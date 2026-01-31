@@ -1,1 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simo Schlumpf – Contact</title>
+  <meta name="description" content="Simo Schlumpf – Politique européenne en Suisse" />
 
+  <style>
+    :root{ --bg:#fff; --ink:#000; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .wrap{
+      padding: clamp(24px, 5vw, 72px);
+      max-width: 62ch;
+    }
+
+    .lang{
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0 0 18px 0;
+      opacity: .85;
+    }
+
+    a{ color: inherit; text-decoration: none; }
+
+    .name{
+      font-size: clamp(26px, 3.2vw, 36px);
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.01em;
+    }
+
+    .role{
+      font-size: clamp(16px, 2.0vw, 20px);
+      margin: 0 0 14px 0;
+      font-weight: 400;
+    }
+
+    .details{
+      font-size: clamp(16px, 2.0vw, 20px);
+      line-height: 1.6;
+      margin: 0;
+      white-space: pre-line;
+    }
+
+    .meta{
+      margin-top: 16px;
+      font-size: clamp(14px, 1.8vw, 18px);
+      line-height: 1.6;
+    }
+
+    em{ font-style: italic; }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <!-- Language navigation -->
+    <p class="lang">
+      <a href="../" aria-label="Zur deutschen Version">DE</a> | FR
+    </p>
+
+    <h1 class="name">Simo Schlumpf</h1>
+
+    <p class="role">Politique européenne en Suisse</p>
+
+    <p class="details">
+<a href="tel:+41799075659" aria-label="Appeler">0041 79 907 56 59</a>
+<a href="mailto:schlumpfsimo@gmail.com" aria-label="Écrire un e-mail">schlumpfsimo [at] gmail.com</a>
+    </p>
+
+    <p class="meta">
+      <a id="vcardLink" href="#" download="Simo-Schlumpf.vcf"><em>Ajouter aux contacts</em></a>
+    </p>
+
+  </main>
+
+  <script>
+    // vCard in-browser download (same file as DE version)
+    (function () {
+      const vcard =
+`BEGIN:VCARD
+VERSION:3.0
+N:Schlumpf;Simo;;;
+FN:Simo Schlumpf
+TITLE:Politique européenne en Suisse
+TEL;TYPE=CELL:+41799075659
+EMAIL:schlumpfsimo@gmail.com
+END:VCARD
+`;
+      const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.getElementById("vcardLink");
+      link.href = url;
+
+      window.addEventListener("beforeunload", () => URL.revokeObjectURL(url));
+    })();
+  </script>
+</body>
+</html>
