@@ -1,52 +1,113 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Simo Schlumpf – Kontakt</title>
+  <meta name="description" content="Simo Schlumpf – Europäische Politik in der Schweiz" />
 
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #ffffff;
-      color: #000000;
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    :root{ --bg:#fff; --ink:#000; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* Option B: top-left anchor, generous margins, responsive */
+    .wrap{
+      padding: clamp(24px, 5vw, 72px);
+      max-width: 62ch;
+    }
+
+    .lang{
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0 0 18px 0;
+      opacity: .85;
+    }
+
+    /* Links should look like text */
+    a{ color: inherit; text-decoration: none; }
+
+    .name{
+      font-size: clamp(26px, 3.2vw, 36px);
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.01em;
+    }
+
+    .role{
+      font-size: clamp(16px, 2.0vw, 20px);
+      margin: 0 0 14px 0;
       font-weight: 400;
     }
 
-    .page {
-      max-width: 640px;
-      padding: 60px 40px;
-    }
-
-    h1 {
-      margin: 0 0 8px 0;
-      font-size: 28px;
-      font-weight: 500;
-    }
-
-    .subtitle {
-      margin: 0 0 32px 0;
-      font-size: 18px;
-    }
-
-    .contact {
-      font-size: 16px;
+    .details{
+      font-size: clamp(16px, 2.0vw, 20px);
       line-height: 1.6;
-      white-space: pre-line; /* keeps line breaks copyable */
+      margin: 0;
+      white-space: pre-line;
     }
+
+    .meta{
+      margin-top: 16px;
+      font-size: clamp(14px, 1.8vw, 18px);
+      line-height: 1.6;
+    }
+
+    em{ font-style: italic; }
   </style>
 </head>
-<body>
-  <div class="page">
-    <h1>Simo Schlumpf</h1>
-    <p class="subtitle">Europäische Politik in der Schweiz</p>
 
-    <div class="contact">
-0041 79 907 56 59
-schlumpfsimo [at] gmail.com
-    </div>
-  </div>
+<body>
+  <main class="wrap">
+    <!-- Language navigation (German stays as index; French will be /fr/) -->
+    <p class="lang">
+      DE | <a href="./fr/" aria-label="Vers la version française">FR</a>
+    </p>
+
+    <h1 class="name">Simo Schlumpf</h1>
+
+    <p class="role">Europäische Politik in der Schweiz</p>
+
+    <p class="details">
+<a href="tel:+41799075659" aria-label="Telefon anrufen">0041 79 907 56 59</a>
+<a href="mailto:schlumpfsimo@gmail.com" aria-label="E-Mail schreiben">schlumpfsimo [at] gmail.com</a>
+    </p>
+
+    <p class="meta">
+      <a id="vcardLink" href="#" download="Simo-Schlumpf.vcf"><em>Kontakt hinzufügen</em></a>
+    </p>
+
+   
+  </main>
+
+  <script>
+    // vCard in-browser download
+    (function () {
+      const vcard =
+`BEGIN:VCARD
+VERSION:3.0
+N:Schlumpf;Simo;;;
+FN:Simo Schlumpf
+TITLE:Europäische Politik in der Schweiz
+TEL;TYPE=CELL:+41799075659
+EMAIL:schlumpfsimo@gmail.com
+END:VCARD
+`;
+      const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.getElementById("vcardLink");
+      link.href = url;
+
+      window.addEventListener("beforeunload", () => URL.revokeObjectURL(url));
+    })();
+  </script>
 </body>
 </html>
