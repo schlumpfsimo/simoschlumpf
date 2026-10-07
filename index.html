@@ -7,7 +7,7 @@
   <meta name="description" content="Simo Schlumpf" />
 
   <style>
-    :root{ --bg:#fff; --ink:#000; }
+    :root{ --bg:#fff; --ink:#000; --blue:#003399; --gold:#FFCC00; }
     html,body{ height:100%; }
     body{
       margin:0;
@@ -37,7 +37,7 @@
     .name{
       font-size: clamp(26px, 3.2vw, 36px);
       font-weight: 600;
-      margin: 0 0 10px 0;
+      margin: 0;
       letter-spacing: -0.01em;
     }
 
@@ -60,11 +60,19 @@
       line-height: 1.6;
     }
 
+    .meta a{ color: var(--blue); }
+
     em{ font-style: italic; }
+
+    /* Europa: drei Sterne + blauer Rand */
+    .stars{ display:flex; gap:8px; margin: 14px 0 0 0; }
+    .st{ width:14px; height:14px; fill:var(--gold); }
+    .bar{ position:fixed; left:0; top:0; bottom:0; width:6px; background:var(--blue); }
   </style>
 </head>
 
 <body>
+  <div class="bar" aria-hidden="true"></div>
   <main class="wrap">
     <!-- Language navigation (German stays as index; French will be /fr/) -->
     <p class="lang">
@@ -72,6 +80,7 @@
     </p>
 
     <h1 class="name">Simo Schlumpf</h1>
+    <div class="stars"><svg class="st" viewBox="-1 -1 2 2" aria-hidden="true"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg class="st" viewBox="-1 -1 2 2" aria-hidden="true"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg class="st" viewBox="-1 -1 2 2" aria-hidden="true"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg></div>
 
 
     <p class="details">
