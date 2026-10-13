@@ -1,7 +1,7 @@
-import { load, save, exportAll, importAll } from './store.js?v=202610132030';
-import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132030';
-import * as src from './sources/index.js?v=202610132030';
-import * as lex from './lexique.js?v=202610132030';
+import { load, save, exportAll, importAll } from './store.js?v=202610132055';
+import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132055';
+import * as src from './sources/index.js?v=202610132055';
+import * as lex from './lexique.js?v=202610132055';
 
 const feed = document.getElementById('feed');
 const detail = document.getElementById('detail');
@@ -213,7 +213,34 @@ function render(c) {
   el.innerHTML = template(c, i);
   feed.appendChild(el);
   io.observe(el);
+  requestAnimationFrame(() => fit(el));
 }
+
+// Garde-fou pour les petits écrans : si le texte ne tient pas, on coupe proprement par « … »,
+// d'abord le résumé, puis le titre — jamais au milieu d'une ligne.
+function fit(el) {
+  const box = el.querySelector('.body');
+  if (!box) return;
+  const blocks = [...box.querySelectorAll('.txt'), ...box.querySelectorAll('.title, .quote')];
+  blocks.forEach((b) => {
+    b.style.webkitLineClamp = '';
+    b.hidden = false;
+  });
+  for (const b of blocks) {
+    const lh = parseFloat(getComputedStyle(b).lineHeight) || 20;
+    let lines = Math.round(b.offsetHeight / lh);
+    while (box.scrollHeight > box.clientHeight + 1 && lines > 1) b.style.webkitLineClamp = --lines;
+    if (box.scrollHeight <= box.clientHeight + 1) return;
+    if (b.classList.contains('txt')) b.hidden = true;
+  }
+}
+
+const refit = () => feed.querySelectorAll('.card').forEach(fit);
+document.fonts?.ready.then(refit);
+window.addEventListener('resize', () => {
+  clearTimeout(refit.t);
+  refit.t = setTimeout(refit, 150);
+});
 
 function renderStart() {
   const date = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());

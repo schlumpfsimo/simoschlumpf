@@ -446,7 +446,7 @@ a { color: inherit; }
 .detail .acts { position: sticky; bottom: 0; background: var(--bg); margin-top: 12px; padding-bottom: 4px; }
 
 /* ---------- Très petits écrans (Unihertz Jelly 2E : ~240 × 427 px) ---------- */
-@media (max-width: 280px), (max-height: 480px) {
+@media (max-width: 340px), (max-height: 560px) {
   .card { padding: 38px 10px 4px; gap: 7px; }
   .top { padding: 8px 10px 12px; }
   .brand { font-size: 12px; }
@@ -488,6 +488,8 @@ a { color: inherit; }
   .items a, .items b { font-size: 14px; }
   .items small { font-size: 12px; }
   .toast { font-size: 9px; bottom: 60px; }
+  .card .img { height: 40%; }
+  .k-news .title { -webkit-line-clamp: 4; }
   .k-news.noimg .title, .k-article.noimg .title { font-size: 24px; }
   .k-image.broken .title { font-size: 22px; }
   .k-paper .title { font-size: 17px; }

@@ -1,5 +1,5 @@
 // Ton lexique : les mots enregistrés reviennent dans le flux à intervalles croissants.
-import { load, save } from './store.js?v=202610132030';
+import { load, save } from './store.js?v=202610132055';
 
 const DAYS = [1, 3, 7, 16, 35, 90];
 const DAY = 864e5;
