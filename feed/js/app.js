@@ -541,7 +541,9 @@ function openCarnet() {
       <label class="btn ghost">Importer<input type="file" accept="application/json" data-import hidden></label>
       <button class="btn ghost" data-reset>Réinitialiser l’algorithme</button>
       <p class="muted">Tout reste sur ce téléphone : favoris, lexique et préférences.</p>
-      <p class="muted">${SOURCES_TEXT}</p></div>`;
+      <p class="muted">${SOURCES_TEXT}</p>
+      <h3 class="imp">Impressum</h3>
+      <p class="muted">Simo Schlumpf</p></div>`;
   }
   carnet.innerHTML = `<header><h2>CARNET</h2><button class="btn ghost" data-close>Fermer</button></header>
     <nav class="tabs">${tabs.map(([k, l, n]) => `<button data-tab="${k}" aria-pressed="${k === tab}">${l}${n === undefined ? '' : ` <span>${n}</span>`}</button>`).join('')}</nav>
