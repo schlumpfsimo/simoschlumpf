@@ -3,13 +3,37 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 const OUT = new URL('../../feed/data/news.json', import.meta.url);
-const PER_SOURCE = 15;
+const PER_SOURCE = 12;
 const UA = 'Mozilla/5.0 (compatible; Flaneur/1.0; +https://www.simoschlumpf.ch/feed/)';
 
+const gnews = (q, hl, gl) => `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=${hl}&gl=${gl}&ceid=${gl}:${hl.split('-')[0]}`;
+
 const SOURCES = [
+  // Politique et idées, en français
   { key: 'lgc', label: 'Le Grand Continent', lang: 'fr', url: 'https://legrandcontinent.eu/fr/feed/' },
   { key: 'rfi', label: 'RFI', lang: 'fr', url: 'https://www.rfi.fr/fr/rss' },
   { key: 'letemps', label: 'Le Temps', lang: 'fr', url: 'https://www.letemps.ch/articles.rss' },
+  { key: 'lemonde', label: 'Le Monde', lang: 'fr', url: 'https://www.lemonde.fr/international/rss_full.xml' },
+  { key: 'lemonde-europe', label: 'Le Monde', lang: 'fr', url: 'https://www.lemonde.fr/europe/rss_full.xml', section: 'Europe' },
+  { key: 'diplo', label: 'Le Monde diplomatique', lang: 'fr', url: 'https://www.monde-diplomatique.fr/recents.xml' },
+  { key: 'courrier', label: 'Courrier international', lang: 'fr', url: 'https://www.courrierinternational.com/feed/all/rss.xml' },
+  { key: 'touteleurope', label: "Toute l'Europe", lang: 'fr', url: 'https://www.touteleurope.eu/feed/', section: 'Europe' },
+  { key: 'tec', label: 'The European Correspondent', lang: 'fr', url: 'https://europeancorrespondent.com/fr/feed.xml', section: 'Europe' },
+  { key: 'rts', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/info/?format=rss/news' },
+  { key: 'visionscarto', label: 'Visionscarto', lang: 'fr', url: 'https://visionscarto.net/spip.php?page=backend', section: 'Cartes' },
+  // Autres langues
+  { key: 'politico', label: 'Politico Europe', lang: 'en', url: gnews('site:politico.eu when:2d', 'en-GB', 'BE'), gnews: true, section: 'Brussels' },
+  { key: 'srf', label: 'SRF', lang: 'de', url: 'https://www.srf.ch/news/bnf/rss/1890', section: 'Schweiz' },
+  { key: 'yle', label: 'Yle', lang: 'fi', url: 'https://feeds.yle.fi/uutiset/v1/majorHeadlines/YLE_UUTISET.rss', section: 'Suomi' },
+  { key: 'pdr', label: 'The Public Domain Review', lang: 'en', url: 'https://publicdomainreview.org/rss.xml', section: 'Art' },
+  { key: 'aeon', label: 'Aeon', lang: 'en', url: 'https://aeon.co/feed.rss', section: 'Essai' },
+  // Villes
+  { key: 'basel', label: 'Bâle', lang: 'de', url: gnews('Basel when:1d', 'de', 'CH'), gnews: true, city: 'Bâle' },
+  { key: 'strasbourg', label: 'Rue89 Strasbourg', lang: 'fr', url: 'https://www.rue89strasbourg.com/feed', city: 'Strasbourg' },
+  { key: 'berlin', label: 'rbb24', lang: 'de', url: 'https://www.rbb24.de/aktuell/index.xml/feed=rss.xml', city: 'Berlin' },
+  { key: 'bruxelles', label: 'The Bulletin', lang: 'en', url: 'https://www.thebulletin.be/rss.xml', city: 'Bruxelles' },
+  { key: 'paris', label: 'Le Parisien', lang: 'fr', url: 'https://feeds.leparisien.fr/leparisien/rss/paris-75', city: 'Paris' },
+  { key: 'vienne', label: 'ORF Wien', lang: 'de', url: 'https://rss.orf.at/wien.xml', city: 'Vienne' },
 ];
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '’', lsquo: '‘', laquo: '«', raquo: '»', hellip: '…', ndash: '–', mdash: '—' };
@@ -73,18 +97,29 @@ async function fetchSource(src, known) {
   const out = [];
   for (const item of items) {
     const url = text(tag(item, 'link'));
-    const title = text(tag(item, 'title'));
+    let title = text(tag(item, 'title'));
+    let sourceLabel = src.label;
+    // Google News : « Titre - Journal », pas de résumé utile.
+    if (src.gnews) {
+      const m = title.match(/^(.*) - ([^-]+)$/);
+      if (m) [title, sourceLabel] = [m[1], m[2].trim()];
+    }
     if (!url || !title) continue;
+    // Certains flux mélangent les langues (Visionscarto) : on garde celle de la source.
+    const itemLang = text(tag(item, 'dc:language'));
+    if (itemLang && !itemLang.startsWith(src.lang)) continue;
     const date = new Date(text(tag(item, 'pubDate')) || Date.now());
     const categories = [...item.matchAll(/<category[^>]*>([\s\S]*?)<\/category>/gi)].map((m) => text(m[1])).filter(Boolean);
     let img = image(item) || known.get(url)?.image || '';
-    if (!img) img = await ogImage(url);
+    if (!img && !src.gnews && !known.has(url)) img = await ogImage(url);
     out.push({
       source: src.key,
-      sourceLabel: src.label,
+      sourceLabel,
       lang: src.lang,
+      city: src.city,
+      section: src.section,
       title,
-      summary: summary(item),
+      summary: src.gnews ? '' : summary(item),
       url,
       image: img,
       date: isNaN(date) ? new Date().toISOString() : date.toISOString(),

@@ -1,9 +1,10 @@
 import { load, save, exportAll, importAll } from './store.js';
 import { pick, reward, resetProfile, setTrending, weight } from './algo.js';
-import * as src from './sources.js';
+import * as src from './sources/index.js';
 import * as lex from './lexique.js';
 
 const feed = document.getElementById('feed');
+const detail = document.getElementById('detail');
 const sheet = document.getElementById('sheet');
 const carnet = document.getElementById('carnet');
 const toastEl = document.getElementById('toast');
@@ -15,78 +16,119 @@ const known = new Set(); // ids déjà dans le pool ou affichés pendant cette s
 const seen = new Set(load('vus', []));
 const reviewed = new Set();
 const trend = [];
+const busy = new Set(); // sources en cours de chargement
+const failures = {}; // source -> { n, until } : on laisse souffler les API qui refusent
 let active = 0;
 let activeSince = Date.now();
-let loading = false;
 let sinceVocab = 0;
 let newsAt = 0;
-let emptyRefills = 0;
-let retryAt = 0;
 let ready = false; // au démarrage, on attend quelques sources pour que la première carte soit déjà un mélange
+let detailCard = null;
+
+// Réserve minimale par famille : la moitié des cartes sont des images.
+const STOCK = { image: 10, news: 4, savoir: 5, paper: 3 };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 /* ---------- Pool et chargement ---------- */
 
+const titles = new Set(); // une même œuvre arrive parfois par deux catalogues
+
 function addToPool(list) {
   for (const c of list || []) {
-    if (!c || seen.has(c.id) || known.has(c.id)) continue;
+    if (!c || !c.title || seen.has(c.id) || known.has(c.id)) continue;
+    c.cat = src.category(c);
+    const key = c.cat + ':' + c.title.toLowerCase();
+    if (titles.has(key)) continue;
+    titles.add(key);
     known.add(c.id);
     pool.push(c);
+    if (c.image) preload(c);
   }
   ensureAhead();
 }
 
-const LOADERS = [
-  { src: 'wiki-fr', fn: () => src.loadWikiTheme('fr'), base: 1.4 },
-  { src: 'wiki-de', fn: () => src.loadWikiTheme('de'), base: 0.6 },
-  { src: 'commons', fn: () => src.loadCommons(), base: 0.8 },
-  { src: 'finna', fn: () => src.loadFinna(), base: 0.8 },
-];
-
-function chooseLoaders(n) {
-  const left = [...LOADERS];
-  const out = [];
-  while (out.length < n && left.length) {
-    const ws = left.map((l) => l.base * weight('src:' + l.src));
-    let r = Math.random() * ws.reduce((a, b) => a + b);
-    const i = Math.max(0, ws.findIndex((w) => (r -= w) <= 0));
-    out.push(left.splice(i, 1)[0]);
-  }
-  return out;
+// On charge l'image avant de montrer la carte : une image cassée ne quitte jamais le pool.
+function preload(c) {
+  const im = new Image();
+  im.decoding = 'async';
+  im.onload = () => {
+    c.ok = true;
+    ensureAhead();
+  };
+  im.onerror = () => {
+    const i = pool.indexOf(c);
+    if (i >= 0) pool.splice(i, 1);
+    if (c.cat !== 'image') {
+      // Une actualité sans image reste lisible : on la garde en version affiche.
+      delete c.image;
+      c.ok = true;
+      pool.push(c);
+    }
+  };
+  im.src = c.image;
 }
 
-async function refill() {
-  if (loading || Date.now() < retryAt) return;
-  loading = true;
-  const before = known.size;
-  const jobs = chooseLoaders(2).map((l) => l.fn().then(addToPool));
+function stock(cat) {
+  return pool.filter((c) => c.cat === cat).length;
+}
+
+function chooseLoader(cat) {
+  const now = Date.now();
+  const ok = src.LOADERS.filter(([key, , , c]) => c === cat && !busy.has(key) && !(failures[key]?.until > now));
+  if (!ok.length) return null;
+  const ws = ok.map(([key, , w]) => w * weight('src:' + key));
+  let r = Math.random() * ws.reduce((a, b) => a + b);
+  return ok[Math.max(0, ws.findIndex((w) => (r -= w) <= 0))];
+}
+
+function run([key, fn]) {
+  busy.add(key);
+  return fn()
+    .then((list) => {
+      if (!list?.length) throw new Error('vide');
+      delete failures[key];
+      addToPool(list);
+    })
+    .catch(() => {
+      // Erreur ou rien de neuf : cette source se repose, de plus en plus longtemps.
+      const n = (failures[key]?.n || 0) + 1;
+      failures[key] = { n, until: Date.now() + Math.min(120e3, 2e3 * 2 ** n) };
+      setTimeout(ensureAhead, Math.min(120e3, 2e3 * 2 ** n) + 50);
+    })
+    .finally(() => busy.delete(key));
+}
+
+function refill() {
   if (Date.now() - newsAt > 30 * 6e4) {
     newsAt = Date.now();
-    jobs.push(src.loadNews().then(addToPool));
+    src.loadNews().then(addToPool).catch(() => {});
   }
-  await Promise.allSettled(jobs);
-  loading = false;
-  // Rien de neuf (réseau coupé, limites d'API) : on patiente de plus en plus longtemps.
-  if (known.size === before) {
-    const wait = Math.min(60e3, 3e3 * 2 ** emptyRefills++);
-    retryAt = Date.now() + wait;
-    setTimeout(ensureAhead, wait + 50);
-  } else emptyRefills = 0;
-  ensureAhead();
+  for (const cat of ['image', 'savoir', 'paper']) {
+    // Deux chargements en parallèle pour les images, un pour le reste.
+    const parallel = cat === 'image' ? 2 : 1;
+    for (let k = 0; k < parallel && stock(cat) < STOCK[cat]; k++) {
+      const loader = chooseLoader(cat);
+      if (loader) run(loader);
+    }
+  }
 }
 
 function nextCard() {
   if (upNext.length) return upNext.shift();
-  if (++sinceVocab >= 7) {
+  if (++sinceVocab >= 9) {
     const e = lex.due(reviewed);
     if (e) {
       sinceVocab = 0;
       reviewed.add(e.w);
-      return { id: 'mot:' + e.w, kind: 'mot', source: 'lexique', label: 'TU TE SOUVIENS ?', lang: 'fr', title: e.w, text: e.def, tags: [] };
+      return { id: 'mot:' + e.w, kind: 'mot', cat: 'savoir', source: 'lexique', label: 'TU TE SOUVIENS ?', lang: 'fr', title: e.w, text: e.def, tags: [], words: [] };
     }
   }
-  return pick(pool, cards.slice(-2).filter((c) => c.id));
+  // Seules les cartes prêtes (image chargée, ou pas d'image) peuvent sortir.
+  const ready = pool.filter((c) => c.ok || !c.image);
+  const c = pick(ready, cards.slice(-2).filter((c) => c.id));
+  if (c) pool.splice(pool.indexOf(c), 1);
+  return c;
 }
 
 function ensureAhead() {
@@ -96,7 +138,7 @@ function ensureAhead() {
     if (!c) break;
     render(c);
   }
-  if (pool.length < 10) refill();
+  refill();
 }
 
 /* ---------- Rendu ---------- */
@@ -106,7 +148,8 @@ function ago(date) {
   if (min < 2) return "à l'instant";
   if (min < 60) return `il y a ${min} min`;
   if (min < 48 * 60) return `il y a ${Math.round(min / 60)} h`;
-  return `il y a ${Math.round(min / 1440)} j`;
+  if (min < 60 * 24 * 60) return `il y a ${Math.round(min / 1440)} j`;
+  return new Date(date).toLocaleDateString('fr-CH', { month: 'long', year: 'numeric' });
 }
 
 function inList(name, id) {
@@ -124,18 +167,26 @@ function actions(c) {
   </nav>`;
 }
 
+const langAttrs = (c) => ({ tr: c.lang === 'fr' ? ' tr' : '', lang: c.lang ? ` lang="${c.lang}"` : '' });
+
 function template(c, i) {
-  const tr = c.lang === 'fr' ? ' tr' : '';
-  const lang = c.lang ? ` lang="${c.lang}"` : '';
-  const meta = `<div class="meta"><span class="no">${String(i).padStart(2, '0')}</span><span class="lbl">${esc(c.label)}</span></div>`;
+  const { tr, lang } = langAttrs(c);
+  const meta = `<div class="meta"><span class="no">${String(i).padStart(2, '0')}</span><span class="lbl">${esc(c.label)}</span>
+    ${c.kind === 'mot' ? '' : '<button class="more" data-act="detail" aria-label="Plus de détails">→</button>'}</div>`;
   const img = c.image ? `<figure class="img"><img src="${esc(c.image)}" alt="" loading="lazy" decoding="async"></figure>` : '';
   const source = `<p class="src">${esc(c.sourceLabel)}${c.date ? ' · ' + ago(c.date) : ''}</p>`;
+  const title = `<h2 class="title${tr}"${lang}>${esc(c.title)}</h2>`;
 
   switch (c.kind) {
     case 'image':
-      return `${meta}${img}<h2 class="title${tr}"${lang}>${esc(c.title)}</h2>
-        ${c.text ? `<p class="txt${tr}"${lang}>${esc(c.text)}</p>` : ''}
-        <p class="credit">${esc(c.credit || c.sourceLabel)}</p>${actions(c)}`;
+      return `${meta}${img}${title}<p class="credit">${esc(c.credit || c.sourceLabel)}</p>${actions(c)}`;
+    case 'news':
+      return `${meta}${img}<div class="body">${title}</div>${source}${actions(c)}`;
+    case 'paper':
+      return `${meta}<div class="body">${title}<p class="txt"${lang}>${esc(c.text)}</p></div>${source}${actions(c)}`;
+    case 'quote':
+      return `${meta}<div class="body"><blockquote class="quote${tr}"${lang}>« ${esc(c.title)} »</blockquote>
+        <p class="author">— ${esc(c.author)}</p></div>${actions(c)}`;
     case 'chiffre':
       return `${meta}<div class="body"><div class="num">${esc(c.number)}</div>
         <p class="txt${tr}"${lang}>${esc(c.text)}</p></div>${source}${actions(c)}`;
@@ -148,8 +199,7 @@ function template(c, i) {
         <p class="def" hidden>${esc(c.text || 'Pas de définition enregistrée.')}</p>
         <nav class="acts acts-2"><button data-act="knew"><i>✓</i>Je savais</button><button data-act="again"><i>↺</i>À revoir</button></nav>`;
     default:
-      return `${meta}${img}<div class="body"><h2 class="title${tr}"${lang}>${esc(c.title)}</h2>
-        ${c.text ? `<p class="txt${tr}"${lang}>${esc(c.text)}</p>` : ''}</div>${source}${actions(c)}`;
+      return `${meta}${img}<div class="body">${title}${c.text ? `<p class="txt${tr}"${lang}>${esc(c.text)}</p>` : ''}</div>${source}${actions(c)}`;
   }
 }
 
@@ -158,7 +208,7 @@ function render(c) {
   cards.push(c);
   known.add(c.id);
   const el = document.createElement('section');
-  el.className = 'card k-' + c.kind;
+  el.className = `card k-${c.kind}${c.image ? '' : ' noimg'}`;
   el.dataset.i = i;
   el.innerHTML = template(c, i);
   feed.appendChild(el);
@@ -172,14 +222,17 @@ function renderStart() {
   el.className = 'card k-start';
   el.dataset.i = 0;
   el.innerHTML = `<div class="start"><h1 class="logo">FLÂNEUR</h1><p class="motto">pas scrolleur</p></div>
-    <p class="date">${esc(date)}</p><p class="hint">Glisse vers le haut ↑</p>`;
+    <p class="date">${esc(date)}</p><p class="hint">↑ glisse pour flâner · → pour lire plus</p>`;
   feed.appendChild(el);
   io.observe(el);
 }
 
-// Images cassées : on enlève simplement le cadre.
-feed.addEventListener('error', (e) => {
-  if (e.target.tagName === 'IMG') e.target.closest('figure')?.remove();
+// Images cassées : on enlève le cadre ; une carte « image » sans image disparaît.
+document.addEventListener('error', (e) => {
+  if (e.target.tagName !== 'IMG') return;
+  const card = e.target.closest('.card');
+  e.target.closest('figure')?.remove();
+  if (card?.classList.contains('k-image')) card.classList.add('broken');
 }, true);
 
 /* ---------- Carte active et temps de lecture ---------- */
@@ -205,11 +258,82 @@ function setActive(i) {
   if (c?.id) {
     seen.add(c.id);
     clearTimeout(saveSeenTimer);
-    saveSeenTimer = setTimeout(() => save('vus', [...seen].slice(-4000)), 1000);
+    saveSeenTimer = setTimeout(() => save('vus', [...seen].slice(-6000)), 1000);
   }
   document.body.classList.toggle('on-start', i === 0);
   ensureAhead();
 }
+
+/* ---------- Vue détaillée : glisser vers la droite pour l'ouvrir, vers la gauche pour revenir ---------- */
+
+function detailHTML(c) {
+  const { tr, lang } = langAttrs(c);
+  const image = c.imageLarge || c.image;
+  const facts = (c.facts || []).filter(([, v]) => v);
+  const body = c.long || c.text || '';
+  return `<header class="dtop"><button class="back" data-back>← Flux</button><span class="lbl">${esc(c.label)}</span></header>
+    ${image ? `<figure class="dimg"><img src="${esc(image)}" alt="" decoding="async"></figure>` : ''}
+    ${c.kind === 'chiffre' ? `<div class="num">${esc(c.number)}</div>` : ''}
+    ${c.kind === 'jour' ? `<div class="year">${esc(c.year)}</div>` : ''}
+    <h2 class="dtitle${tr}"${lang}>${esc(c.kind === 'quote' ? '« ' + c.title + ' »' : c.title)}</h2>
+    ${c.author ? `<p class="author">— ${esc(c.author)}</p>` : ''}
+    ${facts.length ? `<dl class="facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : ''}
+    <div class="dtext${tr}"${lang}>${body.split(/\n+/).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('')}</div>
+    ${c.credit ? `<p class="credit">${esc(c.credit)}</p>` : ''}
+    <p class="src">${esc(c.sourceLabel)}${c.date ? ' · ' + ago(c.date) : ''}</p>
+    ${c.url ? `<a class="btn ghost open" href="${esc(c.url)}" target="_blank" rel="noopener">Ouvrir la source ↗</a>` : ''}
+    ${c.kind === 'mot' ? '' : actions(c)}`;
+}
+
+async function openDetail(c) {
+  if (!c?.id || detailCard) return;
+  detailCard = c;
+  reward(c, 0.25);
+  detail.innerHTML = detailHTML(c);
+  detail.hidden = false;
+  detail.scrollTop = 0;
+  requestAnimationFrame(() => detail.classList.add('open'));
+  history.pushState({ detail: true }, '');
+  try {
+    const more = await src.loadDetail(c);
+    if (detailCard === c && (more.long || more.imageLarge)) {
+      Object.assign(c, Object.fromEntries(Object.entries(more).filter(([, v]) => v)));
+      const y = detail.scrollTop;
+      detail.innerHTML = detailHTML(c);
+      detail.scrollTop = y;
+    }
+  } catch {}
+}
+
+function closeDetail() {
+  if (!detailCard) return;
+  detailCard = null;
+  detail.classList.remove('open');
+  setTimeout(() => {
+    if (!detailCard) detail.hidden = true;
+  }, 220);
+}
+
+window.addEventListener('popstate', closeDetail);
+
+function swipe(el, onSwipe) {
+  let x0, y0, t0;
+  el.addEventListener('touchstart', (e) => {
+    x0 = e.touches[0].clientX;
+    y0 = e.touches[0].clientY;
+    t0 = Date.now();
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (x0 === undefined) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    x0 = undefined;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.6 * Math.abs(dy) && Date.now() - t0 < 800) onSwipe(dx > 0 ? 'right' : 'left');
+  }, { passive: true });
+}
+
+swipe(feed, (dir) => dir === 'right' && openDetail(cards[active]));
+swipe(detail, (dir) => dir === 'left' && history.back());
 
 /* ---------- Actions ---------- */
 
@@ -231,37 +355,43 @@ function toggle(name, c) {
 
 // « Plus comme ça » : les cartes déjà préparées repassent derrière les nouvelles.
 function insertNext(list) {
-  const fresh = list.filter((c) => !seen.has(c.id) && !known.has(c.id));
+  const fresh = list.filter((c) => c?.title && !seen.has(c.id) && !known.has(c.id));
   if (!fresh.length) return false;
-  fresh.forEach((c) => known.add(c.id));
+  fresh.forEach((c) => {
+    c.cat = src.category(c);
+    known.add(c.id);
+  });
   const ahead = cards.splice(active + 1);
-  for (const c of ahead) {
-    const el = feed.querySelector(`.card[data-i="${cards.length + ahead.indexOf(c)}"]`);
+  ahead.forEach((c, k) => {
+    const el = feed.querySelector(`.card[data-i="${cards.length + k}"]`);
     if (el) {
       io.unobserve(el);
       el.remove();
     }
     if (c.kind === 'mot') reviewed.delete(c.title);
-  }
+  });
   upNext.unshift(...fresh.slice(0, 3), ...ahead.filter((c) => c.kind !== 'mot'));
   ensureAhead();
   return true;
 }
 
+// Le même bouton existe sur la carte et dans la vue détaillée.
+function syncPressed(name, c, on) {
+  const el = feed.querySelector(`.card[data-i="${cards.indexOf(c)}"]`);
+  for (const root of [el, detailCard === c ? detail : null]) root?.querySelector(`[data-act="${name}"]`)?.setAttribute('aria-pressed', on);
+}
+
 async function act(name, c, btn, el) {
   switch (name) {
-    case 'aime': {
-      const on = toggle('aime', c);
-      btn.setAttribute('aria-pressed', on);
-      if (on) reward(c, 0.5);
-      toast(on ? 'Ajouté à tes favoris' : 'Retiré des favoris');
+    case 'detail':
+      openDetail(c);
       break;
-    }
+    case 'aime':
     case 'plustard': {
-      const on = toggle('plustard', c);
-      btn.setAttribute('aria-pressed', on);
-      if (on) reward(c, 0.3);
-      toast(on ? 'Pour plus tard — dans le carnet' : 'Retiré de la liste');
+      const on = toggle(name, c);
+      syncPressed(name, c, on);
+      if (on) reward(c, name === 'aime' ? 0.5 : 0.3);
+      toast(name === 'aime' ? (on ? 'Ajouté à tes favoris' : 'Retiré des favoris') : on ? 'Pour plus tard — dans le carnet' : 'Retiré de la liste');
       break;
     }
     case 'partager':
@@ -277,10 +407,11 @@ async function act(name, c, btn, el) {
     case 'encore':
       reward(c, 0.6);
       toast('Compris : plus comme ça');
+      if (detailCard) history.back();
       try {
         const related = pool.filter((p) => p.words.some((w) => c.words.includes(w))).slice(0, 2);
         related.forEach((p) => pool.splice(pool.indexOf(p), 1));
-        const more = await src.loadMoreLike(c);
+        const more = (await src.loadMoreLike(c)) || [];
         insertNext([...more, ...related]);
       } catch {}
       break;
@@ -299,16 +430,23 @@ async function act(name, c, btn, el) {
   }
 }
 
-feed.addEventListener('click', (e) => {
-  const el = e.target.closest('.card');
-  if (!el) return;
-  const c = cards[+el.dataset.i];
+function onTap(e, c, el) {
   const btn = e.target.closest('button[data-act]');
   if (btn) return act(btn.dataset.act, c, btn, el);
   if (e.target.closest('.tr')) {
     const w = wordAt(e);
     if (w) showWord(w);
   }
+}
+
+feed.addEventListener('click', (e) => {
+  const el = e.target.closest('.card');
+  if (el) onTap(e, cards[+el.dataset.i], el);
+});
+
+detail.addEventListener('click', (e) => {
+  if (e.target.closest('[data-back]')) return history.back();
+  if (detailCard) onTap(e, detailCard, detail);
 });
 
 /* ---------- Toucher un mot pour le traduire ---------- */
@@ -371,6 +509,13 @@ sheet.addEventListener('click', (e) => {
 
 let tab = 'aime';
 
+const SOURCES_TEXT = `Actualités : Le Grand Continent, RFI, Le Temps, Le Monde, Le Monde diplomatique, Courrier international,
+  Toute l'Europe, The European Correspondent, Politico Europe, RTS, SRF, Yle, Visionscarto, The Public Domain Review, Aeon,
+  et les villes de Bâle, Strasbourg, Berlin, Bruxelles, Paris et Vienne.
+  Art : Art Institute of Chicago, Cleveland Museum of Art, SMK, V&A, The Met, Wellcome Collection, Europeana,
+  Library of Congress, Openverse, Finna, Wikimedia Commons.
+  Savoir : Wikipédia, Vikidia, Wikiquote, Wikidata, Wiktionary. Recherche : OpenAlex.`;
+
 function openCarnet() {
   const tabs = [
     ['aime', "J'aime", load('aime', []).length],
@@ -396,8 +541,8 @@ function openCarnet() {
       <button class="btn" data-export>Exporter mes données</button>
       <label class="btn ghost">Importer<input type="file" accept="application/json" data-import hidden></label>
       <button class="btn ghost" data-reset>Réinitialiser l’algorithme</button>
-      <p class="muted">Tout reste sur ce téléphone : favoris, lexique et préférences.
-      Sources : Le Grand Continent, RFI, Le Temps, Wikipédia, Wikimedia Commons, Finna, Wiktionary.</p></div>`;
+      <p class="muted">Tout reste sur ce téléphone : favoris, lexique et préférences.</p>
+      <p class="muted">${SOURCES_TEXT}</p></div>`;
   }
   carnet.innerHTML = `<header><h2>CARNET</h2><button class="btn ghost" data-close>Fermer</button></header>
     <nav class="tabs">${tabs.map(([k, l, n]) => `<button data-tab="${k}" aria-pressed="${k === tab}">${l}${n === undefined ? '' : ` <span>${n}</span>`}</button>`).join('')}</nav>
@@ -465,12 +610,13 @@ async function start() {
       setTrending(src.words(trend.join(' ')));
       addToPool(r.cards);
     });
-  const first = Promise.allSettled([src.loadNews().then(addToPool), daily('fr'), daily('de'), refill()]);
+  refill();
+  const first = Promise.allSettled([src.loadNews().then(addToPool), daily('fr'), daily('de')]);
   await Promise.race([first, new Promise((r) => setTimeout(r, 2500))]);
   ready = true;
   ensureAhead();
   await first;
-  if (cards.length <= 1) renderOffline();
+  setTimeout(() => cards.length <= 1 && renderOffline(), 8000);
 }
 
 start();

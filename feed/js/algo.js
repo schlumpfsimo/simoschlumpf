@@ -4,6 +4,8 @@ import { load, save } from './store.js';
 
 const EXPLORE = 0.2;
 const FRENCH_PUSH = 1.35;
+// Après une image : actualités, savoir ou recherche, dans ces proportions (modulées par ce que tu aimes).
+const MIX = { news: 0.45, savoir: 0.35, paper: 0.2 };
 
 let profile = load('profil', { w: {} });
 let trending = new Set();
@@ -11,7 +13,7 @@ let trending = new Set();
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
 function features(card) {
-  return ['src:' + card.source, 'type:' + card.kind, ...(card.tags || []).map((t) => 'tag:' + t)];
+  return ['cat:' + card.cat, 'src:' + card.source, 'type:' + card.kind, ...(card.tags || []).map((t) => 'tag:' + t)];
 }
 
 export function weight(key) {
@@ -52,17 +54,28 @@ function score(card, recent) {
   return s;
 }
 
-// Retire et renvoie la prochaine carte du pool.
-export function pick(pool, recent) {
+function weighted(items, w) {
+  const ws = items.map(w);
+  let r = Math.random() * ws.reduce((a, b) => a + b, 0);
+  const i = ws.findIndex((x) => (r -= x) <= 0);
+  return items[i < 0 ? items.length - 1 : i];
+}
+
+// La famille voulue pour la prochaine carte : une image sur deux.
+export function nextCategory(recent) {
+  if (recent.at(-1)?.cat !== 'image') return 'image';
+  return weighted(Object.keys(MIX), (k) => MIX[k] * weight('cat:' + k));
+}
+
+// Retire et renvoie la prochaine carte du pool, dans la famille voulue si possible.
+export function pick(pool, recent, want = nextCategory(recent)) {
   if (!pool.length) return null;
-  let i;
-  if (Math.random() < EXPLORE) {
-    i = Math.floor(Math.random() * pool.length);
-  } else {
-    const scores = pool.map((c) => score(c, recent));
-    let r = Math.random() * scores.reduce((a, b) => a + b, 0);
-    i = scores.findIndex((s) => (r -= s) <= 0);
-    if (i < 0) i = pool.length - 1;
-  }
-  return pool.splice(i, 1)[0];
+  let candidates = pool.filter((c) => c.cat === want);
+  if (!candidates.length && want !== 'image') candidates = pool.filter((c) => c.cat !== 'image');
+  if (!candidates.length) candidates = pool;
+  const c = Math.random() < EXPLORE
+    ? candidates[Math.floor(Math.random() * candidates.length)]
+    : weighted(candidates, (x) => score(x, recent));
+  pool.splice(pool.indexOf(c), 1);
+  return c;
 }
