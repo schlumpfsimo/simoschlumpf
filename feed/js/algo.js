@@ -1,6 +1,6 @@
 // L'algorithme : des poids par source, type et thème, appris de ce que tu fais.
 // 20 % des cartes sont tirées au hasard pour ne pas s'enfermer dans une bulle.
-import { load, save } from './store.js?v=202610132125';
+import { load, save } from './store.js?v=202610132127';
 
 const EXPLORE = 0.2;
 const FRENCH_PUSH = 1.35;

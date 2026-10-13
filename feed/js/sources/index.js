@@ -1,11 +1,11 @@
 // Le registre des sources, rangées en quatre familles.
 // Le flux alterne : une image sur deux, puis actualités, savoir et recherche.
-import * as wiki from './wiki.js?v=202610132125';
-import { ART_LOADERS, artMoreLike } from './art.js?v=202610132125';
-import { loadPapers } from './papers.js?v=202610132125';
+import * as wiki from './wiki.js?v=202610132127';
+import { ART_LOADERS, artMoreLike } from './art.js?v=202610132127';
+import { loadPapers } from './papers.js?v=202610132127';
 
-export { loadNews } from './news.js?v=202610132125';
-export { loadWikiDaily, translate, meaningsDE, words, rabbitStart, rabbitNext } from './wiki.js?v=202610132125';
+export { loadNews } from './news.js?v=202610132127';
+export { loadWikiDaily, translate, meaningsDE, words, rabbitStart, rabbitNext } from './wiki.js?v=202610132127';
 
 export function category(c) {
   if (c.kind === 'image') return 'image';
