@@ -1,6 +1,6 @@
 // Wikimédia : Wikipédia (FR/DE/EN), Vikidia, Wikiquote, Wikidata, Commons, Wiktionary. Sans clé.
-import { card, getJSON, rand, strip, shorten, words } from './util.js?v=202610132030';
-import { WIKI_FR, WIKI_DE, WIKI_EN, PLACES, QUOTES } from '../topics.js?v=202610132030';
+import { card, getJSON, rand, strip, shorten, words } from './util.js?v=202610132117';
+import { WIKI_FR, WIKI_DE, WIKI_EN, PLACES, QUOTES, ART_CONTEMPORARY } from '../topics.js?v=202610132117';
 
 const bigger = (url) => (url || '').replace(/\/(\d+)px-/, (m, n) => (+n < 640 ? '/640px-' : m));
 const WIKI_LABEL = { fr: 'Wikipédia', de: 'Wikipedia (DE)', en: 'Wikipedia (EN)' };
@@ -255,6 +255,40 @@ export async function loadCommons(theme = rand(['', 'architecture', 'street', 'r
     });
 }
 
+// Art contemporain : photos d'expositions, d'installations et d'art public (images de qualité de Commons).
+export async function loadContemporary() {
+  const theme = rand(ART_CONTEMPORARY);
+  const q = new URLSearchParams({
+    action: 'query', format: 'json', formatversion: '2', origin: '*',
+    generator: 'search', gsrnamespace: '6', gsrlimit: '4', gsrsort: 'random',
+    gsrsearch: `filetype:bitmap incategory:"Quality_images" ${theme}`,
+    prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '720',
+    iiextmetadatafilter: 'ImageDescription|Artist|LicenseShortName|ObjectName|DateTimeOriginal', iiextmetadatalanguage: 'fr',
+  });
+  const d = await getJSON('https://commons.wikimedia.org/w/api.php?' + q);
+  return (d.query?.pages || [])
+    .filter((p) => p.imageinfo?.[0]?.thumburl)
+    .map((p) => {
+      const ii = p.imageinfo[0];
+      const m = ii.extmetadata || {};
+      return card({
+        id: 'commons:' + p.title,
+        kind: 'image',
+        source: 'commons-contemporain',
+        sourceLabel: 'Wikimedia Commons',
+        label: 'ART CONTEMPORAIN',
+        lang: 'fr',
+        title: shorten(strip(m.ObjectName?.value) || p.title.replace(/^File:|\.\w+$/g, ''), 120),
+        text: strip(m.ImageDescription?.value),
+        image: ii.thumburl,
+        url: ii.descriptionurl,
+        credit: [strip(m.Artist?.value), m.LicenseShortName?.value].filter(Boolean).join(' · '),
+        facts: [['Date', strip(m.DateTimeOriginal?.value)]],
+        tags: [theme.toLowerCase()],
+      });
+    });
+}
+
 /* ---------- Plus comme ça ---------- */
 
 export async function wikiMoreLike(c) {
@@ -266,6 +300,51 @@ export async function wikiMoreLike(c) {
   // Pour tout le reste : un article Wikipédia sur le même sujet.
   const d = await wikiApi('fr.wikipedia.org', { generator: 'search', gsrsearch: c.words.slice(0, 4).join(' '), gsrlimit: '2' });
   return fromPages(d, { lang: 'fr', source: 'wiki-fr', sourceLabel: 'Wikipédia', label: 'POUR COMPRENDRE', tag: c.tags[0] || 'contexte' });
+}
+
+/* ---------- Terrier : de lien en lien, toujours plus profond ---------- */
+
+async function rabbitPages(lang, titles) {
+  const q = new URLSearchParams({
+    action: 'query', format: 'json', formatversion: '2', origin: '*', redirects: '1',
+    prop: 'extracts|pageimages|info', exintro: '1', explaintext: '1', exlimit: '20',
+    piprop: 'thumbnail', pithumbsize: '800', inprop: 'url', titles: titles.join('|'),
+  });
+  const d = await getJSON(`https://${lang}.wikipedia.org/w/api.php?${q}`);
+  return (d.query?.pages || []).filter((p) => p.extract && p.extract.length > 150);
+}
+
+function rabbitCard(p, lang, depth) {
+  return { lang, title: p.title, text: shorten(p.extract, 1400), image: p.thumbnail?.source, url: p.fullurl, depth };
+}
+
+// Le point d'entrée : l'article lui-même pour une carte Wikipédia, sinon le meilleur résultat de recherche.
+export async function rabbitStart(c) {
+  const lang = c.source?.startsWith('wiki-') ? c.lang : 'fr';
+  let title = c.source?.startsWith('wiki-') || c.source === 'vikidia' ? c.title : null;
+  if (!title) {
+    for (const query of [c.title, c.words.slice(0, 3).join(' '), c.tags[0]].filter(Boolean)) {
+      const q = new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', origin: '*', list: 'search', srsearch: query, srlimit: '1', srnamespace: '0' });
+      title = (await getJSON(`https://${lang}.wikipedia.org/w/api.php?${q}`)).query?.search?.[0]?.title;
+      if (title) break;
+    }
+  }
+  if (!title) return null;
+  const [p] = await rabbitPages(lang, [title]);
+  return p ? rabbitCard(p, lang, 1) : null;
+}
+
+// Un cran plus bas : un lien au hasard de l'article courant, de préférence illustré.
+export async function rabbitNext(prev, visited) {
+  const q = new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', origin: '*', prop: 'links', plnamespace: '0', pllimit: '500', titles: prev.title });
+  const links = ((await getJSON(`https://${prev.lang}.wikipedia.org/w/api.php?${q}`)).query?.pages?.[0]?.links || [])
+    .map((l) => l.title)
+    .filter((t) => !visited.has(t) && !/^(Liste|Portail|Modèle|Catégorie|\d{4}$)/.test(t));
+  const pick = links.sort(() => Math.random() - 0.5).slice(0, 10);
+  if (!pick.length) return null;
+  const pages = await rabbitPages(prev.lang, pick);
+  const p = pages.find((x) => x.thumbnail) || pages[0];
+  return p ? rabbitCard(p, prev.lang, prev.depth + 1) : null;
 }
 
 /* ---------- Vue détaillée : l'article plus long ---------- */

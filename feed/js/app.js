@@ -1,7 +1,7 @@
-import { load, save, exportAll, importAll } from './store.js?v=202610132030';
-import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132030';
-import * as src from './sources/index.js?v=202610132030';
-import * as lex from './lexique.js?v=202610132030';
+import { load, save, exportAll, importAll } from './store.js?v=202610132117';
+import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132117';
+import * as src from './sources/index.js?v=202610132117';
+import * as lex from './lexique.js?v=202610132117';
 
 const feed = document.getElementById('feed');
 const detail = document.getElementById('detail');
@@ -162,8 +162,9 @@ function actions(c) {
   return `<nav class="acts">
     ${b('aime', '♥', "J'aime", inList('aime', c.id))}
     ${b('plustard', '+', 'Plus tard', inList('plustard', c.id))}
-    ${b('partager', '↗', 'Partager')}
     ${b('encore', '≈', 'Plus comme ça')}
+    ${b('moins', '−', 'Moins comme ça')}
+    ${b('partager', '↗', 'Partager')}
   </nav>`;
 }
 
@@ -213,7 +214,105 @@ function render(c) {
   el.innerHTML = template(c, i);
   feed.appendChild(el);
   io.observe(el);
+  requestAnimationFrame(() => fit(el));
 }
+
+// Garde-fou pour les petits écrans : si le texte ne tient pas, on coupe proprement par « … »,
+// d'abord le résumé, puis le titre — jamais au milieu d'une ligne.
+function fit(el) {
+  const box = el.querySelector('.body');
+  if (!box) return;
+  const blocks = [...box.querySelectorAll('.txt'), ...box.querySelectorAll('.title, .quote')];
+  blocks.forEach((b) => {
+    b.style.webkitLineClamp = '';
+    b.hidden = false;
+  });
+  for (const b of blocks) {
+    const lh = parseFloat(getComputedStyle(b).lineHeight) || 20;
+    let lines = Math.round(b.offsetHeight / lh);
+    while (box.scrollHeight > box.clientHeight + 1 && lines > 1) b.style.webkitLineClamp = --lines;
+    if (box.scrollHeight <= box.clientHeight + 1) return;
+    if (b.classList.contains('txt')) b.hidden = true;
+  }
+}
+
+const refit = () => feed.querySelectorAll('.card').forEach(fit);
+document.fonts?.ready.then(refit);
+window.addEventListener('resize', () => {
+  clearTimeout(refit.t);
+  refit.t = setTimeout(() => {
+    refit();
+    const map = feed.querySelector('.europe');
+    if (map) drawEurope(map);
+  }, 150);
+});
+
+// L'Europe en petits cercles d'étoiles, comme le drapeau européen : 48 × 44 points, une ligne par latitude
+// (de 71,5° N à 34° N, de 24° O à 44° E), tirés des contours Natural Earth.
+const EUROPE = 'c00000000800,3fe00,7ff80,7fff0,ffffc,1ffffc,de00003fff83,3e00007f1f87,3c0000ff3fcf,3fe7fff,7fcffff,ff8ffff,ff8ffff,7fc43ff,77c3fff,e0678bfff,f0078bfff,e0130ffff,f0160ffff,1d0181ffff,3981ffffff,1b87ffffff,33cfffffff,39fffffff,33fffffff,7fffffff,ffffffff,3ffffffff,1fffffff7,fffffecf,ffdffcdf,ffdff80f,fccff807,3fe0e7f803,1fe163f803,1fc039f9e3,1f810dc7ff,3f81099fff,3f8009cfff,1f0030afff,f051007ff,7f00003f,4ff8030bf,fff00003f';
+
+// Dessine une grille de points, chaque point étant un petit cercle de 12 étoiles (comme le drapeau européen).
+// rows : chaînes de '0'/'1' (ou 'W' pour un cercle jaune) ; fit : largeur/hauteur du dessin en unités de grille.
+function drawRings(canvas, rows, { alpha = 0.11, scale = 1, accent = '#f7cf4c' } = {}) {
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const g = canvas.getContext('2d');
+  g.scale(dpr, dpr);
+  const cols = rows[0].length;
+  const cell = Math.min(W / cols, H / rows.length) * scale;
+  const ox = (W - cols * cell) / 2;
+  const oy = (H - rows.length * cell) / 2;
+  const r = cell * 0.34;
+  const dot = Math.max(0.45, r * 0.16);
+  rows.forEach((row, y) => {
+    for (let x = 0; x < cols; x++) {
+      if (row[x] === '0' || row[x] === '.') continue;
+      g.fillStyle = row[x] === 'W' ? accent : `rgba(255, 255, 255, ${alpha})`;
+      const cx = ox + (x + 0.5) * cell;
+      const cy = oy + (y + 0.5) * cell;
+      for (let k = 0; k < 12; k++) {
+        const t = (k / 12) * Math.PI * 2;
+        g.beginPath();
+        g.arc(cx + Math.cos(t) * r, cy + Math.sin(t) * r, dot, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+  });
+}
+
+function drawEurope(canvas) {
+  // Les cellules de la grille sont plus larges que hautes (projection) : on étire un peu la grille.
+  const rows = EUROPE.split(',').map((h) => BigInt('0x' + h).toString(2).padStart(48, '0'));
+  drawRings(canvas, rows, { alpha: 0.11, scale: 1.2 });
+}
+
+// Le lapin blanc d'Alice, au fond du terrier — avec sa montre à gousset (en jaune).
+const RABBIT = `
+.......#..#.......
+......##.##.......
+......##.##.......
+......##.##.......
+......##.##.......
+......##.##.......
+.....#######......
+....#########.....
+....#.#######.....
+....#########.....
+.....#######......
+......#####.......
+.....#######......
+....#########.....
+...###########....
+...###########.##.
+..W###########.##.
+..W###########....
+...###########....
+....#########.....
+....###...###.....
+...####..####.....`.trim().split('\n');
 
 function renderStart() {
   const date = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
@@ -221,10 +320,11 @@ function renderStart() {
   const el = document.createElement('section');
   el.className = 'card k-start';
   el.dataset.i = 0;
-  el.innerHTML = `<div class="start"><h1 class="logo">FLÂNEUR</h1><p class="motto">pas scrolleur</p></div>
-    <p class="date">${esc(date)}</p><p class="hint">↑ glisse pour flâner · → pour lire plus</p>`;
+  el.innerHTML = `<canvas class="europe" aria-hidden="true"></canvas><div class="start"><h1 class="logo">FLÂNEUR</h1><p class="motto">pas scrolleur</p></div>
+    <p class="date">${esc(date)}</p><p class="hint">↑ flâner · ← lire plus · puis ↓ le terrier</p>`;
   feed.appendChild(el);
   io.observe(el);
+  requestAnimationFrame(() => drawEurope(el.querySelector('.europe')));
 }
 
 // Images cassées : on enlève le cadre ; une carte « image » sans image disparaît.
@@ -264,14 +364,16 @@ function setActive(i) {
   ensureAhead();
 }
 
-/* ---------- Vue détaillée : glisser vers la droite pour l'ouvrir, vers la gauche pour revenir ---------- */
+/* ---------- Vue détaillée : glisser vers la gauche ; en descendant, on tombe dans le terrier ---------- */
+
+let rabbit = null; // { from, pages, visited, loading, started, done }
 
 function detailHTML(c) {
   const { tr, lang } = langAttrs(c);
   const image = c.imageLarge || c.image;
   const facts = (c.facts || []).filter(([, v]) => v);
   const body = c.long || c.text || '';
-  return `<header class="dtop"><button class="back" data-back>← Flux</button><span class="lbl">${esc(c.label)}</span></header>
+  return `<header class="dtop"><button class="back" data-back>Flux →</button><span class="lbl">${esc(c.label)}</span></header>
     ${image ? `<figure class="dimg"><img src="${esc(image)}" alt="" decoding="async"></figure>` : ''}
     ${c.kind === 'chiffre' ? `<div class="num">${esc(c.number)}</div>` : ''}
     ${c.kind === 'jour' ? `<div class="year">${esc(c.year)}</div>` : ''}
@@ -282,21 +384,86 @@ function detailHTML(c) {
     ${c.credit ? `<p class="credit">${esc(c.credit)}</p>` : ''}
     <p class="src">${esc(c.sourceLabel)}${c.date ? ' · ' + ago(c.date) : ''}</p>
     ${c.url ? `<a class="btn ghost open" href="${esc(c.url)}" target="_blank" rel="noopener">Ouvrir la source ↗</a>` : ''}
-    ${c.kind === 'mot' ? '' : actions(c)}`;
+    ${c.kind === 'mot' ? '' : actions(c)}
+    <div class="tstack"><p class="tinto">↓ continue à descendre : le terrier</p></div>`;
 }
+
+function rabbitHTML(p) {
+  const tr = p.lang === 'fr' ? ' tr' : '';
+  return `<section class="tpage">
+    <div class="meta"><span class="no">${String(p.depth).padStart(2, '0')}</span><span class="lbl">TERRIER · PROFONDEUR ${p.depth}</span></div>
+    ${p.image ? `<figure class="timg"><img src="${esc(p.image)}" alt="" decoding="async"></figure>` : ''}
+    <h2 class="dtitle${tr}" lang="${p.lang}">${esc(p.title)}</h2>
+    <div class="dtext${tr}" lang="${p.lang}">${p.text.split(/\n+/).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join('')}</div>
+    <a class="btn ghost open" href="${esc(p.url)}" target="_blank" rel="noopener">Wikipédia ↗</a>
+    <p class="deeper">↓ plus profond</p>
+  </section>`;
+}
+
+function stack() {
+  return detail.querySelector('.tstack');
+}
+
+function addRabbit(p) {
+  rabbit.visited.add(p.title);
+  rabbit.pages.push(p);
+  stack().insertAdjacentHTML('beforeend', rabbitHTML(p));
+}
+
+// Le fond du terrier : plus aucun lien à suivre. Le lapin blanc attend là.
+function rabbitEnd() {
+  rabbit.done = true;
+  stack().insertAdjacentHTML('beforeend', `<div class="fond"><canvas class="lapin" aria-hidden="true"></canvas>
+    <p class="tinto">Fond du terrier.</p></div>`);
+  drawRings(stack().querySelector('.lapin'), RABBIT, { alpha: 0.85 });
+}
+
+async function deeper() {
+  const r = rabbit;
+  if (!r || r.loading || r.done) return;
+  r.loading = true;
+  await deeperStep(r);
+  if (rabbit === r) requestAnimationFrame(maybeDeeper);
+}
+
+async function deeperStep(r) {
+  if (!r.started) {
+    r.started = true;
+    reward(r.from, 0.3);
+    const first = await src.rabbitStart(r.from).catch(() => null);
+    if (rabbit !== r) return;
+    r.loading = false;
+    stack().querySelector('.tinto')?.remove();
+    return first ? addRabbit(first) : rabbitEnd();
+  }
+  const next = await src.rabbitNext(r.pages.at(-1), r.visited).catch(() => null);
+  if (rabbit !== r) return;
+  r.loading = false;
+  if (next) addRabbit(next);
+  else rabbitEnd();
+}
+
+// Plus on descend, plus on creuse : l'article suivant se charge avant d'arriver en bas.
+// (Aussi vérifié à l'ouverture : une fiche courte ne déclenche aucun défilement.)
+function maybeDeeper() {
+  if (rabbit && detail.scrollTop + detail.clientHeight > detail.scrollHeight - detail.clientHeight * 1.2) deeper();
+}
+detail.addEventListener('scroll', maybeDeeper, { passive: true });
 
 async function openDetail(c) {
   if (!c?.id || detailCard) return;
   detailCard = c;
+  rabbit = { from: c, pages: [], visited: new Set([c.title]), loading: false, started: false, done: false };
   reward(c, 0.25);
   detail.innerHTML = detailHTML(c);
   detail.hidden = false;
   detail.scrollTop = 0;
   requestAnimationFrame(() => detail.classList.add('open'));
   history.pushState({ detail: true }, '');
+  setTimeout(maybeDeeper, 300);
   try {
     const more = await src.loadDetail(c);
-    if (detailCard === c && (more.long || more.imageLarge)) {
+    if (detailCard === c && !rabbit.started && (more.long || more.imageLarge)) {
       Object.assign(c, Object.fromEntries(Object.entries(more).filter(([, v]) => v)));
       const y = detail.scrollTop;
       detail.innerHTML = detailHTML(c);
@@ -308,6 +475,7 @@ async function openDetail(c) {
 function closeDetail() {
   if (!detailCard) return;
   detailCard = null;
+  rabbit = null;
   detail.classList.remove('open');
   setTimeout(() => {
     if (!detailCard) detail.hidden = true;
@@ -332,8 +500,9 @@ function swipe(el, onSwipe) {
   }, { passive: true });
 }
 
-swipe(feed, (dir) => dir === 'right' && openDetail(cards[active]));
-swipe(detail, (dir) => dir === 'left' && history.back());
+// Vers la gauche : la vue détaillée glisse depuis la droite. Vers la droite : retour au flux, à toute profondeur.
+swipe(feed, (dir) => dir === 'left' && openDetail(cards[active]));
+swipe(detail, (dir) => dir === 'right' && history.back());
 
 /* ---------- Actions ---------- */
 
@@ -354,13 +523,8 @@ function toggle(name, c) {
 }
 
 // « Plus comme ça » : les cartes déjà préparées repassent derrière les nouvelles.
-function insertNext(list) {
-  const fresh = list.filter((c) => c?.title && !seen.has(c.id) && !known.has(c.id));
-  if (!fresh.length) return false;
-  fresh.forEach((c) => {
-    c.cat = src.category(c);
-    known.add(c.id);
-  });
+// Retire du DOM les cartes déjà préparées après la carte active et les renvoie.
+function takeAhead() {
   const ahead = cards.splice(active + 1);
   ahead.forEach((c, k) => {
     const el = feed.querySelector(`.card[data-i="${cards.length + k}"]`);
@@ -370,9 +534,28 @@ function insertNext(list) {
     }
     if (c.kind === 'mot') reviewed.delete(c.title);
   });
-  upNext.unshift(...fresh.slice(0, 3), ...ahead.filter((c) => c.kind !== 'mot'));
+  return ahead.filter((c) => c.kind !== 'mot');
+}
+
+function insertNext(list) {
+  const fresh = list.filter((c) => c?.title && !seen.has(c.id) && !known.has(c.id));
+  if (!fresh.length) return false;
+  fresh.forEach((c) => {
+    c.cat = src.category(c);
+    known.add(c.id);
+  });
+  upNext.unshift(...fresh.slice(0, 3), ...takeAhead());
   ensureAhead();
   return true;
+}
+
+// « Moins comme ça » : même source et même thème disparaissent de la réserve et des cartes préparées.
+function dropSimilar(c) {
+  const similar = (x) => x.source === c.source && (!c.tags.length || x.tags.some((t) => c.tags.includes(t)));
+  for (let i = pool.length - 1; i >= 0; i--) if (similar(pool[i])) pool.splice(i, 1);
+  for (let i = upNext.length - 1; i >= 0; i--) if (similar(upNext[i])) upNext.splice(i, 1);
+  upNext.unshift(...takeAhead().filter((x) => !similar(x)));
+  ensureAhead();
 }
 
 // Le même bouton existe sur la carte et dans la vue détaillée.
@@ -414,6 +597,13 @@ async function act(name, c, btn, el) {
         const more = (await src.loadMoreLike(c)) || [];
         insertNext([...more, ...related]);
       } catch {}
+      break;
+    case 'moins':
+      reward(c, -0.7);
+      toast('Compris : moins de ça');
+      if (detailCard) history.back();
+      dropSimilar(c);
+      setTimeout(() => feed.querySelector(`.card[data-i="${active + 1}"]`)?.scrollIntoView({ behavior: 'smooth' }), 250);
       break;
     case 'reveal':
       el.querySelector('.def').hidden = false;

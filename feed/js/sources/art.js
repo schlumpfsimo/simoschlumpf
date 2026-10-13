@@ -1,20 +1,25 @@
 // Collections d'art et d'archives, toutes en accès libre.
 // Chaque appel tire un thème et une page au hasard : la réserve ne s'épuise pas.
-import { card, getJSON, rand, randInt, strip, first } from './util.js?v=202610132030';
-import { ART, ART_FI } from '../topics.js?v=202610132030';
+import { card, getJSON, rand, randInt, strip, first } from './util.js?v=202610132117';
+import { ART, ART_FI, ART_MODERN, ART_CONTEMPORARY } from '../topics.js?v=202610132117';
 
 function art(c) {
   return card({ kind: 'image', lang: 'en', label: 'ŒUVRE', ...c, facts: (c.facts || []).filter(([, v]) => v) });
 }
 
 /* Art Institute of Chicago */
-export async function loadAIC(theme = rand(ART)) {
+export async function loadAIC(theme = rand(ART), since) {
   const q = new URLSearchParams({
-    q: theme, limit: '4', page: String(1 + randInt(20)),
+    q: theme, limit: '4', page: String(1 + randInt(since ? 8 : 20)),
     fields: 'id,title,image_id,artist_display,date_display,medium_display,place_of_origin,description',
-    'query[term][is_public_domain]': 'true',
+    'query[bool][must][0][term][is_public_domain]': 'true',
   });
-  const d = await getJSON('https://api.artic.edu/api/v1/artworks/search?' + q);
+  if (since) q.set('query[bool][must][1][range][date_start][gte]', since);
+  let d = await getJSON('https://api.artic.edu/api/v1/artworks/search?' + q);
+  if (!d.data.length && q.get('page') !== '1') {
+    q.set('page', '1');
+    d = await getJSON('https://api.artic.edu/api/v1/artworks/search?' + q);
+  }
   return d.data.filter((a) => a.image_id).map((a) =>
     art({
       id: 'aic:' + a.id,
@@ -33,9 +38,14 @@ export async function loadAIC(theme = rand(ART)) {
 }
 
 /* Cleveland Museum of Art (CC0) */
-export async function loadCleveland(theme = rand(ART)) {
-  const q = new URLSearchParams({ q: theme, has_image: '1', cc0: '1', limit: '4', skip: String(randInt(40)) });
-  const d = await getJSON('https://openaccess-api.clevelandart.org/api/artworks/?' + q);
+export async function loadCleveland(theme = rand(ART), since) {
+  const q = new URLSearchParams({ q: theme, has_image: '1', cc0: '1', limit: '4', skip: String(randInt(since ? 12 : 40)) });
+  if (since) q.set('created_after', since);
+  let d = await getJSON('https://openaccess-api.clevelandart.org/api/artworks/?' + q);
+  if (!d.data.length && q.get('skip') !== '0') {
+    q.set('skip', '0');
+    d = await getJSON('https://openaccess-api.clevelandart.org/api/artworks/?' + q);
+  }
   return d.data.filter((a) => a.images?.web?.url).map((a) =>
     art({
       id: 'cma:' + a.id,
@@ -113,9 +123,14 @@ export async function loadWellcome(theme = rand(ART)) {
 }
 
 /* The Met, New York (domaine public) */
-export async function loadMet(theme = rand(ART)) {
-  const q = new URLSearchParams({ q: theme, hasImages: 'true', isPublicDomain: 'true', offset: String(randInt(60)), limit: '6' });
-  const ids = (await getJSON('https://collectionapi.metmuseum.org/public/collection/v1.1/search?' + q)).objectIDs || [];
+export async function loadMet(theme = rand(ART), modern) {
+  const q = new URLSearchParams({ q: theme, hasImages: 'true', isPublicDomain: 'true', offset: String(randInt(modern ? 20 : 60)), limit: '6' });
+  if (modern) q.set('departmentId', '21'); // Modern and Contemporary Art
+  let ids = (await getJSON('https://collectionapi.metmuseum.org/public/collection/v1.1/search?' + q)).objectIDs || [];
+  if (!ids.length && q.get('offset') !== '0') {
+    q.set('offset', '0');
+    ids = (await getJSON('https://collectionapi.metmuseum.org/public/collection/v1.1/search?' + q)).objectIDs || [];
+  }
   const objs = await Promise.allSettled(ids.slice(0, 4).map((id) => getJSON('https://collectionapi.metmuseum.org/public/collection/v1/objects/' + id)));
   return objs
     .filter((r) => r.status === 'fulfilled' && r.value.primaryImageSmall)
@@ -181,7 +196,7 @@ export async function loadLOC(theme = rand(ART)) {
 }
 
 /* Openverse : photographies sous licence Creative Commons */
-export async function loadOpenverse(theme = rand(ART)) {
+export async function loadOpenverse(theme = rand([...ART, ...ART_CONTEMPORARY])) {
   const q = new URLSearchParams({ q: theme, page_size: '4', page: String(1 + randInt(10)), mature: 'false' });
   const d = await getJSON('https://api.openverse.org/v1/images/?' + q);
   return (d.results || []).map((a) =>
@@ -226,8 +241,14 @@ export async function loadFinna(theme = rand(ART_FI)) {
     );
 }
 
+// Art moderne : mêmes musées, filtrés sur les œuvres après 1880.
+const modern = (key, fn, extra) => (theme = rand(ART_MODERN)) =>
+  fn(theme, extra).then((list) => list.map((c) => ({ ...c, source: key, label: 'ART MODERNE' })));
+
 // Tous les catalogues, avec leur poids de départ.
 export const ART_LOADERS = [
+  ['aic-moderne', modern('aic-moderne', loadAIC, '1880'), 1.4], ['cleveland-moderne', modern('cleveland-moderne', loadCleveland, '1880'), 1.1],
+  ['met-moderne', modern('met-moderne', loadMet), 0.5], ['europeana-moderne', modern('europeana-moderne', loadEuropeana), 0.9],
   ['aic', loadAIC, 1.2], ['cleveland', loadCleveland, 1], ['smk', loadSMK, 1], ['vam', loadVAM, 1.1],
   ['wellcome', loadWellcome, 0.8], ['met', loadMet, 1], ['europeana', loadEuropeana, 1.2], ['loc', loadLOC, 0.9],
   ['openverse', loadOpenverse, 0.8], ['finna', loadFinna, 0.8],
