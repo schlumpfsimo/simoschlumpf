@@ -1,11 +1,10 @@
-import { load, save, exportAll, importAll } from './store.js?v=202610132110';
-import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132110';
-import * as src from './sources/index.js?v=202610132110';
-import * as lex from './lexique.js?v=202610132110';
+import { load, save, exportAll, importAll } from './store.js?v=202610132117';
+import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132117';
+import * as src from './sources/index.js?v=202610132117';
+import * as lex from './lexique.js?v=202610132117';
 
 const feed = document.getElementById('feed');
 const detail = document.getElementById('detail');
-const terrier = document.getElementById('terrier');
 const sheet = document.getElementById('sheet');
 const carnet = document.getElementById('carnet');
 const toastEl = document.getElementById('toast');
@@ -252,7 +251,9 @@ window.addEventListener('resize', () => {
 // (de 71,5° N à 34° N, de 24° O à 44° E), tirés des contours Natural Earth.
 const EUROPE = 'c00000000800,3fe00,7ff80,7fff0,ffffc,1ffffc,de00003fff83,3e00007f1f87,3c0000ff3fcf,3fe7fff,7fcffff,ff8ffff,ff8ffff,7fc43ff,77c3fff,e0678bfff,f0078bfff,e0130ffff,f0160ffff,1d0181ffff,3981ffffff,1b87ffffff,33cfffffff,39fffffff,33fffffff,7fffffff,ffffffff,3ffffffff,1fffffff7,fffffecf,ffdffcdf,ffdff80f,fccff807,3fe0e7f803,1fe163f803,1fc039f9e3,1f810dc7ff,3f81099fff,3f8009cfff,1f0030afff,f051007ff,7f00003f,4ff8030bf,fff00003f';
 
-function drawEurope(canvas) {
+// Dessine une grille de points, chaque point étant un petit cercle de 12 étoiles (comme le drapeau européen).
+// rows : chaînes de '0'/'1' (ou 'W' pour un cercle jaune) ; fit : largeur/hauteur du dessin en unités de grille.
+function drawRings(canvas, rows, { alpha = 0.11, scale = 1, accent = '#f7cf4c' } = {}) {
   const W = canvas.clientWidth;
   const H = canvas.clientHeight;
   const dpr = window.devicePixelRatio || 1;
@@ -260,32 +261,58 @@ function drawEurope(canvas) {
   canvas.height = H * dpr;
   const g = canvas.getContext('2d');
   g.scale(dpr, dpr);
-  const rows = EUROPE.split(',').map((h) => BigInt('0x' + h).toString(2).padStart(48, '0'));
-  // La carte remplit la largeur (un peu plus), centrée verticalement.
-  const mapW = 40.9;
-  const mapH = 37.5;
-  const scale = Math.min(W / mapW, H / mapH) * 1.2;
-  const cw = (mapW * scale) / 48;
-  const ch = (mapH * scale) / rows.length;
-  const ox = (W - mapW * scale) / 2;
-  const oy = (H - mapH * scale) / 2;
-  const r = Math.min(cw, ch) * 0.34;
+  const cols = rows[0].length;
+  const cell = Math.min(W / cols, H / rows.length) * scale;
+  const ox = (W - cols * cell) / 2;
+  const oy = (H - rows.length * cell) / 2;
+  const r = cell * 0.34;
   const dot = Math.max(0.45, r * 0.16);
-  g.fillStyle = 'rgba(255, 255, 255, 0.11)';
   rows.forEach((row, y) => {
-    for (let x = 0; x < 48; x++) {
-      if (row[x] !== '1') continue;
-      const cx = ox + (x + 0.5) * cw;
-      const cy = oy + (y + 0.5) * ch;
+    for (let x = 0; x < cols; x++) {
+      if (row[x] === '0' || row[x] === '.') continue;
+      g.fillStyle = row[x] === 'W' ? accent : `rgba(255, 255, 255, ${alpha})`;
+      const cx = ox + (x + 0.5) * cell;
+      const cy = oy + (y + 0.5) * cell;
       for (let k = 0; k < 12; k++) {
-        const a = (k / 12) * Math.PI * 2;
+        const t = (k / 12) * Math.PI * 2;
         g.beginPath();
-        g.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, dot, 0, Math.PI * 2);
+        g.arc(cx + Math.cos(t) * r, cy + Math.sin(t) * r, dot, 0, Math.PI * 2);
         g.fill();
       }
     }
   });
 }
+
+function drawEurope(canvas) {
+  // Les cellules de la grille sont plus larges que hautes (projection) : on étire un peu la grille.
+  const rows = EUROPE.split(',').map((h) => BigInt('0x' + h).toString(2).padStart(48, '0'));
+  drawRings(canvas, rows, { alpha: 0.11, scale: 1.2 });
+}
+
+// Le lapin blanc d'Alice, au fond du terrier — avec sa montre à gousset (en jaune).
+const RABBIT = `
+.......#..#.......
+......##.##.......
+......##.##.......
+......##.##.......
+......##.##.......
+......##.##.......
+.....#######......
+....#########.....
+....#.#######.....
+....#########.....
+.....#######......
+......#####.......
+.....#######......
+....#########.....
+...###########....
+...###########.##.
+..W###########.##.
+..W###########....
+...###########....
+....#########.....
+....###...###.....
+...####..####.....`.trim().split('\n');
 
 function renderStart() {
   const date = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
@@ -294,7 +321,7 @@ function renderStart() {
   el.className = 'card k-start';
   el.dataset.i = 0;
   el.innerHTML = `<canvas class="europe" aria-hidden="true"></canvas><div class="start"><h1 class="logo">FLÂNEUR</h1><p class="motto">pas scrolleur</p></div>
-    <p class="date">${esc(date)}</p><p class="hint">↑ flâner · → lire plus · ← terrier</p>`;
+    <p class="date">${esc(date)}</p><p class="hint">↑ flâner · ← lire plus · puis ↓ le terrier</p>`;
   feed.appendChild(el);
   io.observe(el);
   requestAnimationFrame(() => drawEurope(el.querySelector('.europe')));
@@ -337,14 +364,16 @@ function setActive(i) {
   ensureAhead();
 }
 
-/* ---------- Vue détaillée : glisser vers la droite pour l'ouvrir, vers la gauche pour revenir ---------- */
+/* ---------- Vue détaillée : glisser vers la gauche ; en descendant, on tombe dans le terrier ---------- */
+
+let rabbit = null; // { from, pages, visited, loading, started, done }
 
 function detailHTML(c) {
   const { tr, lang } = langAttrs(c);
   const image = c.imageLarge || c.image;
   const facts = (c.facts || []).filter(([, v]) => v);
   const body = c.long || c.text || '';
-  return `<header class="dtop"><button class="back" data-back>← Flux</button><span class="lbl">${esc(c.label)}</span></header>
+  return `<header class="dtop"><button class="back" data-back>Flux →</button><span class="lbl">${esc(c.label)}</span></header>
     ${image ? `<figure class="dimg"><img src="${esc(image)}" alt="" decoding="async"></figure>` : ''}
     ${c.kind === 'chiffre' ? `<div class="num">${esc(c.number)}</div>` : ''}
     ${c.kind === 'jour' ? `<div class="year">${esc(c.year)}</div>` : ''}
@@ -355,21 +384,86 @@ function detailHTML(c) {
     ${c.credit ? `<p class="credit">${esc(c.credit)}</p>` : ''}
     <p class="src">${esc(c.sourceLabel)}${c.date ? ' · ' + ago(c.date) : ''}</p>
     ${c.url ? `<a class="btn ghost open" href="${esc(c.url)}" target="_blank" rel="noopener">Ouvrir la source ↗</a>` : ''}
-    ${c.kind === 'mot' ? '' : actions(c)}`;
+    ${c.kind === 'mot' ? '' : actions(c)}
+    <div class="tstack"><p class="tinto">↓ continue à descendre : le terrier</p></div>`;
 }
 
+function rabbitHTML(p) {
+  const tr = p.lang === 'fr' ? ' tr' : '';
+  return `<section class="tpage">
+    <div class="meta"><span class="no">${String(p.depth).padStart(2, '0')}</span><span class="lbl">TERRIER · PROFONDEUR ${p.depth}</span></div>
+    ${p.image ? `<figure class="timg"><img src="${esc(p.image)}" alt="" decoding="async"></figure>` : ''}
+    <h2 class="dtitle${tr}" lang="${p.lang}">${esc(p.title)}</h2>
+    <div class="dtext${tr}" lang="${p.lang}">${p.text.split(/\n+/).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join('')}</div>
+    <a class="btn ghost open" href="${esc(p.url)}" target="_blank" rel="noopener">Wikipédia ↗</a>
+    <p class="deeper">↓ plus profond</p>
+  </section>`;
+}
+
+function stack() {
+  return detail.querySelector('.tstack');
+}
+
+function addRabbit(p) {
+  rabbit.visited.add(p.title);
+  rabbit.pages.push(p);
+  stack().insertAdjacentHTML('beforeend', rabbitHTML(p));
+}
+
+// Le fond du terrier : plus aucun lien à suivre. Le lapin blanc attend là.
+function rabbitEnd() {
+  rabbit.done = true;
+  stack().insertAdjacentHTML('beforeend', `<div class="fond"><canvas class="lapin" aria-hidden="true"></canvas>
+    <p class="tinto">Fond du terrier.</p></div>`);
+  drawRings(stack().querySelector('.lapin'), RABBIT, { alpha: 0.85 });
+}
+
+async function deeper() {
+  const r = rabbit;
+  if (!r || r.loading || r.done) return;
+  r.loading = true;
+  await deeperStep(r);
+  if (rabbit === r) requestAnimationFrame(maybeDeeper);
+}
+
+async function deeperStep(r) {
+  if (!r.started) {
+    r.started = true;
+    reward(r.from, 0.3);
+    const first = await src.rabbitStart(r.from).catch(() => null);
+    if (rabbit !== r) return;
+    r.loading = false;
+    stack().querySelector('.tinto')?.remove();
+    return first ? addRabbit(first) : rabbitEnd();
+  }
+  const next = await src.rabbitNext(r.pages.at(-1), r.visited).catch(() => null);
+  if (rabbit !== r) return;
+  r.loading = false;
+  if (next) addRabbit(next);
+  else rabbitEnd();
+}
+
+// Plus on descend, plus on creuse : l'article suivant se charge avant d'arriver en bas.
+// (Aussi vérifié à l'ouverture : une fiche courte ne déclenche aucun défilement.)
+function maybeDeeper() {
+  if (rabbit && detail.scrollTop + detail.clientHeight > detail.scrollHeight - detail.clientHeight * 1.2) deeper();
+}
+detail.addEventListener('scroll', maybeDeeper, { passive: true });
+
 async function openDetail(c) {
-  if (!c?.id || detailCard || rabbit) return;
+  if (!c?.id || detailCard) return;
   detailCard = c;
+  rabbit = { from: c, pages: [], visited: new Set([c.title]), loading: false, started: false, done: false };
   reward(c, 0.25);
   detail.innerHTML = detailHTML(c);
   detail.hidden = false;
   detail.scrollTop = 0;
   requestAnimationFrame(() => detail.classList.add('open'));
   history.pushState({ detail: true }, '');
+  setTimeout(maybeDeeper, 300);
   try {
     const more = await src.loadDetail(c);
-    if (detailCard === c && (more.long || more.imageLarge)) {
+    if (detailCard === c && !rabbit.started && (more.long || more.imageLarge)) {
       Object.assign(c, Object.fromEntries(Object.entries(more).filter(([, v]) => v)));
       const y = detail.scrollTop;
       detail.innerHTML = detailHTML(c);
@@ -381,93 +475,14 @@ async function openDetail(c) {
 function closeDetail() {
   if (!detailCard) return;
   detailCard = null;
+  rabbit = null;
   detail.classList.remove('open');
   setTimeout(() => {
     if (!detailCard) detail.hidden = true;
   }, 220);
 }
 
-/* ---------- Terrier : glisser vers la gauche, puis descendre de lien en lien dans Wikipédia ---------- */
-
-let rabbit = null; // { from, pages, visited, loading }
-
-function rabbitHTML(p) {
-  const tr = p.lang === 'fr' ? ' tr' : '';
-  return `<section class="tpage">
-    <div class="meta"><span class="no">${String(p.depth).padStart(2, '0')}</span><span class="lbl">PROFONDEUR ${p.depth}</span></div>
-    ${p.image ? `<figure class="timg"><img src="${esc(p.image)}" alt="" decoding="async"></figure>` : ''}
-    <h2 class="dtitle${tr}" lang="${p.lang}">${esc(p.title)}</h2>
-    <div class="dtext${tr}" lang="${p.lang}">${p.text.split(/\n+/).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join('')}</div>
-    <a class="btn ghost open" href="${esc(p.url)}" target="_blank" rel="noopener">Wikipédia ↗</a>
-    <p class="deeper">↓ plus profond</p>
-  </section>`;
-}
-
-function addRabbit(p) {
-  rabbit.visited.add(p.title);
-  rabbit.pages.push(p);
-  terrier.querySelector('.tload')?.remove();
-  terrier.querySelector('.tstack').insertAdjacentHTML('beforeend', rabbitHTML(p));
-}
-
-async function deeper() {
-  const r = rabbit;
-  if (!r || r.loading || !r.pages.length) return;
-  r.loading = true;
-  const next = await src.rabbitNext(r.pages.at(-1), r.visited).catch(() => null);
-  if (rabbit !== r) return;
-  r.loading = false;
-  if (next) addRabbit(next);
-  else terrier.querySelector('.tstack').insertAdjacentHTML('beforeend', '<p class="muted tload">Fond du terrier.</p>');
-}
-
-async function openTerrier(c) {
-  if (!c?.id || rabbit || detailCard) return;
-  rabbit = { from: c, pages: [], visited: new Set(), loading: false };
-  reward(c, 0.3);
-  terrier.innerHTML = `<header class="dtop"><span class="lbl">TERRIER</span><span class="ttl">${esc(c.title)}</span>
-    <button class="back" data-back>Flux →</button></header><div class="tstack"><p class="muted tload">On creuse…</p></div>`;
-  terrier.hidden = false;
-  terrier.scrollTop = 0;
-  requestAnimationFrame(() => terrier.classList.add('open'));
-  history.pushState({ terrier: true }, '');
-  const r = rabbit;
-  const first = await src.rabbitStart(c).catch(() => null);
-  if (rabbit !== r) return;
-  if (!first) {
-    terrier.querySelector('.tload').textContent = 'Pas d’article trouvé pour ce sujet.';
-    return;
-  }
-  addRabbit(first);
-  deeper();
-}
-
-function closeTerrier() {
-  if (!rabbit) return;
-  rabbit = null;
-  terrier.classList.remove('open');
-  setTimeout(() => {
-    if (!rabbit) terrier.hidden = true;
-  }, 220);
-}
-
-// Plus on descend, plus on creuse : la page suivante se charge avant d'arriver en bas.
-terrier.addEventListener('scroll', () => {
-  if (rabbit && terrier.scrollTop + terrier.clientHeight > terrier.scrollHeight - terrier.clientHeight * 1.5) deeper();
-}, { passive: true });
-
-terrier.addEventListener('click', (e) => {
-  if (e.target.closest('[data-back]')) return history.back();
-  if (e.target.closest('.tr')) {
-    const hit = wordAt(e);
-    if (hit) showWord(hit.w, hit.sentence);
-  }
-});
-
-window.addEventListener('popstate', () => {
-  closeDetail();
-  closeTerrier();
-});
+window.addEventListener('popstate', closeDetail);
 
 function swipe(el, onSwipe) {
   let x0, y0, t0;
@@ -485,9 +500,9 @@ function swipe(el, onSwipe) {
   }, { passive: true });
 }
 
-swipe(feed, (dir) => (dir === 'right' ? openDetail(cards[active]) : openTerrier(cards[active])));
-swipe(detail, (dir) => dir === 'left' && history.back());
-swipe(terrier, (dir) => dir === 'right' && history.back());
+// Vers la gauche : la vue détaillée glisse depuis la droite. Vers la droite : retour au flux, à toute profondeur.
+swipe(feed, (dir) => dir === 'left' && openDetail(cards[active]));
+swipe(detail, (dir) => dir === 'right' && history.back());
 
 /* ---------- Actions ---------- */
 

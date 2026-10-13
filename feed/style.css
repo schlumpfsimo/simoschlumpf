@@ -5,6 +5,8 @@
   --mute: #8f8f8f;
   --line: #262626;
   --panel: #111;
+  --dbg: #262626;
+  --dline: #3d3d3d;
   --blue: #2735bb;
   --yellow: #f7cf4c;
   --sans: 'Archivo Black', 'Arial Black', sans-serif;
@@ -397,27 +399,27 @@ a { color: inherit; }
   margin: 14px 0 0;
 }
 
-/* ---------- Terrier (glisser vers la gauche) ---------- */
-.detail.terrier { transform: translateX(100%); z-index: 9; }
-.detail.terrier.open { transform: none; }
-.terrier .dtop .lbl { background: var(--yellow); color: #000; }
-.ttl { flex: 1; min-width: 0; font: italic 14px/1.2 var(--serif); text-transform: none; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tpage { min-height: calc(var(--vh) - 60px); padding: 8px 0 18px; border-bottom: 1px solid var(--line); }
+/* ---------- Terrier (en descendant dans la vue détaillée) ---------- */
+.tstack { margin-top: 18px; }
+.tpage { min-height: calc(var(--vh) - 60px); padding: 14px 0 18px; border-top: 1px solid var(--dline); }
+.tpage .meta .lbl { background: var(--yellow); color: #000; }
 .timg { margin: 10px -16px 12px; }
 .timg img { display: block; width: 100%; max-height: 42vh; object-fit: cover; }
-.deeper { text-align: center; font: 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--yellow); margin: 18px 0 0; }
-.tload { text-align: center; padding: 40px 0; }
+.deeper, .tinto { text-align: center; font: 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--yellow); margin: 18px 0 0; }
+.tinto { padding: 22px 0 40px; }
+.fond { padding: 30px 0 60px; border-top: 1px solid var(--dline); }
+.lapin { display: block; width: 100%; height: 220px; }
 
-/* ---------- Vue détaillée (glisser vers la droite) ---------- */
+/* ---------- Vue détaillée (glisser vers la gauche) : gris clair pour la distinguer du flux ---------- */
 .detail {
   position: fixed;
   inset: 0;
   z-index: 8;
-  background: var(--bg);
+  background: var(--dbg);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 16px 0;
-  transform: translateX(-100%);
+  transform: translateX(100%);
   transition: transform 0.2s ease-out;
 }
 .detail.open { transform: none; }
@@ -429,14 +431,14 @@ a { color: inherit; }
   gap: 10px;
   align-items: center;
   padding: 10px 0;
-  background: var(--bg);
+  background: var(--dbg);
   font: 10px/1 var(--sans);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .back { font: 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid var(--ink); padding: 7px 9px; }
 .dtop .lbl { background: var(--blue); padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dimg { margin: 0 -16px 14px; background: var(--bg); }
+.dimg { margin: 0 -16px 14px; background: #000; }
 .dimg img { display: block; width: 100%; max-height: 75vh; object-fit: contain; }
 .dtitle { font: 26px/1.05 var(--sans); letter-spacing: -0.03em; margin: 6px 0 12px; overflow-wrap: break-word; hyphens: auto; }
 .detail .num, .detail .year { margin: 4px 0 8px; }
@@ -456,7 +458,8 @@ a { color: inherit; }
 .dtext p { font-size: 17px; line-height: 1.5; margin: 0 0 12px; }
 .detail .credit { -webkit-line-clamp: unset; margin-bottom: 6px; }
 .detail .open { margin: 12px 0 8px; text-decoration: none; }
-.detail .acts { position: sticky; bottom: 0; background: var(--bg); margin-top: 12px; padding-bottom: 4px; }
+.detail .acts { position: sticky; bottom: 0; z-index: 1; background: var(--dbg); border-top-color: var(--dline); margin-top: 12px; padding-bottom: 4px; }
+.detail .facts { border-color: var(--dline); }
 
 /* ---------- Très petits écrans (Unihertz Jelly 2E : ~240 × 427 px) ---------- */
 @media (max-width: 340px), (max-height: 560px) {
