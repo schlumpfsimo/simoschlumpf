@@ -434,8 +434,8 @@ function onTap(e, c, el) {
   const btn = e.target.closest('button[data-act]');
   if (btn) return act(btn.dataset.act, c, btn, el);
   if (e.target.closest('.tr')) {
-    const w = wordAt(e);
-    if (w) showWord(w);
+    const hit = wordAt(e);
+    if (hit) showWord(hit.w, hit.sentence);
   }
 }
 
@@ -471,24 +471,33 @@ function wordAt(e) {
   while (a > 0 && isLetter(t[a - 1])) a--;
   while (b < t.length && isLetter(t[b])) b++;
   const w = t.slice(a, b).replace(/^-+|-+$/g, '');
-  return w.length > 1 ? w : null;
+  if (w.length < 2) return null;
+  // La phrase autour du mot, pour la traduire en contexte.
+  const start = Math.max(t.lastIndexOf('. ', a), t.lastIndexOf('! ', a), t.lastIndexOf('? ', a)) + 1;
+  const ends = ['. ', '! ', '? '].map((p) => t.indexOf(p, b)).filter((i) => i >= 0);
+  const end = ends.length ? Math.min(...ends) + 1 : t.length;
+  return { w, sentence: t.slice(start, end).trim().slice(0, 400) };
 }
 
-async function showWord(w) {
-  sheet.innerHTML = `<div class="panel"><p class="sw" lang="fr">${esc(w)}</p><p class="muted">Recherche…</p></div>`;
+async function showWord(w, sentence) {
+  sheet.innerHTML = `<div class="panel"><p class="sw" lang="fr">${esc(w)}</p><p class="muted">Traduction…</p></div>`;
   sheet.hidden = false;
-  const defs = await src.define(w);
-  if (sheet.hidden || !sheet.querySelector('.sw') || sheet.querySelector('.sw').textContent !== w) return;
-  const def = defs ? defs.map((d) => `${d.pos} : ${d.defs.join(' ; ')}`).join(' — ') : '';
+  const [tr, wk] = await Promise.all([src.translate(w).catch(() => null), src.meaningsDE(w).catch(() => null)]);
+  if (sheet.hidden || sheet.querySelector('.sw')?.textContent !== w) return;
+  const de = tr?.main || wk?.meanings[0] || '';
+  const def = [de, wk && wk.lemma !== w ? `(${wk.lemma})` : ''].filter(Boolean).join(' ');
   const saved = lex.has(w);
   sheet.innerHTML = `<div class="panel">
     <p class="sw" lang="fr">${esc(w)}</p>
-    ${defs
-      ? `<ul class="defs">${defs.map((d) => `<li><em>${esc(d.pos)}</em> ${esc(d.defs.join(' ; '))}</li>`).join('')}</ul>`
-      : '<p class="muted">Pas de définition trouvée.</p>'}
+    ${de ? `<p class="de" lang="de">${esc(de)}</p>` : '<p class="muted">Pas de traduction trouvée.</p>'}
+    ${tr?.alts.length ? `<p class="alts" lang="de">auch : ${tr.alts.map(esc).join(' · ')}</p>` : ''}
+    ${wk ? `<p class="lemma">${wk.lemma !== w ? `Grundform <b lang="fr">${esc(wk.lemma)}</b> · ` : ''}Wiktionary</p>
+      <ol class="defs" lang="de">${wk.meanings.map((m) => `<li>${esc(m)}</li>`).join('')}</ol>` : ''}
+    ${sentence && sentence !== w ? `<div class="phrase"><p lang="fr">${esc(sentence)}</p>
+      <button class="btn ghost" data-phrase>Traduire la phrase</button><p class="phrase-de" lang="de" hidden></p></div>` : ''}
     <p class="links">
-      <a href="https://fr.wiktionary.org/wiki/${encodeURIComponent(w.toLowerCase())}" target="_blank" rel="noopener">Wiktionnaire</a>
-      <a href="https://dict.leo.org/französisch-deutsch/${encodeURIComponent(w)}" target="_blank" rel="noopener">LEO (allemand)</a>
+      <a href="https://dict.leo.org/französisch-deutsch/${encodeURIComponent(w)}" target="_blank" rel="noopener">LEO</a>
+      <a href="https://de.wiktionary.org/wiki/${encodeURIComponent(wk?.lemma || w)}" target="_blank" rel="noopener">Wiktionary</a>
     </p>
     <div class="row">
       <button class="btn" data-add ${saved ? 'disabled' : ''}>${saved ? 'Déjà dans le lexique' : '+ Ajouter au lexique'}</button>
@@ -498,6 +507,18 @@ async function showWord(w) {
     lex.add(w, def);
     e.target.disabled = true;
     e.target.textContent = 'Ajouté';
+  };
+  const phraseBtn = sheet.querySelector('[data-phrase]');
+  if (phraseBtn) phraseBtn.onclick = async () => {
+    phraseBtn.textContent = 'Traduction…';
+    const out = sheet.querySelector('.phrase-de');
+    try {
+      out.textContent = (await src.translate(sentence)).main;
+    } catch {
+      out.textContent = 'Traduction indisponible.';
+    }
+    out.hidden = false;
+    phraseBtn.remove();
   };
 }
 
@@ -513,7 +534,7 @@ const SOURCES_TEXT = `Actualités : plus de 60 flux — presse française, suiss
   Rhin supérieur et régions frontalières, villes (Bâle, Strasbourg, Berlin, Bruxelles, Paris, Vienne), design et photo.
   Art : Art Institute of Chicago, Cleveland Museum of Art, SMK, V&A, The Met, Wellcome Collection, Europeana,
   Library of Congress, Openverse, Finna, Wikimedia Commons.
-  Savoir : Wikipédia, Vikidia, Wikiquote, Wikidata, Wiktionary. Recherche : OpenAlex.`;
+  Savoir : Wikipédia, Vikidia, Wikiquote, Wikidata. Traduction : MyMemory, Wiktionary. Recherche : OpenAlex.`;
 
 function openCarnet() {
   const tabs = [

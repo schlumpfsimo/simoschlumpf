@@ -280,18 +280,49 @@ export async function wikiLong(c) {
   return { long: p?.extract, imageLarge: p?.thumbnail?.source };
 }
 
-/* ---------- Dictionnaire (Wiktionary, sens en anglais) ---------- */
+/* ---------- Dictionnaire français → allemand ---------- */
 
-export async function define(word) {
+// Traduction automatique (MyMemory, sans clé) : marche pour toutes les formes, et pour des phrases.
+export async function translate(text) {
+  const q = new URLSearchParams({ q: text, langpair: 'fr|de' });
+  const d = await getJSON('https://api.mymemory.translated.net/get?' + q);
+  const main = d.responseData?.translatedText;
+  const alts = [...new Set((d.matches || []).map((m) => m.translation?.trim()).filter((t) => t && t.split(/\s+/).length <= 3 && !/[.!?]$/.test(t)))];
+  return { main, alts: alts.filter((t) => t.toLowerCase() !== (main || '').toLowerCase()).slice(0, 3) };
+}
+
+function cleanWiktionary(t) {
+  return t
+    .replace(/\{\{[^{}|]*\|([^{}|]*)\}\}/g, '$1')
+    .replace(/\{\{[^{}]*\}\}/g, '')
+    .replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, '$1')
+    .replace(/'{2,}|<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function wiktionaryDE(word) {
+  const q = new URLSearchParams({ action: 'parse', page: word, prop: 'wikitext', format: 'json', formatversion: '2', origin: '*', redirects: '1' });
+  const d = await getJSON('https://de.wiktionary.org/w/api.php?' + q);
+  const all = d.parse?.wikitext || '';
+  const fr = all.split(/\n(?=== )/).find((sec) => /\{\{Sprache\|Französisch\}\}/.test(sec));
+  return fr || '';
+}
+
+// Bedeutungen du Wiktionary allemand ; pour une forme fléchie (déclinée), on remonte au lemme (décliner).
+export async function meaningsDE(word) {
   for (const w of [...new Set([word, word.toLowerCase()])]) {
     try {
-      const d = await getJSON('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(w));
-      if (d.fr?.length) {
-        return d.fr.slice(0, 3).map((e) => ({
-          pos: e.partOfSpeech,
-          defs: e.definitions.map((x) => strip(x.definition)).filter(Boolean).slice(0, 3),
-        }));
+      let sec = await wiktionaryDE(w);
+      let lemma = w;
+      const ref = sec.match(/\{\{Grundformverweis[^|}]*\|([^|}]+)/);
+      if (ref) {
+        lemma = ref[1].trim();
+        sec = await wiktionaryDE(lemma);
       }
+      const block = sec.split('{{Bedeutungen}}')[1]?.split(/\n\{\{/)[0] || '';
+      const meanings = block.split('\n').filter((l) => /^:\[\d/.test(l)).map((l) => cleanWiktionary(l.replace(/^:\[[^\]]*\]\s*/, ''))).filter(Boolean);
+      if (meanings.length) return { lemma, meanings: meanings.slice(0, 4) };
     } catch {}
   }
   return null;

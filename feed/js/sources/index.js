@@ -5,7 +5,7 @@ import { ART_LOADERS, artMoreLike } from './art.js';
 import { loadPapers } from './papers.js';
 
 export { loadNews } from './news.js';
-export { loadWikiDaily, define, words } from './wiki.js';
+export { loadWikiDaily, translate, meaningsDE, words } from './wiki.js';
 
 export function category(c) {
   if (c.kind === 'image') return 'image';
