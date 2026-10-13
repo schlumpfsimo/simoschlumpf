@@ -1,7 +1,7 @@
-import { load, save, exportAll, importAll } from './store.js?v=202610132117';
-import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132117';
-import * as src from './sources/index.js?v=202610132117';
-import * as lex from './lexique.js?v=202610132117';
+import { load, save, exportAll, importAll } from './store.js?v=202610132125';
+import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132125';
+import * as src from './sources/index.js?v=202610132125';
+import * as lex from './lexique.js?v=202610132125';
 
 const feed = document.getElementById('feed');
 const detail = document.getElementById('detail');
@@ -321,7 +321,7 @@ function renderStart() {
   el.className = 'card k-start';
   el.dataset.i = 0;
   el.innerHTML = `<canvas class="europe" aria-hidden="true"></canvas><div class="start"><h1 class="logo">FLÂNEUR</h1><p class="motto">pas scrolleur</p></div>
-    <p class="date">${esc(date)}</p><p class="hint">↑ flâner · ← lire plus · puis ↓ le terrier</p>`;
+    <p class="date">${esc(date)}</p><p class="hint">↑ flâner · ← lire plus · puis ↓ le trou de lapin</p>`;
   feed.appendChild(el);
   io.observe(el);
   requestAnimationFrame(() => drawEurope(el.querySelector('.europe')));
@@ -385,13 +385,13 @@ function detailHTML(c) {
     <p class="src">${esc(c.sourceLabel)}${c.date ? ' · ' + ago(c.date) : ''}</p>
     ${c.url ? `<a class="btn ghost open" href="${esc(c.url)}" target="_blank" rel="noopener">Ouvrir la source ↗</a>` : ''}
     ${c.kind === 'mot' ? '' : actions(c)}
-    <div class="tstack"><p class="tinto">↓ continue à descendre : le terrier</p></div>`;
+    <div class="tstack"><p class="tinto">↓ continue à descendre : le trou de lapin</p></div>`;
 }
 
 function rabbitHTML(p) {
   const tr = p.lang === 'fr' ? ' tr' : '';
   return `<section class="tpage">
-    <div class="meta"><span class="no">${String(p.depth).padStart(2, '0')}</span><span class="lbl">TERRIER · PROFONDEUR ${p.depth}</span></div>
+    <div class="meta"><span class="no">${String(p.depth).padStart(2, '0')}</span><span class="lbl">TROU DE LAPIN · PROFONDEUR ${p.depth}</span></div>
     ${p.image ? `<figure class="timg"><img src="${esc(p.image)}" alt="" decoding="async"></figure>` : ''}
     <h2 class="dtitle${tr}" lang="${p.lang}">${esc(p.title)}</h2>
     <div class="dtext${tr}" lang="${p.lang}">${p.text.split(/\n+/).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join('')}</div>
@@ -414,7 +414,7 @@ function addRabbit(p) {
 function rabbitEnd() {
   rabbit.done = true;
   stack().insertAdjacentHTML('beforeend', `<div class="fond"><canvas class="lapin" aria-hidden="true"></canvas>
-    <p class="tinto">Fond du terrier.</p></div>`);
+    <p class="tinto">Fond du trou de lapin.</p></div>`);
   drawRings(stack().querySelector('.lapin'), RABBIT, { alpha: 0.85 });
 }
 

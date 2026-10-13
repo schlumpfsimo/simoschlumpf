@@ -1,7 +1,7 @@
 // Collections d'art et d'archives, toutes en accès libre.
 // Chaque appel tire un thème et une page au hasard : la réserve ne s'épuise pas.
-import { card, getJSON, rand, randInt, strip, first } from './util.js?v=202610132117';
-import { ART, ART_FI, ART_MODERN, ART_CONTEMPORARY } from '../topics.js?v=202610132117';
+import { card, getJSON, rand, randInt, strip, first } from './util.js?v=202610132125';
+import { ART, ART_FI, ART_MODERN, ART_CONTEMPORARY } from '../topics.js?v=202610132125';
 
 function art(c) {
   return card({ kind: 'image', lang: 'en', label: 'ŒUVRE', ...c, facts: (c.facts || []).filter(([, v]) => v) });
