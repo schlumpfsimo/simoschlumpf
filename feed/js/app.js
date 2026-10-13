@@ -509,9 +509,8 @@ sheet.addEventListener('click', (e) => {
 
 let tab = 'aime';
 
-const SOURCES_TEXT = `Actualités : Le Grand Continent, RFI, Le Temps, Le Monde, Le Monde diplomatique, Courrier international,
-  Toute l'Europe, The European Correspondent, Politico Europe, RTS, SRF, Yle, Visionscarto, The Public Domain Review, Aeon,
-  et les villes de Bâle, Strasbourg, Berlin, Bruxelles, Paris et Vienne.
+const SOURCES_TEXT = `Actualités : plus de 60 flux — presse française, suisse et européenne, think tanks,
+  Rhin supérieur et régions frontalières, villes (Bâle, Strasbourg, Berlin, Bruxelles, Paris, Vienne), design et photo.
   Art : Art Institute of Chicago, Cleveland Museum of Art, SMK, V&A, The Met, Wellcome Collection, Europeana,
   Library of Congress, Openverse, Finna, Wikimedia Commons.
   Savoir : Wikipédia, Vikidia, Wikiquote, Wikidata, Wiktionary. Recherche : OpenAlex.`;
