@@ -1,6 +1,6 @@
 // Wikimédia : Wikipédia (FR/DE/EN), Vikidia, Wikiquote, Wikidata, Commons, Wiktionary. Sans clé.
-import { card, getJSON, rand, strip, shorten, words } from './util.js?v=202610132127';
-import { WIKI_FR, WIKI_DE, WIKI_EN, PLACES, QUOTES, ART_CONTEMPORARY } from '../topics.js?v=202610132127';
+import { card, getJSON, rand, strip, shorten, words } from './util.js?v=202610132138';
+import { WIKI_FR, WIKI_DE, WIKI_EN, PLACES, QUOTES, ART_CONTEMPORARY } from '../topics.js?v=202610132138';
 
 const bigger = (url) => (url || '').replace(/\/(\d+)px-/, (m, n) => (+n < 640 ? '/640px-' : m));
 const WIKI_LABEL = { fr: 'Wikipédia', de: 'Wikipedia (DE)', en: 'Wikipedia (EN)' };

@@ -72,6 +72,24 @@ export const WIKI_FR = [
   ['chanson française', 'MUSIQUE'], ['jazz', 'MUSIQUE'], ['musique électronique', 'MUSIQUE'],
   ['langue française', 'LANGUES'], ['étymologie', 'LANGUES'], ['expression française', 'LANGUES'], ['jeu de mots', 'LANGUES'],
   ['espagnol', 'LANGUES'], ['Amérique latine', 'MONDE'], 
+  // Littérature et féminisme
+  ['rentrée littéraire', 'LIVRES'], ['prix Goncourt', 'LIVRES'], ['prix Femina', 'LIVRES'], ['prix Renaudot', 'LIVRES'],
+  ['littérature contemporaine', 'LIVRES'], ['roman français', 'LIVRES'], ['littérature suisse romande', 'LIVRES'],
+  ['autofiction', 'LIVRES'], ['prix Nobel de littérature', 'LIVRES'], ['Virginie Despentes', 'LIVRES'], ['Leïla Slimani', 'LIVRES'],
+  ['Édouard Louis', 'LIVRES'], ['Maylis de Kerangal', 'LIVRES'], ['Elena Ferrante', 'LIVRES'], ['Olga Tokarczuk', 'LIVRES'],
+  ['féminisme', 'FÉMINISME'], ['littérature féministe', 'FÉMINISME'], ['Le Deuxième Sexe', 'FÉMINISME'], ['bell hooks', 'FÉMINISME'],
+  ['Simone de Beauvoir', 'FÉMINISME'], ['Gisèle Halimi', 'FÉMINISME'], ['Monique Wittig', 'FÉMINISME'], ['Mona Chollet', 'FÉMINISME'],
+  ['Chimamanda Ngozi Adichie', 'FÉMINISME'], ['Judith Butler', 'FÉMINISME'], ['écoféminisme', 'FÉMINISME'], ['histoire du féminisme', 'FÉMINISME'],
+  ['suffrage féminin en Suisse', 'FÉMINISME'], ['grève des femmes', 'FÉMINISME'], ['droits des femmes', 'FÉMINISME'],
+  ['égalité salariale', 'FÉMINISME'], ['écriture inclusive', 'FÉMINISME'], ['Olympe de Gouges', 'FÉMINISME'],
+  // Politique de sécurité et technologie militaire
+  ['politique de sécurité', 'SÉCURITÉ'], ['Organisation du traité de l\'Atlantique nord', 'SÉCURITÉ'], ['défense européenne', 'SÉCURITÉ'],
+  ['Coopération structurée permanente', 'SÉCURITÉ'], ['dissuasion nucléaire', 'SÉCURITÉ'], ['contrôle des armements', 'SÉCURITÉ'],
+  ['neutralité armée', 'SÉCURITÉ'], ['Armée suisse', 'SÉCURITÉ'], ['cyberguerre', 'SÉCURITÉ'], ['guerre hybride', 'SÉCURITÉ'],
+  ['drone militaire', 'TECHNOLOGIE MILITAIRE'], ['guerre électronique', 'TECHNOLOGIE MILITAIRE'], ['missile hypersonique', 'TECHNOLOGIE MILITAIRE'],
+  ['défense antimissile', 'TECHNOLOGIE MILITAIRE'], ['avion de combat', 'TECHNOLOGIE MILITAIRE'], ['char de combat', 'TECHNOLOGIE MILITAIRE'],
+  ['sous-marin nucléaire', 'TECHNOLOGIE MILITAIRE'], ['satellite militaire', 'TECHNOLOGIE MILITAIRE'], ['radar', 'TECHNOLOGIE MILITAIRE'],
+  ['Système de combat aérien du futur', 'TECHNOLOGIE MILITAIRE'], ['Eurofighter Typhoon', 'TECHNOLOGIE MILITAIRE'], ['Rafale', 'TECHNOLOGIE MILITAIRE'],
   // Qualité garantie
   ['incategory:"Article de qualité"', 'ARTICLE DE QUALITÉ'], ['incategory:"Bon article"', 'BON ARTICLE'],
 ];
@@ -89,6 +107,10 @@ export const WIKI_DE = [
   ['Berlin', 'STÄDTE'], ['Wien', 'STÄDTE'], ['Kaffeehaus', 'KULTUR'], ['Industriekultur', 'INDUSTRIE'],
   ['Geothermie', 'ENERGIE'], ['Tiefengeothermie', 'ENERGIE'], ['Dinosaurier', 'DINOSAURIER'],
   ['Jura (Gebirge)', 'NATUR'], ['Rhein', 'NATUR'],
+  ['Sicherheitspolitik', 'SICHERHEIT'], ['Zeitenwende (Politik)', 'SICHERHEIT'], ['Bundeswehr', 'SICHERHEIT'], ['Rüstungskontrolle', 'SICHERHEIT'],
+  ['Militärtechnik', 'MILITÄRTECHNIK'], ['Kampfdrohne', 'MILITÄRTECHNIK'], ['Luftverteidigung', 'MILITÄRTECHNIK'],
+  ['Feminismus', 'FEMINISMUS'], ['feministische Literatur', 'FEMINISMUS'], ['Frauenstreik', 'FEMINISMUS'], ['Frauenstimmrecht in der Schweiz', 'FEMINISMUS'],
+  ['Deutscher Buchpreis', 'BÜCHER'], ['Schweizer Buchpreis', 'BÜCHER'], ['Gegenwartsliteratur', 'BÜCHER'],
   ['incategory:"Wikipedia:Exzellent"', 'EXZELLENT'], ['incategory:"Wikipedia:Lesenswert"', 'LESENSWERT'],
 ];
 
@@ -149,6 +171,11 @@ export const PAPERS = [
   ['energy transition Europe', 'ÉNERGIE'], ['dinosaur', 'DINOSAURES'], ['pterosaur', 'DINOSAURES'], ['dinosaur fossil discovery', 'DINOSAURES'],
   ['urban planning housing', 'URBANISME'], ['modernist architecture heritage', 'ARCHITECTURE'], ['street photography', 'PHOTOGRAPHIE'],
   ['glacier retreat Alps', 'CLIMAT'], ['climate policy', 'CLIMAT'], ['night trains rail Europe', 'TRAINS'], ['diplomacy', 'DIPLOMATIE'],
+  ['feminism', 'FÉMINISME'], ['feminist literature', 'FÉMINISME'], ['gender equality politics', 'FÉMINISME'],
+  ['contemporary literature novel', 'LITTÉRATURE'], ['literary prize', 'LITTÉRATURE'],
+  ['European security policy', 'SÉCURITÉ'], ['NATO', 'SÉCURITÉ'], ['European defence integration', 'SÉCURITÉ'],
+  ['neutrality security policy', 'SÉCURITÉ'], ['military drones', 'TECHNOLOGIE MILITAIRE'], ['military technology innovation', 'TECHNOLOGIE MILITAIRE'],
+  ['air and missile defence', 'TECHNOLOGIE MILITAIRE'], ['cyber warfare', 'SÉCURITÉ'],
   ['paleontology', 'PALÉONTOLOGIE'], ['volcano eruption', 'VOLCANS'], ['exoplanet', 'ASTRONOMIE'], ['language learning', 'LANGUES'],
 ];
 

@@ -3,7 +3,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 const OUT = new URL('../../feed/data/news.json', import.meta.url);
-const PER_SOURCE = 6;
+const PER_SOURCE = 5;
 const MAX_AGE_DAYS = 45;
 const UA = 'Mozilla/5.0 (compatible; Flaneur/1.0; +https://www.simoschlumpf.ch/feed/)';
 
@@ -114,6 +114,24 @@ const SOURCES = [
   { key: 'cda', label: 'Connaissance des Arts', lang: 'fr', url: 'https://www.connaissancedesarts.com/feed/', section: 'Exposition' },
   { key: 'beauxarts', label: 'Beaux Arts', lang: 'fr', url: 'https://www.beauxarts.com/feed/', section: 'Exposition' },
   { key: 'monopol', label: 'Monopol', lang: 'de', url: 'https://www.monopol-magazin.de/rss.xml', section: 'Kunst' },
+  // Littérature : nouveautés
+  { key: 'lemonde-livres', label: 'Le Monde des livres', lang: 'fr', url: 'https://www.lemonde.fr/livres/rss_full.xml', section: 'Livres' },
+  { key: 'livreshebdo', label: 'Livres Hebdo', lang: 'fr', url: 'https://www.livreshebdo.fr/rss.xml', section: 'Livres' },
+  { key: 'inrocks-livres', label: 'Les Inrocks', lang: 'fr', url: 'https://www.lesinrocks.com/livres/feed/', section: 'Livres' },
+  { key: 'lithub', label: 'Literary Hub', lang: 'en', url: 'https://lithub.com/feed/', section: 'Books' },
+  { key: 'perlentaucher', label: 'Perlentaucher', lang: 'de', url: gnews('site:perlentaucher.de when:7d', 'de', 'DE'), gnews: true, section: 'Bücher' },
+  // Féminisme
+  { key: 'glorieuses', label: 'Les Glorieuses', lang: 'fr', url: 'https://www.lesglorieuses.fr/feed/', section: 'Féminisme' },
+  { key: 'feminisme', label: 'Féminisme', lang: 'fr', url: gnews('féminisme OR féministe when:3d', 'fr', 'FR'), gnews: true, section: 'Féminisme' },
+  { key: 'feminismus', label: 'Feminismus', lang: 'de', url: gnews('Feminismus OR feministisch when:3d', 'de', 'CH'), gnews: true, section: 'Feminismus' },
+  // Politique de sécurité et technologie militaire
+  { key: 'lemonde-defense', label: 'Le Monde', lang: 'fr', url: 'https://www.lemonde.fr/defense/rss_full.xml', section: 'Défense' },
+  { key: 'opex360', label: 'Zone Militaire', lang: 'fr', url: 'https://www.opex360.com/feed/', section: 'Défense' },
+  { key: 'iris', label: 'IRIS', lang: 'fr', url: 'https://www.iris-france.org/feed/', section: 'Sécurité' },
+  { key: 'warontherocks', label: 'War on the Rocks', lang: 'en', url: 'https://warontherocks.com/feed/', section: 'Security' },
+  { key: 'defensenews', label: 'Defense News', lang: 'en', url: 'https://www.defensenews.com/arc/outboundfeeds/rss/', section: 'Defence' },
+  { key: 'breakingdefense', label: 'Breaking Defense', lang: 'en', url: 'https://breakingdefense.com/feed/', section: 'Defence' },
+  { key: 'twz', label: 'The War Zone', lang: 'en', url: 'https://www.twz.com/feed', section: 'Military tech' },
 ];
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '’', lsquo: '‘', laquo: '«', raquo: '»', hellip: '…', ndash: '–', mdash: '—' };
@@ -135,7 +153,7 @@ function tag(item, name) {
   return m ? m[1] : '';
 }
 
-function shorten(s, max = 320) {
+function shorten(s, max = 240) {
   if (s.length <= max) return s;
   const cut = s.slice(0, max);
   return cut.slice(0, cut.lastIndexOf(' ')) + ' …';
@@ -218,9 +236,16 @@ const known = new Map(previous.items.map((it) => [it.url, it]));
 
 // Google News n'aime pas les rafales : ces recherches passent une par une, espacées.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Et seulement toutes les trois heures : entre-temps, on garde les titres précédents.
+const GNEWS_EVERY_HOURS = 3;
 async function gnewsSerial() {
   const out = new Map();
+  const due = new Date().getUTCHours() % GNEWS_EVERY_HOURS === 0 || process.env.GNEWS === '1';
   for (const src of SOURCES.filter((x) => x.gnews)) {
+    if (!due) {
+      out.set(src, { status: 'rejected', reason: new Error(`${src.key}: pas cette heure-ci`) });
+      continue;
+    }
     out.set(src, await fetchSource(src, known).then((value) => ({ status: 'fulfilled', value }), (reason) => ({ status: 'rejected', reason })));
     await sleep(1500);
   }

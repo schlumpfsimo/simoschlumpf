@@ -1,7 +1,7 @@
-import { load, save, exportAll, importAll } from './store.js?v=202610132127';
-import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132127';
-import * as src from './sources/index.js?v=202610132127';
-import * as lex from './lexique.js?v=202610132127';
+import { load, save, exportAll, importAll } from './store.js?v=202610132138';
+import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132138';
+import * as src from './sources/index.js?v=202610132138';
+import * as lex from './lexique.js?v=202610132138';
 
 const feed = document.getElementById('feed');
 const detail = document.getElementById('detail');
@@ -156,15 +156,27 @@ function inList(name, id) {
   return load(name, []).some((x) => x.id === id);
 }
 
+// Icônes dessinées sur la même grille de 24 px : même taille et même épaisseur partout.
+const ICON = Object.fromEntries(Object.entries({
+  aime: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+  plustard: '<path d="M12 5v14M5 12h14"/>',
+  encore: '<path d="M4 9.5c2.7-2.6 5.3 2.6 8 0s5.3-2.6 8 0M4 15.5c2.7-2.6 5.3 2.6 8 0s5.3-2.6 8 0"/>',
+  moins: '<path d="M5 12h14"/>',
+  partager: '<path d="M7 17L17 7M9 7h8v8"/>',
+  detail: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  knew: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  again: '<path d="M19 12a7 7 0 1 1-2.1-5M19 4.5V9h-4.5"/>',
+}).map(([k, d]) => [k, `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`]));
+
 function actions(c) {
   const b = (act, icon, label, pressed) =>
-    `<button data-act="${act}" aria-label="${label}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}><i>${icon}</i>${label}</button>`;
+    `<button data-act="${act}" aria-label="${label}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}>${icon}${label}</button>`;
   return `<nav class="acts">
-    ${b('aime', '♥', "J'aime", inList('aime', c.id))}
-    ${b('plustard', '+', 'Plus tard', inList('plustard', c.id))}
-    ${b('encore', '≈', 'Plus comme ça')}
-    ${b('moins', '−', 'Moins comme ça')}
-    ${b('partager', '↗', 'Partager')}
+    ${b('aime', ICON.aime, "J'aime", inList('aime', c.id))}
+    ${b('plustard', ICON.plustard, 'Plus tard', inList('plustard', c.id))}
+    ${b('encore', ICON.encore, 'Plus comme ça')}
+    ${b('moins', ICON.moins, 'Moins comme ça')}
+    ${b('partager', ICON.partager, 'Partager')}
   </nav>`;
 }
 
@@ -173,7 +185,7 @@ const langAttrs = (c) => ({ tr: c.lang === 'fr' ? ' tr' : '', lang: c.lang ? ` l
 function template(c, i) {
   const { tr, lang } = langAttrs(c);
   const meta = `<div class="meta"><span class="no">${String(i).padStart(2, '0')}</span><span class="lbl">${esc(c.label)}</span>
-    ${c.kind === 'mot' ? '' : '<button class="more" data-act="detail" aria-label="Plus de détails">→</button>'}</div>`;
+    ${c.kind === 'mot' ? '' : `<button class="more" data-act="detail" aria-label="Plus de détails">${ICON.detail}</button>`}</div>`;
   const img = c.image ? `<figure class="img"><img src="${esc(c.image)}" alt="" loading="lazy" decoding="async"></figure>` : '';
   const source = `<p class="src">${esc(c.sourceLabel)}${c.date ? ' · ' + ago(c.date) : ''}</p>`;
   const title = `<h2 class="title${tr}"${lang}>${esc(c.title)}</h2>`;
@@ -198,7 +210,7 @@ function template(c, i) {
       return `${meta}<div class="word" lang="fr">${esc(c.title)}</div>
         <button class="reveal" data-act="reveal">Révéler</button>
         <p class="def" hidden>${esc(c.text || 'Pas de définition enregistrée.')}</p>
-        <nav class="acts acts-2"><button data-act="knew"><i>✓</i>Je savais</button><button data-act="again"><i>↺</i>À revoir</button></nav>`;
+        <nav class="acts acts-2"><button data-act="knew">${ICON.knew}Je savais</button><button data-act="again">${ICON.again}À revoir</button></nav>`;
     default:
       return `${meta}${img}<div class="body">${title}${c.text ? `<p class="txt${tr}"${lang}>${esc(c.text)}</p>` : ''}</div>${source}${actions(c)}`;
   }
@@ -286,7 +298,7 @@ function drawRings(canvas, rows, { alpha = 0.11, scale = 1, accent = '#f7cf4c' }
 function drawEurope(canvas) {
   // Les cellules de la grille sont plus larges que hautes (projection) : on étire un peu la grille.
   const rows = EUROPE.split(',').map((h) => BigInt('0x' + h).toString(2).padStart(48, '0'));
-  drawRings(canvas, rows, { alpha: 0.11, scale: 1.2 });
+  drawRings(canvas, rows, { alpha: 0.2, scale: 1.2 });
 }
 
 // Le lapin blanc d'Alice, au fond du terrier — avec sa montre à gousset (en jaune).
@@ -558,6 +570,33 @@ function dropSimilar(c) {
   ensureAhead();
 }
 
+/* ---------- Partage : le lien ouvre Flâneur, avec la carte partagée en premier ---------- */
+
+const SHARE_KEYS = { k: 'kind', t: 'title', x: 'text', i: 'image', u: 'url', s: 'sourceLabel', l: 'label', g: 'lang', y: 'year', n: 'number', a: 'author', c: 'credit' };
+
+function shareLink(c) {
+  const data = {};
+  for (const [short, key] of Object.entries(SHARE_KEYS)) if (c[key]) data[short] = key === 'text' ? String(c[key]).slice(0, 300) : c[key];
+  if (c.sharedLabel) data.l = c.sharedLabel; // une carte reçue garde son étiquette d'origine
+  const bytes = new TextEncoder().encode(JSON.stringify(data));
+  const b64 = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${location.origin}${location.pathname}?c=${b64}`;
+}
+
+function sharedCard() {
+  const b64 = new URLSearchParams(location.search).get('c');
+  if (!b64) return null;
+  try {
+    const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+    const data = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0))));
+    const c = Object.fromEntries(Object.entries(SHARE_KEYS).filter(([k]) => data[k] !== undefined).map(([k, key]) => [key, data[k]]));
+    if (!c.title || !['news', 'article', 'image', 'paper', 'quote', 'chiffre', 'jour'].includes(c.kind)) return null;
+    return { ...c, id: 'partage:' + (c.url || c.title), source: 'partage', label: 'POUR TOI · ' + (c.label || ''), sharedLabel: c.label, tags: [], facts: [], words: src.words(c.title) };
+  } catch {
+    return null;
+  }
+}
+
 // Le même bouton existe sur la carte et dans la vue détaillée.
 function syncPressed(name, c, on) {
   const el = feed.querySelector(`.card[data-i="${cards.indexOf(c)}"]`);
@@ -577,16 +616,18 @@ async function act(name, c, btn, el) {
       toast(name === 'aime' ? (on ? 'Ajouté à tes favoris' : 'Retiré des favoris') : on ? 'Pour plus tard — dans le carnet' : 'Retiré de la liste');
       break;
     }
-    case 'partager':
+    case 'partager': {
       reward(c, 0.4);
+      const text = `Beim Spazieren im Internet an dich gedacht –\nen flânant sur Internet, j'ai pensé à toi :\n${shareLink(c)}`;
       try {
-        if (navigator.share) await navigator.share({ title: c.title, url: c.url });
+        if (navigator.share) await navigator.share({ text });
         else {
-          await navigator.clipboard.writeText(c.url);
+          await navigator.clipboard.writeText(text);
           toast('Lien copié');
         }
       } catch {}
       break;
+    }
     case 'encore':
       reward(c, 0.6);
       toast('Compris : plus comme ça');
@@ -815,6 +856,12 @@ function renderOffline() {
 
 async function start() {
   renderStart();
+  const shared = sharedCard();
+  if (shared) {
+    shared.cat = src.category(shared);
+    upNext.push(shared);
+    feed.querySelector('.k-start .motto').insertAdjacentHTML('afterend', '<p class="pourtoi">Quelqu’un a pensé à toi ↓</p>');
+  }
   newsAt = Date.now();
   const daily = (lang) =>
     src.loadWikiDaily(lang).then((r) => {
