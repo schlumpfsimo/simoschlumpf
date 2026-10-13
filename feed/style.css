@@ -277,6 +277,12 @@ a { color: inherit; }
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
 }
 .sw { font: 30px/1 var(--sans); letter-spacing: -0.03em; color: var(--yellow); margin: 0 0 10px; overflow-wrap: anywhere; }
+.de { font: 22px/1.15 var(--sans); letter-spacing: -0.02em; margin: 0 0 6px; }
+.alts, .lemma { font-size: 13px; color: var(--mute); margin: 0 0 8px; }
+.lemma b { color: var(--ink); font-weight: 600; }
+.phrase { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+.phrase p { font-size: 14px; line-height: 1.4; margin: 0 0 8px; }
+.phrase .phrase-de { color: var(--yellow); }
 .defs { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.4; }
 .defs li { margin-bottom: 6px; }
 .defs em { color: var(--mute); }
@@ -322,6 +328,7 @@ a { color: inherit; }
 .items small { grid-row: 2; color: var(--mute); font-size: 13px; }
 .items button { grid-row: 1 / span 2; grid-column: 2; font-size: 22px; color: var(--mute); padding: 0 4px; }
 .settings { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.imp { font: 11px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 0; }
 
 /* ---------- Toast ---------- */
 .toast {
@@ -342,3 +349,155 @@ a { color: inherit; }
   transition: opacity 0.2s, transform 0.2s;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Flux v2 : plus d'images, titres courts ---------- */
+#feed, .detail { touch-action: pan-y; }
+.meta .more {
+  margin-left: auto;
+  font: 18px/1 system-ui, sans-serif;
+  color: var(--yellow);
+  padding: 0 0 0 12px;
+}
+.card .img { height: 48%; }
+.card.k-image .img { height: auto; }
+.card.k-jour .img { height: 24%; }
+.card .title {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card .txt {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card .body { mask-image: none; -webkit-mask-image: none; }
+.k-news .title { -webkit-line-clamp: 5; }
+
+/* Sans image : la carte devient une affiche typographique. */
+.card.noimg .body { display: flex; flex-direction: column; justify-content: center; }
+.k-news.noimg .title, .k-article.noimg .title { font-size: clamp(26px, 9vw, 44px); -webkit-line-clamp: 7; }
+.k-image.broken .title { font-size: clamp(24px, 8vw, 40px); margin-top: auto; }
+
+.k-paper .meta .lbl { background: var(--ink); color: #000; }
+.k-paper .title { font: 600 22px/1.15 var(--serif); letter-spacing: 0; -webkit-line-clamp: 5; }
+.k-paper .txt { font-size: 14px; color: #c8c8c8; -webkit-line-clamp: 7; }
+
+.k-quote .body { display: flex; flex-direction: column; justify-content: center; }
+.quote { font: italic 24px/1.3 var(--serif); margin: 0; }
+.author {
+  font: 11px/1.3 var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--yellow);
+  margin: 14px 0 0;
+}
+
+/* ---------- Vue détaillée (glisser vers la droite) ---------- */
+.detail {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  background: var(--bg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 16px 0;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease-out;
+}
+.detail.open { transform: none; }
+.dtop {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  background: var(--bg);
+  font: 10px/1 var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.back { font: 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid var(--ink); padding: 7px 9px; }
+.dtop .lbl { background: var(--blue); padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dimg { margin: 0 -16px 14px; background: var(--bg); }
+.dimg img { display: block; width: 100%; max-height: 75vh; object-fit: contain; }
+.dtitle { font: 26px/1.05 var(--sans); letter-spacing: -0.03em; margin: 6px 0 12px; overflow-wrap: break-word; hyphens: auto; }
+.detail .num, .detail .year { margin: 4px 0 8px; }
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 12px;
+  margin: 0 0 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.35;
+}
+.facts dt { font: 9px/1.7 var(--sans); text-transform: uppercase; letter-spacing: 0.05em; color: var(--mute); }
+.facts dd { margin: 0; }
+.dtext p { font-size: 17px; line-height: 1.5; margin: 0 0 12px; }
+.detail .credit { -webkit-line-clamp: unset; margin-bottom: 6px; }
+.detail .open { margin: 12px 0 8px; text-decoration: none; }
+.detail .acts { position: sticky; bottom: 0; background: var(--bg); margin-top: 12px; padding-bottom: 4px; }
+
+/* ---------- Très petits écrans (Unihertz Jelly 2E : ~240 × 427 px) ---------- */
+@media (max-width: 280px), (max-height: 480px) {
+  .card { padding: 38px 10px 4px; gap: 7px; }
+  .top { padding: 8px 10px 12px; }
+  .brand { font-size: 12px; }
+  #open-carnet { font-size: 9px; padding: 5px 7px; }
+  .meta { font-size: 8.5px; }
+  .meta .lbl { padding: 3px 5px; }
+  .img { height: 30%; }
+  .title { font-size: 17px; line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .txt { font-size: 14px; line-height: 1.38; }
+  .src { font-size: 8.5px; }
+  .credit { font-size: 11px; }
+  .k-image .title { font-size: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .k-image .txt { font-size: 12.5px; }
+  .num { font-size: 15vw; white-space: nowrap; overflow-wrap: normal; margin-bottom: 8px; }
+  .k-chiffre .txt, .k-jour .txt { font-size: 16px; }
+  .year { font-size: 22vw; }
+  .k-jour .img { height: 22%; }
+  .word { font-size: 26px; overflow-wrap: normal; hyphens: auto; }
+  .def { font-size: 15px; }
+  .reveal, .btn { font-size: 10px; padding: 9px 11px; }
+  /* Icônes seules : les libellés ne tiennent pas sur 240 px. */
+  .acts button { font-size: 0; min-height: 40px; }
+  .acts button i { font-size: 20px; }
+  .acts-2 button { font-size: 9px; }
+  .logo { font-size: 17vw; }
+  .motto { font-size: 16px; }
+  .date, .hint { left: 10px; font-size: 8.5px; }
+  .date { bottom: 44px; }
+  .hint { bottom: 24px; }
+  .panel { padding: 12px 10px calc(12px + env(safe-area-inset-bottom)); }
+  .sw { font-size: 22px; }
+  .de { font-size: 18px; }
+  .phrase p { font-size: 13px; }
+  .defs { font-size: 13.5px; }
+  .links { font-size: 13px; gap: 12px; }
+  .carnet { padding: 10px 10px 24px; }
+  .carnet h2 { font-size: 20px; }
+  .tabs button { font-size: 9px; padding: 6px; }
+  .items a, .items b { font-size: 14px; }
+  .items small { font-size: 12px; }
+  .toast { font-size: 9px; bottom: 60px; }
+  .k-news.noimg .title, .k-article.noimg .title { font-size: 24px; }
+  .k-image.broken .title { font-size: 22px; }
+  .k-paper .title { font-size: 17px; }
+  .k-paper .txt { font-size: 12.5px; -webkit-line-clamp: 6; }
+  .quote { font-size: 19px; }
+  .author { font-size: 9px; }
+  .meta .more { font-size: 16px; }
+  .detail { padding: 0 10px; }
+  .dimg { margin: 0 -10px 10px; }
+  .dtitle { font-size: 20px; }
+  .dtext p { font-size: 15px; line-height: 1.45; }
+  .facts { font-size: 13px; }
+}
