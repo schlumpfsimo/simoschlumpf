@@ -1,6 +1,6 @@
 // Recherche récente via OpenAlex (sans clé, quota quotidien par connexion).
-import { card, getJSON, rand, randInt, shorten } from './util.js?v=202610132117';
-import { PAPERS } from '../topics.js?v=202610132117';
+import { card, getJSON, rand, randInt, shorten } from './util.js?v=202610132138';
+import { PAPERS } from '../topics.js?v=202610132138';
 
 // OpenAlex stocke les résumés sous forme d'index inversé { mot: [positions] }.
 function abstract(inv) {
