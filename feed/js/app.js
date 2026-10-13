@@ -115,7 +115,7 @@ function inList(name, id) {
 
 function actions(c) {
   const b = (act, icon, label, pressed) =>
-    `<button data-act="${act}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}><i>${icon}</i>${label}</button>`;
+    `<button data-act="${act}" aria-label="${label}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}><i>${icon}</i>${label}</button>`;
   return `<nav class="acts">
     ${b('aime', '♥', "J'aime", inList('aime', c.id))}
     ${b('plustard', '+', 'Plus tard', inList('plustard', c.id))}
