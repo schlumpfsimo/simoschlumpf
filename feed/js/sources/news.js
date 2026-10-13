@@ -1,5 +1,5 @@
 // Actualités : news.json, mis à jour chaque heure par GitHub Actions (.github/scripts/fetch-news.mjs).
-import { card, getJSON } from './util.js?v=202610132055';
+import { card, getJSON } from './util.js?v=202610132110';
 
 export async function loadNews() {
   const d = await getJSON('data/news.json?v=' + Math.floor(Date.now() / 9e5));

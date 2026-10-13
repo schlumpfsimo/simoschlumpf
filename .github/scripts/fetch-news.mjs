@@ -3,7 +3,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 const OUT = new URL('../../feed/data/news.json', import.meta.url);
-const PER_SOURCE = 8;
+const PER_SOURCE = 6;
 const MAX_AGE_DAYS = 45;
 const UA = 'Mozilla/5.0 (compatible; Flaneur/1.0; +https://www.simoschlumpf.ch/feed/)';
 
@@ -83,6 +83,37 @@ const SOURCES = [
   { key: 'dezeen', label: 'Dezeen', lang: 'en', url: 'https://www.dezeen.com/feed/', section: 'Architecture' },
   { key: 'backontrack', label: 'Back on Track', lang: 'en', url: 'https://back-on-track.eu/feed/', section: 'Trains' },
   { key: 'kosmofoto', label: 'Kosmo Foto', lang: 'en', url: 'https://www.kosmofoto.com/feed/', section: 'Photo' },
+  // Autorités : Confédération, cantons, Strasbourg
+  { key: 'bund-fr', label: 'Confédération', lang: 'fr', url: 'https://www.newsd.admin.ch/newsd/feeds/rss?lang=fr&org-nr=1&offer-nr=', section: 'Conseil fédéral' },
+  { key: 'bund-de', label: 'Bund', lang: 'de', url: 'https://www.newsd.admin.ch/newsd/feeds/rss?lang=de&org-nr=1&offer-nr=', section: 'Bundesrat' },
+  { key: 'kantone', label: 'Kantone', lang: 'de', url: gnews('site:baselland.ch OR site:ag.ch OR site:so.ch OR site:jura.ch when:14d', 'de', 'CH'), gnews: true, section: 'Kantone' },
+  { key: 'strasbourg-eu', label: 'Ville de Strasbourg', lang: 'fr', url: gnews('site:strasbourg.eu when:30d', 'fr', 'FR'), gnews: true, city: 'Strasbourg' },
+  // SRF et RTS, toutes rubriques
+  { key: 'srf-neu', label: 'SRF', lang: 'de', url: 'https://www.srf.ch/news/bnf/rss/19032223' },
+  { key: 'srf-int', label: 'SRF', lang: 'de', url: 'https://www.srf.ch/news/bnf/rss/1922', section: 'International' },
+  { key: 'srf-wirtschaft', label: 'SRF', lang: 'de', url: 'https://www.srf.ch/news/bnf/rss/1926', section: 'Wirtschaft' },
+  { key: 'rts-suisse', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/info/suisse/?format=rss/news', section: 'Suisse' },
+  { key: 'rts-monde', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/info/monde/?format=rss/news', section: 'Monde' },
+  { key: 'rts-eco', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/info/economie/?format=rss/news', section: 'Économie' },
+  { key: 'rts-sciences', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/info/sciences-tech/?format=rss/news', section: 'Sciences' },
+  { key: 'rts-regions', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/info/regions/?format=rss/news', section: 'Régions' },
+  { key: 'rts-culture', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/info/culture/?format=rss/news', section: 'Culture' },
+  { key: 'rts-sport', label: 'RTS', lang: 'fr', url: 'https://www.rts.ch/sport/?format=rss/news', section: 'Sport' },
+  // Culture à Bâle et Strasbourg
+  { key: 'basel-museen', label: 'Musées de Bâle', lang: 'de', url: gnews('"Kunstmuseum Basel" OR "Fondation Beyeler" OR "Kunsthalle Basel" OR "Museum Tinguely" OR "Vitra Design Museum" OR "HEK Basel" when:14d', 'de', 'CH'), gnews: true, city: 'Bâle · culture', section: 'Exposition' },
+  { key: 'basel-kultur', label: 'Culture à Bâle', lang: 'de', url: gnews('Basel Ausstellung OR Vernissage OR Theater OR Konzert when:3d', 'de', 'CH'), gnews: true, city: 'Bâle · culture' },
+  { key: 'strasbourg-culture', label: 'Culture à Strasbourg', lang: 'fr', url: gnews('Strasbourg exposition OR musée OR spectacle OR festival when:7d', 'fr', 'FR'), gnews: true, city: 'Strasbourg · culture' },
+  { key: 'pokaa', label: 'Pokaa', lang: 'fr', url: 'https://www.pokaa.fr/feed/', city: 'Strasbourg · culture' },
+  // Expositions et art contemporain
+  { key: 'cad', label: 'Contemporary Art Daily', lang: 'en', url: 'https://www.contemporaryartdaily.com/feed/', section: 'Exposition' },
+  { key: 'eflux', label: 'e-flux', lang: 'en', url: gnews('site:e-flux.com announcements when:7d', 'en-US', 'US'), gnews: true, section: 'Exposition' },
+  { key: 'artnewspaper', label: 'The Art Newspaper', lang: 'en', url: 'https://www.theartnewspaper.com/rss.xml', section: 'Art' },
+  { key: 'hyperallergic', label: 'Hyperallergic', lang: 'en', url: 'https://hyperallergic.com/feed/', section: 'Art' },
+  { key: 'artnet', label: 'Artnet News', lang: 'en', url: 'https://news.artnet.com/feed', section: 'Art' },
+  { key: 'artforum', label: 'Artforum', lang: 'en', url: 'https://www.artforum.com/feed/', section: 'Art' },
+  { key: 'cda', label: 'Connaissance des Arts', lang: 'fr', url: 'https://www.connaissancedesarts.com/feed/', section: 'Exposition' },
+  { key: 'beauxarts', label: 'Beaux Arts', lang: 'fr', url: 'https://www.beauxarts.com/feed/', section: 'Exposition' },
+  { key: 'monopol', label: 'Monopol', lang: 'de', url: 'https://www.monopol-magazin.de/rss.xml', section: 'Kunst' },
 ];
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '’', lsquo: '‘', laquo: '«', raquo: '»', hellip: '…', ndash: '–', mdash: '—' };
@@ -185,7 +216,22 @@ try {
 } catch {}
 const known = new Map(previous.items.map((it) => [it.url, it]));
 
-const results = await Promise.allSettled(SOURCES.map((s) => fetchSource(s, known)));
+// Google News n'aime pas les rafales : ces recherches passent une par une, espacées.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function gnewsSerial() {
+  const out = new Map();
+  for (const src of SOURCES.filter((x) => x.gnews)) {
+    out.set(src, await fetchSource(src, known).then((value) => ({ status: 'fulfilled', value }), (reason) => ({ status: 'rejected', reason })));
+    await sleep(1500);
+  }
+  return out;
+}
+const [direct, viaGoogle] = await Promise.all([
+  Promise.allSettled(SOURCES.filter((x) => !x.gnews).map((s) => fetchSource(s, known))),
+  gnewsSerial(),
+]);
+const directIt = direct[Symbol.iterator]();
+const results = SOURCES.map((s) => (s.gnews ? viaGoogle.get(s) : directIt.next().value));
 const items = [];
 results.forEach((r, i) => {
   if (r.status === 'fulfilled') items.push(...r.value);

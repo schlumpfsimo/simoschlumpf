@@ -146,8 +146,8 @@ a { color: inherit; }
 
 .acts {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
   border-top: 1px solid var(--line);
   padding-top: 6px;
   margin-top: auto;
@@ -224,6 +224,8 @@ a { color: inherit; }
 .def { font-size: 17px; line-height: 1.4; margin: 0 0 auto; }
 
 .k-start { justify-content: center; position: relative; }
+.europe { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.k-start .start { position: relative; }
 .logo {
   font: clamp(48px, 16vw, 120px)/0.85 var(--sans);
   letter-spacing: -0.06em;
@@ -395,6 +397,17 @@ a { color: inherit; }
   margin: 14px 0 0;
 }
 
+/* ---------- Terrier (glisser vers la gauche) ---------- */
+.detail.terrier { transform: translateX(100%); z-index: 9; }
+.detail.terrier.open { transform: none; }
+.terrier .dtop .lbl { background: var(--yellow); color: #000; }
+.ttl { flex: 1; min-width: 0; font: italic 14px/1.2 var(--serif); text-transform: none; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpage { min-height: calc(var(--vh) - 60px); padding: 8px 0 18px; border-bottom: 1px solid var(--line); }
+.timg { margin: 10px -16px 12px; }
+.timg img { display: block; width: 100%; max-height: 42vh; object-fit: cover; }
+.deeper { text-align: center; font: 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--yellow); margin: 18px 0 0; }
+.tload { text-align: center; padding: 40px 0; }
+
 /* ---------- Vue détaillée (glisser vers la droite) ---------- */
 .detail {
   position: fixed;
@@ -498,6 +511,7 @@ a { color: inherit; }
   .author { font-size: 9px; }
   .meta .more { font-size: 16px; }
   .detail { padding: 0 10px; }
+  .timg { margin: 8px -10px 10px; }
   .dimg { margin: 0 -10px 10px; }
   .dtitle { font-size: 20px; }
   .dtext p { font-size: 15px; line-height: 1.45; }

@@ -113,6 +113,24 @@ export const ART = [
   'dinosaur', 'fossil', 'volcano', 'astronomy', 'botanical', 'anatomy', 'music', 'dance', 'theatre', 'reading', 'flag',
 ];
 
+// Modernisme classique (domaine public) : les musées en servent les images.
+export const ART_MODERN = [
+  'Kandinsky', 'Paul Klee', 'Mondrian', 'Malevich', 'Egon Schiele', 'Gustav Klimt', 'Edvard Munch', 'Kirchner', 'Franz Marc',
+  'August Macke', 'Robert Delaunay', 'Sonia Delaunay', 'Hilma af Klint', 'Kupka', 'Lissitzky', 'Rodchenko', 'Popova',
+  'Bauhaus', 'De Stijl', 'constructivism', 'cubism', 'futurism', 'expressionism', 'Dada', 'Art Deco', 'Vienna Secession',
+  'Wiener Werkstätte', 'abstraction', 'geometric abstraction', 'modernist poster', 'modern design', 'avant-garde',
+  'Matisse', 'Picasso', 'Braque', 'Juan Gris', 'Modigliani', 'Vallotton', 'Hodler', 'Cuno Amiet', 'Giovanni Giacometti',
+  'Seurat', 'Signac', 'Cézanne', 'Van Gogh', 'Gauguin', 'Toulouse-Lautrec', 'Bonnard', 'Vuillard', 'photogram', 'Atget',
+];
+
+// Art contemporain : seulement en photos libres (Commons, Openverse) — les œuvres elles-mêmes sont protégées.
+export const ART_CONTEMPORARY = [
+  'contemporary art', 'art installation', 'contemporary sculpture', 'public art', 'street art', 'mural', 'graffiti',
+  'art exhibition', 'gallery exhibition', 'museum of modern art', 'Art Basel', 'documenta', 'Venice Biennale',
+  'land art', 'light installation', 'video art', 'kinetic art', 'Tinguely', 'Fondation Beyeler', 'Kunsthalle',
+  'Centre Pompidou', 'Tate Modern', 'MAMCS Strasbourg', 'Vitra Campus', 'contemporary architecture', 'sculpture park',
+];
+
 export const ART_FI = ['kaupunki', 'arkkitehtuuri', 'rautatieasema', 'raja', 'katukuva', 'satama', 'Helsinki 1960',
   'järvi', 'talvi', 'sauna', 'tehdas', 'juna', 'lentokone', 'design', 'Aalto'];
 

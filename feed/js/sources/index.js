@@ -1,11 +1,11 @@
 // Le registre des sources, rangées en quatre familles.
 // Le flux alterne : une image sur deux, puis actualités, savoir et recherche.
-import * as wiki from './wiki.js?v=202610132055';
-import { ART_LOADERS, artMoreLike } from './art.js?v=202610132055';
-import { loadPapers } from './papers.js?v=202610132055';
+import * as wiki from './wiki.js?v=202610132110';
+import { ART_LOADERS, artMoreLike } from './art.js?v=202610132110';
+import { loadPapers } from './papers.js?v=202610132110';
 
-export { loadNews } from './news.js?v=202610132055';
-export { loadWikiDaily, translate, meaningsDE, words } from './wiki.js?v=202610132055';
+export { loadNews } from './news.js?v=202610132110';
+export { loadWikiDaily, translate, meaningsDE, words, rabbitStart, rabbitNext } from './wiki.js?v=202610132110';
 
 export function category(c) {
   if (c.kind === 'image') return 'image';
@@ -18,6 +18,7 @@ export function category(c) {
 export const LOADERS = [
   ...ART_LOADERS.map(([key, fn, w]) => [key, () => fn(), w, 'image']),
   ['commons', () => wiki.loadCommons(), 1.1, 'image'],
+  ['commons-contemporain', () => wiki.loadContemporary(), 1.3, 'image'],
   ['wikidata', () => wiki.loadPlaces(), 0.9, 'image'],
   ['wiki-fr', () => wiki.loadWikiTheme('fr'), 2, 'savoir'],
   ['wiki-de', () => wiki.loadWikiTheme('de'), 0.7, 'savoir'],
@@ -32,6 +33,7 @@ export async function loadMoreLike(c) {
     const more = artMoreLike(c);
     if (more) return more;
     if (c.source === 'commons') return wiki.loadCommons(c.words.slice(0, 2).join(' '));
+    if (c.source === 'commons-contemporain') return wiki.loadContemporary();
   }
   if (c.kind === 'paper') return loadPapers();
   return wiki.wikiMoreLike(c);
