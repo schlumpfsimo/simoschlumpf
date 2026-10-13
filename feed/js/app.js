@@ -1,7 +1,7 @@
-import { load, save, exportAll, importAll } from './store.js';
-import { pick, reward, resetProfile, setTrending, weight } from './algo.js';
-import * as src from './sources/index.js';
-import * as lex from './lexique.js';
+import { load, save, exportAll, importAll } from './store.js?v=202610132030';
+import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132030';
+import * as src from './sources/index.js?v=202610132030';
+import * as lex from './lexique.js?v=202610132030';
 
 const feed = document.getElementById('feed');
 const detail = document.getElementById('detail');
