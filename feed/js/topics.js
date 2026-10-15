@@ -194,3 +194,56 @@ export const QUOTES = [
   'Honoré de Balzac', 'Émile Zola', 'George Sand', 'Jean Jaurès', 'Pierre Mendès France', 'François Mitterrand', 'Nelson Mandela',
   'Mahatma Gandhi', 'Albert Einstein', 'Marie Curie', 'Friedrich Dürrenmatt', 'Max Frisch', 'Charles-Ferdinand Ramuz',
 ];
+
+/* ---------- Parti pris : décolonial, antiraciste, féministe, queer, solidaire ---------- */
+
+export const WIKI_PP_FR = [
+  ['décolonisation', 'DÉCOLONIAL'], ['pensée décoloniale', 'DÉCOLONIAL'], ['postcolonialisme', 'DÉCOLONIAL'], ['Négritude', 'DÉCOLONIAL'],
+  ['Aimé Césaire', 'DÉCOLONIAL'], ['Frantz Fanon', 'DÉCOLONIAL'], ['Édouard Glissant', 'DÉCOLONIAL'], ['Assia Djebar', 'DÉCOLONIAL'],
+  ['Kateb Yacine', 'DÉCOLONIAL'], ['Maryse Condé', 'DÉCOLONIAL'], ['Fatou Diome', 'DÉCOLONIAL'], ['Léonora Miano', 'DÉCOLONIAL'],
+  ['Alice Diop', 'DÉCOLONIAL'], ['Mati Diop', 'DÉCOLONIAL'], ['Ousmane Sembène', 'DÉCOLONIAL'], ['Thomas Sankara', 'DÉCOLONIAL'],
+  ['Patrice Lumumba', 'DÉCOLONIAL'], ['Amílcar Cabral', 'DÉCOLONIAL'], ['Toussaint Louverture', 'DÉCOLONIAL'], ['Révolution haïtienne', 'DÉCOLONIAL'],
+  ['restitution du patrimoine culturel africain', 'DÉCOLONIAL'], ['rapport Sarr-Savoy', 'DÉCOLONIAL'], ['histoire coloniale de la Suisse', 'DÉCOLONIAL'],
+  ['Mission de Bâle', 'DÉCOLONIAL'], ['traite atlantique', 'DÉCOLONIAL'], ['abolition de l\'esclavage', 'DÉCOLONIAL'], ['zoo humain', 'DÉCOLONIAL'],
+  ['antiracisme', 'ANTIRACISME'], ['mouvement afro-américain des droits civiques', 'ANTIRACISME'], ['Black Lives Matter', 'ANTIRACISME'],
+  ['apartheid', 'ANTIRACISME'], ['Nelson Mandela', 'ANTIRACISME'], ['Steve Biko', 'ANTIRACISME'], ['James Baldwin', 'ANTIRACISME'],
+  ['Toni Morrison', 'ANTIRACISME'], ['Angela Davis', 'ANTIRACISME'], ['Marche pour l\'égalité et contre le racisme', 'ANTIRACISME'],
+  ['Audre Lorde', 'FÉMINISME'], ['intersectionnalité', 'FÉMINISME'], ['Kimberlé Crenshaw', 'FÉMINISME'], ['féminisme noir', 'FÉMINISME'],
+  ['Mouvement de libération des femmes', 'FÉMINISME'], ['grève féministe du 14 juin', 'FÉMINISME'], ['Françoise Vergès', 'FÉMINISME'],
+  ['Stonewall', 'QUEER'], ['Marsha P. Johnson', 'QUEER'], ['Sylvia Rivera', 'QUEER'], ['ACT UP', 'QUEER'], ['marche des fiertés', 'QUEER'],
+  ['histoire LGBT', 'QUEER'], ['Paris Is Burning', 'QUEER'], ['Paul B. Preciado', 'QUEER'], ['Didier Eribon', 'QUEER'], ['théorie queer', 'QUEER'],
+  ['Claude Cahun', 'QUEER'], ['Magnus Hirschfeld', 'QUEER'], ['ballroom (culture)', 'QUEER'], ['drag', 'QUEER'],
+  ['grève générale de 1918', 'SOLIDARITÉ'], ['mouvement ouvrier', 'SOLIDARITÉ'], ['entraide', 'SOLIDARITÉ'], ['Commune de Paris', 'SOLIDARITÉ'],
+  ['Rosa Luxemburg', 'SOLIDARITÉ'], ['sauvetage en Méditerranée', 'SOLIDARITÉ'], ['sans-papiers', 'SOLIDARITÉ'], ['zapatisme', 'SOLIDARITÉ'],
+  ['solidarité internationale', 'SOLIDARITÉ'], ['désobéissance civile', 'SOLIDARITÉ'], ['justice climatique', 'SOLIDARITÉ'],
+];
+
+export const WIKI_PP_DE = [
+  ['Kolonialismus und die Schweiz', 'DEKOLONIAL'], ['Schwarze Deutsche', 'ANTIRASSISMUS'], ['May Ayim', 'ANTIRASSISMUS'],
+  ['Postkolonialismus', 'DEKOLONIAL'], ['Frauenstreik 1991', 'FEMINISMUS'], ['Queere Geschichte', 'QUEER'], ['Landesstreik', 'SOLIDARITÄT'],
+  ['Schwarzenbach-Initiative', 'ANTIRASSISMUS'], ['Saisonnierstatut', 'SOLIDARITÄT'], ['Solidarität', 'SOLIDARITÄT'],
+];
+
+// Requêtes pour les collections : arts non occidentaux, luttes, diasporas, photographie documentaire.
+export const ART_PP = [
+  'Harlem Renaissance', 'civil rights', 'Gordon Parks', 'African American', 'Black women', 'Jacob Lawrence', 'Romare Bearden',
+  'Africa', 'Yoruba', 'Benin', 'kente', 'Ethiopia', 'Mali', 'Japanese print', 'Indian painting', 'Mughal', 'Persian', 'Ottoman',
+  'Mexican', 'Andean textile', 'Aztec', 'Maya', 'Aboriginal', 'Maori', 'Pacific', 'Native American', 'Inuit',
+  'women artists', 'suffragette', 'suffrage', 'protest', 'strike', 'labor', 'solidarity', 'migration', 'immigrants', 'refugees',
+  'anti-apartheid', 'independence', 'pride', 'queer', 'Claude Cahun', 'Frida Kahlo', 'Tina Modotti',
+];
+
+// Photographie documentaire (Library of Congress, domaine public).
+export const PHOTO = [
+  'Gordon Parks', 'Dorothea Lange', 'Walker Evans', 'Russell Lee', 'Marion Post Wolcott', 'Jack Delano', 'John Vachon', 'Arthur Rothstein',
+  'Farm Security Administration', 'street photography', 'Harris & Ewing', 'Frances Benjamin Johnston', 'Lewis Hine', 'Detroit Publishing',
+  'Kodachrome', 'portrait', 'night', 'train station', 'market', 'women workers', 'civil rights march', 'jazz', 'New York street',
+];
+
+export const PAPERS_PP = [
+  ['decolonial theory', 'DÉCOLONIAL'], ['postcolonial Europe', 'DÉCOLONIAL'], ['colonial history Switzerland', 'DÉCOLONIAL'],
+  ['restitution colonial art museums', 'DÉCOLONIAL'], ['racism Europe', 'ANTIRACISME'], ['antiracism movements', 'ANTIRACISME'],
+  ['Black Europe', 'ANTIRACISME'], ['intersectionality', 'FÉMINISME'], ['feminist political economy', 'FÉMINISME'],
+  ['queer politics Europe', 'QUEER'], ['LGBTQ rights', 'QUEER'], ['trans rights', 'QUEER'], ['migration solidarity', 'SOLIDARITÉ'],
+  ['mutual aid', 'SOLIDARITÉ'], ['Global South', 'SUD GLOBAL'], ['climate justice', 'SOLIDARITÉ'], ['labour movement', 'SOLIDARITÉ'],
+];

@@ -1,7 +1,7 @@
-import { load, save, exportAll, importAll } from './store.js?v=202610132138';
-import { pick, reward, resetProfile, setTrending, weight } from './algo.js?v=202610132138';
-import * as src from './sources/index.js?v=202610132138';
-import * as lex from './lexique.js?v=202610132138';
+import { load, save, exportAll, importAll } from './store.js?v=202610150659';
+import { pick, reward, resetProfile, setTrending, weight, PARTI_PRIS, getPartiPris, setPartiPris } from './algo.js?v=202610150659';
+import * as src from './sources/index.js?v=202610150659';
+import * as lex from './lexique.js?v=202610150659';
 
 const feed = document.getElementById('feed');
 const detail = document.getElementById('detail');
@@ -25,8 +25,8 @@ let newsAt = 0;
 let ready = false; // au démarrage, on attend quelques sources pour que la première carte soit déjà un mélange
 let detailCard = null;
 
-// Réserve minimale par famille : la moitié des cartes sont des images.
-const STOCK = { image: 10, news: 4, savoir: 5, paper: 3 };
+// Réserve minimale par famille : deux cartes sur trois sont des images.
+const STOCK = { image: 14, news: 4, savoir: 5, paper: 3 };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -43,39 +43,49 @@ function addToPool(list) {
     titles.add(key);
     known.add(c.id);
     pool.push(c);
-    if (c.image) preload(c);
+    // Les cartes « image » attendent que leur image soit chargée ; les autres sortent tout de suite
+    // (une image d'actualité cassée disparaît simplement, la carte reste lisible).
+    if (c.cat === 'image') queuePreload(c);
+    else c.ok = true;
   }
   ensureAhead();
 }
 
-// On charge l'image avant de montrer la carte : une image cassée ne quitte jamais le pool.
-function preload(c) {
-  const im = new Image();
-  im.decoding = 'async';
-  im.onload = () => {
-    c.ok = true;
-    ensureAhead();
-  };
-  im.onerror = () => {
-    const i = pool.indexOf(c);
-    if (i >= 0) pool.splice(i, 1);
-    if (c.cat !== 'image') {
-      // Une actualité sans image reste lisible : on la garde en version affiche.
-      delete c.image;
-      c.ok = true;
-      pool.push(c);
-    }
-  };
-  im.src = c.image;
+// Préchargement des images, quatre à la fois : jamais des centaines de téléchargements d'un coup.
+const preloadQueue = [];
+let preloading = 0;
+
+function queuePreload(c) {
+  preloadQueue.push(c);
+  pumpPreload();
+}
+
+function pumpPreload() {
+  while (preloading < 4 && preloadQueue.length) {
+    const c = preloadQueue.shift();
+    if (!pool.includes(c)) continue;
+    preloading++;
+    const im = new Image();
+    const done = (ok) => {
+      preloading--;
+      if (ok) c.ok = true;
+      else if (pool.includes(c)) pool.splice(pool.indexOf(c), 1);
+      ensureAhead();
+      pumpPreload();
+    };
+    im.onload = () => done(true);
+    im.onerror = () => done(false);
+    im.src = c.image;
+  }
 }
 
 function stock(cat) {
   return pool.filter((c) => c.cat === cat).length;
 }
 
-function chooseLoader(cat) {
+function chooseLoader(cat, ppOnly = false) {
   const now = Date.now();
-  const ok = src.LOADERS.filter(([key, , , c]) => c === cat && !busy.has(key) && !(failures[key]?.until > now));
+  const ok = src.LOADERS.filter(([key, , , c]) => c === cat && (!ppOnly || key.endsWith('-pp') || key.includes('-pp-')) && !busy.has(key) && !(failures[key]?.until > now));
   if (!ok.length) return null;
   const ws = ok.map(([key, , w]) => w * weight('src:' + key));
   let r = Math.random() * ws.reduce((a, b) => a + b);
@@ -105,8 +115,13 @@ function refill() {
     src.loadNews().then(addToPool).catch(() => {});
   }
   for (const cat of ['image', 'savoir', 'paper']) {
-    // Deux chargements en parallèle pour les images, un pour le reste.
-    const parallel = cat === 'image' ? 2 : 1;
+    // Le parti pris a besoin de réserve à lui : sinon il se dilue parmi les autres sources.
+    if (getPartiPris() > 0 && pool.filter((c) => c.cat === cat && c.pp).length < 2) {
+      const loader = chooseLoader(cat, true);
+      if (loader) run(loader);
+    }
+    // Trois chargements en parallèle pour les images, un pour le reste.
+    const parallel = cat === 'image' ? 3 : 1;
     for (let k = 0; k < parallel && stock(cat) < STOCK[cat]; k++) {
       const loader = chooseLoader(cat);
       if (loader) run(loader);
@@ -128,7 +143,24 @@ function nextCard() {
   const ready = pool.filter((c) => c.ok || !c.image);
   const c = pick(ready, cards.slice(-2).filter((c) => c.id));
   if (c) pool.splice(pool.indexOf(c), 1);
+  if (c?.kind === 'image' && Math.random() < 0.12) series(c);
   return c;
+}
+
+// De temps en temps, une petite exposition : deux autres œuvres du même artiste à la suite.
+async function series(c) {
+  const artist = src.artistOf(c);
+  if (!artist) return;
+  try {
+    const list = (await src.loadSeries(c, artist)) || [];
+    const more = list.filter((x) => x.image && !known.has(x.id) && !seen.has(x.id)).slice(0, 2);
+    more.forEach((x) => {
+      x.label = 'SÉRIE · ' + artist.toUpperCase();
+      x.cat = 'image';
+      known.add(x.id);
+    });
+    upNext.unshift(...more);
+  } catch {}
 }
 
 function ensureAhead() {
@@ -192,7 +224,9 @@ function template(c, i) {
 
   switch (c.kind) {
     case 'image':
-      return `${meta}${img}${title}<p class="credit">${esc(c.credit || c.sourceLabel)}</p>${actions(c)}`;
+      // Plein écran : l'image d'abord, le texte en petit par-dessus.
+      return `${c.image ? `<figure class="full img"><img src="${esc(c.image)}" alt="" decoding="async"></figure>` : ''}
+        <div class="over">${meta}<div class="bottom">${title}<p class="credit">${esc(c.credit || c.sourceLabel)}</p>${actions(c)}</div></div>`;
     case 'news':
       return `${meta}${img}<div class="body">${title}</div>${source}${actions(c)}`;
     case 'paper':
@@ -404,6 +438,7 @@ function rabbitHTML(p) {
   const tr = p.lang === 'fr' ? ' tr' : '';
   return `<section class="tpage">
     <div class="meta"><span class="no">${String(p.depth).padStart(2, '0')}</span><span class="lbl">PLUS PROFONDE · NIVEAU ${p.depth}</span></div>
+    ${p.via ? `<p class="via">${p.detour ? 'Détour depuis' : 'Depuis'} « ${esc(p.via)} »</p>` : ''}
     ${p.image ? `<figure class="timg"><img src="${esc(p.image)}" alt="" decoding="async"></figure>` : ''}
     <h2 class="dtitle${tr}" lang="${p.lang}">${esc(p.title)}</h2>
     <div class="dtext${tr}" lang="${p.lang}">${p.text.split(/\n+/).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join('')}</div>
@@ -439,16 +474,36 @@ async function deeper() {
 }
 
 async function deeperStep(r) {
+  // Une erreur réseau n'est pas le fond du trou : on le dit, et le prochain défilement réessaie.
+  const failed = () => {
+    r.loading = false;
+    if (!stack().querySelector('.retry')) stack().insertAdjacentHTML('beforeend', '<p class="tinto retry">La connexion hésite… réessaie en descendant</p>');
+    r.retryAt = Date.now() + 3000;
+  };
+  if (r.retryAt > Date.now()) return (r.loading = false);
+  stack().querySelector('.retry')?.remove();
   if (!r.started) {
+    let first;
+    try {
+      first = await src.rabbitStart(r.from);
+    } catch {
+      if (rabbit === r) failed();
+      return;
+    }
+    if (rabbit !== r) return;
     r.started = true;
     reward(r.from, 0.3);
-    const first = await src.rabbitStart(r.from).catch(() => null);
-    if (rabbit !== r) return;
     r.loading = false;
     stack().querySelector('.tinto')?.remove();
     return first ? addRabbit(first) : rabbitEnd();
   }
-  const next = await src.rabbitNext(r.pages.at(-1), r.visited).catch(() => null);
+  let next;
+  try {
+    next = await src.rabbitNext(r.pages.at(-1), r.visited, r.pages[0].title);
+  } catch {
+    if (rabbit === r) failed();
+    return;
+  }
   if (rabbit !== r) return;
   r.loading = false;
   if (next) addRabbit(next);
@@ -575,6 +630,9 @@ function dropSimilar(c) {
 const SHARE_KEYS = { k: 'kind', t: 'title', x: 'text', i: 'image', u: 'url', s: 'sourceLabel', l: 'label', g: 'lang', y: 'year', n: 'number', a: 'author', c: 'credit' };
 
 function shareLink(c) {
+  // D'abord une référence courte (#aic:27992, #w:fr:Frontière, #n:1k3x9…) ; sinon la carte entière dans l'adresse.
+  const ref = src.refOf(c);
+  if (ref) return `${location.origin}${location.pathname}#${encodeURIComponent(ref).replace(/%3A/g, ':')}`;
   const data = {};
   for (const [short, key] of Object.entries(SHARE_KEYS)) if (c[key]) data[short] = key === 'text' ? String(c[key]).slice(0, 300) : c[key];
   if (c.sharedLabel) data.l = c.sharedLabel; // une carte reçue garde son étiquette d'origine
@@ -670,9 +728,25 @@ function onTap(e, c, el) {
   }
 }
 
+// Double toucher sur une image : j'aime, avec un cœur qui s'envole.
+let lastTap = { t: 0, el: null };
+function doubleTap(e, el) {
+  if (!e.target.closest('.full')) return false;
+  const now = Date.now();
+  const twice = lastTap.el === el && now - lastTap.t < 350;
+  lastTap = twice ? { t: 0, el: null } : { t: now, el };
+  if (!twice) return true;
+  const c = cards[+el.dataset.i];
+  if (!inList('aime', c.id)) act('aime', c, el.querySelector('[data-act="aime"]'), el);
+  el.insertAdjacentHTML('beforeend', `<span class="burst">${ICON.aime}</span>`);
+  setTimeout(() => el.querySelector('.burst')?.remove(), 800);
+  return true;
+}
+
 feed.addEventListener('click', (e) => {
   const el = e.target.closest('.card');
-  if (el) onTap(e, cards[+el.dataset.i], el);
+  if (!el || doubleTap(e, el)) return;
+  onTap(e, cards[+el.dataset.i], el);
 });
 
 detail.addEventListener('click', (e) => {
@@ -791,6 +865,9 @@ function openCarnet() {
     body = `<div class="settings">
       <button class="btn" data-export>Exporter mes données</button>
       <label class="btn ghost">Importer<input type="file" accept="application/json" data-import hidden></label>
+      <h3 class="imp">Parti pris</h3>
+      <p class="muted">Une part du flux vient délibérément de voix décoloniales, antiracistes, féministes, queer et solidaires.</p>
+      <div class="pp">${PARTI_PRIS.map(([name, share], i) => `<button data-pp="${i}" aria-pressed="${i === getPartiPris()}">${name}${share ? ` · 1/${Math.round(1 / share)}` : ''}</button>`).join('')}</div>
       <button class="btn ghost" data-reset>Réinitialiser l’algorithme</button>
       <p class="muted">Tout reste sur ce téléphone : favoris, lexique et préférences.</p>
       <p class="muted">${SOURCES_TEXT}</p>
@@ -822,6 +899,10 @@ carnet.addEventListener('click', (e) => {
     a.download = 'flaneur.json';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  } else if (t.dataset.pp) {
+    setPartiPris(+t.dataset.pp);
+    openCarnet();
+    toast('Parti pris : ' + PARTI_PRIS[+t.dataset.pp][0]);
   } else if ('reset' in t.dataset && confirm('Réinitialiser ce que l’algorithme a appris ?')) {
     resetProfile();
     toast('Algorithme réinitialisé');
@@ -854,14 +935,25 @@ function renderOffline() {
   feed.appendChild(el);
 }
 
+// Un lien partagé ouvre directement la vue détaillée de la carte.
+async function openShared() {
+  const ref = decodeURIComponent(location.hash.slice(1));
+  let c = ref ? await src.loadRef(ref).catch(() => null) : null;
+  if (!c) c = sharedCard();
+  if (!c) return;
+  c.cat = src.category(c);
+  c.sharedLabel = c.sharedLabel || c.label;
+  c.label = 'POUR TOI · ' + (c.sharedLabel || '');
+  known.add(c.id);
+  upNext.unshift(c);
+  feed.querySelector('.k-start .motto').insertAdjacentHTML('afterend', '<p class="pourtoi">Quelqu’un a pensé à toi ↓</p>');
+  history.replaceState(null, '', location.pathname);
+  openDetail(c);
+}
+
 async function start() {
   renderStart();
-  const shared = sharedCard();
-  if (shared) {
-    shared.cat = src.category(shared);
-    upNext.push(shared);
-    feed.querySelector('.k-start .motto').insertAdjacentHTML('afterend', '<p class="pourtoi">Quelqu’un a pensé à toi ↓</p>');
-  }
+  openShared();
   newsAt = Date.now();
   const daily = (lang) =>
     src.loadWikiDaily(lang).then((r) => {

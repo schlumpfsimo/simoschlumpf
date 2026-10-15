@@ -410,10 +410,29 @@ a { color: inherit; }
   margin: 14px 0 0;
 }
 
+/* ---------- Images en plein écran ---------- */
+.card.k-image { padding: 0; position: relative; }
+.full { position: absolute; inset: 0; margin: 0; background: #000; }
+.card.k-image .full { height: auto; }
+.full img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.over { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 46px 16px 8px; pointer-events: none; }
+.over > *, .over .bottom > * { pointer-events: auto; }
+.over .bottom { margin: auto -16px -8px; padding: 48px 16px 8px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.82) 38%); pointer-events: none; }
+.over .title { font-size: 16px; line-height: 1.15; margin: 0 0 2px; -webkit-line-clamp: 2; }
+.over .acts { border-top-color: rgba(255, 255, 255, 0.18); }
+.k-image.broken .over .bottom { margin-top: 0; }
+.burst { position: absolute; left: 50%; top: 45%; width: 96px; height: 96px; margin: -48px; pointer-events: none; animation: burst 0.8s ease-out forwards; }
+.burst svg { width: 100%; height: 100%; fill: var(--yellow); stroke: none; }
+@keyframes burst { 0% { transform: scale(0.4); opacity: 0; } 25% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1.4) translateY(-30px); opacity: 0; } }
+.pp { display: flex; flex-wrap: wrap; gap: 4px; }
+.pp button { font: 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px; border: 1px solid var(--line); }
+.pp button[aria-pressed='true'] { background: var(--yellow); color: #000; border-color: var(--yellow); }
+
 /* ---------- Terrier (en descendant dans la vue détaillée) ---------- */
 .tstack { margin-top: 18px; }
 .tpage { min-height: calc(var(--vh) - 60px); padding: 14px 0 18px; border-top: 1px solid var(--dline); }
 .tpage .meta .lbl { background: var(--yellow); color: #000; }
+.via { font: italic 13px/1.3 var(--serif); color: var(--mute); margin: 8px 0 0; }
 .timg { margin: 10px -16px 12px; }
 .timg img { display: block; width: 100%; max-height: 42vh; object-fit: cover; }
 .deeper, .tinto { text-align: center; font: 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--yellow); margin: 18px 0 0; }
@@ -516,6 +535,9 @@ a { color: inherit; }
   .items small { font-size: 12px; }
   .toast { font-size: 9px; bottom: 60px; }
   .card .img { height: 40%; }
+  .over { padding: 38px 10px 4px; }
+  .over .bottom { margin: auto -10px -4px; padding: 40px 10px 4px; }
+  .over .title { font-size: 14px; }
   .k-news .title { -webkit-line-clamp: 4; }
   .k-news.noimg .title, .k-article.noimg .title { font-size: 24px; }
   .k-image.broken .title { font-size: 22px; }
