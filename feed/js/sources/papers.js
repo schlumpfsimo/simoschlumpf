@@ -1,6 +1,6 @@
 // Recherche récente via OpenAlex (sans clé, quota quotidien par connexion).
-import { card, getJSON, rand, randInt, shorten } from './util.js?v=202610132138';
-import { PAPERS } from '../topics.js?v=202610132138';
+import { card, getJSON, rand, randInt, shorten } from './util.js?v=202610150659';
+import { PAPERS, PAPERS_PP } from '../topics.js?v=202610150659';
 
 // OpenAlex stocke les résumés sous forme d'index inversé { mot: [positions] }.
 function abstract(inv) {
@@ -10,8 +10,35 @@ function abstract(inv) {
   return out.filter(Boolean).join(' ');
 }
 
-export async function loadPapers() {
-  const [query, label] = rand(PAPERS);
+export function fromWork(w, label = '', pp = false) {
+  const text = abstract(w.abstract_inverted_index);
+  const authors = (w.authorships || []).map((a) => a.author?.display_name).filter(Boolean);
+  const journal = w.primary_location?.source?.display_name;
+  return card({
+    id: 'paper:' + w.id,
+    kind: 'paper',
+    source: 'openalex',
+    sourceLabel: journal || 'OpenAlex',
+    label: label ? 'RECHERCHE · ' + label : 'RECHERCHE',
+    pp,
+    lang: 'en',
+    title: w.title.replace(/<[^>]+>/g, ''),
+    text: shorten(text, 400),
+    long: text,
+    url: w.doi || w.primary_location?.landing_page_url || w.id,
+    date: w.publication_date,
+    facts: [
+      ['Auteurs', authors.slice(0, 4).join(', ') + (authors.length > 4 ? ' et al.' : '')],
+      ['Revue', journal],
+      ['Publié le', new Date(w.publication_date).toLocaleDateString('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' })],
+      ['Accès', w.open_access?.is_oa ? 'Libre' : 'Payant'],
+    ].filter(([, v]) => v),
+    tags: label ? [label.toLowerCase()] : [],
+  });
+}
+
+export async function loadPapers(themes = PAPERS, pp = false) {
+  const [query, label] = rand(themes);
   const since = new Date(Date.now() - 2 * 365 * 864e5).toISOString().slice(0, 10);
   const q = new URLSearchParams({
     search: query,
@@ -24,29 +51,5 @@ export async function loadPapers() {
   const d = await getJSON('https://api.openalex.org/works?' + q);
   return (d.results || [])
     .filter((w) => w.title && w.publication_date <= new Date().toISOString().slice(0, 10))
-    .map((w) => {
-      const text = abstract(w.abstract_inverted_index);
-      const authors = (w.authorships || []).map((a) => a.author?.display_name).filter(Boolean);
-      const journal = w.primary_location?.source?.display_name;
-      return card({
-        id: 'paper:' + w.id,
-        kind: 'paper',
-        source: 'openalex',
-        sourceLabel: journal || 'OpenAlex',
-        label: 'RECHERCHE · ' + label,
-        lang: 'en',
-        title: w.title.replace(/<[^>]+>/g, ''),
-        text: shorten(text, 400),
-        long: text,
-        url: w.doi || w.primary_location?.landing_page_url || w.id,
-        date: w.publication_date,
-        facts: [
-          ['Auteurs', authors.slice(0, 4).join(', ') + (authors.length > 4 ? ' et al.' : '')],
-          ['Revue', journal],
-          ['Publié le', new Date(w.publication_date).toLocaleDateString('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' })],
-          ['Accès', w.open_access?.is_oa ? 'Libre' : 'Payant'],
-        ].filter(([, v]) => v),
-        tags: [label.toLowerCase()],
-      });
-    });
+    .map((w) => fromWork(w, label, pp));
 }

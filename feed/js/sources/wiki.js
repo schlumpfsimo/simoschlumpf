@@ -1,6 +1,6 @@
 // Wikimédia : Wikipédia (FR/DE/EN), Vikidia, Wikiquote, Wikidata, Commons, Wiktionary. Sans clé.
-import { card, getJSON, rand, strip, shorten, words } from './util.js?v=202610132138';
-import { WIKI_FR, WIKI_DE, WIKI_EN, PLACES, QUOTES, ART_CONTEMPORARY } from '../topics.js?v=202610132138';
+import { card, getJSON, rand, strip, shorten, words } from './util.js?v=202610150659';
+import { WIKI_FR, WIKI_DE, WIKI_EN, WIKI_PP_FR, WIKI_PP_DE, PLACES, QUOTES, ART_CONTEMPORARY } from '../topics.js?v=202610150659';
 
 const bigger = (url) => (url || '').replace(/\/(\d+)px-/, (m, n) => (+n < 640 ? '/640px-' : m));
 const WIKI_LABEL = { fr: 'Wikipédia', de: 'Wikipedia (DE)', en: 'Wikipedia (EN)' };
@@ -141,11 +141,15 @@ function fromPages(d, { lang, source, sourceLabel, label, tag }) {
 
 const THEMES = { fr: WIKI_FR, de: WIKI_DE, en: WIKI_EN };
 
-export async function loadWikiTheme(lang) {
-  const [query, label] = rand(THEMES[lang]);
+export async function loadWikiTheme(lang, themes = THEMES[lang], pp = false) {
+  const [query, label] = rand(themes);
   const d = await wikiApi(`${lang}.wikipedia.org`, { generator: 'search', gsrsearch: query, gsrlimit: '4', gsrsort: 'random' });
-  return fromPages(d, { lang, source: 'wiki-' + lang, sourceLabel: WIKI_LABEL[lang], label, tag: label.toLowerCase() });
+  const list = fromPages(d, { lang, source: 'wiki-' + lang, sourceLabel: WIKI_LABEL[lang], label, tag: label.toLowerCase() });
+  return pp ? list.map((c) => ({ ...c, pp: true })) : list;
 }
+
+// Parti pris : les mêmes articles, mais tirés des thèmes décoloniaux, antiracistes, féministes, queer et solidaires.
+export const loadWikiPP = (lang) => loadWikiTheme(lang, lang === 'de' ? WIKI_PP_DE : WIKI_PP_FR, true);
 
 // Vikidia : l'encyclopédie en français plus simple.
 export async function loadVikidia() {
@@ -289,6 +293,35 @@ export async function loadContemporary() {
     });
 }
 
+/* ---------- Une seule carte, retrouvée par sa référence (liens partagés) ---------- */
+
+export async function commonsByTitle(title) {
+  const q = new URLSearchParams({
+    action: 'query', format: 'json', formatversion: '2', origin: '*', titles: title,
+    prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '720',
+    iiextmetadatafilter: 'ImageDescription|Artist|LicenseShortName|ObjectName|DateTimeOriginal', iiextmetadatalanguage: 'fr',
+  });
+  const p = (await getJSON('https://commons.wikimedia.org/w/api.php?' + q)).query?.pages?.[0];
+  const ii = p?.imageinfo?.[0];
+  if (!ii) return null;
+  const m = ii.extmetadata || {};
+  return card({
+    id: 'commons:' + p.title, kind: 'image', source: 'commons', sourceLabel: 'Wikimedia Commons', label: 'IMAGE', lang: 'fr',
+    title: shorten(strip(m.ObjectName?.value) || p.title.replace(/^File:|\.\w+$/g, ''), 120),
+    text: strip(m.ImageDescription?.value), image: ii.thumburl, url: ii.descriptionurl,
+    credit: [strip(m.Artist?.value), m.LicenseShortName?.value].filter(Boolean).join(' · '),
+  });
+}
+
+export async function articleByTitle(lang, title) {
+  if (lang === 'vikidia') {
+    const d = await wikiApi('fr.vikidia.org', { titles: title });
+    return fromPages(d, { lang: 'fr', source: 'vikidia', sourceLabel: 'Vikidia', label: 'EN FRANÇAIS FACILE', tag: 'facile' })[0] || null;
+  }
+  const s = await getJSON(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+  return s.extract ? fromSummary({ ...s, titles: { normalized: s.title } }, lang, { label: 'WIKIPÉDIA' }) : null;
+}
+
 /* ---------- Plus comme ça ---------- */
 
 export async function wikiMoreLike(c) {
@@ -334,17 +367,53 @@ export async function rabbitStart(c) {
   return p ? rabbitCard(p, lang, 1) : null;
 }
 
-// Un cran plus bas : un lien au hasard de l'article courant, de préférence illustré.
-export async function rabbitNext(prev, visited) {
-  const q = new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', origin: '*', prop: 'links', plnamespace: '0', pllimit: '500', titles: prev.title });
-  const links = ((await getJSON(`https://${prev.lang}.wikipedia.org/w/api.php?${q}`)).query?.pages?.[0]?.links || [])
-    .map((l) => l.title)
-    .filter((t) => !visited.has(t) && !/^(Liste|Portail|Modèle|Catégorie|\d{4}$)/.test(t));
-  const pick = links.sort(() => Math.random() - 0.5).slice(0, 10);
+// Un cran plus bas. Pas au hasard : on part des liens de l'introduction (ce qui compte vraiment pour l'article),
+// classés par ressemblance avec l'article de départ et avec l'article courant (recherche « morelike » de Wikipédia).
+// Une fois sur cinq, un détour volontaire : un lien de l'introduction au hasard.
+const similarCache = new Map();
+
+async function similar(lang, title) {
+  const key = lang + ':' + title;
+  if (!similarCache.has(key)) {
+    const q = new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', origin: '*', list: 'search', srsearch: 'morelike:' + title, srlimit: '50', srnamespace: '0' });
+    similarCache.set(key, getJSON(`https://${lang}.wikipedia.org/w/api.php?${q}`).then((d) => (d.query?.search || []).map((x) => x.title)).catch(() => []));
+  }
+  return similarCache.get(key);
+}
+
+async function introLinks(lang, title) {
+  const q = new URLSearchParams({ action: 'parse', format: 'json', formatversion: '2', origin: '*', page: title, prop: 'links', section: '0', redirects: '1' });
+  const d = await getJSON(`https://${lang}.wikipedia.org/w/api.php?${q}`);
+  return (d.parse?.links || []).filter((l) => l.ns === 0 && l.exists !== false).map((l) => l.title);
+}
+
+const BORING = /^(Liste|Portail|Modèle|Catégorie|Aide|\d{1,4}$|\d{1,2} \w+$|(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre))/i;
+
+export async function rabbitNext(prev, visited, origin = prev.title) {
+  const [links, simOrigin, simHere] = await Promise.all([introLinks(prev.lang, prev.title), similar(prev.lang, origin), similar(prev.lang, prev.title)]);
+  let cands = links.filter((t) => !visited.has(t) && !BORING.test(t));
+  const detour = prev.depth % 5 === 4 && cands.length > 3;
+  let ranked;
+  if (detour) {
+    ranked = cands.sort(() => Math.random() - 0.5);
+  } else {
+    const score = (t, i) => {
+      const o = simOrigin.indexOf(t);
+      const h = simHere.indexOf(t);
+      return (o >= 0 ? 100 - o : 0) + (h >= 0 ? 60 - h : 0) + Math.max(0, 20 - i);
+    };
+    ranked = cands.map((t, i) => [t, score(t, i)]).sort((x, y) => y[1] - x[1]).map(([t]) => t);
+    // Introduction sans lien utile : on suit les articles semblables.
+    if (!ranked.length) ranked = simHere.filter((t) => !visited.has(t) && !BORING.test(t));
+  }
+  const pick = ranked.slice(0, 6);
   if (!pick.length) return null;
   const pages = await rabbitPages(prev.lang, pick);
-  const p = pages.find((x) => x.thumbnail) || pages[0];
-  return p ? rabbitCard(p, prev.lang, prev.depth + 1) : null;
+  const order = (p) => pick.indexOf(p.title);
+  pages.sort((x, y) => order(x) - order(y));
+  // Le mieux classé, mais une image vaut un petit détour parmi les trois premiers.
+  const p = pages.slice(0, 3).find((x) => x.thumbnail) || pages[0];
+  return p ? { ...rabbitCard(p, prev.lang, prev.depth + 1), via: prev.title, detour } : null;
 }
 
 /* ---------- Vue détaillée : l'article plus long ---------- */

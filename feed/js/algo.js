@@ -1,11 +1,30 @@
 // L'algorithme : des poids par source, type et thème, appris de ce que tu fais.
 // 20 % des cartes sont tirées au hasard pour ne pas s'enfermer dans une bulle.
-import { load, save } from './store.js?v=202610132138';
+import { load, save } from './store.js?v=202610150659';
 
 const EXPLORE = 0.2;
 const FRENCH_PUSH = 1.35;
-// Après une image : actualités, savoir ou recherche, dans ces proportions (modulées par ce que tu aimes).
+// Après deux images : actualités, savoir ou recherche, dans ces proportions (modulées par ce que tu aimes).
 const MIX = { news: 0.45, savoir: 0.35, paper: 0.2 };
+
+// Parti pris : part des cartes tirées des voix décoloniales, antiracistes, féministes, queer et solidaires.
+// Réglable dans le carnet ; par défaut une carte sur quatre.
+export const PARTI_PRIS = [
+  ['aucun', 0],
+  ['léger', 1 / 6],
+  ['moyen', 1 / 4],
+  ['fort', 1 / 3],
+];
+let partiPris = load('partipris', 2);
+
+export function getPartiPris() {
+  return partiPris;
+}
+
+export function setPartiPris(level) {
+  partiPris = level;
+  save('partipris', level);
+}
 
 let profile = load('profil', { w: {} });
 let trending = new Set();
@@ -61,9 +80,9 @@ function weighted(items, w) {
   return items[i < 0 ? items.length - 1 : i];
 }
 
-// La famille voulue pour la prochaine carte : une image sur deux.
+// La famille voulue pour la prochaine carte : deux images sur trois.
 export function nextCategory(recent) {
-  if (recent.at(-1)?.cat !== 'image') return 'image';
+  if (!(recent.length >= 2 && recent.slice(-2).every((r) => r.cat === 'image'))) return 'image';
   return weighted(Object.keys(MIX), (k) => MIX[k] * weight('cat:' + k));
 }
 
@@ -73,6 +92,11 @@ export function pick(pool, recent, want = nextCategory(recent)) {
   let candidates = pool.filter((c) => c.cat === want);
   if (!candidates.length && want !== 'image') candidates = pool.filter((c) => c.cat !== 'image');
   if (!candidates.length) candidates = pool;
+  // Le parti pris : une fois sur quatre (par défaut), on ne pioche que dans ces voix-là, si la réserve en a.
+  if (Math.random() < PARTI_PRIS[partiPris][1]) {
+    const pp = candidates.filter((c) => c.pp);
+    if (pp.length) candidates = pp;
+  }
   const c = Math.random() < EXPLORE
     ? candidates[Math.floor(Math.random() * candidates.length)]
     : weighted(candidates, (x) => score(x, recent));

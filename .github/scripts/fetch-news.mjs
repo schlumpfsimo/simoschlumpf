@@ -121,9 +121,9 @@ const SOURCES = [
   { key: 'lithub', label: 'Literary Hub', lang: 'en', url: 'https://lithub.com/feed/', section: 'Books' },
   { key: 'perlentaucher', label: 'Perlentaucher', lang: 'de', url: gnews('site:perlentaucher.de when:7d', 'de', 'DE'), gnews: true, section: 'Bücher' },
   // Féminisme
-  { key: 'glorieuses', label: 'Les Glorieuses', lang: 'fr', url: 'https://www.lesglorieuses.fr/feed/', section: 'Féminisme' },
-  { key: 'feminisme', label: 'Féminisme', lang: 'fr', url: gnews('féminisme OR féministe when:3d', 'fr', 'FR'), gnews: true, section: 'Féminisme' },
-  { key: 'feminismus', label: 'Feminismus', lang: 'de', url: gnews('Feminismus OR feministisch when:3d', 'de', 'CH'), gnews: true, section: 'Feminismus' },
+  { key: 'glorieuses', pp: true, label: 'Les Glorieuses', lang: 'fr', url: 'https://www.lesglorieuses.fr/feed/', section: 'Féminisme' },
+  { key: 'feminisme', pp: true, label: 'Féminisme', lang: 'fr', url: gnews('féminisme OR féministe when:3d', 'fr', 'FR'), gnews: true, section: 'Féminisme' },
+  { key: 'feminismus', pp: true, label: 'Feminismus', lang: 'de', url: gnews('Feminismus OR feministisch when:3d', 'de', 'CH'), gnews: true, section: 'Feminismus' },
   // Politique de sécurité et technologie militaire
   { key: 'lemonde-defense', label: 'Le Monde', lang: 'fr', url: 'https://www.lemonde.fr/defense/rss_full.xml', section: 'Défense' },
   { key: 'opex360', label: 'Zone Militaire', lang: 'fr', url: 'https://www.opex360.com/feed/', section: 'Défense' },
@@ -132,6 +132,27 @@ const SOURCES = [
   { key: 'defensenews', label: 'Defense News', lang: 'en', url: 'https://www.defensenews.com/arc/outboundfeeds/rss/', section: 'Defence' },
   { key: 'breakingdefense', label: 'Breaking Defense', lang: 'en', url: 'https://breakingdefense.com/feed/', section: 'Defence' },
   { key: 'twz', label: 'The War Zone', lang: 'en', url: 'https://www.twz.com/feed', section: 'Military tech' },
+  // Parti pris : voix décoloniales, antiracistes, féministes, queer et solidaires
+  { key: 'africasacountry', label: 'Africa Is a Country', lang: 'en', url: 'https://africasacountry.com/feed', section: 'Décolonial', pp: true },
+  { key: 'orientxxi', label: 'Orient XXI', lang: 'fr', url: gnews('site:orientxxi.info when:14d', 'fr', 'FR'), gnews: true, section: 'Décolonial', pp: true },
+  { key: 'afriquexxi', label: 'Afrique XXI', lang: 'fr', url: gnews('site:afriquexxi.info when:30d', 'fr', 'FR'), gnews: true, section: 'Décolonial', pp: true },
+  { key: 'funambulist', label: 'The Funambulist', lang: 'en', url: 'https://thefunambulist.net/feed', section: 'Décolonial', pp: true },
+  { key: 'bondyblog', label: 'Bondy Blog', lang: 'fr', url: 'https://www.bondyblog.fr/feed/', section: 'Antiracisme', pp: true },
+  { key: 'streetpress', label: 'StreetPress', lang: 'fr', url: 'https://www.streetpress.com/rss.xml', section: 'Société', pp: true },
+  { key: 'mediapart', label: 'Mediapart', lang: 'fr', url: 'https://www.mediapart.fr/articles/feed', pp: true },
+  { key: 'ballast', label: 'Ballast', lang: 'fr', url: 'https://www.revue-ballast.fr/feed/', section: 'Luttes', pp: true },
+  { key: 'contretemps', label: 'Contretemps', lang: 'fr', url: 'https://www.contretemps.eu/feed/', section: 'Luttes', pp: true },
+  { key: 'komitid', label: 'Komitid', lang: 'fr', url: 'https://www.komitid.fr/feed/', section: 'Queer', pp: true },
+  { key: 'tetu', label: 'têtu·', lang: 'fr', url: 'https://tetu.com/feed/', section: 'Queer', pp: true },
+  { key: 'them', label: 'Them', lang: 'en', url: 'https://www.them.us/feed/rss', section: 'Queer', pp: true },
+  { key: 'queerty', label: 'Queerty', lang: 'en', url: 'https://www.queerty.com/feed', section: 'Queer', pp: true },
+  { key: 'missy', label: 'Missy Magazine', lang: 'de', url: 'https://missy-magazine.de/feed/', section: 'Feminismus', pp: true },
+  { key: 'anschlaege', label: 'an.schläge', lang: 'de', url: 'https://anschlaege.at/feed/', section: 'Feminismus', pp: true },
+  { key: 'daslamm', label: 'Das Lamm', lang: 'de', url: 'https://daslamm.ch/feed/', section: 'Solidarität', pp: true },
+  { key: 'woz', label: 'WOZ', lang: 'de', url: gnews('site:woz.ch when:7d', 'de', 'CH'), gnews: true, pp: true },
+  { key: 'aljazeera', label: 'Al Jazeera', lang: 'en', url: 'https://www.aljazeera.com/xml/rss/all.xml', pp: true },
+  { key: 'newhumanitarian', label: 'The New Humanitarian', lang: 'en', url: 'https://www.thenewhumanitarian.org/rss.xml', section: 'Solidarity', pp: true },
+  { key: 'hyperallergic-indigenous', label: 'Hyperallergic', lang: 'en', url: 'https://hyperallergic.com/tag/indigenous-art/feed/', section: 'Indigenous art', pp: true },
 ];
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '’', lsquo: '‘', laquo: '«', raquo: '»', hellip: '…', ndash: '–', mdash: '—' };
@@ -217,6 +238,7 @@ async function fetchSource(src, known) {
       lang: src.lang,
       city: src.city,
       section: src.section,
+      pp: src.pp || undefined,
       title,
       summary: src.gnews ? '' : summary(item),
       url,

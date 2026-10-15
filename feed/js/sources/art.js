@@ -1,7 +1,7 @@
 // Collections d'art et d'archives, toutes en accès libre.
 // Chaque appel tire un thème et une page au hasard : la réserve ne s'épuise pas.
-import { card, getJSON, rand, randInt, strip, first } from './util.js?v=202610132138';
-import { ART, ART_FI, ART_MODERN, ART_CONTEMPORARY } from '../topics.js?v=202610132138';
+import { card, getJSON, rand, randInt, strip, first } from './util.js?v=202610150659';
+import { ART, ART_FI, ART_MODERN, ART_CONTEMPORARY, ART_PP, PHOTO } from '../topics.js?v=202610150659';
 
 function art(c) {
   return card({ kind: 'image', lang: 'en', label: 'ŒUVRE', ...c, facts: (c.facts || []).filter(([, v]) => v) });
@@ -9,31 +9,21 @@ function art(c) {
 
 /* Art Institute of Chicago */
 export async function loadAIC(theme = rand(ART), since) {
+  // Le texte va dans la requête booléenne : avec « q » seul, le filtre domaine public l'emporte et le thème est ignoré.
   const q = new URLSearchParams({
-    q: theme, limit: '4', page: String(1 + randInt(since ? 8 : 20)),
+    limit: '4', page: String(1 + randInt(since ? 4 : 6)),
     fields: 'id,title,image_id,artist_display,date_display,medium_display,place_of_origin,description',
     'query[bool][must][0][term][is_public_domain]': 'true',
+    'query[bool][must][1][multi_match][query]': theme,
   });
-  if (since) q.set('query[bool][must][1][range][date_start][gte]', since);
+  if (since) q.set('query[bool][must][2][range][date_start][gte]', since);
   let d = await getJSON('https://api.artic.edu/api/v1/artworks/search?' + q);
   if (!d.data.length && q.get('page') !== '1') {
     q.set('page', '1');
     d = await getJSON('https://api.artic.edu/api/v1/artworks/search?' + q);
   }
   return d.data.filter((a) => a.image_id).map((a) =>
-    art({
-      id: 'aic:' + a.id,
-      source: 'aic',
-      sourceLabel: 'Art Institute of Chicago',
-      title: a.title,
-      image: `https://www.artic.edu/iiif/2/${a.image_id}/full/600,/0/default.jpg`,
-      imageLarge: `https://www.artic.edu/iiif/2/${a.image_id}/full/1200,/0/default.jpg`,
-      long: strip(a.description),
-      credit: a.artist_display?.split('\n')[0],
-      url: 'https://www.artic.edu/artworks/' + a.id,
-      facts: [['Artiste', a.artist_display], ['Date', a.date_display], ['Technique', a.medium_display], ['Origine', a.place_of_origin]],
-      tags: [theme.toLowerCase()],
-    })
+    fromAIC(a, theme)
   );
 }
 
@@ -47,18 +37,7 @@ export async function loadCleveland(theme = rand(ART), since) {
     d = await getJSON('https://openaccess-api.clevelandart.org/api/artworks/?' + q);
   }
   return d.data.filter((a) => a.images?.web?.url).map((a) =>
-    art({
-      id: 'cma:' + a.id,
-      source: 'cleveland',
-      sourceLabel: 'Cleveland Museum of Art',
-      title: a.title,
-      image: a.images.web.url,
-      long: strip(a.wall_description || a.description || a.did_you_know),
-      credit: a.creators?.[0]?.description,
-      url: a.url,
-      facts: [['Artiste', a.creators?.[0]?.description], ['Date', a.creation_date], ['Technique', a.technique], ['Département', a.department]],
-      tags: [theme.toLowerCase()],
-    })
+    fromCleveland(a, theme)
   );
 }
 
@@ -67,18 +46,7 @@ export async function loadSMK(theme = rand(ART)) {
   const q = new URLSearchParams({ keys: theme, offset: String(randInt(60)), rows: '4', lang: 'en' });
   const d = await getJSON(`https://api.smk.dk/api/v1/art/search/?${q}&filters=%5Bhas_image:true%5D,%5Bpublic_domain:true%5D`);
   return (d.items || []).filter((a) => a.image_thumbnail).map((a) =>
-    art({
-      id: 'smk:' + a.object_number,
-      source: 'smk',
-      sourceLabel: 'SMK Copenhague',
-      title: a.titles?.find((t) => t.language === 'engelsk')?.title || a.titles?.[0]?.title || 'Sans titre',
-      image: a.image_thumbnail,
-      credit: a.production?.[0]?.creator,
-      url: a.frontend_url,
-      facts: [['Artiste', a.production?.[0]?.creator], ['Date', a.production_date?.[0]?.period], ['Type', a.object_names?.[0]?.name],
-        ['Techniques', (a.techniques || []).join(', ')]],
-      tags: [theme.toLowerCase()],
-    })
+    fromSMK(a, theme)
   );
 }
 
@@ -106,9 +74,12 @@ export async function loadVAM(theme = rand(ART)) {
 export async function loadWellcome(theme = rand(ART)) {
   const q = new URLSearchParams({ query: theme, pageSize: '4', page: String(1 + randInt(15)) });
   const d = await getJSON('https://api.wellcomecollection.org/catalogue/v2/images?' + q);
-  return (d.results || []).filter((a) => a.thumbnail?.url).map((a) => {
-    const base = a.thumbnail.url.replace(/\/info\.json$/, '');
-    return art({
+  return (d.results || []).filter((a) => a.thumbnail?.url).map((a) => fromWellcome(a, theme));
+}
+
+export function fromWellcome(a, theme = '') {
+  const base = a.thumbnail.url.replace(/\/info\.json$/, '');
+  return art({
       id: 'wellcome:' + a.id,
       source: 'wellcome',
       sourceLabel: 'Wellcome Collection',
@@ -117,8 +88,7 @@ export async function loadWellcome(theme = rand(ART)) {
       imageLarge: base + '/full/!1200,1200/0/default.jpg',
       credit: a.thumbnail.license?.label,
       url: 'https://wellcomecollection.org/works/' + a.source?.id,
-      tags: [theme.toLowerCase()],
-    });
+      tags: theme ? [theme.toLowerCase()] : [],
   });
 }
 
@@ -135,17 +105,7 @@ export async function loadMet(theme = rand(ART), modern) {
   return objs
     .filter((r) => r.status === 'fulfilled' && r.value.primaryImageSmall)
     .map(({ value: a }) =>
-      art({
-        id: 'met:' + a.objectID,
-        source: 'met',
-        sourceLabel: 'The Met',
-        title: a.title,
-        image: a.primaryImageSmall,
-        credit: a.artistDisplayName,
-        url: a.objectURL,
-        facts: [['Artiste', a.artistDisplayName], ['Date', a.objectDate], ['Technique', a.medium], ['Département', a.department], ['Culture', a.culture]],
-        tags: [theme.toLowerCase()],
-      })
+      fromMet(a, theme)
     );
 }
 
@@ -200,18 +160,7 @@ export async function loadOpenverse(theme = rand([...ART, ...ART_CONTEMPORARY]))
   const q = new URLSearchParams({ q: theme, page_size: '4', page: String(1 + randInt(10)), mature: 'false' });
   const d = await getJSON('https://api.openverse.org/v1/images/?' + q);
   return (d.results || []).map((a) =>
-    art({
-      id: 'openverse:' + a.id,
-      source: 'openverse',
-      sourceLabel: 'Openverse',
-      label: 'PHOTO',
-      title: a.title || theme,
-      image: a.thumbnail || a.url,
-      credit: [a.creator, (a.license || '').toUpperCase()].filter(Boolean).join(' · '),
-      url: a.foreign_landing_url,
-      facts: [['Auteur', a.creator], ['Licence', `CC ${(a.license || '').toUpperCase()} ${a.license_version || ''}`], ['Source', a.source]],
-      tags: [theme.toLowerCase()],
-    })
+    fromOpenverse(a, theme)
   );
 }
 
@@ -224,7 +173,89 @@ export async function loadFinna(theme = rand(ART_FI)) {
   return (d.records || [])
     .filter((r) => r.images?.length)
     .map((r) =>
-      art({
+      fromFinna(r, theme)
+    );
+}
+
+/* Conversions : une notice de musée → une carte (aussi utilisées pour les liens partagés) */
+
+export function fromAIC(a, theme = '') {
+  return art({
+      id: 'aic:' + a.id,
+      source: 'aic',
+      sourceLabel: 'Art Institute of Chicago',
+      title: a.title,
+      image: `https://www.artic.edu/iiif/2/${a.image_id}/full/600,/0/default.jpg`,
+      imageLarge: `https://www.artic.edu/iiif/2/${a.image_id}/full/1200,/0/default.jpg`,
+      long: strip(a.description),
+      credit: a.artist_display?.split('\n')[0],
+      url: 'https://www.artic.edu/artworks/' + a.id,
+      facts: [['Artiste', a.artist_display], ['Date', a.date_display], ['Technique', a.medium_display], ['Origine', a.place_of_origin]],
+      tags: theme ? [theme.toLowerCase()] : [],
+    });
+}
+
+export function fromCleveland(a, theme = '') {
+  return art({
+      id: 'cma:' + a.id,
+      source: 'cleveland',
+      sourceLabel: 'Cleveland Museum of Art',
+      title: a.title,
+      image: a.images.web.url,
+      long: strip(a.wall_description || a.description || a.did_you_know),
+      credit: a.creators?.[0]?.description,
+      url: a.url,
+      facts: [['Artiste', a.creators?.[0]?.description], ['Date', a.creation_date], ['Technique', a.technique], ['Département', a.department]],
+      tags: theme ? [theme.toLowerCase()] : [],
+    });
+}
+
+export function fromSMK(a, theme = '') {
+  return art({
+      id: 'smk:' + a.object_number,
+      source: 'smk',
+      sourceLabel: 'SMK Copenhague',
+      title: a.titles?.find((t) => t.language === 'engelsk')?.title || a.titles?.[0]?.title || 'Sans titre',
+      image: a.image_thumbnail,
+      credit: a.production?.[0]?.creator,
+      url: a.frontend_url,
+      facts: [['Artiste', a.production?.[0]?.creator], ['Date', a.production_date?.[0]?.period], ['Type', a.object_names?.[0]?.name],
+        ['Techniques', (a.techniques || []).join(', ')]],
+      tags: theme ? [theme.toLowerCase()] : [],
+    });
+}
+
+export function fromMet(a, theme = '') {
+  return art({
+        id: 'met:' + a.objectID,
+        source: 'met',
+        sourceLabel: 'The Met',
+        title: a.title,
+        image: a.primaryImageSmall,
+        credit: a.artistDisplayName,
+        url: a.objectURL,
+        facts: [['Artiste', a.artistDisplayName], ['Date', a.objectDate], ['Technique', a.medium], ['Département', a.department], ['Culture', a.culture]],
+        tags: theme ? [theme.toLowerCase()] : [],
+      });
+}
+
+export function fromOpenverse(a, theme = '') {
+  return art({
+      id: 'openverse:' + a.id,
+      source: 'openverse',
+      sourceLabel: 'Openverse',
+      label: 'PHOTO',
+      title: a.title || theme,
+      image: a.thumbnail || a.url,
+      credit: [a.creator, (a.license || '').toUpperCase()].filter(Boolean).join(' · '),
+      url: a.foreign_landing_url,
+      facts: [['Auteur', a.creator], ['Licence', `CC ${(a.license || '').toUpperCase()} ${a.license_version || ''}`], ['Source', a.source]],
+      tags: theme ? [theme.toLowerCase()] : [],
+    });
+}
+
+export function fromFinna(r, theme = '') {
+  return art({
         id: 'finna:' + r.id,
         source: 'finna',
         sourceLabel: 'Finna',
@@ -236,14 +267,16 @@ export async function loadFinna(theme = rand(ART_FI)) {
         credit: [r.buildings?.[0]?.translated, r.year].filter(Boolean).join(' · '),
         url: 'https://finna.fi/Record/' + encodeURIComponent(r.id),
         facts: [['Auteur', r.nonPresenterAuthors?.[0]?.name], ['Année', r.year], ['Institution', r.buildings?.[0]?.translated], ['Droits', r.imageRights?.copyright]],
-        tags: [theme],
-      })
-    );
+        tags: theme ? [theme] : [],
+      });
 }
 
 // Art moderne : mêmes musées, filtrés sur les œuvres après 1880.
-const modern = (key, fn, extra) => (theme = rand(ART_MODERN)) =>
-  fn(theme, extra).then((list) => list.map((c) => ({ ...c, source: key, label: 'ART MODERNE' })));
+// Un catalogue interrogé avec une liste de thèmes à lui, sous sa propre clé (pour que l'algorithme apprenne).
+const themed = (key, fn, themes, label, extra, more = {}) => (theme = rand(themes)) =>
+  fn(theme, extra).then((list) => list.map((c) => ({ ...c, source: key, label: label || c.label, ...more })));
+const modern = (key, fn, extra) => themed(key, fn, ART_MODERN, 'ART MODERNE', extra);
+const partiPris = (key, fn) => themed(key, fn, ART_PP, null, undefined, { pp: true });
 
 // Tous les catalogues, avec leur poids de départ.
 export const ART_LOADERS = [
@@ -252,6 +285,13 @@ export const ART_LOADERS = [
   ['aic', loadAIC, 1.2], ['cleveland', loadCleveland, 1], ['smk', loadSMK, 1], ['vam', loadVAM, 1.1],
   ['wellcome', loadWellcome, 0.8], ['met', loadMet, 1], ['europeana', loadEuropeana, 1.2], ['loc', loadLOC, 0.9],
   ['openverse', loadOpenverse, 0.8], ['finna', loadFinna, 0.8],
+  // Photographie documentaire
+  ['loc-photo', themed('loc-photo', loadLOC, PHOTO, 'PHOTOGRAPHIE'), 1.6],
+  ['europeana-photo', themed('europeana-photo', loadEuropeana, ['photograph', 'street photography', 'portrait photograph', 'press photograph', 'city photograph'], 'PHOTOGRAPHIE'), 1],
+  // Parti pris : arts non occidentaux, luttes, diasporas
+  ['aic-pp', partiPris('aic-pp', loadAIC), 1], ['met-pp', partiPris('met-pp', loadMet), 0.8],
+  ['europeana-pp', partiPris('europeana-pp', loadEuropeana), 1], ['loc-pp', partiPris('loc-pp', loadLOC), 1],
+  ['openverse-pp', partiPris('openverse-pp', loadOpenverse), 0.6],
 ];
 
 // « Plus comme ça » pour une image : même catalogue, mêmes mots.
