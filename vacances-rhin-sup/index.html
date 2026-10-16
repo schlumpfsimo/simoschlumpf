@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vacances Rhin supérieur 2027</title>
+<meta name="description" content="Vacances scolaires et jours fériés 2027 dans le Rhin supérieur – Schulferien und Feiertage 2027 am Oberrhein">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+/* Layout: Jahreswandkalender – Steuerleiste (Gebiete, Ebenen, Sitzungsplaner), Tagesdetail, 12 Monatsspalten, Liste mit Quellen */
+:root{
+  --bg:#ffffff; --fg:#1b2333; --muted:#5d6678; --line:#d5dae3; --we:#e4e7ee; --cell:#ffffff; --panel:#f3f5f9;
+  --head:#24438f; --flag:#c8102e; --ok:#d9f1e1; --okfg:#17663a; --sel:#24438f;
+  --bw:#1f3f99; --rp:#1a9a4a; --als:#e8b400; --bas:#8a2a7a; --so:#e46f1b; --ju:#1aa6d9; --ag:#d7192b; --bl:#8c5a24;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif; --f-disp:"Source Serif 4",Georgia,serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141922; --fg:#e7eaf0; --muted:#9aa3b5; --line:#2e3646; --we:#232a37; --cell:#181e29; --panel:#1d2431;
+  --head:#8fa8ec; --flag:#ff5a6e; --ok:#1d3a2a; --okfg:#7fdca4; --sel:#8fa8ec;
+  --bw:#5d7fe0; --rp:#3cc073; --als:#f2c933; --bas:#c45cb2; --so:#f08a3c; --ju:#3cc0ee; --ag:#ff4d5c; --bl:#c98b4a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141922; --fg:#e7eaf0; --muted:#9aa3b5; --line:#2e3646; --we:#232a37; --cell:#181e29; --panel:#1d2431;
+  --head:#8fa8ec; --flag:#ff5a6e; --ok:#1d3a2a; --okfg:#7fdca4; --sel:#8fa8ec;
+  --bw:#5d7fe0; --rp:#3cc073; --als:#f2c933; --bas:#c45cb2; --so:#f08a3c; --ju:#3cc0ee; --ag:#ff4d5c; --bl:#c98b4a; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+.wrap{max-width:1500px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+h1{font-family:var(--f-disp);font-size:clamp(26px,4vw,40px);margin:0;color:var(--head);text-wrap:balance;line-height:1.1}
+h1 small{display:block;font-family:var(--f-body);font-size:15px;font-weight:600;color:var(--muted);letter-spacing:.04em;margin-top:6px}
+.year{font-family:var(--f-disp);font-size:clamp(40px,6vw,64px);font-weight:600;line-height:1}
+h2{font-family:var(--f-disp);font-size:22px;margin:0;color:var(--head)}
+.fr{color:var(--muted)}
+.intro{max-width:85ch;margin:0;display:flex;flex-direction:column;gap:4px}
+.intro p{margin:0}
+/* Steuerleiste */
+.controls{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);min-width:150px}
+.chip{font:inherit;font-size:14px;display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 8px;border-radius:999px;border:1.5px solid var(--line);background:var(--cell);color:var(--fg);cursor:pointer}
+.chip i{width:12px;height:12px;border-radius:3px;background:var(--c);display:inline-block;opacity:.25}
+.chip[aria-pressed="true"]{border-color:var(--c)}
+.chip[aria-pressed="true"] i{opacity:1}
+.chip[aria-pressed="false"]{color:var(--muted)}
+.chip .fr{font-size:12px}
+.btn{font:inherit;font-size:13px;padding:5px 11px;border-radius:6px;border:1px solid var(--line);background:var(--cell);color:var(--head);cursor:pointer;font-weight:600}
+.btn:hover,.chip:hover{border-color:var(--head)}
+.btn[aria-pressed="true"]{background:var(--head);color:var(--bg);border-color:var(--head)}
+:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+.planinfo{font-size:14px;color:var(--okfg);font-weight:600}
+/* Detail */
+.detail{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;grid-template-columns:minmax(150px,220px) 1fr;gap:14px;align-items:start}
+.detail h3{margin:0;font-family:var(--f-disp);font-size:22px;color:var(--head);line-height:1.15}
+.detail h3 small{display:block;font-family:var(--f-body);font-size:14px;font-weight:400;color:var(--muted)}
+.dlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px 18px;min-width:0}
+.ditem{display:flex;gap:8px;align-items:flex-start;font-size:14px;min-width:0}
+.ditem i{flex:none;width:10px;height:10px;border-radius:2px;background:var(--c);margin-top:5px}
+.ditem.free{color:var(--muted)}
+.ditem.free i{opacity:.3}
+.tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:4px;margin-right:4px}
+.tag.v{background:var(--we);color:var(--fg)}
+.tag.h{background:var(--flag);color:var(--bg)}
+@media (max-width:640px){.detail{grid-template-columns:1fr}.lbl{min-width:0;width:100%}}
+/* Kalender */
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--cell)}
+.cal{display:grid;grid-template-columns:repeat(12,minmax(104px,1fr));min-width:1250px}
+.month{border-left:1px solid var(--line);display:flex;flex-direction:column}
+.month:first-child{border-left:0}
+.mh{font-weight:700;font-size:13px;padding:8px 8px 7px;color:var(--head);border-bottom:2px solid var(--flag);white-space:nowrap;display:flex;justify-content:space-between;gap:4px}
+.mh em{font-style:normal;font-weight:400;color:var(--muted)}
+.mh .cnt{color:var(--okfg);font-weight:700}
+.day{font:inherit;display:flex;align-items:stretch;height:24px;border:0;border-bottom:1px solid var(--line);background:transparent;color:inherit;padding:0;text-align:left;cursor:pointer;font-variant-numeric:tabular-nums;width:100%}
+.day.we{background:var(--we)}
+.day:hover{box-shadow:inset 0 0 0 1.5px var(--head)}
+.day.sel{box-shadow:inset 0 0 0 2px var(--sel)}
+.day.empty{cursor:default;border-bottom-color:transparent}
+.day.empty:hover{box-shadow:none}
+.plan .day.free{background:var(--ok)}
+.plan .day:not(.free):not(.empty){opacity:.55}
+.dn{width:20px;text-align:right;font-weight:600;font-size:12px;padding-top:4px;color:var(--head)}
+.wd{width:16px;text-align:center;font-size:10.5px;padding-top:5px;color:var(--muted)}
+.day.hol .dn{color:var(--flag)}
+.sq{flex:1;display:flex;flex-wrap:wrap;align-content:center;gap:1px;padding:0 3px;min-width:0}
+.sq b{width:7px;height:7px;display:block;background:var(--c)}
+.sq b.reg{background:transparent;outline:1.5px solid var(--c);outline-offset:-1.5px}
+.lanes{display:flex;gap:1px;padding-right:2px}
+.lanes s{width:3px;display:block;text-decoration:none;background:var(--c)}
+.lanes s.off{background:transparent}
+.foot{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+/* Liste */
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:18px}
+.reg-card{border-top:4px solid var(--c);padding-top:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.reg-card h3{margin:0;font-size:17px}
+.reg-card h3 span{font-weight:400;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+td{padding:3px 6px 3px 0;vertical-align:top;border-bottom:1px solid var(--line)}
+td:first-child{width:46%}
+td .fr{display:block}
+.small{font-size:13px;color:var(--muted)}
+.src{font-size:13px;overflow-wrap:anywhere}
+.src a{color:var(--head)}
+/* Termine */
+.apts{border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.apts h2{font-size:20px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,220px));gap:10px 12px;align-items:end}
+.form label{display:flex;flex-direction:column;gap:4px;white-space:nowrap;font-size:13px;font-weight:600;min-width:0}
+.form label .fr{font-weight:400;display:inline}
+.form input[type=text],.form input[type=date]{font:inherit;font-size:15px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--cell);color:var(--fg);min-width:0;width:100%;box-sizing:border-box}
+.form .regs{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
+.form .regs label{flex-direction:row;align-items:center;gap:6px;font-weight:400}
+.form .regs input{accent-color:var(--head)}
+.form .act{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn.primary{background:var(--head);color:var(--bg);border-color:var(--head)}
+.preview{font-size:14px}
+.alist{display:flex;flex-direction:column;gap:8px}
+.apt-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:10px 12px;border-radius:6px;background:var(--panel);border-left:4px solid var(--st)}
+.apt-item.ok{--st:var(--okfg)} .apt-item.warn{--st:var(--als)} .apt-item.bad{--st:var(--flag)}
+.badge{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--st);color:var(--bg);white-space:nowrap}
+.apt-item h4{margin:0;font-size:15px}
+.apt-item h4 button{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--head);cursor:pointer;text-align:left}
+.apt-item ul{margin:4px 0 0;padding-left:18px;font-size:13.5px}
+.apt-item .meta{font-size:13px;color:var(--muted)}
+.del{font:inherit;font-size:12px;background:none;border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--muted);cursor:pointer}
+.del:hover{color:var(--flag);border-color:var(--flag)}
+.empty-apt{font-size:14px;color:var(--muted)}
+.notice{font-size:13px;color:var(--muted);margin:0}
+.day .mk{width:6px;height:6px;border-radius:50%;margin:9px 0 0 2px;flex:none;background:transparent}
+.day.apt .mk{background:var(--head);box-shadow:0 0 0 1.5px var(--bg)}
+@media (max-width:480px){.form{grid-template-columns:1fr}.apt-item{grid-template-columns:1fr}.apt-item .badge{justify-self:start}.apt-item .del{justify-self:start}}
+@media (prefers-reduced-motion:no-preference){.day,.chip,.btn{transition:background-color .15s,opacity .15s,border-color .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Vacances scolaires &amp; jours fériés dans le Rhin supérieur<small>Schulferien &amp; Feiertage am Oberrhein</small></h1>
+    <div class="year">2027</div>
+  </header>
+
+  <div class="intro">
+    <p>Choisissez les collectivités, cliquez sur un jour pour voir le détail, ou activez le planificateur pour trouver les jours ouvrables sans vacances ni jours fériés. Les dates suivent les indications des autorités ; pour les cantons suisses et l’Alsace, les week-ends attenants sont inclus.</p>
+    <p class="fr">Gebiete auswählen, einen Tag anklicken für die Einzelheiten, oder den Sitzungsplaner einschalten, um Werktage ohne Ferien und Feiertage zu finden. Die Daten folgen den Angaben der Behörden; bei den Schweizer Kantonen und im Elsass sind die angrenzenden Wochenenden eingeschlossen.</p>
+  </div>
+
+  <section class="controls" aria-label="Filtres / Filter">
+    <div class="row"><span class="lbl">Collectivités <span class="fr">/ Gebiete</span></span><div class="row" id="chips"></div></div>
+    <div class="row"><span class="lbl">Sélection <span class="fr">/ Auswahl</span></span>
+      <button class="btn" type="button" data-preset="all">Toutes / Alle</button>
+      <button class="btn" type="button" data-preset="ch">Suisse / Schweiz</button>
+      <button class="btn" type="button" data-preset="de">Allemagne / Deutschland</button>
+      <button class="btn" type="button" data-preset="fr">France / Frankreich</button>
+    </div>
+    <div class="row"><span class="lbl">Affichage <span class="fr">/ Anzeige</span></span>
+      <button class="btn" type="button" id="tVac" aria-pressed="true">Vacances / Ferien</button>
+      <button class="btn" type="button" id="tHol" aria-pressed="true">Jours fériés / Feiertage</button>
+      <button class="btn" type="button" id="tPlan" aria-pressed="false">Planificateur de séances / Sitzungsplaner</button>
+      <span class="planinfo" id="planinfo" hidden></span>
+    </div>
+  </section>
+
+  <section class="apts" aria-label="Rendez-vous / Termine">
+    <h2>Vérifier des rendez-vous <span class="fr" style="font-weight:400">/ Termine prüfen</span></h2>
+    <form class="form" id="aptForm" autocomplete="off">
+      <label><span>Date <span class="fr">/ Datum</span></span><input type="date" id="aStart" required min="2027-01-01" max="2027-12-31" value="2027-03-10"></label>
+      <label><span>Jusqu’au (facultatif) <span class="fr">/ bis (optional)</span></span><input type="date" id="aEnd" min="2027-01-01" max="2027-12-31"></label>
+      <div class="regs" id="aRegs"><span class="lbl" style="min-width:0">Collectivités concernées <span class="fr">/ Betroffene Gebiete</span></span></div>
+      <div class="act">
+        <button class="btn primary" type="submit">Ajouter et vérifier / Hinzufügen und prüfen</button>
+        <span class="preview" id="aPreview"></span>
+      </div>
+    </form>
+    <div class="alist" id="aList"></div>
+    <p class="notice" id="aNotice"></p>
+  </section>
+
+  <section class="detail" id="detail" aria-live="polite"></section>
+
+  <div class="scroll"><div class="cal" id="cal"></div></div>
+
+  <div class="foot">
+    <span>Etat au / Stand : 16.10.2026</span>
+    <span>Données sans garantie – font foi les autorités compétentes. / Angaben ohne Gewähr – massgebend sind die zuständigen Behörden.</span>
+    <span>Carré vide : jour férié dans une partie des communes seulement ou demi-journée / Hohles Quadrat: Feiertag nur in einem Teil der Gemeinden oder halbtags</span>
+  </div>
+
+  <h2>Liste par collectivité <span class="fr" style="font-weight:400">/ Liste nach Gebietskörperschaft</span></h2>
+  <div class="list" id="list"></div>
+</div>
+
+<script>
+
+// fer: [von, bis, DE, FR]   hol: [datum, DE, FR, nurTeilweise]
+const HCH={ny:["01-01","Neujahr","Nouvel An"],bt:["01-02","Berchtoldstag","2 janvier"],kf:["03-26","Karfreitag","Vendredi saint"],om:["03-29","Ostermontag","Lundi de Pâques"],ma:["05-01","Tag der Arbeit","Fête du travail"],af:["05-06","Auffahrt","Ascension"],pm:["05-17","Pfingstmontag","Lundi de Pentecôte"],fl:["05-27","Fronleichnam","Fête-Dieu"],bf:["08-01","Bundesfeier","Fête nationale"],mh:["08-15","Mariä Himmelfahrt","Assomption"],ah:["11-01","Allerheiligen","Toussaint"],me:["12-08","Mariä Empfängnis","Immaculée Conception"],wn:["12-25","Weihnachten","Noël"],st:["12-26","Stephanstag","Saint-Étienne"]};
+const h=(id,part)=>part?[...HCH[id],1]:HCH[id];
+const SRC_EDK=["EDK / CDIP, Schulferien 2027 – Vacances scolaires 2027 (Stand 13.05.2026), via TCS","https://www.tcs.ch/mam/Corporate-Communication/PDF/Info-Sheet/schulferien-2027.pdf"];
+const BASEL_FER=[["01-01","01-03","Weihnachtsferien 2026/27 (ab 19.12.2026)","Vacances de Noël 2026/27 (dès le 19.12.2026)"],["02-06","02-21","Fasnachtsferien (Basler Fasnacht 15.–17.02.)","Vacances de carnaval (Carnaval de Bâle 15–17.02)"],["03-20","04-04","Frühjahrsferien","Vacances de printemps"],["05-07","05-07","Freitag nach Auffahrt (schulfrei)","Vendredi après l’Ascension (congé)"],["07-03","08-15","Sommerferien","Vacances d’été"],["10-02","10-17","Herbstferien","Vacances d’automne"],["12-18","12-31","Weihnachtsferien 2027/28 (Unterrichtsbeginn 03.01.2028)","Vacances de Noël 2027/28 (reprise le 03.01.2028)"]];
+const BASEL_HOL=[h("ny"),h("kf"),h("om"),h("ma"),h("af"),h("pm"),h("bf"),h("wn"),h("st")];
+const R=[
+ {k:"bw",de:"Baden-Württemberg",fr:"Bade-Wurtemberg",
+  fer:[["01-01","01-09","Weihnachtsferien 2026/27 (ab 23.12.2026)","Vacances de Noël 2026/27 (dès le 23.12.2026)"],["03-30","04-03","Osterferien","Vacances de Pâques"],["05-18","05-29","Pfingstferien","Vacances de Pentecôte"],["07-29","09-11","Sommerferien","Vacances d’été"],["11-02","11-06","Herbstferien","Vacances d’automne"],["12-23","12-31","Weihnachtsferien 2027/28 (bis 08.01.2028)","Vacances de Noël 2027/28 (jusqu’au 08.01.2028)"]],
+  hol:[["01-01","Neujahr","Nouvel An"],["01-06","Heilige Drei Könige","Épiphanie"],["03-26","Karfreitag","Vendredi saint"],["03-29","Ostermontag","Lundi de Pâques"],["05-01","Tag der Arbeit","Fête du travail"],["05-06","Christi Himmelfahrt","Ascension"],["05-17","Pfingstmontag","Lundi de Pentecôte"],["05-27","Fronleichnam","Fête-Dieu"],["10-03","Tag der Deutschen Einheit","Jour de l’Unité allemande"],["11-01","Allerheiligen","Toussaint"],["12-25","1. Weihnachtstag","Noël"],["12-26","2. Weihnachtstag","Saint-Étienne"]],
+  nde:"Keine landesweiten Winterferien; Fasnachtsferien legen die Schulen über bewegliche Ferientage selbst fest.",
+  nfr:"Pas de vacances d’hiver au niveau du Land ; les écoles fixent elles-mêmes d’éventuels congés de carnaval (jours mobiles).",
+  src:[["Landtag Baden-Württemberg, Sitzungsplan 2027 (mit Ferienterminen)","https://www.landtag-bw.de/resource/blob/640400/fd33b2a534bf7088c5c7ed6a12e4f9d9/Sitzungsplan%201.%20Januar%202027%20bis%2031.%20Dezember%202027.pdf"],["Profiling Institut, Kalender 2027 Baden-Württemberg (Ferien und Feiertage)","https://www.profiling-institut.de/wp-content/uploads/ferien-pdf/kalender-2027-baden-wuerttemberg-ferien-feiertage.pdf"]]},
+ {k:"rp",de:"Rheinland-Pfalz",fr:"Rhénanie-Palatinat",
+  fer:[["01-01","01-08","Weihnachtsferien 2026/27 (ab 23.12.2026)","Vacances de Noël 2026/27 (dès le 23.12.2026)"],["03-22","04-02","Osterferien","Vacances de Pâques"],["06-28","08-06","Sommerferien","Vacances d’été"],["10-04","10-15","Herbstferien","Vacances d’automne"],["12-23","12-31","Weihnachtsferien 2027/28 (bis 07.01.2028)","Vacances de Noël 2027/28 (jusqu’au 07.01.2028)"]],
+  hol:[["01-01","Neujahr","Nouvel An"],["03-26","Karfreitag","Vendredi saint"],["03-29","Ostermontag","Lundi de Pâques"],["05-01","Tag der Arbeit","Fête du travail"],["05-06","Christi Himmelfahrt","Ascension"],["05-17","Pfingstmontag","Lundi de Pentecôte"],["05-27","Fronleichnam","Fête-Dieu"],["10-03","Tag der Deutschen Einheit","Jour de l’Unité allemande"],["11-01","Allerheiligen","Toussaint"],["12-25","1. Weihnachtstag","Noël"],["12-26","2. Weihnachtstag","Saint-Étienne"]],
+  nde:"Keine Winter- und Pfingstferien; zusätzlich bewegliche Ferientage nach Festlegung der Schulen.",
+  nfr:"Pas de vacances d’hiver ni de Pentecôte ; jours mobiles supplémentaires fixés par les écoles.",
+  src:[["Profiling Institut, Kalender 2027 Rheinland-Pfalz (Grundlage: Ministerium für Bildung RLP)","https://www.profiling-institut.de/wp-content/uploads/ferien-pdf/kalender-2027-rheinland-pfalz-ferien-feiertage.pdf"],["Kalenderpedia, Ferien Rheinland-Pfalz 2027","https://www.kalenderpedia.de/ferien/ferien-rheinland-pfalz-2027.html"]]},
+ {k:"als",de:"Frankreich / Elsass (Académie de Strasbourg, Zone B)",fr:"France / Alsace (Académie de Strasbourg, zone B)",
+  fer:[["01-01","01-03","Weihnachtsferien 2026/27 (ab 19.12.2026)","Vacances de Noël 2026/27 (dès le 19.12.2026)"],["02-20","03-07","Winterferien","Vacances d’hiver"],["04-17","05-02","Frühlingsferien","Vacances de printemps"],["05-06","05-09","Auffahrtsbrücke (kein Unterricht am 7. Mai)","Pont de l’Ascension (pas de classe le 7 mai)"],["07-03","09-01","Sommerferien (Schulbeginn 02.09.2027)","Vacances d’été (rentrée le 02.09.2027)"],["10-23","11-07","Allerheiligenferien","Vacances de la Toussaint"],["12-18","12-31","Weihnachtsferien 2027/28 (Unterrichtsbeginn 03.01.2028)","Vacances de Noël 2027/28 (reprise le 03.01.2028)"]],
+  hol:[["01-01","Neujahr","Jour de l’an"],["03-26","Karfreitag (Lokalrecht)","Vendredi saint (droit local)"],["03-29","Ostermontag","Lundi de Pâques"],["05-01","Tag der Arbeit","Fête du travail"],["05-06","Christi Himmelfahrt","Ascension"],["05-08","Kriegsende 1945","Victoire 1945"],["05-17","Pfingstmontag","Lundi de Pentecôte"],["07-14","Nationalfeiertag","Fête nationale"],["08-15","Mariä Himmelfahrt","Assomption"],["11-01","Allerheiligen","Toussaint"],["11-11","Waffenstillstand 1918","Armistice"],["12-25","Weihnachten","Noël"],["12-26","Stephanstag (Lokalrecht)","Saint-Étienne (droit local)"]],
+  nde:"Die Ferien beginnen nach dem Unterricht am angegebenen Samstag; Wiederbeginn am Morgen des angegebenen Tages.",
+  nfr:"Les vacances commencent après la classe le samedi indiqué ; reprise le matin du jour indiqué.",
+  src:[["Service-Public.fr, vacances scolaires 2026-2027","https://www.service-public.gouv.fr/particuliers/actualites/A18563"],["Onisep, vacances scolaires 2026-2027","https://www.onisep.fr/vacances-scolaires-2026-2027"],["Banque des Territoires, calendrier scolaire 2027-2028 (arrêté, JO du 23.07.2026)","https://www.banquedesterritoires.fr/le-calendrier-scolaire-2027-2028-publie-au-journal-officiel"]]},
+ {k:"bas",de:"Basel-Stadt",fr:"Bâle-Ville",fer:[...BASEL_FER,["03-10","03-10","Gesamtkonferenz der Kantonalen Schulkonferenz (schulfrei)","Conférence générale des enseignants (congé)"]].sort((a,b)=>a[0].localeCompare(b[0])),hol:BASEL_HOL,
+  nde:"Gleiche Schulferien wie Basel-Landschaft. Zusätzlich schulfrei am 10.03.2027 (Gesamtkonferenz der Kantonalen Schulkonferenz).",
+  nfr:"Mêmes vacances qu’à Bâle-Campagne. Congé supplémentaire le 10.03.2027 (conférence générale des enseignants).",
+  src:[["Kanton Basel-Stadt, Schulferien","https://www.bs.ch/themen/bildung-und-kinderbetreuung/schulferien"],SRC_EDK,["Bundesamt für Justiz, Kantonale Feiertage","https://www.bj.admin.ch/dam/bj/de/data/publiservice/service/zivilprozessrecht/kant-feiertage.pdf"]]},
+ {k:"bl",de:"Basel-Landschaft",fr:"Bâle-Campagne",fer:BASEL_FER,hol:BASEL_HOL,
+  nde:"Ausnahme Regionales Gymnasium Laufental-Thierstein: Sommerferien ab 10.07., Herbstferien bis 24.10.2027.",
+  nfr:"Exception pour le Gymnase régional Laufental-Thierstein : vacances d’été dès le 10.07, d’automne jusqu’au 24.10.2027.",
+  src:[["Kanton Basel-Landschaft, Schulferien 2026/2027","https://www.baselland.ch/politik-und-behorden/direktionen/bildungs-kultur-und-sportdirektion/schulferien/schulferien-2026-2027"],["Kanton Basel-Landschaft, Schulferien 2027/2028","https://www.baselland.ch/politik-und-behorden/direktionen/bildungs-kultur-und-sportdirektion/schulferien/schulferien-2027-2028"]]},
+ {k:"so",de:"Solothurn",fr:"Soleure",
+  fer:[["01-01","01-03","Weihnachtsferien 2026/27","Vacances de Noël 2026/27"],["02-06","02-21","Winter-/Sportferien","Vacances d’hiver / de sport"],["04-10","04-25","Frühlingsferien","Vacances de printemps"],["07-10","08-15","Sommerferien","Vacances d’été"],["10-02","10-24","Herbstferien","Vacances d’automne"],["12-25","12-31","Weihnachtsferien 2027/28 (bis 09.01.2028)","Vacances de Noël 2027/28 (jusqu’au 09.01.2028)"]],
+  hol:[h("ny"),["03-19","Josefstag (einzelne Gemeinden)","Saint-Joseph (certaines communes)",1],h("kf"),["05-01","Tag der Arbeit (ab 12 Uhr)","Fête du travail (dès 12 h)",1],h("af"),h("fl",1),h("bf"),h("mh",1),h("ah",1),h("wn")],
+  nde:"Die Volksschulen legen die Ferien teils kommunal fest; im Schwarzbubenland (z. B. Dornach) weichen Sport- und Frühlingsferien ab. Fronleichnam, Mariä Himmelfahrt und Allerheiligen gelten nicht im Bezirk Bucheggberg. Ostermontag, Pfingstmontag und Stephanstag sind keine kantonalen Feiertage, an den Schulen aber in der Regel unterrichtsfrei.",
+  nfr:"Les écoles obligatoires fixent en partie leurs vacances au niveau communal ; dans le Schwarzbubenland (p. ex. Dornach), les vacances de sport et de printemps diffèrent. La Fête-Dieu, l’Assomption et la Toussaint ne sont pas fériées dans le district de Bucheggberg. Le lundi de Pâques, le lundi de Pentecôte et la Saint-Étienne ne sont pas des jours fériés cantonaux, mais en règle générale sans classe.",
+  src:[SRC_EDK,["Kanton Solothurn, Ferienplan Mittel- und Berufsfachschulen 2026/27","https://www.so.ch/fileadmin/internet/dbk/dbk-abmh/Dokumente/abmh/Ferienplaene/Ferienplan_2026-27-Web_20191104_ABMH.pdf"],["Kanton Solothurn, Schulferienpläne der Volksschulen 2027/28","https://so.ch/fileadmin/internet/dbk/dbk-vsa/Schulsystem/Ferienplan/Schulferienplan_2027_2028.pdf"],["Kanton Solothurn, Amt für Wirtschaft und Arbeit – Feiertage","https://so.ch/verwaltung/volkswirtschaftsdepartement/amt-fuer-wirtschaft-und-arbeit/arbeitsbedingungen/arbeitsinspektorat/feiertage/"],["Bundesamt für Justiz, Kantonale Feiertage","https://www.bj.admin.ch/dam/bj/de/data/publiservice/service/zivilprozessrecht/kant-feiertage.pdf"]]},
+ {k:"ag",de:"Aargau",fr:"Argovie",
+  fer:[["01-01","01-03","Weihnachtsferien 2026/27","Vacances de Noël 2026/27"],["04-10","04-25","Frühlingsferien","Vacances de printemps"],["07-17","08-08","Sommerferien (kantonal einheitliche drei Wochen)","Vacances d’été (trois semaines fixées par le canton)"],["10-02","10-17","Herbstferien","Vacances d’automne"],["12-24","12-31","Weihnachtsferien 2027/28 (bis 09.01.2028)","Vacances de Noël 2027/28 (jusqu’au 09.01.2028)"]],
+  hol:[h("ny"),h("bt",1),h("kf"),h("om",1),h("af"),h("pm",1),h("fl",1),h("bf"),h("mh",1),h("ah",1),h("me",1),h("wn"),h("st",1)],
+  nde:"Der Kanton legt je zwei Wochen Frühlings-, Herbst- und Weihnachtsferien sowie drei Wochen Sommerferien einheitlich fest; Sportferien und weitere Ferienwochen bestimmen die Gemeinden. Die Feiertage sind nach Bezirken und Gemeinden unterschiedlich festgelegt; der 1. Mai ist im Aargau kein gesetzlicher Feiertag.",
+  nfr:"Le canton fixe deux semaines de vacances de printemps, d’automne et de Noël ainsi que trois semaines en été ; les vacances de sport et les autres semaines sont fixées par les communes. Les jours fériés varient selon les districts et les communes ; le 1er mai n’est pas un jour férié légal en Argovie.",
+  src:[SRC_EDK,["Kanton Aargau, Amt für Wirtschaft und Arbeit – Feiertage","https://www.ag.ch/media/kanton-aargau/dvi/dokumente/awa/awa/arbeitnehmerschutz-im-betrieb/feiertage.pdf"]]},
+ {k:"ju",de:"Jura",fr:"Jura",
+  fer:[["01-01","01-10","Weihnachtsferien 2026/27 (ab 24.12.2026)","Vacances de Noël 2026/27 (dès le 24.12.2026)"],["02-13","02-21","Winterferien (Sportwoche)","Semaine de relâche hivernale"],["03-26","04-11","Osterferien","Vacances de Pâques"],["05-06","05-09","Auffahrt (schulfrei 6. und 7. Mai)","Ascension (congé les 6 et 7 mai)"],["07-03","08-15","Sommerferien","Vacances d’été"],["10-02","10-17","Herbstferien","Vacances d’automne"],["12-24","12-31","Weihnachtsferien 2027/28 (bis 07.01.2028)","Vacances de Noël 2027/28 (jusqu’au 07.01.2028)"]],
+  hol:[h("ny"),h("bt"),h("kf"),h("om"),h("ma"),h("af"),h("pm"),h("fl"),["06-23","Jahrestag des Plebiszits","Commémoration du plébiscite"],h("bf"),h("mh"),h("ah"),h("wn")],
+  nde:"Der Kanton gibt die Ferien von Montag bis Freitag an; hier mit den angrenzenden Wochenenden.",
+  nfr:"Le canton indique les vacances du lundi au vendredi ; ici avec les week-ends attenants.",
+  src:[["République et Canton du Jura, vacances scolaires","https://www.jura.ch/fr/Autorites/Administration/DFNS/Formation-postobligatoire-SFP/CEJEF/Vacances-scolaires/Vacances-scolaires.html"],SRC_EDK,["Office fédéral de la justice, jours fériés cantonaux","https://www.bj.admin.ch/dam/bj/de/data/publiservice/service/zivilprozessrecht/kant-feiertage.pdf"]]}
+];
+const MDE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const MFR=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const WD=["di","lu","ma","me","je","ve","sa"];
+const WDFR=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+const WDDE=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const key=(m,d)=>String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+const fmt=k=>{const[m,d]=k.split("-");return d+"."+m+".";};
+const wdOf=k=>{const[m,d]=k.split("-").map(Number);return WD[new Date(2027,m-1,d).getDay()];};
+const short=s=>s.split(" (")[0];
+const GROUPS={all:R.map(r=>r.k),ch:["bas","bl","so","ag","ju"],de:["bw","rp"],fr:["als"]};
+
+// Zustand
+let st={on:R.map(r=>r.k),vac:true,hol:true,plan:false,sel:"02-15"};
+try{const v=JSON.parse(localStorage.getItem("ferien-2027")||"null");if(v&&Array.isArray(v.on))st={...st,...v};}catch(e){}
+const save=()=>{try{localStorage.setItem("ferien-2027",JSON.stringify(st));}catch(e){}};
+const active=()=>R.filter(r=>st.on.includes(r.k));
+const status=(r,k)=>({f:r.fer.find(x=>k>=x[0]&&k<=x[1]),h:r.hol.find(x=>x[0]===k)});
+
+// Chips
+const chips=document.getElementById("chips");
+R.forEach(r=>{
+  const b=document.createElement("button");b.type="button";b.className="chip";b.dataset.k=r.k;b.style.setProperty("--c",`var(--${r.k})`);
+  b.innerHTML=`<i></i>${short(r.fr)}${short(r.fr)!==short(r.de)?` <span class="fr">/ ${short(r.de)}</span>`:""}`;
+  b.addEventListener("click",()=>{st.on=st.on.includes(r.k)?st.on.filter(x=>x!==r.k):R.map(x=>x.k).filter(x=>x===r.k||st.on.includes(x));render();});
+  chips.appendChild(b);
+});
+document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>{st.on=[...GROUPS[b.dataset.preset]];render();}));
+const tog=(id,p)=>document.getElementById(id).addEventListener("click",()=>{st[p]=!st[p];render();});
+tog("tVac","vac");tog("tHol","hol");tog("tPlan","plan");
+
+// Kalender aufbauen (einmal), dann nur aktualisieren
+const cal=document.getElementById("cal");const cells={};const mcnt={};
+for(let m=1;m<=12;m++){
+  const col=document.createElement("div");col.className="month";
+  col.innerHTML=`<div class="mh"><span>${MFR[m-1][0].toUpperCase()+MFR[m-1].slice(1)} <em>/ ${MDE[m-1]}</em></span><span class="cnt" hidden></span></div>`;
+  mcnt[m]=col.querySelector(".cnt");
+  const days=new Date(2027,m,0).getDate();
+  for(let d=1;d<=31;d++){
+    if(d>days){const e=document.createElement("div");e.className="day empty";col.appendChild(e);continue;}
+    const k=key(m,d),dow=new Date(2027,m-1,d).getDay();
+    const b=document.createElement("button");b.type="button";b.id="d"+k;b.dataset.k=k;b.dataset.dow=dow;
+    b.innerHTML=`<span class="dn">${d}</span><span class="mk"></span><span class="wd">${WD[dow]}</span><span class="sq"></span><span class="lanes"></span>`;
+    b.addEventListener("click",()=>{st.sel=k;render();});
+    col.appendChild(b);cells[k]=b;
+  }
+  cal.appendChild(col);
+}
+
+function render(){
+  save();
+  const A=active();
+  document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",st.on.includes(c.dataset.k)));
+  document.getElementById("tVac").setAttribute("aria-pressed",st.vac);
+  document.getElementById("tHol").setAttribute("aria-pressed",st.hol);
+  document.getElementById("tPlan").setAttribute("aria-pressed",st.plan);
+  cal.classList.toggle("plan",st.plan);
+  let freeTotal=0;const perM={};
+  for(const k in cells){
+    const b=cells[k],dow=+b.dataset.dow,m=+k.slice(0,2);
+    let sq="",lanes="",anyH=false,busy=false,tips=[];
+    A.forEach(r=>{
+      const s=status(r,k);
+      if(s.h){if(!s.h[3])busy=true;anyH=true;if(st.hol)sq+=`<b class="${s.h[3]?"reg":""}" style="--c:var(--${r.k})"></b>`;tips.push(`${short(r.fr)} : ${s.h[2]} / ${s.h[1]}`);}
+      if(s.f){busy=true;tips.push(`${short(r.fr)} : ${s.f[3]} / ${s.f[2]}`);}
+      if(st.vac)lanes+=`<s class="${s.f?"":"off"}" style="--c:var(--${r.k})"></s>`;
+    });
+    const free=A.length>0&&dow!==0&&dow!==6&&!busy;
+    if(free){freeTotal++;perM[m]=(perM[m]||0)+1;}
+    b.className="day"+((dow===0||dow===6)?" we":"")+(anyH&&st.hol?" hol":"")+(free?" free":"")+(k===st.sel?" sel":"")+(aptDays.has(k)?" apt":"");
+    b.querySelector(".sq").innerHTML=sq;b.querySelector(".lanes").innerHTML=lanes;
+    const [mm,dd]=k.split("-");
+    b.title=`${+dd}.${+mm}.2027`+(tips.length?"\n"+tips.join("\n"):"");
+    b.setAttribute("aria-label",b.title.replace(/\n/g,"; "));
+  }
+  for(let m=1;m<=12;m++){mcnt[m].hidden=!st.plan;mcnt[m].textContent=perM[m]||0;mcnt[m].title=`${perM[m]||0} jours ouvrables libres / freie Werktage`;}
+  const pi=document.getElementById("planinfo");pi.hidden=!st.plan;
+  pi.textContent=A.length?`${freeTotal} jours ouvrables libres pour la sélection / ${freeTotal} freie Werktage für die Auswahl`:"Aucune collectivité sélectionnée / Kein Gebiet ausgewählt";
+  renderDetail(A);
+  document.querySelectorAll(".reg-card").forEach(c=>c.hidden=!st.on.includes(c.dataset.k));
+}
+
+function renderDetail(A){
+  const k=st.sel,[m,d]=k.split("-").map(Number),dow=new Date(2027,m-1,d).getDay();
+  const items=A.map(r=>{
+    const s=status(r,k);let t="";
+    if(s.h)t+=`<span class="tag h">${s.h[3]?"Férié partiel":"Férié"}</span>${s.h[2]} <span class="fr">/ ${s.h[1]}</span><br>`;
+    if(s.f)t+=`<span class="tag v">${s.f[0]===s.f[1]?"Congé":"Vacances"}</span>${s.f[3]} <span class="fr">/ ${s.f[2]}</span>`;
+    if(!t)t=(dow===0||dow===6)?`Week-end <span class="fr">/ Wochenende</span>`:`Jour ouvrable <span class="fr">/ Werktag</span>`;
+    return `<div class="ditem${!s.h&&!s.f?" free":""}" style="--c:var(--${r.k})"><i></i><div><strong>${short(r.fr)}</strong> – ${t}</div></div>`;
+  }).join("");
+  document.getElementById("detail").innerHTML=`<h3>${WDFR[dow]} ${d} ${MFR[m-1]} 2027<small>${WDDE[dow]}, ${d}. ${MDE[m-1]} 2027</small></h3><div class="dlist">${items||'<span class="fr">Aucune collectivité sélectionnée / Kein Gebiet ausgewählt</span>'}</div>`;
+}
+
+// Liste
+const list=document.getElementById("list");
+R.forEach(r=>{
+  const ferRows=r.fer.map(f=>`<tr><td>${f[3]}<span class="fr">${f[2]}</span></td><td><a href="#d${f[0]}" class="jump" data-k="${f[0]}">${wdOf(f[0])} ${fmt(f[0])} – ${wdOf(f[1])} ${fmt(f[1])}2027</a></td></tr>`).join("");
+  const part=r.hol.some(x=>x[3]);
+  const holDe=r.hol.map(x=>`${fmt(x[0])} ${x[1]}${x[3]?"*":""}`).join(" · ");
+  const holFr=r.hol.map(x=>`${fmt(x[0])} ${x[2]}${x[3]?"*":""}`).join(" · ");
+  const src=r.src.map(s=>`<li><a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a></li>`).join("");
+  list.insertAdjacentHTML("beforeend",`<section class="reg-card" data-k="${r.k}" style="--c:var(--${r.k})">
+    <h3>${r.fr} <span>/ ${r.de}</span></h3>
+    <table><tbody>${ferRows}</tbody></table>
+    <div class="small"><strong>Jours fériés :</strong> ${holFr}${part?" (* dans une partie des communes seulement ou demi-journée)":""}</div>
+    <div class="small fr"><strong>Feiertage:</strong> ${holDe}${part?" (* nur in einem Teil der Gemeinden bzw. halbtags)":""}</div>
+    <div class="small">${r.nfr}<br><span class="fr">${r.nde}</span></div>
+    <div class="src"><strong>Sources / Quellen :</strong><ul style="margin:4px 0 0;padding-left:18px">${src}</ul></div>
+  </section>`);
+});
+list.addEventListener("click",e=>{const a=e.target.closest(".jump");if(!a)return;e.preventDefault();st.sel=a.dataset.k;render();
+  const c=cells[a.dataset.k];c.scrollIntoView({block:"center",inline:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});c.focus({preventScroll:true});});
+list.querySelectorAll(".jump").forEach(a=>a.style.color="var(--head)");
+
+// ---- Termine (im Browser gespeichert) ----
+const APT_KEY="ferien-2027-termine";
+let apts=[],aptDays=new Set(),stored=true;
+try{const v=JSON.parse(localStorage.getItem(APT_KEY)||"[]");if(Array.isArray(v))apts=v.filter(a=>a&&a.start&&Array.isArray(a.regions));}catch(e){stored=false;}
+const saveApts=()=>{try{localStorage.setItem(APT_KEY,JSON.stringify(apts));}catch(e){stored=false;}};
+const aRegs=document.getElementById("aRegs");
+R.forEach(r=>aRegs.insertAdjacentHTML("beforeend",`<label><input type="checkbox" id="ar-${r.k}" value="${r.k}" checked> ${short(r.fr)}</label>`));
+const iso2k=v=>v?v.slice(5):"";
+const kDate=k=>{const[m,d]=k.split("-").map(Number);return new Date(2027,m-1,d);};
+const daysBetween=(a,b)=>{const out=[];let d=kDate(a);const e=kDate(b);while(d<=e){out.push(key(d.getMonth()+1,d.getDate()));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);}return out;};
+const fmtK=k=>{const[m,d]=k.split("-").map(Number);const w=new Date(2027,m-1,d).getDay();return `${WD[w]} ${String(d).padStart(2,"0")}.${String(m).padStart(2,"0")}.2027`;};
+function check(a){
+  const regs=R.filter(r=>a.regions.includes(r.k));const hard=[],soft=[];
+  daysBetween(a.start,a.end||a.start).forEach(k=>{
+    const dow=kDate(k).getDay();
+    if(dow===0||dow===6)soft.push({k,txt:`Week-end <span class="fr">/ Wochenende</span>`});
+    regs.forEach(r=>{const s=status(r,k);
+      if(s.h)(s.h[3]?soft:hard).push({k,r,txt:`${s.h[3]?"Férié partiel":"Férié"} : ${s.h[2]} <span class="fr">/ ${s.h[1]}</span>`});
+      if(s.f)hard.push({k,r,txt:`${s.f[0]===s.f[1]?"Congé scolaire":"Vacances"} : ${s.f[3]} <span class="fr">/ ${s.f[2]}</span>`});});
+  });
+  return {hard,soft,state:hard.length?"bad":soft.length?"warn":"ok"};
+}
+const BADGE={ok:"Aucun conflit / Kein Konflikt",warn:"À vérifier / Prüfen",bad:"Conflit / Konflikt"};
+function issuesHtml(c){return [...c.hard,...c.soft].map(i=>`<li>${fmtK(i.k)}${i.r?` – <strong>${short(i.r.fr)}</strong>`:""} : ${i.txt}</li>`).join("");}
+function formApt(){let a=iso2k(document.getElementById("aStart").value),b=iso2k(document.getElementById("aEnd").value);
+  if(b&&b<a)[a,b]=[b,a];return {start:a,end:b&&b!==a?b:"",regions:R.map(r=>r.k).filter(k=>document.getElementById("ar-"+k).checked)};}
+function preview(){const a=formApt(),el=document.getElementById("aPreview");
+  if(!a.start||!document.getElementById("aStart").value.startsWith("2027")){el.textContent="Choisir une date en 2027 / Datum in 2027 wählen";return;}
+  if(!a.regions.length){el.textContent="Aucune collectivité cochée / Kein Gebiet gewählt";return;}
+  const c=check(a);el.innerHTML=`Aperçu / Vorschau : <strong style="color:${c.state==="ok"?"var(--okfg)":c.state==="warn"?"var(--muted)":"var(--flag)"}">${BADGE[c.state]}</strong>${c.hard.length+c.soft.length?` (${c.hard.length+c.soft.length})`:""}`;}
+document.getElementById("aptForm").addEventListener("input",preview);
+function renderApts(){
+  aptDays=new Set();apts.forEach(a=>daysBetween(a.start,a.end||a.start).forEach(k=>aptDays.add(k)));
+  const L=document.getElementById("aList");
+  if(!apts.length){L.innerHTML=`<p class="empty-apt">Aucun rendez-vous enregistré. Saisissez une date ci-dessus ; chaque rendez-vous est vérifié contre les vacances et jours fériés des collectivités cochées.<br><span class="fr">Noch keine Termine erfasst. Datum oben eingeben; jeder Termin wird mit den Ferien und Feiertagen der angekreuzten Gebiete abgeglichen.</span></p>`;}
+  else L.innerHTML=[...apts].sort((x,y)=>x.start.localeCompare(y.start)).map(a=>{const c=check(a);
+    const when=a.end?`${fmtK(a.start)} – ${fmtK(a.end)}`:fmtK(a.start);
+    const regs=a.regions.length===R.length?"Toutes les collectivités / alle Gebiete":R.filter(r=>a.regions.includes(r.k)).map(r=>short(r.fr)).join(", ");
+    return `<div class="apt-item ${c.state}"><span class="badge">${BADGE[c.state]}</span><div style="min-width:0"><h4><button type="button" data-go="${a.start}">${when}</button></h4><div class="meta">${regs}</div>${c.state!=="ok"?`<ul>${issuesHtml(c)}</ul>`:""}</div><button class="del" type="button" data-del="${a.id}">Supprimer / Löschen</button></div>`;}).join("");
+  note(stored?"Les rendez-vous sont enregistrés uniquement dans ce navigateur. / Termine werden nur in diesem Browser gespeichert.":"Les rendez-vous ne sont conservés que pendant cette visite. / Termine bleiben nur während dieses Besuchs erhalten.");
+  render();
+}
+document.getElementById("aList").addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]");if(g){st.sel=g.dataset.go;render();cells[g.dataset.go].scrollIntoView({block:"center",inline:"center"});return;}
+  const d=e.target.closest("[data-del]");if(!d)return;
+  if(d.dataset.armed!=="1"){d.dataset.armed="1";d.textContent="Confirmer / Bestätigen";setTimeout(()=>{if(d.isConnected){d.dataset.armed="";d.textContent="Supprimer / Löschen";}},4000);return;}
+  apts=apts.filter(a=>a.id!==d.dataset.del);saveApts();renderApts();
+});
+const note=t=>document.getElementById("aNotice").textContent=t;
+document.getElementById("aptForm").addEventListener("submit",e=>{
+  e.preventDefault();const a=formApt();
+  if(!a.start||!a.regions.length){preview();return;}
+  a.created=new Date().toISOString();a.id="t"+Date.now();
+  apts.push(a);saveApts();renderApts();
+});
+renderApts();preview();
+</script>
+
+</body>
+</html>
