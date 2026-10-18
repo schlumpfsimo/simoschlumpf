@@ -1090,7 +1090,7 @@ function makeRig(palette, opts = {}){
   if (opts.moustache && rig.B.Head && rig.B.HeadTop_End){ const H = rig.B.Head, k = 1 / WS(H);
     const up = rig.B.HeadTop_End.position.clone().normalize();
     const face = new THREE.Vector3(0, 0, 1).applyQuaternion(H.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
-    const mo = new THREE.Mesh(new THREE.BoxGeometry(.072 * k, .018 * k, .026 * k), M('#2e221c'));
+    const mo = new THREE.Mesh(new THREE.BoxGeometry(.078 * k, .02 * k, .026 * k), M('#2e221c'));
     mo.position.copy(up).multiplyScalar(.088 * k).addScaledVector(face, .112 * k); mo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face); H.add(mo); }
   if (opts.jacket){
     // work jacket details hung on the chest, neck, hips and wrists, placed along each bone's own up/face/side axes
@@ -1155,13 +1155,13 @@ function loadRig(){ new GLTFLoader().load('assets/human.glb', gl => {
     let r = 0, m = 0; for (let i = 0; i < P.count; i++) if (headW(i) > .5 && isSkin(i) && P.getY(i) > c.y){ r += Math.hypot(P.getX(i) - c.x, P.getY(i) - c.y, P.getZ(i) - c.z); m++; } r /= m;
     const col = new Float32Array(P.count * 3).fill(1);
     for (let i = 0; i < P.count; i++){
-      if (headW(i) > .3 && isHair(i)){ const d = new THREE.Vector3(P.getX(i) - c.x, P.getY(i) - c.y, P.getZ(i) - c.z); const L = d.length() || 1; const k = Math.min(1, (r * 1.03) / L); P.setXYZ(i, c.x + d.x * k, c.y + d.y * k, c.z + d.z * k); }
-      if (headW(i) > .5 && isSkin(i) && P.getY(i) < c.y - r * .15 && P.getY(i) > cy0 + (cy1 - cy0) * .08){ col[i * 3] = .86; col[i * 3 + 1] = .82; col[i * 3 + 2] = .8; }   // stubble on the jaw
+      // the hair keeps its hairline but hugs the skull: a buzz cut, not a cap
+      if (headW(i) > .3 && isHair(i)){ const d = new THREE.Vector3(P.getX(i) - c.x, P.getY(i) - c.y, P.getZ(i) - c.z); const L = d.length() || 1; const k = Math.max(.9, Math.min(1, (r * 1.045) / L)); P.setXYZ(i, c.x + d.x * k, c.y + d.y * k, c.z + d.z * k); }
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3)); P.needsUpdate = true; g.computeVertexNormals(); smoothNormals(g);
   }
   // the man
-  Object.assign(RIG, makeRig(['#c99068', '#1f1a18', '#a37c62', '#2f4a73', '#33363c'], { moustache: true, jacket: '#2f4a73', geo: GEO_PLAYER }));
+  Object.assign(RIG, makeRig(['#c99068', '#1f1a18', '#9c765a', '#2f4a73', '#33363c'], { moustache: true, jacket: '#2f4a73', geo: GEO_PLAYER }));
   player.children.slice().forEach(ch => player.remove(ch));
   player.add(RIG.root); blob(player, 1.1, 1.1);
   rigHead(st.mode !== 'sit');
