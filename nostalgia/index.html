@@ -50,8 +50,9 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
-const D = window.BASEL;
+const D = window.BASEL, DBG = new URLSearchParams(location.search);
 const PI = Math.PI;
 const touch = matchMedia('(pointer:coarse)').matches;
 
@@ -1004,6 +1005,68 @@ function pose(p, mode, ph = 0){
 }
 const player = makePerson({ cloth: TEX.jacket, skinTex: TEX.skin, jacket: '#4b6a93', pocket: '#44618a', collar: '#405b82', trousers: '#33363c', shoes: '#3e2c20', skin: '#c99068', hair: '#b2805f', moustache: '#4a3527' });
 scene.add(player, window.__BIKE);
+// ------------------------------------------------------------------ the man: a CC0 low-poly human by Quaternius, restyled
+// (assets/human.glb; palette-textured, so his clothes are painted here)
+const RIG = { ready: false, mixer: null, acts: {}, B: {}, head: null, mesh: null, cur: null };
+function paletteTex(cols){
+  const c = document.createElement('canvas'); c.width = 8; c.height = 32; const g = c.getContext('2d');
+  const rows = [[0, 6], [6, 11], [11, 17], [17, 23], [23, 32]];
+  cols.forEach((col, i) => { g.fillStyle = col; g.fillRect(0, rows[i][0], 8, rows[i][1] - rows[i][0]); });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = t.minFilter = THREE.NearestFilter; return t;
+}
+function smoothNormals(geo){
+  const p = geo.attributes.position, n = geo.attributes.normal, acc = new Map(), key = i => p.getX(i).toFixed(2) + ',' + p.getY(i).toFixed(2) + ',' + p.getZ(i).toFixed(2);
+  for (let i = 0; i < p.count; i++){ const k = key(i), a = acc.get(k) || [0, 0, 0]; a[0] += n.getX(i); a[1] += n.getY(i); a[2] += n.getZ(i); acc.set(k, a); }
+  for (let i = 0; i < p.count; i++){ const a = acc.get(key(i)), l = Math.hypot(...a) || 1; n.setXYZ(i, a[0] / l, a[1] / l, a[2] / l); }
+  n.needsUpdate = true;
+}
+function loadRig(){ new GLTFLoader().load('assets/human.glb', gl => {
+  const m = gl.scene; m.scale.setScalar(1.8 / 526); player.add(m); m.updateMatrixWorld(true);
+  let mesh; m.traverse(o => { if (o.isSkinnedMesh) mesh = o; });
+  mesh.material = new THREE.MeshLambertMaterial({ map: paletteTex(['#c99068', '#1f1a18', '#a97a58', '#4b6a93', '#33363c']) });
+  mesh.frustumCulled = false; mesh.castShadow = true; smoothNormals(mesh.geometry);
+  const bones = mesh.skeleton.bones; bones.forEach(b => RIG.B[b.name] = b);
+  // long sleeves: arm vertices take the shirt colour, hands stay skin
+  const arm = new Set(bones.map((b, i) => (/Arm$|ForeArm$/.test(b.name) ? i : -1)).filter(i => i >= 0));
+  const si = mesh.geometry.attributes.skinIndex, sw = mesh.geometry.attributes.skinWeight, uv = mesh.geometry.attributes.uv;
+  for (let i = 0; i < uv.count; i++){ let w = 0; for (let k = 0; k < 4; k++) if (arm.has(si.getComponent(i, k))) w += sw.getComponent(i, k); if (w > .5) uv.setY(i, .375); }
+  uv.needsUpdate = true;
+  // shoes on the foot bones, a moustache under the nose (model units are centimetres)
+  const M = c => new THREE.MeshLambertMaterial({ color: c });
+  const WS = b => b.getWorldScale(new THREE.Vector3()).x;   // metres per bone unit
+  for (const side of ['Left', 'Right']){ const f = RIG.B[side + 'Foot'], t = RIG.B[side + 'ToeBase']; if (!f || !t) continue; const k = 1 / WS(f);
+    // the shoe runs from the ankle to the toe, along the toe bone's direction in the foot's own space
+    const dir = t.position.clone(), len = dir.length(); dir.normalize();
+    const sh = new THREE.Mesh(new THREE.BoxGeometry(.095 * k, .075 * k, len * 1.55), M('#3e2c20'));
+    sh.position.copy(dir).multiplyScalar(len * .55); sh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir); sh.castShadow = true; f.add(sh); RIG['shoe' + side] = sh; }
+  if (RIG.B.Head && RIG.B.HeadTop_End){ const H = RIG.B.Head, k = 1 / WS(H);
+    const up = RIG.B.HeadTop_End.position.clone().normalize();
+    const face = new THREE.Vector3(0, 0, 1).applyQuaternion(H.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+    const mo = new THREE.Mesh(new THREE.BoxGeometry(.065 * k, .02 * k, .025 * k), M('#4a3527'));
+    mo.position.copy(up).multiplyScalar(.1 * k).addScaledVector(face, .1 * k); mo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face); H.add(mo); RIG.mo = mo; }
+  RIG.mixer = new THREE.AnimationMixer(m);
+  for (const [k, re] of [['idle', /Idle/], ['walk', /Walk/], ['run', /Run/]]){ const c = gl.animations.find(a => re.test(a.name)); if (c) RIG.acts[k] = RIG.mixer.clipAction(c); }
+  RIG.mesh = mesh; RIG.root = m; RIG.head = RIG.B.Head; RIG.ready = true;
+  player.children.slice().forEach(ch => { if (ch !== m) player.remove(ch); });
+  rigHead(st.mode !== 'sit');
+}, undefined, e => console.warn('rig', e)); }
+function rigHead(show){ if (RIG.head) RIG.head.scale.setScalar(show ? 1 : .001); }
+function rigPose(mode, dt, speed){
+  if (!RIG.ready) return;
+  if (mode === 'sit'){
+    RIG.mixer.stopAllAction(); RIG.cur = null; RIG.mesh.skeleton.pose();
+    const B = RIG.B, q = (DBG.get('sit') || '').split(',').map(Number), S = { ul: q[0] || 1.5, lg: q[1] || 1.3, arm: q[2] || 1.15, sp: q[3] || .12, fa: q[4] || .75 };
+    RIG.root.position.y = -.55;
+    for (const s of ['Left', 'Right']){ B[s + 'UpLeg'].rotation.x += S.ul; B[s + 'Leg'].rotation.x += S.lg; B[s + 'Arm'].rotation.x += S.arm; B[s + 'ForeArm'].rotation.z += (s === 'Left' ? 1 : -1) * S.fa; }
+    B.Spine.rotation.x += S.sp;
+    return;
+  }
+  RIG.root.position.y = 0;
+  const want = mode === 'run' ? 'run' : speed > .15 ? 'walk' : 'idle', act = RIG.acts[want] || RIG.acts.idle;
+  if (RIG.cur !== act){ if (RIG.cur) RIG.cur.fadeOut(.25); act.reset().fadeIn(.25).play(); RIG.cur = act; }
+  if (want === 'walk') act.timeScale = clamp(speed / 1.7, .6, 1.4);
+  RIG.mixer.update(dt);
+}
 
 // a few others on the Rheinbord and the Pfalz, Colville-still
 const extras = [];
@@ -1182,9 +1245,10 @@ ui.mute.addEventListener('pointerdown', e => { e.stopPropagation(); toggleMute()
 
 // ------------------------------------------------------------------ player state
 const st = { mode: 'sit', yaw: 0, ph: 0, speed: 0, sitT: 0 };
+loadRig();
 {
   const S0 = window.__START, p = bankPoint(S0.p, .75); p[0] += S0.along[0] * 1.2; p[1] += S0.along[1] * 1.2;
-  player.position.set(p[0], northH(.75), p[1]); player.userData.head.visible = false;
+  player.position.set(p[0], northH(.75), p[1]); player.userData.head.visible = false; rigHead(false);
   st.yaw = Math.atan2(MU.cx - p[0], MU.cz - p[1]);
   camYaw = st.yaw;
 }
@@ -1202,9 +1266,9 @@ function walkable(x, z){
 const canSit = () => { const d = waterDist(player.position.x, player.position.z); return d > .5 && d < 13.4; };
 function toggleSit(){
   if (!started) return;
-  if (st.mode === 'sit'){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; }
+  if (st.mode === 'sit'){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; rigHead(true); }
   else if (canSit()){
-    st.mode = 'sit'; st.sitT = 0; player.userData.head.visible = false;
+    st.mode = 'sit'; st.sitT = 0; player.userData.head.visible = false; rigHead(false);
     const [, q] = waterNear(player.position.x, player.position.z);
     const toM = Math.atan2(MU.cx - player.position.x, MU.cz - player.position.z), toW = Math.atan2(q[0] - player.position.x, q[1] - player.position.z);
     let d = toM - toW; d = Math.atan2(Math.sin(d), Math.cos(d)); st.yaw = toW + clamp(d, -.9, .9);
@@ -1322,7 +1386,7 @@ function update(dt){
   if (keys.KeyA || keys.ArrowLeft) ix -= 1; if (keys.KeyD || keys.ArrowRight) ix += 1;
   ix += joy.x; iz -= joy.y;
   const il = Math.hypot(ix, iz);
-  if (started && st.mode === 'sit' && il > .2){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; }
+  if (started && st.mode === 'sit' && il > .2){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; rigHead(true); }
   const run = keys.ShiftLeft || keys.ShiftRight || il > .95 && joy.id !== null;
   if (st.mode !== 'sit' && il > .1){
     const fx = Math.sin(camYaw), fz = Math.cos(camYaw), k = Math.min(il, 1) / il;
@@ -1341,7 +1405,7 @@ function update(dt){
   } else if (st.mode !== 'sit'){ st.speed = 0; st.ph = 0; st.mode = 'walk'; }
   player.position.y = lerp(player.position.y, northH(waterDist(player.position.x, player.position.z)), Math.min(1, dt * 10));
   player.rotation.y = st.yaw;
-  pose(player, st.mode === 'sit' ? 'sit' : st.mode, st.ph);
+  if (RIG.ready) rigPose(st.mode, dt, st.speed); else pose(player, st.mode === 'sit' ? 'sit' : st.mode, st.ph);
   const z = zoneAt(player.position.x); if (started && z !== zoneNow){ zoneNow = z; showZone(z); }
 
   // --- camera
@@ -1412,7 +1476,6 @@ function update(dt){
   // --- sound: lapping louder near the water
   if (AC && river){ const d = waterDist(player.position.x, player.position.z); river.userData.lap.gain.setTargetAtTime(clamp(1 - d / 14, 0, 1) * .05, AC.currentTime, .5); }
 }
-const DBG = new URLSearchParams(location.search);
 let rtI = 0;
 function frame(){
   const dt = Math.min(clock.getDelta(), .1);
@@ -1429,7 +1492,7 @@ function frame(){
   requestAnimationFrame(frame);
 }
 frame();
-window.__ready = true; window.__player = player; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
+window.__ready = true; window.__RIG = RIG; window.__player = player; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
 </script>
 </body>
 </html>
