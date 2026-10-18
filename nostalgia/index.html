@@ -156,16 +156,27 @@ function grain(g, s, amt, seed = 3){
   for (let i = 0; i < d.data.length; i += 4){ const n = (r() - .5) * amt; d.data[i] += n; d.data[i + 1] += n; d.data[i + 2] += n; }
   g.putImageData(d, 0, 0);
 }
+function facadeTile(g, s, o){
+  g.fillStyle = '#f2ede4'; g.fillRect(0, 0, s, s); grain(g, s, 14, 29);
+  const win = (x, w) => {
+    const y = 30, h = 66;
+    if (o.shutters){ g.fillStyle = o.shutters; g.fillRect(x - 13, y, 12, h); g.fillRect(x + w + 1, y, 12, h);
+      g.fillStyle = 'rgba(0,0,0,.18)'; for (let k = y + 4; k < y + h; k += 5){ g.fillRect(x - 13, k, 12, 1); g.fillRect(x + w + 1, k, 12, 1); } }
+    g.fillStyle = o.surround; g.fillRect(x - 4, y - 5, w + 8, h + 8);
+    g.fillStyle = '#f7f4ee'; g.fillRect(x, y, w, h);
+    g.fillStyle = '#39404a'; g.fillRect(x + 3, y + 3, w - 6, h - 6);
+    const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, 'rgba(190,205,215,.55)'); gr.addColorStop(.5, 'rgba(120,135,150,.15)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x + 3, y + 3, w - 6, h - 6);
+    g.fillStyle = '#f7f4ee'; g.fillRect(x + w / 2 - 1.5, y, 3, h); g.fillRect(x, y + h * .38, w, 3);
+    g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x - 5, y + h + 3, w + 10, 3);
+  };
+  if (o.pair){ win(30, 26); win(72, 26); } else win(46, 36);
+  if (o.course){ g.fillStyle = 'rgba(150,110,95,.55)'; g.fillRect(0, 120, s, 5); }
+}
 const TEX = {
-  facade: canvasTex(64, (g, s) => {
-    g.fillStyle = '#f1ece2'; g.fillRect(0, 0, s, s); grain(g, s, 18);
-    g.fillStyle = '#7e8a74'; g.fillRect(14, 14, 8, 30); g.fillRect(42, 14, 8, 30);         // shutters
-    g.fillStyle = '#e6dfd2'; g.fillRect(21, 12, 22, 34);                                     // frame
-    g.fillStyle = '#3d4247'; g.fillRect(23, 14, 18, 30);                                     // glass
-    g.fillStyle = '#5b636a'; g.fillRect(23, 14, 18, 6);
-    g.fillStyle = '#e6dfd2'; g.fillRect(31, 14, 2, 30); g.fillRect(23, 27, 18, 2);
-    g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(21, 46, 22, 2);
-  }),
+  facade: canvasTex(128, (g, s) => facadeTile(g, s, { shutters: '#6f8466', surround: '#e9e2d6' })),
+  facade2: canvasTex(128, (g, s) => facadeTile(g, s, { surround: '#c98f7e', course: true })),
+  facade3: canvasTex(128, (g, s) => facadeTile(g, s, { surround: '#d9d2c4', pair: true, shutters: '#8a8f86' })),
   plaster: canvasTex(64, (g, s) => { g.fillStyle = '#efe9de'; g.fillRect(0, 0, s, s); grain(g, s, 22, 5); }),
   roof: canvasTex(64, (g, s) => {
     g.fillStyle = '#e9ddd2'; g.fillRect(0, 0, s, s); grain(g, s, 26, 7);
@@ -206,6 +217,16 @@ const TEX = {
     for (let i = 0; i < 40; i++){ const r = rng(i * 7 + 1); g.fillRect(r() * s, r() * s, 6, 1); }
   }),
   wood: canvasTex(32, (g, s) => { g.fillStyle = '#e8e2d8'; g.fillRect(0, 0, s, s); g.fillStyle = 'rgba(0,0,0,.25)'; for (let y = 0; y < s; y += 6) g.fillRect(0, y, s, 1); grain(g, s, 20, 23); }),
+  wavelets: canvasTex(128, (g, s) => {
+    // Colville's water: rows of small crescents, light on top, shadow beneath
+    g.fillStyle = '#808080'; g.fillRect(0, 0, s, s);
+    const r = rng(41);
+    for (let row = 0; row < 16; row++) for (let i = 0; i < 9; i++){
+      const x = (i + (row % 2) * .5 + (r() - .5) * .3) * s / 8, y = (row + .5) * s / 16, w = 7 + r() * 5;
+      g.strokeStyle = '#d8d8d8'; g.lineWidth = 2; g.beginPath(); g.arc(x, y + 3, w, PI * 1.15, PI * 1.85); g.stroke();
+      g.strokeStyle = '#3a3a3a'; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y + 1, w * .9, PI * .2, PI * .8); g.stroke();
+    }
+  }, { linear: true }),
   ripple: canvasTex(128, (g, s) => {
     const d = g.createImageData(s, s);
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++){
@@ -302,8 +323,33 @@ function boxAt(g, cx, cy, cz, sx, sy, sz, rot, col, tile = 2){
 const ngon = (cx, cz, r, n, rot = 0) => Array.from({ length: n }, (_, i) => [cx + r * Math.cos(rot + i * 2 * PI / n), cz + r * Math.sin(rot + i * 2 * PI / n)]);
 
 // ------------------------------------------------------------------ city
-const FACADES = ['#efe6d2', '#e8dcc4', '#ddc79c', '#e6cbb9', '#d3d7c8', '#f3f0e8', '#d8c3a3', '#e9d6ab', '#c4cbc9', '#dcae96', '#ead9c9', '#cfc2a8'].map(lin);
-const ROOFS = ['#9a5240', '#874a38', '#7a4434', '#a35d43', '#6e4236', '#8f5a48', '#5f5b58'].map(lin);
+// a moulded eave band around the top of a facade
+function cornice(g, pts, y, col){
+  const ccw = signedArea(pts) > 0;
+  for (let i = 0; i < pts.length; i++){
+    const a = pts[i], b = pts[(i + 1) % pts.length], ex = b[0] - a[0], ez = b[1] - a[1], L = Math.hypot(ex, ez); if (L < .3) continue;
+    const n = ccw ? [ez / L, -ex / L] : [-ez / L, ex / L], o = .32;
+    const A = [a[0] + n[0] * o, a[1] + n[1] * o], B = [b[0] + n[0] * o, b[1] + n[1] * o];
+    face(g, [[A[0], y - .5, A[1]], [B[0], y - .5, B[1]], [B[0], y, B[1]], [A[0], y, A[1]]], [[0, 0], [L / 3, 0], [L / 3, .2], [0, .2]], col, [n[0], 0, n[1]]);
+    face(g, [[a[0], y - .5, a[1]], [b[0], y - .5, b[1]], [B[0], y - .5, B[1]], [A[0], y - .5, A[1]]], [[0, 0], [L / 3, 0], [L / 3, .1], [0, .1]], col.map(v => v * .7), [0, -1, 0]);
+  }
+}
+// small gabled dormers along both roof slopes
+function dormers(o, y, rh, rc, r){
+  const ax = [o.c, o.s], bx = [-o.s, o.c], W = o.hv + .35, rot = Math.atan2(o.s, o.c);
+  const P = (u, v) => [o.cx + ax[0] * u + bx[0] * v, o.cz + ax[1] * u + bx[1] * v];
+  for (const sg of [1, -1]) for (let u = -o.hu + 2.2; u < o.hu - 1.8; u += 3.6){
+    if (r() < .35) continue;
+    const vf = sg * o.hv * .62, vb = sg * o.hv * .25, yf = y + rh * (1 - Math.abs(vf) / W), top = yf + 1.5;
+    const c = P(u, (vf + vb) / 2), f = P(u, vf + sg * .02);
+    boxAt(geo('plaster'), c[0], (yf - .3 + top) / 2, c[1], 1.3, top - yf + .3, Math.abs(vf - vb), rot, lin('#efe9dd'), 2);
+    boxAt(geo('stone'), f[0], yf + .65, f[1], .7, .9, .06, rot, lin('#3d434b'), 2);
+    const q = [P(u - .8, vf + sg * .15), P(u + .8, vf + sg * .15), P(u + .8, vb), P(u - .8, vb)];
+    pyramid(geo('roof'), q, top, [c[0], top + .8, c[1]], rc, 2);
+  }
+}
+const FACADES = ['#f3eee4', '#efe6d2', '#e8dcc4', '#ead6a6', '#ecd2c2', '#f6f3ec', '#e2d2b4', '#efdcae', '#d9dccf', '#e6bca6', '#f0e2d2', '#ffffff', '#f6f1e6'].map(lin);
+const ROOFS = ['#7d4c3a', '#6c4334', '#5e3d31', '#8a5440', '#4f3a32', '#764a3c', '#59504b'].map(lin);
 const WHITE = [1, 1, 1];
 
 const NORTH_BLDG = [];
@@ -317,14 +363,18 @@ for (const [t, h0, name, flat, seed] of D.B){
   let lo = 1e9, hi = -1e9, dmin = 1e9;
   for (const [x, z] of pts){ const h = north ? PROM : southH(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); dmin = Math.min(dmin, waterDist(x, z)); }
   const small = t === 1;
-  let hh = h0 > 0 ? h0 : small ? 3.5 + r() * 1.5 : (north ? 12.5 : 11) + Math.floor(r() * 3) * 3.1;
+  let hh = h0 > 0 ? h0 : small ? 3.5 + r() * 1.5 : (north ? 12.5 : 13) + Math.floor(r() * 3) * 3.3;
   if (t === 2) hh = Math.max(hh, 16);
   const y0 = (!north && dmin < 9) ? -2 : lo - 2, y1 = hi + hh;
   const fc = FACADES[Math.floor(r() * FACADES.length)], rc = ROOFS[Math.floor(r() * ROOFS.length)];
-  walls(geo(small || t === 2 ? 'plaster' : 'facade'), pts, y0, y1, t === 2 ? lin('#e9e2d4') : fc, 3.2, 3.3);
+  const fv = ['facade', 'facade2', 'facade3'][Math.floor(r() * 3)];
+  walls(geo(small || t === 2 ? 'plaster' : fv), pts, y0, y1, t === 2 ? lin('#e9e2d4') : fc, 3.2, 3.3);
+  if (!small) cornice(geo('plaster'), pts, y1, fc.map(v => v * .86));
   const o = obb(pts), fill = Math.abs(signedArea(pts)) / (4 * o.hu * o.hv);
   if (!small && fill > 0.72 && o.hv < 16){
-    gable(geo('roof'), geo('plaster'), o, y1, Math.min(o.hv * 1.25, 11), rc, fc);
+    const rh = Math.min(o.hv * 1.3, 11);
+    gable(geo('roof'), geo('plaster'), o, y1, rh, rc, fc);
+    if (o.hu > 4 && o.hv > 3.2) dormers(o, y1, rh, rc, r);
   } else cap(geo('roof'), pts, y1, small ? lin('#77706a') : rc.map(v => v * .8), 3);
   if (name === 'Martinskirche'){
     // the bell tower, at the corner nearest the river
@@ -391,27 +441,44 @@ const MU = { cx: -86.35, cz: 172.11, a: 143.91 * PI / 180, y: 24 };
   }
 }
 
-// ------------------------------------------------------------------ river walls on the Grossbasel side
+// ------------------------------------------------------------------ river banks
+// Grossbasel: pale limestone quay, pink sandstone below the Pfalz, green slopes behind.
+// Kleinbasel: a paved edge where the Rheinbord meets the water.
+const BUSHES = [];
 {
-  const gStone = geo('stone'), col = lin('#d8ccb6'), colTop = lin('#c9bea9');
+  const gStone = geo('stone'), gSand = geo('sand'), col = lin('#e4d8bf'), colTop = lin('#d6cab0'), pink = lin('#e2b6a4');
+  const pfK = (x, z) => smooth(clamp((92 - Math.hypot(x - MU.cx, z - MU.cz)) / 22, 0, 1));
+  const wh = (x, z) => lerp(Math.min(southH(x, z), 4.5), southH(x, z), pfK(x, z));
   for (const [a, b] of SEGS){
     const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
-    if (isNorth(mx, mz) || Math.abs(mx) > 760 || Math.abs(mz) > 760) continue;
+    if (Math.abs(mx) > 760 || Math.abs(mz) > 760) continue;
     const ex = b[0] - a[0], ez = b[1] - a[1], L = Math.hypot(ex, ez); if (L < .1) continue;
     const nx = RIV_CCW ? ez / L : -ez / L, nz = RIV_CCW ? -ex / L : ex / L;   // n points to land
-    // the high wall belongs to the Pfalz; elsewhere a low quay wall with the slope rising behind it
-    const pfK = (x, z) => smooth(clamp((135 - Math.hypot(x - MU.cx, z - MU.cz)) / 40, 0, 1)), pf = pfK(mx, mz) > .5;
-    const wh = (x, z) => lerp(Math.min(southH(x, z), 6.5), southH(x, z), pfK(x, z));
+    if (isNorth(mx, mz)){
+      face(gStone, [[a[0], 1.02, a[1]], [b[0], 1.02, b[1]], [b[0] - nx * 1.8, -1.4, b[1] - nz * 1.8], [a[0] - nx * 1.8, -1.4, a[1] - nz * 1.8]],
+        [[0, 0], [L / 2, 0], [L / 2, 1], [0, 1]], lin('#b9b2a4'), [-nx, 1, -nz]);
+      continue;
+    }
+    const pf = pfK(mx, mz) > .5, g = gStone, c = pf ? pink : col;
     const ha = wh(a[0], a[1]), hb = wh(b[0], b[1]);
-    face(gStone, [[a[0], -3, a[1]], [b[0], -3, b[1]], [b[0], hb, b[1]], [a[0], ha, a[1]]], [[0, -1], [L / 3, -1], [L / 3, hb / 3], [0, ha / 3]], col, [-nx, 0, -nz]);
+    face(g, [[a[0], -3, a[1]], [b[0], -3, b[1]], [b[0], hb, b[1]], [a[0], ha, a[1]]], [[0, -1], [L / 3, -1], [L / 3, hb / 3], [0, ha / 3]], c, [-nx, 0, -nz]);
     const ia = [a[0] + nx * 6, a[1] + nz * 6], ib = [b[0] + nx * 6, b[1] + nz * 6], ya = southH(ia[0], ia[1]), yb = southH(ib[0], ib[1]);
-    face(pf ? gStone : geo('ground'), [[a[0], ha, a[1]], [b[0], hb, b[1]], [ib[0], yb, ib[1]], [ia[0], ya, ia[1]]], [[0, 0], [L / 3, 0], [L / 3, 2], [0, 2]], pf ? colTop : lin('#8d8a68'), [0, 1, 0]);
+    face(pf ? g : geo('ground'), [[a[0], ha, a[1]], [b[0], hb, b[1]], [ib[0], yb, ib[1]], [ia[0], ya, ia[1]]], [[0, 0], [L / 3, 0], [L / 3, 2], [0, 2]], pf ? colTop : lin('#6f7c45'), [0, 1, 0]);
     // closes the slits where the river outline has small inlets
     face(gStone, [[ia[0], -3, ia[1]], [ib[0], -3, ib[1]], [ib[0], yb, ib[1]], [ia[0], ya, ia[1]]], [[0, 0], [L / 3, 0], [L / 3, 1], [0, 1]], col.map(v => v * .7), [-nx, 0, -nz]);
-    if (ha > 12 && hb > 12){ // parapet on the high walls (Pfalz)
+    if (ha > 12 && hb > 12){ // parapet on the Pfalz
       const p = 1.05;
-      face(gStone, [[a[0], ha, a[1]], [b[0], hb, b[1]], [b[0], hb + p, b[1]], [a[0], ha + p, a[1]]], [[0, 0], [L / 3, 0], [L / 3, .4], [0, .4]], col, [-nx, 0, -nz]);
-      face(gStone, [[a[0], ha + p, a[1]], [b[0], hb + p, b[1]], [b[0] + nx * .5, hb + p, b[1] + nz * .5], [a[0] + nx * .5, ha + p, a[1] + nz * .5]], [[0, 0], [1, 0], [1, .1], [0, .1]], colTop, [0, 1, 0]);
+      face(g, [[a[0], ha, a[1]], [b[0], hb, b[1]], [b[0], hb + p, b[1]], [a[0], ha + p, a[1]]], [[0, 0], [L / 3, 0], [L / 3, .4], [0, .4]], c, [-nx, 0, -nz]);
+      face(g, [[a[0], ha + p, a[1]], [b[0], hb + p, b[1]], [b[0] + nx * .5, hb + p, b[1] + nz * .5], [a[0] + nx * .5, ha + p, a[1] + nz * .5]], [[0, 0], [1, 0], [1, .1], [0, .1]], colTop, [0, 1, 0]);
+    }
+    // greenery on the slopes between quay and houses
+    if (!pf || pfK(mx, mz) < .9){
+      const r = rng(Math.floor(mx * 7 + mz * 13) >>> 0);
+      for (let t = 0; t < L; t += 3.2) for (let row = 0; row < 3; row++){
+        if (r() < .35) continue;
+        const k = 1.5 + row * 5 + r() * 5, f = t / L, x = a[0] + ex * f + nx * k, z = a[1] + ez * f + nz * k;
+        BUSHES.push([x, lerp(lerp(ha, hb, f), southH(x, z), Math.min(1, k / 6)) - .5, z, r() < .4 ? 3 + r() * 2.2 : 1.6 + r() * 1.3]);
+      }
     }
   }
 }
@@ -580,20 +647,22 @@ if (!renderer.getContext()) document.getElementById('err').style.display = 'flex
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-const FOG = new THREE.Color('#e6dcc9');
-scene.fog = new THREE.FogExp2(FOG, 0.00135);
+const FOG = new THREE.Color('#ead9bd');
+scene.fog = new THREE.FogExp2(FOG, 0.0011);
 const camera = new THREE.PerspectiveCamera(52, 1, 0.3, 4000);
 
-const SUN = new THREE.Vector3(-0.905, 0.36, -0.2).normalize();   // late afternoon, west-north-west
-const sun = new THREE.DirectionalLight('#ffd7a6', 2.6);
+const SUN = new THREE.Vector3(-0.69, 0.25, -0.68).normalize();   // summer evening, north-west
+const sun = new THREE.DirectionalLight('#ffcc90', 3.0);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 1, far: 700 });
 sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.4;
 scene.add(sun, sun.target);
-scene.add(new THREE.HemisphereLight('#c9d8e4', '#b5a78c', 1.7));
+scene.add(new THREE.HemisphereLight('#d9dfe2', '#bfae8c', 1.45));
+const bounce = new THREE.DirectionalLight('#ffd9b0', .75);           // evening light off the river, onto the Grossbasel facades
+bounce.position.set(.55, .35, -.76); scene.add(bounce);
 
 const MATS = {
-  facade: { map: TEX.facade }, plaster: { map: TEX.plaster }, roof: { map: TEX.roof }, stone: { map: TEX.stone, side: THREE.DoubleSide },
+  facade: { map: TEX.facade }, facade2: { map: TEX.facade2 }, facade3: { map: TEX.facade3 }, plaster: { map: TEX.plaster }, roof: { map: TEX.roof }, stone: { map: TEX.stone, side: THREE.DoubleSide },
   sand: { map: TEX.sand }, sandWin: { map: TEX.sandWin }, munster: { map: TEX.munster }, ground: { map: TEX.ground }, wood: { map: TEX.wood },
 };
 function flush(){
@@ -615,9 +684,16 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), new THREE.Shade
   vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); gl_Position.z = gl_Position.w; }',
   fragmentShader: `varying vec3 vD; uniform vec3 uSun;
     vec3 L(vec3 c){ return pow(c, vec3(2.2)); }
+    float hs(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+      return mix(mix(hs(i), hs(i + vec2(1, 0)), f.x), mix(hs(i + vec2(0, 1)), hs(i + vec2(1, 1)), f.x), f.y); }
     void main(){
       float h = max(vD.y, 0.);
-      vec3 col = mix(L(vec3(.91,.87,.79)), L(vec3(.52,.68,.82)), pow(h, .4));
+      vec3 col = mix(L(vec3(.95,.88,.76)), L(vec3(.56,.71,.84)), pow(h, .42));
+      vec2 q = vD.xz / (vD.y + .12) * 1.6;
+      float cl = vn(q * 1.3) * .55 + vn(q * 3.7) * .3 + vn(q * 9.) * .15;
+      float fl = smoothstep(.58, .66, cl + (vn(q * 26.) - .5) * .3) * smoothstep(.12, .45, vD.y);
+      col = mix(col, L(vec3(.97,.95,.91)), fl * .6);
       float s = max(dot(normalize(vD), uSun), 0.);
       col += L(vec3(1.,.86,.62)) * (pow(s, 8.) * .35 + pow(s, 900.) * 2.5);
       if (vD.y < 0.) col = L(vec3(.89,.84,.75));
@@ -642,15 +718,15 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), new THREE.Shade
 const water = new THREE.Mesh(new THREE.PlaneGeometry(2200, 2200), new THREE.ShaderMaterial({
   fog: true,
   uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-    uTime: { value: 0 }, uSun: { value: SUN }, tRip: { value: TEX.ripple },
-    uDeep: { value: new THREE.Color('#3f6a62') }, uSky: { value: new THREE.Color('#b9c8cc') }, uSunCol: { value: new THREE.Color('#ffe2b0') },
+    uTime: { value: 0 }, uSun: { value: SUN }, tRip: { value: TEX.ripple }, tRefl: { value: null }, tWav: { value: TEX.wavelets }, uTexMat: { value: new THREE.Matrix4() },
+    uDeep: { value: new THREE.Color('#3d5c44') }, uSky: { value: new THREE.Color('#b9c8cc') }, uSunCol: { value: new THREE.Color('#ffe2b0') },
   }]),
-  vertexShader: `varying vec3 vW;
+  vertexShader: `varying vec3 vW; varying vec4 vR; uniform mat4 uTexMat;
 #include <fog_pars_vertex>
-    void main(){ vec4 w = modelMatrix * vec4(position,1.); vW = w.xyz; vec4 mvPosition = viewMatrix * w; gl_Position = projectionMatrix * mvPosition;
+    void main(){ vec4 w = modelMatrix * vec4(position,1.); vW = w.xyz; vR = uTexMat * w; vec4 mvPosition = viewMatrix * w; gl_Position = projectionMatrix * mvPosition;
 #include <fog_vertex>
     }`,
-  fragmentShader: `varying vec3 vW; uniform float uTime; uniform vec3 uSun, uDeep, uSky, uSunCol; uniform sampler2D tRip;
+  fragmentShader: `varying vec3 vW; varying vec4 vR; uniform float uTime; uniform vec3 uSun, uDeep, uSky, uSunCol; uniform sampler2D tRip, tRefl, tWav;
 #include <fog_pars_fragment>
     void main(){
       vec2 f = normalize(vec2(-.796,-.605));
@@ -661,7 +737,13 @@ const water = new THREE.Mesh(new THREE.PlaneGeometry(2200, 2200), new THREE.Shad
       vec3 V = normalize(cameraPosition - vW);
       vec3 N = normalize(vec3((r2 - .5) * .22 + (r3 - .5) * .12, 1., (r1 - .5) * .18 + (r3 - .5) * .12));
       float fres = pow(1. - max(dot(N, V), 0.), 4.);
-      vec3 col = mix(uDeep * (.85 + r1 * .3), uSky, clamp(fres * .9, 0., .85));
+      vec4 rc = vR; rc.xy += vec2(N.x, N.z) * rc.w * .06;
+      vec3 refl = texture2DProj(tRefl, rc).rgb;
+      float k = clamp(.42 + fres * .55, 0., .92);
+      vec3 col = mix(uDeep * (.85 + r1 * .3), refl * vec3(.86, .92, .84), k);
+      float dist = length(cameraPosition - vW);
+      float wv = texture2D(tWav, vec2(n * .22, (s - uTime * 1.5) * .3)).r;
+      col *= mix(1., .82 + wv * .36, exp(-dist / 45.) * .9);
       vec3 H = normalize(V + uSun);
       col += uSunCol * pow(max(dot(N, H), 0.), 260.) * 2.2;
       gl_FragColor = vec4(col, 1.);
@@ -673,15 +755,14 @@ water.rotation.x = -PI / 2; scene.add(water);
 // ------------------------------------------------------------------ trees
 {
   const crown = (() => {
-    const parts = [[0, 0, 0, 1], [.55, -.2, .2, .7], [-.5, -.15, -.25, .72], [.1, .35, -.3, .62]].map(([x, y, z, r]) => {
-      const g = new THREE.IcosahedronGeometry(r, 1); g.translate(x, y, z); return g;
-    });
-    const p = []; for (const g of parts) p.push(...g.attributes.position.array);
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.computeVertexNormals(); return g;
+    const parts = [[0, 0, 0, 1], [.55, -.18, .25, .72], [-.52, -.12, -.25, .74], [.12, .38, -.32, .64], [-.2, .3, .42, .6], [.45, .2, -.4, .55]];
+    const p = [], n = [];
+    for (const [x, y, z, r] of parts){ const g = new THREE.IcosahedronGeometry(r, 2); g.translate(x, y, z); p.push(...g.attributes.position.array); n.push(...g.attributes.normal.array); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(n, 3)); return g;
   })();
   const trunk = new THREE.CylinderGeometry(.18, .26, 1, 6); trunk.translate(0, .5, 0);
   const pts = D.T.filter(([x, z]) => !inRiver(x, z));
-  const cm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ flatShading: true }), pts.length);
+  const cm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial(), pts.length);
   const tm = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: '#4d4237' }), pts.length);
   const M4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), greens = ['#566f38', '#4a6432', '#62773d', '#58703f', '#6b7c42'].map(c => new THREE.Color(c));
   pts.forEach(([x, z], i) => {
@@ -692,44 +773,90 @@ water.rotation.x = -PI / 2; scene.add(water);
     M4.compose(new THREE.Vector3(x, y + th + s * .75, z), q, new THREE.Vector3(s, s * .95, s)); cm.setMatrixAt(i, M4);
     cm.setColorAt(i, greens[Math.floor(r() * greens.length)]);
   });
-  for (const m of [cm, tm]){ m.castShadow = m.receiveShadow = true; scene.add(m); }
+  const bm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial(), BUSHES.length);
+  BUSHES.forEach(([x, y, z, s], i) => {
+    const r = rng(i * 7 + 3); e.set(0, r() * PI * 2, 0); q.setFromEuler(e);
+    M4.compose(new THREE.Vector3(x, y + s * .55, z), q, new THREE.Vector3(s, s * (s > 2.5 ? 1.3 : .8), s)); bm.setMatrixAt(i, M4);
+    bm.setColorAt(i, greens[Math.floor(r() * greens.length)]);
+  });
+  for (const m of [cm, tm, bm]){ m.castShadow = m.receiveShadow = true; scene.add(m); }
 }
 
 // ------------------------------------------------------------------ people
 function makePerson(o){
-  const g = new THREE.Group(), M = c => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
-  const box = (w, h, d, c, x, y, z, parent = g) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
-  const hip = new THREE.Group(); hip.position.y = .92; g.add(hip);
-  const legs = [-1, 1].map(s => { const p = new THREE.Group(); p.position.set(s * .11, 0, 0); hip.add(p);
-    box(.17, .84, .2, o.trousers, 0, -.42, 0, p); box(.18, .1, .3, o.shoes, 0, -.87, .05, p); return p; });
-  const body = new THREE.Group(); hip.add(body);
-  box(.5, .62, .28, o.jacket, 0, .31, 0, body);
-  box(.36, .1, .3, o.jacket, 0, .62, -.01, body);                      // collar
-  if (o.pocket){ box(.12, .1, .02, o.pocket, -.13, .43, .15, body); box(.12, .1, .02, o.pocket, .13, .43, .15, body); }
-  const arms = [-1, 1].map(s => { const p = new THREE.Group(); p.position.set(s * .31, .58, 0); body.add(p);
-    box(.14, .6, .16, o.jacket, 0, -.3, 0, p); box(.11, .12, .12, o.skin, 0, -.66, 0, p); return p; });
-  const head = new THREE.Group(); head.position.y = .82; body.add(head);
-  box(.1, .1, .1, o.skin, 0, -.1, 0, head);
-  box(.24, .28, .26, o.skin, 0, .06, 0, head);
-  box(.255, .07, .275, o.hair, 0, .2, -.005, head);                     // buzz cut
-  box(.255, .14, .04, o.hair, 0, .13, -.125, head);
-  box(.035, .05, .05, o.skin, 0, .05, .14, head);                       // nose
-  for (const s of [-1, 1]) box(.035, .025, .01, '#2a2522', s * .055, .1, .131, head);
-  if (o.moustache){ box(.15, .04, .05, o.moustache, 0, -.01, .14, head); for (const s of [-1, 1]) box(.03, .05, .04, o.moustache, s * .068, -.035, .14, head); }
+  const g = new THREE.Group(), mats = {};
+  const M = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c }));
+  const add = (geom, c, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geom, M(c)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
+  // a limb segment hanging down from its joint
+  const seg = (r0, r1, len, c, parent, x = 0, y = 0, z = 0, sz = 1) => { const q = new THREE.CylinderGeometry(r0, r1, len, 10); q.translate(0, -len / 2, 0); q.scale(1, 1, sz); return add(q, c, parent, x, y, z); };
+  const ball = (rx, ry, rz, c, parent, x = 0, y = 0, z = 0) => { const q = new THREE.SphereGeometry(1, 12, 9); q.scale(rx, ry, rz); return add(q, c, parent, x, y, z); };
+  const joint = (parent, x, y, z) => { const j = new THREE.Group(); j.position.set(x, y, z); parent.add(j); return j; };
+  const hip = joint(g, 0, .95, 0);
+  ball(.165, .11, .11, o.trousers, hip, 0, -.03, 0);
+  const legs = [-1, 1].map(s => {
+    const th = joint(hip, s * .09, -.04, 0);
+    seg(.08, .062, .46, o.trousers, th);
+    const kn = joint(th, 0, -.46, 0);
+    ball(.063, .063, .063, o.trousers, kn);
+    seg(.062, .05, .43, o.trousers, kn);
+    ball(.052, .045, .125, o.shoes, kn, 0, -.45, .045);
+    return { th, kn, s };
+  });
+  const body = joint(hip, 0, 0, 0);
+  seg(.2, .172, .6, o.jacket, body, 0, .64, 0, .62);           // torso, flatter front to back
+  ball(.212, .075, .128, o.jacket, body, 0, .6, 0);             // shoulders
+  seg(.172, .184, .1, o.jacket, body, 0, .07, 0, .64);          // hem
+  seg(.078, .088, .07, o.collar || o.jacket, body, 0, .71, -.01); // collar
+  if (o.pocket) for (const s of [-1, 1]) add(new THREE.BoxGeometry(.09, .085, .012), o.pocket, body, s * .085, .44, .119);
+  seg(.045, .05, .1, o.skin, body, 0, .76, 0);                  // neck
+  const arms = [-1, 1].map(s => {
+    const sh = joint(body, s * .215, .58, 0);
+    ball(.06, .06, .06, o.jacket, sh);
+    seg(.056, .047, .3, o.jacket, sh);
+    const el = joint(sh, 0, -.3, 0);
+    seg(.047, .042, .26, o.jacket, el);
+    ball(.034, .055, .022, o.skin, el, 0, -.3, 0);
+    return { sh, el, s };
+  });
+  const head = joint(body, 0, .86, 0);
+  ball(.098, .118, .108, o.skin, head);                         // skull
+  ball(.083, .055, .088, o.skin, head, 0, -.062, .014);         // jaw
+  ball(.016, .026, .03, o.skin, head, 0, -.008, .106);          // nose
+  for (const s of [-1, 1]){
+    ball(.016, .028, .012, o.skin, head, s * .098, -.005, -.005);               // ears
+    ball(.011, .008, .006, '#2a2522', head, s * .036, .02, .098);               // eyes
+    add(new THREE.BoxGeometry(.034, .008, .01), o.hair, head, s * .037, .042, .1); // brows
+  }
+  // hair as a cap over the skull; short = buzz cut
+  const hg = new THREE.SphereGeometry(1, 14, 8, 0, PI * 2, 0, PI * (o.long ? .66 : .56));
+  hg.scale(.1012, .1215, .1112);
+  add(hg, o.hair, head, 0, .003, -.004).rotation.x = -.42;
+  if (o.moustache) for (const s of [-1, 1]){ const m = ball(.033, .012, .016, o.moustache, head, s * .025, -.036, .1); m.rotation.z = s * .28; }
   g.userData = { hip, legs, arms, body, head };
   return g;
 }
 function pose(p, mode, ph = 0){
   const { hip, legs, arms, body } = p.userData;
   if (mode === 'sit'){
-    hip.position.y = .3; legs.forEach(l => l.rotation.x = -1.35); arms.forEach((a, i) => { a.rotation.x = -.55; a.rotation.z = i ? -.12 : .12; }); body.rotation.x = .12;
-  } else {
-    const s = Math.sin(ph);
-    hip.position.y = .92 + Math.abs(Math.cos(ph)) * .03; body.rotation.x = mode === 'run' ? .18 : .04;
-    legs[0].rotation.x = s * .55; legs[1].rotation.x = -s * .55; arms[0].rotation.x = -s * .5; arms[1].rotation.x = s * .5; arms.forEach(a => a.rotation.z = 0);
+    hip.position.y = .42; body.rotation.x = .12;
+    for (const l of legs){ l.th.rotation.set(-1.42, 0, l.s * .07); l.kn.rotation.x = 1.3; }
+    for (const a of arms){ a.sh.rotation.set(-.28, 0, a.s * .1); a.el.rotation.x = -.6; }
+    return;
   }
+  const amp = mode === 'run' ? .8 : .45;
+  hip.position.y = .95 - (mode === 'run' ? .05 : 0) + Math.abs(Math.cos(ph)) * .025;
+  body.rotation.x = mode === 'run' ? .16 : .03;
+  legs.forEach((l, i) => {
+    const s = Math.sin(ph + (i ? PI : 0));
+    l.th.rotation.set(s * amp, 0, l.s * .02);
+    l.kn.rotation.x = .08 + Math.max(0, Math.sin(ph + (i ? PI : 0) - 1.3)) * amp * 1.4;
+  });
+  arms.forEach((a, i) => {
+    a.sh.rotation.set(Math.sin(ph + (i ? 0 : PI)) * amp * .8, 0, a.s * .07);
+    a.el.rotation.x = mode === 'run' ? -1.2 : -.22;
+  });
 }
-const player = makePerson({ jacket: '#2d5a9b', pocket: '#284f88', trousers: '#2e3036', shoes: '#4a3526', skin: '#d6a585', hair: '#3a2f27', moustache: '#4a3527' });
+const player = makePerson({ jacket: '#2f5c9c', pocket: '#2a5390', collar: '#294f86', trousers: '#2e3036', shoes: '#4a3526', skin: '#d6a585', hair: '#4b3e33', moustache: '#4a3527' });
 scene.add(player);
 
 // a few others on the Rheinbord and the Pfalz, Colville-still
@@ -848,7 +975,20 @@ flush();
 const post = { scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
 const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); post.scene.add(quad);
 const RT = () => new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
-const rtScene = RT(), rtAcc = [RT(), RT()];
+const rtScene = RT(), rtAcc = [RT(), RT()], rtRefl = RT();
+water.material.uniforms.tRefl.value = rtRefl.texture;
+const mirrorCam = new THREE.PerspectiveCamera(), clipUp = [new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.05)];
+const BIAS = new THREE.Matrix4().set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1);
+function renderReflection(){
+  mirrorCam.copy(camera);
+  mirrorCam.position.set(camera.position.x, -camera.position.y, camera.position.z);
+  mirrorCam.up.set(0, -1, 0); mirrorCam.lookAt(camLook.x, -camLook.y, camLook.z);
+  mirrorCam.updateMatrixWorld(); mirrorCam.updateProjectionMatrix();
+  water.material.uniforms.uTexMat.value.copy(BIAS).multiply(mirrorCam.projectionMatrix).multiply(mirrorCam.matrixWorldInverse);
+  water.visible = false; renderer.clippingPlanes = clipUp; renderer.shadowMap.autoUpdate = false;
+  renderer.setRenderTarget(rtRefl); renderer.render(scene, mirrorCam);
+  renderer.clippingPlanes = []; renderer.shadowMap.autoUpdate = true; water.visible = true;
+}
 rtScene.depthBuffer = true;
 const vs = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
 const accMat = new THREE.ShaderMaterial({ uniforms: { tCur: { value: null }, tPrev: { value: null }, k: { value: .4 } }, vertexShader: vs,
@@ -1009,10 +1149,11 @@ function toggleMute(){
 // ------------------------------------------------------------------ resize
 let W = 0, H = 0;
 function resize(){
-  const pr = Math.min(window.devicePixelRatio || 1, clamp(560 / innerHeight, .45, 1));
+  const pr = Math.min(window.devicePixelRatio || 1, clamp(640 / innerHeight, .5, 1));
   renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false);
   W = Math.round(innerWidth * pr); H = Math.round(innerHeight * pr);
   for (const r of [rtScene, ...rtAcc]) r.setSize(W, H);
+  rtRefl.setSize(Math.round(W / 2), Math.round(H / 2));
   outMat.uniforms.uRes.value.set(W, H);
   camera.aspect = innerWidth / innerHeight; camera.fov = innerWidth < innerHeight ? 68 : 52; camera.updateProjectionMatrix();
 }
@@ -1091,7 +1232,7 @@ function update(dt){
   const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 1.6 : 5));
   camPos.lerp(wantPos, k); camLook.lerp(wantLook, k); first = false;
   camera.position.copy(camPos); camera.lookAt(camLook);
-  const fov = (innerWidth < innerHeight ? 68 : 52) - (st.mode === 'sit' ? (innerWidth < innerHeight ? 18 : 16) : 0);
+  const fov = (innerWidth < innerHeight ? 68 : 52) - (st.mode === 'sit' ? (innerWidth < innerHeight ? 22 : 21) : 0);
   if (Math.abs(camera.fov - fov) > .01){ camera.fov = lerp(camera.fov, fov, first ? 1 : Math.min(1, dt * 1.5)); camera.updateProjectionMatrix(); }
 
   // --- sun & shadow follow the player (snapped to texels)
@@ -1141,9 +1282,10 @@ let rtI = 0;
 function frame(){
   const dt = Math.min(clock.getDelta(), .1);
   update(dt);
+  renderReflection();
   renderer.setRenderTarget(rtScene); renderer.render(scene, camera);
   quad.material = accMat; accMat.uniforms.tCur.value = rtScene.texture; accMat.uniforms.tPrev.value = rtAcc[rtI].texture;
-  accMat.uniforms.k.value = st.mode === 'sit' ? .3 : .45;
+  accMat.uniforms.k.value = st.mode === 'sit' ? .28 : .32;
   renderer.setRenderTarget(rtAcc[1 - rtI]); renderer.render(post.scene, post.cam);
   quad.material = outMat; outMat.uniforms.tSrc.value = rtAcc[1 - rtI].texture; outMat.uniforms.uTime.value = T;
   renderer.setRenderTarget(null); renderer.render(post.scene, post.cam);
