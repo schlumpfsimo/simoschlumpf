@@ -403,6 +403,32 @@ function dormers(o, y, rh, rc, r){
     pyramid(geo('roof'), q, top, [c[0], top + .8, c[1]], rc, 2);
   }
 }
+function relief(pts, base, top, fc, r){
+  const ccw = signedArea(pts) > 0, gGl = geo('plaster'), gFr = geo('stone'), glass = lin('#2a3038'), frame = fc.map(v => Math.min(1, v * 1.04)), dark = fc.map(v => v * .55);
+  const shut = [lin('#6b8262'), lin('#86897f'), lin('#8a5a4c'), lin('#5d6f86')][Math.floor(r() * 4)], withShut = r() < .6;
+  const floors = Math.max(1, Math.floor((top - base - .8) / 3.3)), balcF = r() < .5 ? 1 + Math.floor(r() * Math.max(1, floors - 1)) : -1;
+  let doorDone = false;
+  for (let i = 0; i < pts.length; i++){
+    const a = pts[i], b = pts[(i + 1) % pts.length], ex = b[0] - a[0], ez = b[1] - a[1], L = Math.hypot(ex, ez); if (L < 3.4) continue;
+    const n = ccw ? [ez / L, -ex / L] : [-ez / L, ex / L], rot = Math.atan2(ez, ex), bays = Math.floor(L / 3.1), gap = L / bays;
+    { const [, q] = waterNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2); if (!q || (q[0] - (a[0] + b[0]) / 2) * n[0] + (q[1] - (a[1] + b[1]) / 2) * n[1] < 0) continue; }   // only walls that face the river
+    for (let k = 0; k < bays; k++){
+      const t = (k + .5) * gap, cx = a[0] + ex * t / L, cz = a[1] + ez * t / L;
+      for (let f = 0; f < floors; f++){
+        const y = base + 1.2 + f * 3.3 + .8, door = f === 0 && !doorDone && k === Math.floor(bays / 2) && r() < .7;
+        if (door){ doorDone = true; boxAt(gGl, cx + n[0] * .06, base + 1.15, cz + n[1] * .06, 1.3, 2.3, .1, rot, dark, 1); boxAt(gFr, cx + n[0] * .1, base + 2.35, cz + n[1] * .1, 1.6, .12, .2, rot, frame, 1); continue; }
+        boxAt(gFr, cx + n[0] * .05, y, cz + n[1] * .05, 1.5, 1.9, .1, rot, frame, 1);                           // reveal frame
+        boxAt(gGl, cx + n[0] * .08, y, cz + n[1] * .08, 1.2, 1.6, .1, rot, glass, 1);                            // glass
+        boxAt(gFr, cx + n[0] * .14, y - .86, cz + n[1] * .14, 1.5, .1, .28, rot, frame, 1);                      // sill
+        if (withShut) for (const sg of [-1, 1]){ const ox = -Math.sin(rot) * 0, sx = Math.cos(rot) * sg * 1.05, sz = Math.sin(rot) * sg * 1.05; boxAt(gGl, cx + sx + n[0] * .1, y, cz + sz + n[1] * .1, .5, 1.6, .06, rot, shut, 1); }
+        if (f === balcF && k === Math.floor(bays / 2)){
+          boxAt(gFr, cx + n[0] * .55, y - 1.0, cz + n[1] * .55, 2.6, .14, 1.1, rot, frame, 1);
+          boxAt(gGl, cx + n[0] * 1.08, y - .5, cz + n[1] * 1.08, 2.6, .9, .05, rot, dark, 1);
+        }
+      }
+    }
+  }
+}
 const FACADES = ['#f3eee4', '#efe6d2', '#e8dcc4', '#ead6a6', '#ecd2c2', '#f6f3ec', '#e2d2b4', '#efdcae', '#d9dccf', '#e6bca6', '#f0e2d2', '#ffffff', '#f6f1e6'].map(lin);
 const ROOFS = ['#7d4c3a', '#6c4334', '#5e3d31', '#8a5440', '#4f3a32', '#764a3c', '#59504b'].map(lin);
 const WHITE = [1, 1, 1];
@@ -422,8 +448,9 @@ for (const [t, h0, name, flat, seed] of D.B){
   if (t === 2) hh = Math.max(hh, 16);
   const y0 = (!north && dmin < 9) ? -2 : lo - 2, y1 = hi + hh;
   const fc = FACADES[Math.floor(r() * FACADES.length)], rc = ROOFS[Math.floor(r() * ROOFS.length)];
-  const fv = ['facade', 'facade2', 'facade3'][Math.floor(r() * 3)];
+  const near = !small && t !== 2 && dmin < 60 && Math.hypot(cx - 60, cz + 40) < 230, fv = near ? 'plaster' : ['facade', 'facade2', 'facade3'][Math.floor(r() * 3)];
   walls(geo(small || t === 2 ? 'plaster' : fv), pts, y0, y1, t === 2 ? lin('#e9e2d4') : fc, 3.2, 3.3);
+  if (near) relief(pts, hi, y1, fc, r);
   if (!small) cornice(geo('plaster'), pts, y1, fc.map(v => v * .86));
   const o = obb(pts), fill = Math.abs(signedArea(pts)) / (4 * o.hu * o.hv);
   if (!small && fill > 0.72 && o.hv < 16){
@@ -676,8 +703,8 @@ const ORWs = resample(ORW, 4);
     // two Wickelfisch bags left on the steps, a bicycle against the kerb, bollards by the landing
     const bag = (d, side, col) => { const c = bankPoint(p, d); boxAt(geo('plaster'), c[0] + along[0] * side, northH(d) + .33, c[1] + along[1] * side, .34, .3, .5, -yaw + .4, lin(col), 1);
       boxAt(geo('plaster'), c[0] + along[0] * side, northH(d) + .52, c[1] + along[1] * side, .36, .1, .14, -yaw + .4, lin(col).map(v => v * .8), 1); };
-    bag(5.1, 2.6, '#d9472f'); bag(7.4, -3.4, '#e8c33a');
-    const bk = bankPoint(ORWs[START_I + 3], 13.9), bike = new THREE.Group(), M = c => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+    bag(1.1, 2.4, '#d9472f'); bag(2.3, -2.9, '#e8c33a');
+    const bk = bankPoint(ORWs[START_I + 3], 13.9), bike = new THREE.Group(), M = c => new THREE.MeshLambertMaterial({ color: c });
     for (const x of [-.52, .52]){ const w = new THREE.Mesh(new THREE.TorusGeometry(.33, .025, 5, 14), M('#2a2a2a')); w.position.set(x, .33, 0); bike.add(w);
       const hub = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .08, 6), M('#aaa')); hub.rotation.x = PI / 2; hub.position.set(x, .33, 0); bike.add(hub); }
     const tube = (a, b, col = '#3d6b3f') => { const d = new THREE.Vector3(...b).sub(new THREE.Vector3(...a)), m = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, d.length(), 5), M(col));
@@ -719,7 +746,7 @@ function buildTerrain(){
     let y, c;
     if (n){
       const d = waterDist(x, z);
-      y = w ? Math.max(-1.6, 1.0 - d * 0.9) : northH(d) + (d > 3 && d < 12 ? (vnoise(x / 5, z / 5) - .5) * .5 : 0);
+      y = w ? Math.max(-1.6, 1.0 - d * 0.9) : northH(d);
       gr[k] = !w && d > 2.2 && d < 13 ? 1 : 0;
       c = w ? C.under : d < 2.5 ? C.low : gr[k] ? C.grass : C.pave;
       kind[k] = w ? 0 : 1;
@@ -744,7 +771,7 @@ function buildTerrain(){
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(ix); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: which ? TEX.grass : TEX.ground, vertexColors: true, flatShading: true }));
+    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: which ? TEX.grass : TEX.ground, vertexColors: true }));
     m.receiveShadow = true; group.add(m);
   });
   return group;
@@ -780,7 +807,7 @@ function flush(){
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(G.p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(G.n, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(G.u, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(G.c, 3));
-    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ ...MATS[k], vertexColors: true, flatShading: true }));
+    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ ...MATS[k], vertexColors: true }));
     m.castShadow = m.receiveShadow = true; scene.add(m);
     delete GEO[k];
   }
@@ -862,12 +889,12 @@ water.rotation.x = -PI / 2; scene.add(water);
   const crown = (() => {
     const parts = [[0, 0, 0, 1], [.55, -.18, .25, .72], [-.52, -.12, -.25, .74], [.12, .38, -.32, .64], [-.2, .3, .42, .6], [.45, .2, -.4, .55]];
     const p = [], n = [];
-    for (const [x, y, z, r] of parts){ const g = new THREE.IcosahedronGeometry(r, 1); g.translate(x, y, z); p.push(...g.attributes.position.array); n.push(...g.attributes.normal.array); }
+    for (const [x, y, z, r] of parts){ const g = new THREE.IcosahedronGeometry(r, 2); g.translate(x, y, z); p.push(...g.attributes.position.array); n.push(...g.attributes.normal.array); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(n, 3)); return g;
   })();
   const trunk = new THREE.CylinderGeometry(.18, .26, 1, 6); trunk.translate(0, .5, 0);
   const pts = D.T.filter(([x, z]) => !inRiver(x, z));
-  const cm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ flatShading: true, emissive: '#3a4a22', emissiveIntensity: .45 }), pts.length);
+  const cm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ emissive: '#3a4a22', emissiveIntensity: .45 }), pts.length);
   const tm = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: '#4d4237' }), pts.length);
   const M4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), greens = ['#566f38', '#4a6432', '#62773d', '#58703f', '#6b7c42'].map(c => new THREE.Color(c));
   pts.forEach(([x, z], i) => {
@@ -878,7 +905,7 @@ water.rotation.x = -PI / 2; scene.add(water);
     M4.compose(new THREE.Vector3(x, y + th + s * .75, z), q, new THREE.Vector3(s, s * .95, s)); cm.setMatrixAt(i, M4);
     cm.setColorAt(i, greens[Math.floor(r() * greens.length)]);
   });
-  const bm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ flatShading: true, emissive: '#3a4a22', emissiveIntensity: .3 }), BUSHES.length);
+  const bm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ emissive: '#3a4a22', emissiveIntensity: .3 }), BUSHES.length);
   BUSHES.forEach(([x, y, z, s], i) => {
     const r = rng(i * 7 + 3); e.set(0, r() * PI * 2, 0); q.setFromEuler(e);
     M4.compose(new THREE.Vector3(x, y + s * .55, z), q, new THREE.Vector3(s, s * (s > 2.5 ? 1.3 : .8), s)); bm.setMatrixAt(i, M4);
@@ -890,11 +917,11 @@ water.rotation.x = -PI / 2; scene.add(water);
 // ------------------------------------------------------------------ people
 function makePerson(o){
   const g = new THREE.Group(), mats = {};
-  const M = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+  const M = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c }));
   const add = (geom, c, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geom, M(c)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
   // a limb segment hanging down from its joint
-  const seg = (r0, r1, len, c, parent, x = 0, y = 0, z = 0, sz = 1) => { const q = new THREE.CylinderGeometry(r0, r1, len, 6); q.translate(0, -len / 2, 0); q.scale(1, 1, sz); return add(q, c, parent, x, y, z); };
-  const ball = (rx, ry, rz, c, parent, x = 0, y = 0, z = 0) => { const q = new THREE.SphereGeometry(1, 7, 5); q.scale(rx, ry, rz); return add(q, c, parent, x, y, z); };
+  const seg = (r0, r1, len, c, parent, x = 0, y = 0, z = 0, sz = 1) => { const q = new THREE.CylinderGeometry(r0, r1, len, 9); q.translate(0, -len / 2, 0); q.scale(1, 1, sz); return add(q, c, parent, x, y, z); };
+  const ball = (rx, ry, rz, c, parent, x = 0, y = 0, z = 0) => { const q = new THREE.SphereGeometry(1, 11, 8); q.scale(rx, ry, rz); return add(q, c, parent, x, y, z); };
   const joint = (parent, x, y, z) => { const j = new THREE.Group(); j.position.set(x, y, z); parent.add(j); return j; };
   const hip = joint(g, 0, .95, 0);
   ball(.165, .11, .11, o.trousers, hip, 0, -.03, 0);
@@ -909,7 +936,7 @@ function makePerson(o){
   });
   const body = joint(hip, 0, 0, 0);
   const torso = seg(.2, .172, .6, o.jacket, body, 0, .64, 0, .62);           // torso, flatter front to back
-  if (o.cloth) torso.material = new THREE.MeshLambertMaterial({ map: o.cloth, flatShading: true });
+  if (o.cloth){ torso.material = new THREE.MeshLambertMaterial({ map: o.cloth }); torso.rotation.y = PI; }
   ball(.212, .075, .128, o.jacket, body, 0, .6, 0);             // shoulders
   seg(.172, .184, .1, o.jacket, body, 0, .07, 0, .64);          // hem
   seg(.078, .088, .07, o.collar || o.jacket, body, 0, .71, -.01); // collar
@@ -934,7 +961,7 @@ function makePerson(o){
     add(new THREE.BoxGeometry(.034, .008, .01), o.hair, head, s * .037, .042, .1); // brows
   }
   // hair as a cap over the skull; short = buzz cut
-  const hg = new THREE.SphereGeometry(1, 8, 5, 0, PI * 2, 0, PI * (o.long ? .66 : .56));
+  const hg = new THREE.SphereGeometry(1, 12, 7, 0, PI * 2, 0, PI * (o.long ? .66 : .56));
   hg.scale(.1012, .1215, .1112);
   add(hg, o.hair, head, 0, .003, -.004).rotation.x = -.42;
   if (o.moustache) for (const s of [-1, 1]){ const m = ball(.033, .012, .016, o.moustache, head, s * .025, -.036, .1); m.rotation.z = s * .28; }
@@ -944,9 +971,9 @@ function makePerson(o){
 function pose(p, mode, ph = 0){
   const { hip, legs, arms, body } = p.userData;
   if (mode === 'sit'){
-    hip.position.y = .42; body.rotation.x = .12;
-    for (const l of legs){ l.th.rotation.set(-1.42, 0, l.s * .07); l.kn.rotation.x = 1.3; }
-    for (const a of arms){ a.sh.rotation.set(-.28, 0, a.s * .1); a.el.rotation.x = -.6; }
+    hip.position.y = .44; body.rotation.x = .1;
+    for (const l of legs){ l.th.rotation.set(-1.5, 0, l.s * .12); l.kn.rotation.x = 1.25; }
+    for (const a of arms){ a.sh.rotation.set(-.15, 0, a.s * .35); a.el.rotation.x = -.15; }
     return;
   }
   const amp = mode === 'run' ? .8 : .45;
@@ -991,7 +1018,7 @@ const extras = [];
 // ------------------------------------------------------------------ the Münsterfähri
 const ferry = new THREE.Group();
 {
-  const M = c => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+  const M = c => new THREE.MeshLambertMaterial({ color: c });
   const hullS = new THREE.Shape(); hullS.moveTo(-4.6, 0); hullS.lineTo(4.2, 0); hullS.lineTo(5, .7); hullS.lineTo(-5, .7); hullS.lineTo(-4.6, 0);
   const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(hullS, { depth: 2.4, bevelEnabled: false }), M('#5a3f2c'));
   hull.geometry.translate(0, -.25, -1.2); ferry.add(hull);
@@ -1030,7 +1057,7 @@ scene.add(rope);
 // ------------------------------------------------------------------ trams on the bridges
 const trams = [];
 {
-  const M = c => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+  const M = c => new THREE.MeshLambertMaterial({ color: c });
   for (const [k, phase] of [['mittlere', 0], ['mittlere', .55], ['wettstein', .25], ['wettstein', .8]]){
     const t = new THREE.Group();
     const b = new THREE.Mesh(new THREE.BoxGeometry(24, 2.6, 2.4), M('#3f7a45')); b.position.y = 1.8; t.add(b);
@@ -1054,7 +1081,7 @@ function alongLine(line, dist){
 }
 const swimmers = [];
 {
-  const M = c => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+  const M = c => new THREE.MeshLambertMaterial({ color: c });
   [['#d14b3a', '#e0b597', 0], ['#e7c33a', '#c99677', .33], ['#3b7fc4', '#e3bc9e', .61]].forEach(([bag, skin, f], i) => {
     const s = new THREE.Group();
     const h = new THREE.Mesh(new THREE.IcosahedronGeometry(.13, 0), M(skin)); h.position.y = .08; s.add(h);
@@ -1129,7 +1156,8 @@ cv.addEventListener('pointermove', e => {
     joy.x = dx; joy.y = dy; ui.stick.firstChild.style.transform = `translate(${dx * 35}px,${dy * 35}px)`;
   } else if (e.pointerId === look.id){
     look.moved += Math.abs(e.clientX - look.lx) + Math.abs(e.clientY - look.ly);
-    camYaw -= (e.clientX - look.lx) * .006; camPitch = clamp(camPitch + (e.clientY - look.ly) * .004, -.25, .6);
+    camYaw -= (e.clientX - look.lx) * .006; camPitch = clamp(camPitch + (e.clientY - look.ly) * .004, st.mode === 'sit' ? -.7 : -.25, .6);
+    if (st.mode === 'sit'){ let d = camYaw - st.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); camYaw = st.yaw + clamp(d, -1.3, 1.3); }
     look.lx = e.clientX; look.ly = e.clientY; lookIdle = 0;
   }
 });
@@ -1142,8 +1170,8 @@ ui.mute.addEventListener('pointerdown', e => { e.stopPropagation(); toggleMute()
 // ------------------------------------------------------------------ player state
 const st = { mode: 'sit', yaw: 0, ph: 0, speed: 0, sitT: 0 };
 {
-  const S0 = window.__START, p = bankPoint(S0.p, 12.1); p[0] += S0.along[0] * 1.2; p[1] += S0.along[1] * 1.2;
-  player.position.set(p[0], northH(12.1), p[1]);
+  const S0 = window.__START, p = bankPoint(S0.p, .75); p[0] += S0.along[0] * 1.2; p[1] += S0.along[1] * 1.2;
+  player.position.set(p[0], northH(.75), p[1]); player.userData.head.visible = false;
   st.yaw = Math.atan2(MU.cx - p[0], MU.cz - p[1]);
   camYaw = st.yaw;
 }
@@ -1158,12 +1186,12 @@ function walkable(x, z){
   }
   return true;
 }
-const canSit = () => { const d = waterDist(player.position.x, player.position.z); return d > 2.5 && d < 13.4; };
+const canSit = () => { const d = waterDist(player.position.x, player.position.z); return d > .5 && d < 13.4; };
 function toggleSit(){
   if (!started) return;
-  if (st.mode === 'sit'){ st.mode = 'walk'; camYaw = st.yaw; }
+  if (st.mode === 'sit'){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; }
   else if (canSit()){
-    st.mode = 'sit'; st.sitT = 0;
+    st.mode = 'sit'; st.sitT = 0; player.userData.head.visible = false;
     const [, q] = waterNear(player.position.x, player.position.z);
     const toM = Math.atan2(MU.cx - player.position.x, MU.cz - player.position.z), toW = Math.atan2(q[0] - player.position.x, q[1] - player.position.z);
     let d = toM - toW; d = Math.atan2(Math.sin(d), Math.cos(d)); st.yaw = toW + clamp(d, -.9, .9);
@@ -1254,7 +1282,7 @@ function resize(){
   for (const r of [rtScene, ...rtAcc]) r.setSize(W, H);
   rtRefl.setSize(W / 2, H / 2);
   outMat.uniforms.uRes.value.set(W, H);
-  camera.aspect = innerWidth / innerHeight; camera.fov = innerWidth < innerHeight ? 68 : 52; camera.updateProjectionMatrix();
+  camera.aspect = innerWidth / innerHeight; camera.fov = innerWidth < innerHeight ? 82 : 72; camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize); resize();
 
@@ -1281,7 +1309,7 @@ function update(dt){
   if (keys.KeyA || keys.ArrowLeft) ix -= 1; if (keys.KeyD || keys.ArrowRight) ix += 1;
   ix += joy.x; iz -= joy.y;
   const il = Math.hypot(ix, iz);
-  if (started && st.mode === 'sit' && il > .2){ st.mode = 'walk'; camYaw = st.yaw; }
+  if (started && st.mode === 'sit' && il > .2){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; }
   const run = keys.ShiftLeft || keys.ShiftRight || il > .95 && joy.id !== null;
   if (st.mode !== 'sit' && il > .1){
     const fx = Math.sin(camYaw), fz = Math.cos(camYaw), k = Math.min(il, 1) / il;
@@ -1307,28 +1335,24 @@ function update(dt){
   const head = tmp.set(player.position.x, player.position.y + 1.45, player.position.z);
   let wantPos, wantLook;
   if (st.mode === 'sit'){
+    if (st.sitT === 0){ camYaw = st.yaw; camPitch = 0; lookIdle = 0; }
     st.sitT += dt;
-    // a slow drift between an over-the-shoulder view of the Münster and his profile
-    const f = [Math.sin(st.yaw), Math.cos(st.yaw)], r = [-f[1], f[0]];
-    const th = .45 + (1 - Math.cos(st.sitT * 2 * PI / 70)) * .5 * 1.05 + (look.id !== null || lookIdle < 4 ? 0 : 0);
-    const R = 2.7 + (1 - Math.cos(st.sitT * 2 * PI / 70)) * .25;
-    const dir = [-f[0] * Math.cos(th) + r[0] * Math.sin(th), -f[1] * Math.cos(th) + r[1] * Math.sin(th)];
-    wantPos = new THREE.Vector3(head.x + dir[0] * R, head.y - .05 + (th - .45) * .15, head.z + dir[1] * R);
-    { const sg = camGround(wantPos.x, wantPos.z); if (wantPos.y < sg + .6) wantPos.y = sg + .6; }
-    const k = smooth(clamp((th - .45) / 1.05, 0, 1)) * .93;
-    const dM = MU_LOOK.clone().sub(wantPos).normalize(), dH = new THREE.Vector3(head.x + f[0] * .6, head.y - .1, head.z + f[1] * .6).sub(wantPos).normalize();
-    wantLook = wantPos.clone().add(dM.lerp(dH, k).normalize().multiplyScalar(20));
-    wantLook.y -= (1 - k) * 2.6;
+    // first person: his own knees and shoes over the water, the Münster ahead; a slow look around
+    const yaw = st.yaw + Math.sin(st.sitT * 2 * PI / 90) * .22 + (camYaw - st.yaw) * (look.id !== null || lookIdle < 6 ? 1 : Math.max(0, 1 - (lookIdle - 6) / 8));
+    const pitch = -.42 + Math.sin(st.sitT * 2 * PI / 60 + 1) * .3 + (look.id !== null || lookIdle < 6 ? camPitch : camPitch * Math.max(0, 1 - (lookIdle - 6) / 8));
+    const eye = new THREE.Vector3(player.position.x - Math.sin(st.yaw) * .06, player.position.y + .44 + .86 + .1, player.position.z - Math.cos(st.yaw) * .06);
+    wantPos = eye;
+    wantLook = new THREE.Vector3(eye.x + Math.sin(yaw) * Math.cos(pitch) * 10, eye.y + Math.sin(pitch) * 10, eye.z + Math.cos(yaw) * Math.cos(pitch) * 10);
   } else {
-    const d = 3.6;
-    wantPos = new THREE.Vector3(head.x - Math.sin(camYaw) * d * Math.cos(camPitch), head.y + .25 + Math.sin(camPitch) * d, head.z - Math.cos(camYaw) * d * Math.cos(camPitch));
+    const d = 3.0;
+    wantPos = new THREE.Vector3(head.x - Math.sin(camYaw) * d * Math.cos(camPitch), head.y + .2 + Math.sin(camPitch) * d, head.z - Math.cos(camYaw) * d * Math.cos(camPitch));
     wantLook = new THREE.Vector3(head.x + Math.sin(camYaw) * 5, head.y - .35, head.z + Math.cos(camYaw) * 5);
     const gy = camGround(wantPos.x, wantPos.z); if (wantPos.y < gy + .7) wantPos.y = gy + .7;
   }
-  const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 1.6 : 5));
+  const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 2.5 : 5));
   camPos.lerp(wantPos, k); camLook.lerp(wantLook, k); first = false;
   camera.position.copy(camPos); camera.lookAt(camLook);
-  const fov = (innerWidth < innerHeight ? 70 : 58) - (st.mode === 'sit' ? (innerWidth < innerHeight ? 8 : 10) : 0);
+  const fov = (innerWidth < innerHeight ? 82 : 72) - (st.mode === 'sit' ? 0 : 2);
   if (Math.abs(camera.fov - fov) > .01){ camera.fov = lerp(camera.fov, fov, first ? 1 : Math.min(1, dt * 1.5)); camera.updateProjectionMatrix(); }
 
   // --- sun & shadow follow the player (snapped to texels)
