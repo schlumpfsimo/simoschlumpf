@@ -264,10 +264,11 @@ const TEX = {
       if (r() < .4){ g.fillStyle = 'rgba(80,50,25,.5)'; g.beginPath(); g.ellipse(r() * s, y + 4, 3, 2, 0, 0, PI * 2); g.fill(); } }
     grain(g, s, 18, 27);
   }),
+  skin: canvasTex(64, (g, s) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, s, s); grain(g, s, 12, 36); blotches(g, s, 6, '200,120,90', .18, 6, 18, 37); }),
   jacket: canvasTex(64, (g, s) => {
     // bleu de travail: seams, a placket, two chest pockets, worn pale at the folds
-    g.fillStyle = '#2f5c9c'; g.fillRect(0, 0, s, s); grain(g, s, 20, 33);
-    blotches(g, s, 6, '120,150,190', .25, 6, 16, 34);
+    g.fillStyle = '#4b6a93'; g.fillRect(0, 0, s, s); grain(g, s, 18, 33);
+    blotches(g, s, 7, '140,165,195', .3, 6, 16, 34); blotches(g, s, 4, '30,45,70', .25, 6, 14, 35);
     g.fillStyle = 'rgba(10,25,50,.5)'; g.fillRect(31, 0, 2, s); g.fillRect(15, 0, 1, s); g.fillRect(48, 0, 1, s);
     for (let y = 8; y < s; y += 12){ g.fillStyle = '#d8d2c0'; g.fillRect(31, y, 2, 2); }
     g.fillStyle = 'rgba(10,25,50,.45)'; g.fillRect(4, 10, 20, 2); g.fillRect(40, 10, 20, 2); g.fillRect(4, 10, 1, 14); g.fillRect(23, 10, 1, 14); g.fillRect(40, 10, 1, 14); g.fillRect(59, 10, 1, 14);
@@ -918,67 +919,79 @@ water.rotation.x = -PI / 2; scene.add(water);
 function makePerson(o){
   const g = new THREE.Group(), mats = {};
   const M = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c }));
-  const add = (geom, c, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geom, M(c)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
-  // a limb segment hanging down from its joint
-  const seg = (r0, r1, len, c, parent, x = 0, y = 0, z = 0, sz = 1) => { const q = new THREE.CylinderGeometry(r0, r1, len, 9); q.translate(0, -len / 2, 0); q.scale(1, 1, sz); return add(q, c, parent, x, y, z); };
-  const ball = (rx, ry, rz, c, parent, x = 0, y = 0, z = 0) => { const q = new THREE.SphereGeometry(1, 11, 8); q.scale(rx, ry, rz); return add(q, c, parent, x, y, z); };
+  const Ms = o.skinTex ? new THREE.MeshLambertMaterial({ map: o.skinTex, color: o.skin }) : M(o.skin);
+  const add = (geom, mat, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geom, mat.isMaterial ? mat : M(mat)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
+  // a tapered limb segment hanging down from its joint; profile = [[radius, t], ...]
+  const limb = (prof, len, mat, parent, x = 0, y = 0, z = 0, sz = 1) => {
+    const pts = prof.map(([r, t]) => new THREE.Vector2(r, -t * len)); const q = new THREE.LatheGeometry(pts, 12); q.scale(1, 1, sz); return add(q, mat, parent, x, y, z);
+  };
+  const ball = (rx, ry, rz, mat, parent, x = 0, y = 0, z = 0) => { const q = new THREE.SphereGeometry(1, 14, 10); q.scale(rx, ry, rz); return add(q, mat, parent, x, y, z); };
   const joint = (parent, x, y, z) => { const j = new THREE.Group(); j.position.set(x, y, z); parent.add(j); return j; };
-  const hip = joint(g, 0, .95, 0);
-  ball(.165, .11, .11, o.trousers, hip, 0, -.03, 0);
+  const hip = joint(g, 0, .96, 0);
+  ball(.19, .12, .14, o.trousers, hip, 0, -.02, 0);                                            // pelvis
   const legs = [-1, 1].map(s => {
-    const th = joint(hip, s * .09, -.04, 0);
-    seg(.08, .062, .46, o.trousers, th);
+    const th = joint(hip, s * .1, -.03, 0);
+    limb([[.1, 0], [.098, .3], [.08, .75], [.07, 1]], .46, o.trousers, th, 0, 0, 0, 1.05);     // thigh
     const kn = joint(th, 0, -.46, 0);
-    ball(.063, .063, .063, o.trousers, kn);
-    seg(.062, .05, .43, o.trousers, kn);
-    ball(.052, .045, .125, o.shoes, kn, 0, -.45, .045);
+    ball(.072, .07, .075, o.trousers, kn);
+    limb([[.068, 0], [.072, .2], [.06, .6], [.045, 1]], .44, o.trousers, kn);                 // shin, calf bulge
+    ball(.055, .11, .06, o.trousers, kn, 0, -.14, -.03);
+    const sh = ball(.075, .05, .14, o.shoes, kn, 0, -.455, .05); sh.scale.set(.075, .055, .135);
+    ball(.08, .045, .07, o.shoes, kn, 0, -.46, -.01);                                           // heel
     return { th, kn, s };
   });
   const body = joint(hip, 0, 0, 0);
-  const torso = seg(.2, .172, .6, o.jacket, body, 0, .64, 0, .62);           // torso, flatter front to back
-  if (o.cloth){ torso.material = new THREE.MeshLambertMaterial({ map: o.cloth }); torso.rotation.y = PI; }
-  ball(.212, .075, .128, o.jacket, body, 0, .6, 0);             // shoulders
-  seg(.172, .184, .1, o.jacket, body, 0, .07, 0, .64);          // hem
-  seg(.078, .088, .07, o.collar || o.jacket, body, 0, .71, -.01); // collar
-  if (o.pocket) for (const s of [-1, 1]) add(new THREE.BoxGeometry(.09, .085, .012), o.pocket, body, s * .085, .44, .119);
-  seg(.045, .05, .1, o.skin, body, 0, .76, 0);                  // neck
+  // the torso lathed from hips to neck: waist, chest, broad shoulders
+  const torso = (() => {
+    const prof = [[.17, 0], [.19, .06], [.175, .2], [.2, .38], [.225, .52], [.245, .6], [.2, .66], [.09, .7]].map(([r, t]) => new THREE.Vector2(r, t * .74));
+    const q = new THREE.LatheGeometry(prof, 16); q.scale(1, 1, .66);
+    const m = new THREE.Mesh(q, o.cloth ? new THREE.MeshLambertMaterial({ map: o.cloth }) : M(o.jacket)); m.position.y = .02; m.castShadow = true; body.add(m); return m;
+  })();
+  torso.rotation.y = PI;
+  for (const s of [-1, 1]) ball(.09, .07, .085, o.jacket, body, s * .22, .46, 0);               // deltoids
+  add(new THREE.CylinderGeometry(.07, .08, .09, 10), Ms, body, 0, .55, .01);                 // neck
+  add(new THREE.CylinderGeometry(.09, .085, .06, 10), o.collar || o.jacket, body, 0, .53, 0);  // collar
+  if (o.pocket) for (const s of [-1, 1]) add(new THREE.BoxGeometry(.1, .09, .012), o.pocket, body, s * .09, .32, .135);
   const arms = [-1, 1].map(s => {
-    const sh = joint(body, s * .215, .58, 0);
-    ball(.06, .06, .06, o.jacket, sh);
-    seg(.056, .047, .3, o.jacket, sh);
+    const sh = joint(body, s * .26, .46, 0);
+    limb([[.062, 0], [.064, .3], [.052, 1]], .3, o.jacket, sh);                                 // upper arm
     const el = joint(sh, 0, -.3, 0);
-    seg(.047, .042, .26, o.jacket, el);
-    ball(.034, .055, .022, o.skin, el, 0, -.3, 0);
+    ball(.05, .05, .05, o.jacket, el);
+    limb([[.052, 0], [.056, .25], [.04, 1]], .27, o.jacket, el);                                // forearm
+    add(new THREE.CylinderGeometry(.045, .042, .03, 10), o.jacket, el, 0, -.27, 0);             // cuff
+    const hand = ball(.045, .085, .028, Ms, el, 0, -.33, .005); hand.rotation.x = .15;          // big hands
+    ball(.016, .045, .02, Ms, el, s * .04, -.3, .01);                                           // thumb
     return { sh, el, s };
   });
-  const head = joint(body, 0, .86, 0);
-  ball(.098, .118, .108, o.skin, head);                         // skull
-  ball(.083, .055, .088, o.skin, head, 0, -.062, .014);         // jaw
-  ball(.016, .026, .03, o.skin, head, 0, -.008, .106);          // nose
+  const head = joint(body, 0, .595, .01);
+  const skull = ball(.093, .112, .104, Ms, head, 0, .07, 0);
+  ball(.08, .075, .09, Ms, head, 0, -.02, .012);                                                // jaw
+  ball(.07, .05, .07, Ms, head, 0, .01, .03);                                                   // cheeks
+  ball(.085, .035, .07, Ms, head, 0, .095, .03);                                                // brow ridge
+  ball(.018, .028, .028, Ms, head, 0, .035, .11);                                               // nose
+  ball(.012, .006, .006, '#4d2e24', head, 0, .018, .128);
   for (const s of [-1, 1]){
-    ball(.016, .028, .012, o.skin, head, s * .098, -.005, -.005);               // ears
-    ball(.011, .008, .006, '#2a2522', head, s * .036, .02, .098);               // eyes
-    add(new THREE.BoxGeometry(.034, .008, .01), o.hair, head, s * .037, .042, .1); // brows
+    ball(.016, .028, .012, Ms, head, s * .095, .05, -.01);                                      // ears
+    ball(.0115, .007, .006, '#1f1a18', head, s * .035, .06, .104);                              // eyes
+    add(new THREE.BoxGeometry(.036, .007, .012), '#5a3f30', head, s * .036, .085, .1).rotation.z = s * -.1;  // brows
+    if (o.moustache){ const m = ball(.03, .011, .014, o.moustache, head, s * .022, -.0, .108); m.rotation.z = s * .25; }
   }
-  // hair as a cap over the skull; short = buzz cut
-  const hg = new THREE.SphereGeometry(1, 12, 7, 0, PI * 2, 0, PI * (o.long ? .66 : .56));
-  hg.scale(.1012, .1215, .1112);
-  add(hg, o.hair, head, 0, .003, -.004).rotation.x = -.42;
-  if (o.moustache) for (const s of [-1, 1]){ const m = ball(.033, .012, .016, o.moustache, head, s * .025, -.036, .1); m.rotation.z = s * .28; }
+  // the buzz cut: nearly bald, just a darker shadow on the skull
+  { const hg = new THREE.SphereGeometry(1.012, 16, 9, 0, PI * 2, 0, PI * .5); hg.scale(.093, .112, .104); const m = add(hg, o.hair, head, 0, .07, 0); m.rotation.x = -.35; }
   g.userData = { hip, legs, arms, body, head };
   return g;
 }
 function pose(p, mode, ph = 0){
   const { hip, legs, arms, body } = p.userData;
   if (mode === 'sit'){
-    hip.position.y = .44; body.rotation.x = .1;
-    for (const l of legs){ l.th.rotation.set(-1.5, 0, l.s * .12); l.kn.rotation.x = 1.25; }
-    for (const a of arms){ a.sh.rotation.set(-.15, 0, a.s * .35); a.el.rotation.x = -.15; }
+    hip.position.y = .46; body.rotation.x = .14;
+    for (const l of legs){ l.th.rotation.set(-1.5, 0, l.s * .14); l.kn.rotation.x = 1.2; }
+    for (const a of arms){ a.sh.rotation.set(-.2, 0, a.s * .3); a.el.rotation.x = -.2; }
     return;
   }
   const amp = mode === 'run' ? .8 : .45;
-  hip.position.y = .95 - (mode === 'run' ? .05 : 0) + Math.abs(Math.cos(ph)) * .025;
-  body.rotation.x = mode === 'run' ? .16 : .03;
+  hip.position.y = .96 - (mode === 'run' ? .05 : 0) + Math.abs(Math.cos(ph)) * .025;
+  body.rotation.x = mode === 'run' ? .18 : .07;
   legs.forEach((l, i) => {
     const s = Math.sin(ph + (i ? PI : 0));
     l.th.rotation.set(s * amp, 0, l.s * .02);
@@ -989,7 +1002,7 @@ function pose(p, mode, ph = 0){
     a.el.rotation.x = mode === 'run' ? -1.2 : -.22;
   });
 }
-const player = makePerson({ cloth: TEX.jacket, jacket: '#2f5c9c', pocket: '#2a5390', collar: '#294f86', trousers: '#2e3036', shoes: '#4a3526', skin: '#d6a585', hair: '#4b3e33', moustache: '#4a3527' });
+const player = makePerson({ cloth: TEX.jacket, skinTex: TEX.skin, jacket: '#4b6a93', pocket: '#44618a', collar: '#405b82', trousers: '#33363c', shoes: '#3e2c20', skin: '#c99068', hair: '#b2805f', moustache: '#4a3527' });
 scene.add(player, window.__BIKE);
 
 // a few others on the Rheinbord and the Pfalz, Colville-still
@@ -1352,6 +1365,7 @@ function update(dt){
   const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 2.5 : 5));
   camPos.lerp(wantPos, k); camLook.lerp(wantLook, k); first = false;
   camera.position.copy(camPos); camera.lookAt(camLook);
+  if (DBG.has('closeup')){ const a = +DBG.get('closeup') || 0, hy = player.position.y + (st.mode === 'sit' ? .9 : 1.45); camera.position.set(player.position.x + Math.sin(st.yaw + a) * 1.7, hy + .1, player.position.z + Math.cos(st.yaw + a) * 1.7); camera.lookAt(player.position.x, hy - .25, player.position.z); }
   const fov = (innerWidth < innerHeight ? 82 : 72) - (st.mode === 'sit' ? 0 : 2);
   if (Math.abs(camera.fov - fov) > .01){ camera.fov = lerp(camera.fov, fov, first ? 1 : Math.min(1, dt * 1.5)); camera.updateProjectionMatrix(); }
 
@@ -1415,7 +1429,7 @@ function frame(){
   requestAnimationFrame(frame);
 }
 frame();
-window.__ready = true; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
+window.__ready = true; window.__player = player; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
 </script>
 </body>
 </html>
