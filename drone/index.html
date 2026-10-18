@@ -29,6 +29,8 @@ const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'hig
 renderer.setPixelRatio(1);
 renderer.setSize(RW, RH, false);
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local');
 const cv = renderer.domElement;
 document.body.appendChild(cv);
 function fit(){
@@ -351,7 +353,7 @@ function obstacleAt(x, y, z){
   const list = obstacles.get(okey(Math.floor(x / OCELL), Math.floor(z / OCELL)));
   if (!list) return null;
   for (const o of list){
-    if (y > o.top) continue;
+    if (y > o.top || (o.ti !== undefined && o.ti >= treeIM.count)) continue;
     const dx = x - o.x, dz = z - o.z;
     if (o.box){
       const lx = dx * o.c - dz * o.s, lz = dx * o.s + dz * o.c;
@@ -545,6 +547,7 @@ const central = { x: CENTRAL.x, z: CENTRAL.z, alive: true, central: true };
 
 // ---------------------------------------------------------------- vegetation & small objects
 const treeMat = lam({ color: 0xffffff }, 0.27);
+let treeIM, bushIM;
 {
   const trees = [];
   for (let j = -36; j <= 36; j++) for (let i = -20; i <= 20; i++){
@@ -575,18 +578,21 @@ const treeMat = lam({ color: 0xffffff }, 0.27);
     const a = rr(0, 6.283), d = rr(80, 560), x = Math.cos(a) * d, z = Math.sin(a) * d;
     if (!nearRoad(x, z) && !inSquare(x, z) && !obstacleAt(x, groundAt(x, z) + 1, z) && Math.hypot(x - START.x, z - START.z) > 25) trees.push([x, z, rr(2.5, 4.5), rr(8, 16)]);
   }
+  for (let i = trees.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [trees[i], trees[j]] = [trees[j], trees[i]]; }
   const im = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), treeMat, trees.length);
+  treeIM = im;
   trees.forEach(([x, z, r, th], n) => {
     const h = groundAt(x, z);
     setInst(im, n, x, h + th * 0.5, z, rr(0, 6.3), r, th * 0.55, r, rr(-.15, .15), rr(-.15, .15));
     const k = rr(0.16, 0.26); im.setColorAt(n, _col.setRGB(k, k * 0.97, k * 0.88));
-    addObstacle({ x, z, r: r * 0.85, top: h + th }, r);
+    addObstacle({ x, z, r: r * 0.85, top: h + th, ti: n }, r);
   });
   im.frustumCulled = false;
   scene.add(im);
 
   const NB = 7000;
   const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), treeMat, NB);
+  bushIM = bush;
   for (let n = 0; n < NB; n++){
     let x = rr(-7600, 7600), z = rr(-7600, 7600);
     if (n < 1500){ x = rr(-900, 900); z = rr(-900, 900); }
@@ -932,16 +938,61 @@ addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
   keys[e.code] = true;
-  if (ended){ if (endPhase() > 7 && (e.code === 'Space' || e.code === 'Enter')) location.reload(); return; }
-  if (e.code === 'KeyP' || e.code === 'Escape') setPaused(!paused);
-  if (e.code === 'KeyN') setVision(vision === 'day' ? 'thermal' : 'day');
-  if (paused || ended) return;
-  if (e.code === 'Space') toggleArm();
-  if (e.code === 'KeyM' || e.code === 'Tab') toggleMode();
-  if (e.code === 'KeyE' && P.alive && P.armed) die('boom');
+  if (e.code === 'Space' || e.code === 'Enter') act('arm');
+  if (e.code === 'KeyP' || e.code === 'Escape') act('pause');
+  if (e.code === 'KeyN') act('vision');
+  if (e.code === 'KeyM' || e.code === 'Tab') act('mode');
+  if (e.code === 'KeyE') act('det');
 });
+function act(a){
+  if (ended){ if (endPhase() > 7 && (a === 'arm' || a === 'det')) location.reload(); return; }
+  if (a === 'pause') return setPaused(!paused);
+  if (a === 'vision') return setVision(vision === 'day' ? 'thermal' : 'day');
+  if (paused) return;
+  if (a === 'arm') toggleArm();
+  if (a === 'mode') toggleMode();
+  if (a === 'det' && P.alive && P.armed) die('boom');
+}
+
+// analog input: Quest Touch controllers in VR, or a standard gamepad (Xbox layout) on the desktop
+const pad = { active: false, pitch: 0, roll: 0, yaw: 0, thr: 0, climb: 0, thrSeen: false, prev: {} };
+const dead = v => Math.abs(v) < 0.08 ? 0 : (v - Math.sign(v) * 0.08) / 0.92;
+const expo = v => v * (0.35 + 0.65 * v * v);
+function edge(id, on, a){ if (on && !pad.prev[id]){ audioInit(); act(a); } pad.prev[id] = on; }
+function readPads(){
+  pad.active = false;
+  const session = renderer.xr.getSession();
+  if (session){
+    for (const src of session.inputSources){
+      const gp = src.gamepad;
+      if (!gp) continue;
+      const ax = gp.axes, bt = gp.buttons;
+      pad.active = true;
+      if (src.handedness === 'right'){
+        pad.roll = expo(dead(ax[2] || 0)); pad.pitch = -expo(dead(ax[3] || 0));
+        edge('A', bt[4] && bt[4].pressed, 'arm'); edge('B', bt[5] && bt[5].pressed, 'det');
+      } else if (src.handedness === 'left'){
+        pad.yaw = expo(dead(ax[2] || 0)); pad.climb = -dead(ax[3] || 0);
+        pad.thr = bt[0] ? bt[0].value : 0;
+        edge('X', bt[4] && bt[4].pressed, 'vision'); edge('Y', bt[5] && bt[5].pressed, 'mode'); edge('LS', bt[3] && bt[3].pressed, 'pause');
+      }
+    }
+  } else if (navigator.getGamepads){
+    for (const gp of navigator.getGamepads()){
+      if (!gp || !gp.connected || gp.mapping !== 'standard') continue;
+      const ax = gp.axes, bt = gp.buttons;
+      pad.active = true;
+      pad.yaw = expo(dead(ax[0])); pad.climb = -dead(ax[1]); pad.roll = expo(dead(ax[2])); pad.pitch = -expo(dead(ax[3]));
+      pad.thr = bt[7] ? bt[7].value : 0;
+      edge('g0', bt[0].pressed, 'arm'); edge('g1', bt[1].pressed, 'det'); edge('g2', bt[2].pressed, 'vision'); edge('g3', bt[3].pressed, 'mode'); edge('g9', bt[9] && bt[9].pressed, 'pause');
+      break;
+    }
+  }
+  if (!pad.active){ pad.pitch = pad.roll = pad.yaw = pad.climb = 0; }
+  if (pad.thr > 0.05) pad.thrSeen = true;
+}
 addEventListener('keyup', e => { keys[e.code] = false; });
-addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (!paused) setPaused(true); });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (!paused && !renderer.xr.isPresenting) setPaused(true); });
 addEventListener('pointerdown', () => { audioInit(); if (ended && endPhase() > 7) location.reload(); });
 
 // ---------------------------------------------------------------- player drone (P1-SUN style interceptor)
@@ -1009,7 +1060,7 @@ function simStep(dt){
   if (P.armed){
     if (acro) T = P.thr * MAXT;
     else {
-      const vzt = (keys.KeyW ? 14 : 0) - (keys.KeyS ? 11 : 0);
+      const vzt = clamp((keys.KeyW ? 14 : 0) - (keys.KeyS ? 11 : 0) + pad.climb * 14, -11, 14);
       T = clamp((G + 4 * (vzt - P.vel.y) + KDRAG * P.vel.length() * P.vel.y) / Math.max(0.28, _up.y), 0, MAXT);
     }
     const left = 1 - P.used;
@@ -1762,7 +1813,7 @@ function drawOSD(){
   txt(P.mode, W / 2, H - 10, 'center');
   txt('H ' + fmtD(dist), W / 2 + 40, H - 10, 'left');
   if (!P.armed && blink) txt('DISARMED', W / 2, H / 2 + 26, 'center');
-  if (!P.armed) txt('[SPACE]   [P]', W / 2, H / 2 + 38, 'center');
+  if (!P.armed) txt(renderer.xr.isPresenting ? '[A]   [L-STICK]' : '[SPACE]   [P]', W / 2, H / 2 + 38, 'center');
 }
 
 function drawEnd(){
@@ -1828,8 +1879,13 @@ function drawPause(){
     const ly = m.y < cy ? m.y - 33 : m.y + 33;
     txt(m.n + (m.cw ? ' CW ' : ' CCW ') + Math.round(mix * 100) + '%', m.x, ly, 'center');
   });
-  txt('SPACE ARM   E DETONATE', 8, 218);
-  txt('M ACRO/ANGL N THERMAL', 8, 229);
+  if (renderer.xr.isPresenting){
+    txt('A ARM  B DET  TRIG THR', 8, 218);
+    txt('Y ACRO/ANGL X THERMAL', 8, 229);
+  } else {
+    txt('SPACE ARM   E DETONATE', 8, 218);
+    txt('M ACRO/ANGL N THERMAL', 8, 229);
+  }
 
   const x0 = 162; let y = 30;
   const row = (on, a, b) => {
@@ -1859,11 +1915,13 @@ setVision('day');
 function updateSticks(dt){
   const acro = P.mode === 'ACRO';
   const r = 1 - Math.exp(-dt * (acro ? 7 : 9));
-  const tp = (keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0);
-  const tr = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
-  const ty = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
-  P.sp += (tp - P.sp) * r; P.sr += (tr - P.sr) * r; P.sy += (ty - P.sy) * r;
-  if (acro && P.armed){
+  const tp = clamp((keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0) + pad.pitch, -1, 1);
+  const tr = clamp((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0) + pad.roll, -1, 1);
+  const ty = clamp((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + pad.yaw, -1, 1);
+  const ra = pad.active ? 1 - Math.exp(-dt * 30) : r;
+  P.sp += (tp - P.sp) * ra; P.sr += (tr - P.sr) * ra; P.sy += (ty - P.sy) * ra;
+  if (acro && P.armed && pad.active && pad.thrSeen) P.thr = pad.thr;
+  else if (acro && P.armed){
     if (keys.KeyW) P.thr = Math.min(1, P.thr + dt * 0.75);
     if (keys.KeyS) P.thr = Math.max(0, P.thr - dt * 0.75);
   }
@@ -1919,6 +1977,43 @@ function update(dt){
   killBlink = Math.max(0, killBlink - dt);
 }
 
+// ---------------------------------------------------------------- Meta Quest: head-locked goggle screen
+let lastFeed = 0;
+const feedRT = new THREE.WebGLRenderTarget(RW, RH, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+const vrScene = new THREE.Scene();
+vrScene.background = new THREE.Color(0);
+const vrCam = new THREE.PerspectiveCamera();
+// the quad is placed in view space, so it stays fixed to the head in both eyes: ~50 degrees wide at 1.5 m
+const goggle = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.05), new THREE.ShaderMaterial({
+  uniforms: { map: { value: feedRT.texture } }, depthTest: false, depthWrite: false,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy, -1.5, 1.0); }`,
+  fragmentShader: `uniform sampler2D map; varying vec2 vUv; void main(){ gl_FragColor = texture2D(map, vUv); }`
+}));
+goggle.frustumCulled = false;
+vrScene.add(goggle);
+function vrQuality(on){
+  treeIM.count = on ? Math.floor(treeIM.instanceMatrix.count * 0.45) : treeIM.instanceMatrix.count;
+  bushIM.count = on ? 2200 : bushIM.instanceMatrix.count;
+}
+if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
+  if (!ok) return;
+  const b = document.createElement('button');
+  b.textContent = 'ENTER VR';
+  b.style.cssText = 'position:absolute;right:16px;bottom:16px;z-index:2;padding:8px 14px;font:bold 14px monospace;color:#f4f2ec;background:rgba(0,0,0,0.6);border:2px solid #f4f2ec;cursor:pointer';
+  b.onclick = async () => {
+    audioInit();
+    const cur = renderer.xr.getSession();
+    if (cur){ cur.end(); return; }
+    try {
+      const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] });
+      await renderer.xr.setSession(session);
+      vrQuality(true); setPaused(false); b.textContent = 'EXIT VR';
+      session.addEventListener('end', () => { vrQuality(false); b.textContent = 'ENTER VR'; });
+    } catch (e) { b.textContent = 'VR N/A'; }
+  };
+  document.body.appendChild(b);
+}).catch(() => {});
+
 function render(){
   post.uniforms.uTime.value = (performance.now() / 1000) % 600;
   post.uniforms.uNoise.value = noise;
@@ -1937,24 +2032,34 @@ function render(){
     setP(AU.hiss.gain, ended ? 0.1 * (1 - black) : P.alive ? noise * 0.04 : 0.07);
   }
 
-  drawOSD();
-  if (paused) drawPause();
-  osdTex.needsUpdate = true;
-
-  renderer.setRenderTarget(rt);
-  renderer.render(scene, camera);
-  renderer.setRenderTarget(null);
-  renderer.render(postScene, postCam);
+  const inVR = renderer.xr.isPresenting, t = performance.now();
+  if (!inVR || t - lastFeed > 1000 / 30){
+    lastFeed = t;
+    drawOSD();
+    if (paused) drawPause();
+    osdTex.needsUpdate = true;
+    const xrTarget = renderer.getRenderTarget();
+    renderer.xr.enabled = false;
+    renderer.setRenderTarget(rt);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(inVR ? feedRT : null);
+    renderer.render(postScene, postCam);
+    renderer.xr.enabled = true;
+    renderer.setRenderTarget(xrTarget);
+  }
+  if (inVR) renderer.render(vrScene, vrCam);
 }
 
 function frame(now){
-  requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  readPads();
   if (!paused) update(dt);
   render();
 }
-requestAnimationFrame(frame);
+renderer.setAnimationLoop(frame);
 if (location.hash === '#dbg') window.__d = { P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; },
+  vrPreview(){ renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(feedRT); renderer.render(postScene, postCam); renderer.setRenderTarget(null); vrCam.aspect = RW / RH; vrCam.fov = 75; vrCam.updateProjectionMatrix(); renderer.render(vrScene, vrCam); },
+  vrQuality, pad,
   get state(){ return { clock, ended, kills, leaks, aaKills, alive: houses.filter(h => h.village && h.alive).length }; } };
 </script>
 </body>
