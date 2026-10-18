@@ -46,14 +46,14 @@
 <div id="stick"><i></i></div>
 <div id="err"></div>
 
-<script src="basel-data.js"></script>
+<script src="basel-city.js?v=2"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js';
 
-const D2 = window.BASEL2, DBG = new URLSearchParams(location.search);
+const D2 = window.BASEL2, DBG = new URLSearchParams(location.search), LOW = matchMedia('(pointer:coarse)').matches;   // phones get a lighter city
 const D = { B: D2.B, R: D2.WATER.reduce((a, b) => b[1].length > a[1].length ? b : a)[1], T: D2.T };
 const COLL = { circles: [], boxes: [] };   // [x, z, r] and [cx, cz, halfW, halfL, yaw]
 
@@ -314,14 +314,24 @@ const TEX = {
 };
 
 // ------------------------------------------------------------------ geometry builder
-class Geo { constructor(){ this.p = []; this.n = []; this.u = []; this.c = []; } }
+// growable typed arrays: a fraction of the memory of plain arrays, and the GPU takes them as they are
+class Geo {
+  constructor(){ this.cap = 1 << 16; this.n3 = 0; this.p = new Float32Array(this.cap * 3); this.n = new Float32Array(this.cap * 3); this.u = new Float32Array(this.cap * 2); this.c = new Float32Array(this.cap * 3); }
+  grow(){ this.cap *= 2; const g = (a, k) => { const b = new Float32Array(this.cap * k); b.set(a); return b; }; this.p = g(this.p, 3); this.n = g(this.n, 3); this.u = g(this.u, 2); this.c = g(this.c, 3); }
+  get length(){ return this.n3; }
+}
 const GEO = {};
 const geo = k => GEO[k] || (GEO[k] = new Geo());
 function tri(g, a, b, c, ua, ub, uc, col){
   const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
   let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1;
   nx /= l; ny /= l; nz /= l;
-  g.p.push(...a, ...b, ...c); g.n.push(nx, ny, nz, nx, ny, nz, nx, ny, nz); g.u.push(...ua, ...ub, ...uc); g.c.push(...col, ...col, ...col);
+  if (g.n3 + 3 > g.cap) g.grow();
+  const i = g.n3, P = g.p, N = g.n, U = g.u, C = g.c;
+  P[i * 3] = a[0]; P[i * 3 + 1] = a[1]; P[i * 3 + 2] = a[2]; P[i * 3 + 3] = b[0]; P[i * 3 + 4] = b[1]; P[i * 3 + 5] = b[2]; P[i * 3 + 6] = c[0]; P[i * 3 + 7] = c[1]; P[i * 3 + 8] = c[2];
+  for (let k = 0; k < 3; k++){ N[(i + k) * 3] = nx; N[(i + k) * 3 + 1] = ny; N[(i + k) * 3 + 2] = nz; C[(i + k) * 3] = col[0]; C[(i + k) * 3 + 1] = col[1]; C[(i + k) * 3 + 2] = col[2]; }
+  U[i * 2] = ua[0]; U[i * 2 + 1] = ua[1]; U[i * 2 + 2] = ub[0]; U[i * 2 + 3] = ub[1]; U[i * 2 + 4] = uc[0]; U[i * 2 + 5] = uc[1];
+  g.n3 += 3;
 }
 // polygon face (convex, planar), flipped so its normal agrees with `hint`
 function face(g, vs, uvs, col, hint){
@@ -467,11 +477,11 @@ function roundTower(x, z, r, h, cone, col, roofCol){
   walls(geo('stone'), c, y - 2, y + h, col, 3, 3); cap(geo('plaster'), c, y + h, col, 2);
   pyramid(geo('roof'), c, y + h, [x, y + h + cone, z], roofCol, 2);
 }
-for (const [t, h0, name, flat, seed] of D.B){
+function buildBuilding([t, h0, name, flat, seed]){
   const pts = pairs(flat);
   const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cz = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-  if (inRiver(cx, cz)) continue;
-  if (h0 > 60 && t !== 2 && t !== 3 && t !== 4) continue;              // no towers of today: nostalgia Basel
+  if (inRiver(cx, cz)) return;
+  if (h0 > 60 && t !== 2 && t !== 3 && t !== 4) return;              // no towers of today: nostalgia Basel
   const north = isNorth(cx, cz), r = rng(seed * 31 + 7);
   const dist = Math.hypot(cx - START_XZ[0], cz - START_XZ[1]), tier = dist < 330 ? 0 : dist < 950 ? 1 : 2;
   let lo = 1e9, hi = -1e9, dmin = 1e9;
@@ -494,13 +504,13 @@ for (const [t, h0, name, flat, seed] of D.B){
       boxAt(geo('plaster'), (a[0] + b[0]) / 2 + n[0] * .03, hi + .42, (a[1] + b[1]) / 2 + n[1] * .03, L + .04, .85, .06, Math.atan2(ez, ex), dc, 1);
     }
   }
-  if (!small && tier < 2) cornice(geo('plaster'), pts, y1, fc.map(v => v * .86));
+  if (!small && tier === 0) cornice(geo('plaster'), pts, y1, fc.map(v => v * .86));
   const o = obb(pts), fill = Math.abs(signedArea(pts)) / (4 * o.hu * o.hv);
-  if (!small && fill > 0.72 && o.hv < 16){
+  if (!small && tier < 2 && fill > 0.72 && o.hv < 16){
     const rh = Math.min(o.hv * 1.3, 11);
     gable(geo('roof'), geo('plaster'), o, y1, rh, rc, fc);
     if (tier === 0 && o.hu > 4 && o.hv > 3.2) dormers(o, y1, rh, rc, r);
-    if (tier < 2) for (let c = 0; c < 1 + (o.hu > 7 ? 1 : 0); c++){ const u = (r() - .5) * o.hu * 1.2, v = (r() - .5) * o.hv * .5;
+    if (tier === 0) for (let c = 0; c < 1 + (o.hu > 7 ? 1 : 0); c++){ const u = (r() - .5) * o.hu * 1.2, v = (r() - .5) * o.hv * .5;
       boxAt(geo('plaster'), o.cx + o.c * u - o.s * v, y1 + rh * (1 - Math.abs(v) / o.hv) + .4, o.cz + o.s * u + o.c * v, .7, 1.6, .7, Math.atan2(o.s, o.c), lin('#8a6f62'), 1); }
   } else cap(geo('roof'), pts, y1, small ? lin('#77706a') : rc.map(v => v * .8), 3);
   if (rathaus && o.hu > 8){ const ax = [o.c, o.s]; towerAt(o.cx + ax[0] * (o.hu - 4), o.cz + ax[1] * (o.hu - 4), 7, 44, 14, lin('#b23a30'), lin('#4f6b3f'), Math.atan2(o.s, o.c)); }
@@ -564,6 +574,9 @@ const MU = { cx: -86.35, cz: 172.11, a: 143.91 * PI / 180, y: 24 };
   }
 }
 
+
+const CITY = { list: D.B.map(e => { const f = e[3]; let cx = 0, cz = 0; for (let k = 0; k < f.length; k += 2){ cx += f[k]; cz += f[k + 1]; } const n = f.length / 2; return [e, Math.hypot(cx / n - START_XZ[0], cz / n - START_XZ[1])]; }).sort((a, b) => a[1] - b[1]).map(x => x[0]), i: 0, done: false };
+function buildTowers(){
 // the city's towers from the map: bell towers with their real heights, the old gates
 {
   const SAND = lin('#d9b6a6'), DARK = lin('#4e3e39'), STONE = lin('#d8ccb6');
@@ -574,6 +587,15 @@ const MU = { cx: -86.35, cz: 172.11, a: 143.91 * PI / 180, y: 24 };
   }
   // Spalentor: the great gate, a square tower between two round ones
   const sp = D2.LM.Spalentor; if (sp){ const [x, z] = sp; towerAt(x, z, 11, 28, 16, STONE, lin('#5a7a44'), .35); for (const sg of [-1, 1]) roundTower(x + Math.cos(.35) * sg * 10, z - Math.sin(.35) * sg * 10, 4.2, 21, 9, STONE, DARK); }
+}
+
+}
+// the city builds in slices of a few milliseconds a frame, nearest first, so the page answers at once and the streets fill in around you
+function cityStep(){
+  const t0 = performance.now(); let n = 0;
+  while (CITY.i < CITY.list.length && performance.now() - t0 < 14){ buildBuilding(CITY.list[CITY.i++]); n++; }
+  if (n) flush();
+  if (CITY.i < CITY.list.length) setTimeout(cityStep, 0); else { buildTowers(); flush(); CITY.done = true; }
 }
 
 // ------------------------------------------------------------------ river banks
@@ -855,7 +877,7 @@ const ORWs = resample(ORW, 4);
 
 // ------------------------------------------------------------------ terrain
 function buildTerrain(){
-  const X0 = -1750, X1 = 1750, Z0 = -1400, Z1 = 1400, S = 6, NX = Math.round((X1 - X0) / S) + 1, NZ = Math.round((Z1 - Z0) / S) + 1;
+  const X0 = -1750, X1 = 1750, Z0 = -1400, Z1 = 1400, S = LOW ? 9 : 6, NX = Math.round((X1 - X0) / S) + 1, NZ = Math.round((Z1 - Z0) / S) + 1;
   // green areas rasterised to a 10 m grid
   const GS = 10, GNX = Math.ceil((X1 - X0) / GS) + 1, GNZ = Math.ceil((Z1 - Z0) / GS) + 1, green = new Uint8Array(GNX * GNZ);
   for (const flat of D2.GREEN){ const P = pairs(flat), bx0 = Math.min(...P.map(p => p[0])), bx1 = Math.max(...P.map(p => p[0])), bz0 = Math.min(...P.map(p => p[1])), bz1 = Math.max(...P.map(p => p[1]));
@@ -925,10 +947,10 @@ const MATS = {
 };
 function flush(){
   for (const k in GEO){
-    const G = GEO[k]; if (!G.p.length) continue;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(G.p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(G.n, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(G.u, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(G.c, 3));
+    const G = GEO[k]; if (!G.n3) continue;
+    const g = new THREE.BufferGeometry(), n = G.n3;
+    g.setAttribute('position', new THREE.BufferAttribute(G.p.slice(0, n * 3), 3)); g.setAttribute('normal', new THREE.BufferAttribute(G.n.slice(0, n * 3), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(G.u.slice(0, n * 2), 2)); g.setAttribute('color', new THREE.BufferAttribute(G.c.slice(0, n * 3), 3));
     const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ ...MATS[k], vertexColors: true }));
     m.castShadow = m.receiveShadow = true; scene.add(m);
     delete GEO[k];
@@ -1009,9 +1031,9 @@ water.rotation.x = -PI / 2; scene.add(water);
 // ------------------------------------------------------------------ trees
 {
   const crown = (() => {
-    const parts = [[0, 0, 0, 1], [.55, -.18, .25, .72], [-.52, -.12, -.25, .74], [.12, .38, -.32, .64], [-.2, .3, .42, .6], [.45, .2, -.4, .55]];
+    const parts = LOW ? [[0, 0, 0, 1], [.5, -.15, .22, .72]] : [[0, 0, 0, 1], [.5, -.15, .22, .72], [-.46, -.1, -.3, .7]];
     const p = [], n = [];
-    for (const [x, y, z, r] of parts){ const g = new THREE.IcosahedronGeometry(r, 2); g.translate(x, y, z); p.push(...g.attributes.position.array); n.push(...g.attributes.normal.array); }
+    for (const [x, y, z, r] of parts){ const g = new THREE.IcosahedronGeometry(r, 1); g.translate(x, y, z); p.push(...g.attributes.position.array); n.push(...g.attributes.normal.array); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(n, 3)); return g;
   })();
   const trunk = new THREE.CylinderGeometry(.18, .26, 1, 6); trunk.translate(0, .5, 0);
@@ -1604,7 +1626,9 @@ const gulls = [];
 
 // ------------------------------------------------------------------ build everything
 const terrain = buildTerrain(); scene.add(terrain);
+while (CITY.i < Math.min(600, CITY.list.length)) buildBuilding(CITY.list[CITY.i++]);
 flush();
+setTimeout(cityStep, 0);
 
 // ------------------------------------------------------------------ post: GTA-style trails + Colville grade
 const post = { scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
@@ -1968,7 +1992,7 @@ function frame(){
   requestAnimationFrame(frame);
 }
 frame();
-window.__ready = true; window.__DRIVE = DRIVE; window.__enterCar = enterCar; window.__keys = keys; window.__walkable = walkable; window.__RIG = RIG; window.__CIN = CIN; window.__PEDS = PEDS; window.__player = player; window.__st = st; window.__trams = TRAMS; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
+window.__ready = true; window.__CITY = CITY; window.__DRIVE = DRIVE; window.__enterCar = enterCar; window.__keys = keys; window.__walkable = walkable; window.__RIG = RIG; window.__CIN = CIN; window.__PEDS = PEDS; window.__player = player; window.__st = st; window.__trams = TRAMS; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
 </script>
 </body>
 </html>
