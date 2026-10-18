@@ -24,17 +24,17 @@ import * as THREE from 'three';
 THREE.ColorManagement.enabled = false;
 
 // ---------------------------------------------------------------- setup
-const W = 320, H = 240;
+const W = 320, H = 240, RW = 384, RH = 288; // W, H: OSD layout units; RW, RH: feed pixels
 const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
 renderer.setPixelRatio(1);
-renderer.setSize(W, H, false);
+renderer.setSize(RW, RH, false);
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 const cv = renderer.domElement;
 document.body.appendChild(cv);
 function fit(){
-  const s = Math.min(innerWidth / W, innerHeight / H);
-  cv.style.width = (W * s) + 'px';
-  cv.style.height = (H * s) + 'px';
+  const s = Math.min(innerWidth / RW, innerHeight / RH);
+  cv.style.width = (RW * s) + 'px';
+  cv.style.height = (RH * s) + 'px';
 }
 addEventListener('resize', fit); fit();
 
@@ -45,7 +45,7 @@ const FOG = new THREE.Color(0.72, 0.70, 0.66);
 scene.fog = new THREE.FogExp2(FOG, 0.00015);
 const camera = new THREE.PerspectiveCamera(100, W / H, 0.04, 22000);
 scene.add(camera);
-const rt = new THREE.WebGLRenderTarget(W, H, { minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter });
+const rt = new THREE.WebGLRenderTarget(RW, RH, { minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter });
 
 // ---------------------------------------------------------------- helpers
 function hash2(x, y){
@@ -932,6 +932,7 @@ addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
   keys[e.code] = true;
+  if (ended){ if (endPhase() > 7 && (e.code === 'Space' || e.code === 'Enter')) location.reload(); return; }
   if (e.code === 'KeyP' || e.code === 'Escape') setPaused(!paused);
   if (e.code === 'KeyN') setVision(vision === 'day' ? 'thermal' : 'day');
   if (paused || ended) return;
@@ -941,7 +942,7 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (!paused) setPaused(true); });
-addEventListener('pointerdown', audioInit);
+addEventListener('pointerdown', () => { audioInit(); if (ended && endPhase() > 7) location.reload(); });
 
 // ---------------------------------------------------------------- player drone (P1-SUN style interceptor)
 const G = 9.81, MAXT = 4.6 * G, KDRAG = 0.0036, LDRAG = 0.12;
@@ -1314,7 +1315,7 @@ class Vehicle {
     this.place(dt);
     if (this.s >= this.road.len - 4) endFeed();
     this.dustT -= dt;
-    if (this.dustT <= 0 && speed > 2){ this.dustT = 0.18; fx(_p3.set(this.pos.x, this.pos.y + 0.6, this.pos.z).addScaledVector(this.vel, -0.35), false, 2, 9, 4, _ev.set(0, 0.6, 0), 0.45, 0, DUST); }
+    if (this.dustT <= 0 && speed > 2){ this.dustT = 0.12; fx(_p3.set(this.pos.x, this.pos.y + 0.8, this.pos.z).addScaledVector(this.vel, -0.4), false, 3, 16, 7, _ev.set(rr(-0.5, 0.5), 1.2, rr(-0.5, 0.5)), 0.6, 0, DUST); }
     if (AU.ready){ if (!this.snd) this.snd = makeVehicleSound(); updateSrcSound(this.snd, this.pos, this.vel, true); }
     this.shoot(dt);
   }
@@ -1522,7 +1523,7 @@ function updateGuns(dt){
 }
 
 // ---------------------------------------------------------------- the threat: Gerans and columns arrive over time
-let nextGeran = 40, nextColumn = 80;
+let nextGeran = 40, nextColumn = 25;
 const pending = [];
 function updateThreats(){
   const ramp = Math.max(0.4, 1 - clock / 1800);
@@ -1538,9 +1539,11 @@ function updateThreats(){
   for (let i = pending.length - 1; i >= 0; i--) if (clock >= pending[i].at){ gerans.push(new Geran(pending[i].type, pending[i].corr)); pending.splice(i, 1); }
   if (clock > nextColumn){ spawnColumn(); nextColumn = clock + rr(220, 340) * Math.max(0.5, 1 - clock / 2400); }
 }
+let endedAt = 0;
+const endPhase = () => ended ? (performance.now() - endedAt) / 1000 : 0;
 function endFeed(){
   if (ended) return;
-  ended = true;
+  ended = true; endedAt = performance.now();
   P.alive = false; P.armed = false;
   staticAmt = 1;
 }
@@ -1562,20 +1565,20 @@ function setVision(name){
 }
 
 // ---------------------------------------------------------------- post processing (analog FPV feed)
-const osd = document.createElement('canvas'); osd.width = W; osd.height = H;
+const osd = document.createElement('canvas'); osd.width = RW; osd.height = RH;
 const oc = osd.getContext('2d');
 const osdTex = new THREE.CanvasTexture(osd);
 osdTex.minFilter = osdTex.magFilter = THREE.NearestFilter;
 const K = 0.2;
 const post = new THREE.ShaderMaterial({
   uniforms: {
-    tScene: { value: rt.texture }, tOSD: { value: osdTex }, uRes: { value: new THREE.Vector2(W, H) },
-    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.3 }, uTherm: { value: 0 }
+    tScene: { value: rt.texture }, tOSD: { value: osdTex }, uRes: { value: new THREE.Vector2(RW, RH) },
+    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.3 }, uTherm: { value: 0 }, uBlack: { value: 0 }
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader: `
     uniform sampler2D tScene, tOSD; uniform vec2 uRes;
-    uniform float uTime, uNoise, uStatic, uFlash, uK, uGain, uTherm;
+    uniform float uTime, uNoise, uStatic, uFlash, uK, uGain, uTherm, uBlack;
     varying vec2 vUv;
     float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main(){
@@ -1590,7 +1593,7 @@ const post = new THREE.ShaderMaterial({
       vec2 s = c * 0.5 + 0.5;
       vec3 col = texture2D(tScene, s).rgb;
       vec3 smear = texture2D(tScene, s - vec2(1.5 / uRes.x, 0.0)).rgb + texture2D(tScene, s - vec2(3.5 / uRes.x, 0.0)).rgb;
-      col = mix(col, smear * 0.5, 0.4);
+      col = mix(col, smear * 0.5, 0.3);
       float l = dot(col, vec3(0.299, 0.587, 0.114));
       l = clamp(pow(l * uGain, 0.85) * 1.15, 0.0, 1.0);
       vec3 graded = mix(vec3(0.11, 0.10, 0.09), vec3(0.88, 0.85, 0.79), l) * vec3(1.0, 0.965, 0.9);
@@ -1599,7 +1602,7 @@ const post = new THREE.ShaderMaterial({
       vec4 o = texture2D(tOSD, vec2(vUv.x + jit, vUv.y));
       col = mix(col, o.rgb, o.a);
       float n = h(gl_FragCoord.xy + vec2(tq * 7.13, tq * 3.7));
-      col += (n - 0.5) * (0.07 + uNoise * 0.55);
+      col += (n - 0.5) * (0.05 + uNoise * 0.55);
       col += step(1.0 - uNoise * 0.03, h(gl_FragCoord.xy * 1.31 + tq)) * 0.8;
       float band = fract(vUv.y + uTime * 0.11);
       col *= 1.0 - 0.06 * smoothstep(0.0, 0.04, band) * smoothstep(0.1, 0.04, band);
@@ -1608,6 +1611,9 @@ const post = new THREE.ShaderMaterial({
       float ln = h(vec2(row, tq * 1.3));
       col = mix(col, vec3(sn * 0.75 + ln * 0.25) * vec3(0.92, 0.9, 0.86), uStatic);
       col = mix(col, vec3(1.0, 0.97, 0.9), uFlash);
+      col = mix(col, vec3(0.0), uBlack);
+      vec4 o2 = texture2D(tOSD, vUv);
+      col = mix(col, o2.rgb, o2.a * uBlack);
       gl_FragColor = vec4(col, 1.0);
     }`
 });
@@ -1654,6 +1660,15 @@ function drawCompass(){
   strokeTwice();
   oc.beginPath(); oc.moveTo(cx, y + 6); oc.lineTo(cx - 3, y + 10); oc.lineTo(cx + 3, y + 10); oc.closePath(); oc.stroke(); oc.fill();
   txt(String(Math.round(hd) % 360).padStart(3, '0'), cx, y + 17, 'center');
+  // nearest ground target bearing
+  let nv = null, nvd = 1e9;
+  for (const v of vehicles){ if (!v.alive) continue; const d = Math.hypot(v.pos.x - P.pos.x, v.pos.z - P.pos.z); if (d < nvd){ nvd = d; nv = v; } }
+  if (nv){
+    const brg = (Math.atan2(nv.pos.x - P.pos.x, -(nv.pos.z - P.pos.z)) * 180 / Math.PI + 360) % 360;
+    const off = ((brg - hd + 540) % 360) - 180, x = cx + clamp(off, -span - 4, span + 4) * ppd;
+    oc.beginPath(); oc.moveTo(x, y + 4); oc.lineTo(x + 4, y + 8); oc.lineTo(x, y + 12); oc.lineTo(x - 4, y + 8); oc.closePath();
+    strokeTwice();
+  }
   // village (home) bearing
   if (Math.hypot(P.pos.x, P.pos.z) > 60){
     const brg = (Math.atan2(-P.pos.x, P.pos.z) * 180 / Math.PI + 360) % 360;
@@ -1664,7 +1679,9 @@ function drawCompass(){
   }
 }
 function drawOSD(){
+  oc.setTransform(RW / W, 0, 0, RH / H, 0, 0);
   oc.clearRect(0, 0, W, H);
+  if (ended){ drawEnd(); return; }
   if (!P.alive) return;
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle';
   oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
@@ -1705,6 +1722,16 @@ function drawOSD(){
       txt(fmtD(d), x, y + s + 6, 'center');
     } else if (d < nd){ nd = d; near = g; }
   }
+  // ground targets reported by the recon drone: diamond with distance
+  for (const v of vehicles){
+    if (!v.alive) continue;
+    const d = v.pos.distanceTo(camera.position);
+    const [x, y, fr] = toScreen(_p3.copy(v.pos).setY(v.pos.y + 1.5));
+    if (!fr || x < 4 || x > W - 4 || y < 36 || y > H - 4) continue;
+    oc.beginPath(); oc.moveTo(x, y - 6); oc.lineTo(x + 6, y); oc.lineTo(x, y + 6); oc.lineTo(x - 6, y); oc.closePath();
+    strokeTwice();
+    txt(fmtD(d), x, y + 12, 'center');
+  }
   if (near){
     const l = near.pos.clone().applyMatrix4(camera.matrixWorldInverse);
     let ax = l.x, ay = l.y;
@@ -1738,6 +1765,13 @@ function drawOSD(){
   if (!P.armed) txt('[SPACE]   [P]', W / 2, H / 2 + 38, 'center');
 }
 
+function drawEnd(){
+  if (endPhase() < 7) return;
+  oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle';
+  oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
+  txt('[TRY AGAIN]', W / 2, H / 2, 'center');
+}
+
 // ---------------------------------------------------------------- pause screen: quadcopter schematic
 // Betaflight quad X: 1 rear right CW, 2 front right CCW, 3 rear left CCW, 4 front left CW
 const MOTORS = [
@@ -1754,6 +1788,7 @@ function outlined(draw, w = 1){
 }
 function drawPause(){
   const now = performance.now(), pdt = Math.min(0.05, (now - pauseLast) / 1000); pauseLast = now;
+  oc.setTransform(RW / W, 0, 0, RH / H, 0, 0);
   oc.clearRect(0, 0, W, H);
   oc.fillStyle = 'rgba(0,0,0,0.6)'; oc.fillRect(0, 0, W, H);
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle'; oc.lineJoin = 'round';
@@ -1889,6 +1924,8 @@ function render(){
   post.uniforms.uNoise.value = noise;
   post.uniforms.uStatic.value = P.alive ? staticAmt : 1;
   post.uniforms.uFlash.value = ended ? 0 : flash;
+  const black = clamp((endPhase() - 5) / 1.5, 0, 1);
+  post.uniforms.uBlack.value = black;
 
   if (AU.ready){
     const tf = P.T / MAXT, on = P.alive && P.armed && !ended;
@@ -1897,7 +1934,7 @@ function render(){
     setP(AU.pGain.gain, on ? 0.05 + 0.16 * tf : 0, 0.03);
     setP(AU.pLp.frequency, 900 + 3500 * tf);
     setP(AU.wind.gain, P.alive && !ended ? Math.min(0.3, P.vel.length() / 110 * 0.3) : 0);
-    setP(AU.hiss.gain, ended ? 0.1 : P.alive ? noise * 0.04 : 0.07);
+    setP(AU.hiss.gain, ended ? 0.1 * (1 - black) : P.alive ? noise * 0.04 : 0.07);
   }
 
   drawOSD();
