@@ -250,7 +250,7 @@ const TEX = {
     blotches(g, s, 8, '60,55,50', .3, 8, 22, 20); grain(g, s, 14, 21);
   }),
   grass: canvasTex(128, (g, s) => {
-    g.fillStyle = '#7d8a4c'; g.fillRect(0, 0, s, s);
+    g.fillStyle = '#7b8256'; g.fillRect(0, 0, s, s);
     blotches(g, s, 14, '150,150,80', .35, 8, 22, 22); blotches(g, s, 12, '60,80,40', .4, 6, 18, 23); blotches(g, s, 5, '160,140,100', .3, 6, 14, 24);
     const r = rng(25); g.fillStyle = 'rgba(40,60,30,.5)';
     for (let i = 0; i < 260; i++){ const x = r() * s, y = r() * s; g.fillRect(x, y, 1, 2 + r() * 3); }
@@ -431,8 +431,8 @@ function relief(pts, base, top, fc, r){
     }
   }
 }
-const FACADES = ['#f3eee4', '#efe6d2', '#e8dcc4', '#ead6a6', '#ecd2c2', '#f6f3ec', '#e2d2b4', '#efdcae', '#d9dccf', '#e6bca6', '#f0e2d2', '#ffffff', '#f6f1e6'].map(lin);
-const ROOFS = ['#7d4c3a', '#6c4334', '#5e3d31', '#8a5440', '#4f3a32', '#764a3c', '#59504b'].map(lin);
+const FACADES = ['#e6e0d3', '#e2d8c4', '#d9ccb4', '#d8c8a2', '#dbc4b4', '#e9e5db', '#cfc2a8', '#dccba4', '#cfd0c4', '#d4b39f', '#e0d2c2', '#ece8de', '#e3dccc', '#c9c4b2', '#d2c0a8'].map(lin);
+const ROOFS = ['#74534a', '#66483e', '#5a443c', '#7a5748', '#4e3e39', '#6e5146', '#5a5450', '#6b5c52'].map(lin);
 const WHITE = [1, 1, 1];
 
 const NORTH_BLDG = [];
@@ -453,12 +453,22 @@ for (const [t, h0, name, flat, seed] of D.B){
   const near = !small && t !== 2 && dmin < 60 && Math.hypot(cx - 60, cz + 40) < 230, fv = near ? 'plaster' : ['facade', 'facade2', 'facade3'][Math.floor(r() * 3)];
   walls(geo(small || t === 2 ? 'plaster' : fv), pts, y0, y1, t === 2 ? lin('#e9e2d4') : fc, 3.2, 3.3);
   if (near) relief(pts, hi, y1, fc, r);
+  if (Math.hypot(cx - 60, cz + 40) < 320 && !small){
+    const ccw = signedArea(pts) > 0, dc = fc.map(v => v * .72);
+    for (let i = 0; i < pts.length; i++){
+      const a = pts[i], b = pts[(i + 1) % pts.length], ex = b[0] - a[0], ez = b[1] - a[1], L = Math.hypot(ex, ez); if (L < 1) continue;
+      const n = ccw ? [ez / L, -ex / L] : [-ez / L, ex / L];
+      boxAt(geo('plaster'), (a[0] + b[0]) / 2 + n[0] * .03, hi + .42, (a[1] + b[1]) / 2 + n[1] * .03, L + .04, .85, .06, Math.atan2(ez, ex), dc, 1);
+    }
+  }
   if (!small) cornice(geo('plaster'), pts, y1, fc.map(v => v * .86));
   const o = obb(pts), fill = Math.abs(signedArea(pts)) / (4 * o.hu * o.hv);
   if (!small && fill > 0.72 && o.hv < 16){
     const rh = Math.min(o.hv * 1.3, 11);
     gable(geo('roof'), geo('plaster'), o, y1, rh, rc, fc);
     if (o.hu > 4 && o.hv > 3.2) dormers(o, y1, rh, rc, r);
+    for (let c = 0; c < 1 + (o.hu > 7 ? 1 : 0); c++){ const u = (r() - .5) * o.hu * 1.2, v = (r() - .5) * o.hv * .5;
+      boxAt(geo('plaster'), o.cx + o.c * u - o.s * v, y1 + rh * (1 - Math.abs(v) / o.hv) + .4, o.cz + o.s * u + o.c * v, .7, 1.6, .7, Math.atan2(o.s, o.c), lin('#8a6f62'), 1); }
   } else cap(geo('roof'), pts, y1, small ? lin('#77706a') : rc.map(v => v * .8), 3);
   if (name === 'Martinskirche'){
     // the bell tower, at the corner nearest the river
@@ -532,7 +542,7 @@ const MU = { cx: -86.35, cz: 172.11, a: 143.91 * PI / 180, y: 24 };
 const BUSHES = [];
 const KB_STEPS = [70, -20];
 {
-  const gStone = geo('stone'), gSand = geo('sand'), col = lin('#e4d8bf'), colTop = lin('#d6cab0'), pink = lin('#e2b6a4');
+  const gStone = geo('stone'), gSand = geo('sand'), col = lin('#e4d8bf'), colTop = lin('#d6cab0'), pink = lin('#d2b2a2');
   const pfK = (x, z) => smooth(clamp((92 - Math.hypot(x - MU.cx, z - MU.cz)) / 22, 0, 1));
   const wh = (x, z) => lerp(Math.min(southH(x, z), 4.5), southH(x, z), pfK(x, z));
   for (const [a, b] of SEGS){
@@ -715,6 +725,36 @@ const ORWs = resample(ORW, 4);
     tube([.38, .85, 0], [.46, 1.0, 0], '#222'); tube([.46, 1.0, -.22], [.46, 1.0, .22], '#222'); tube([-.1, .85, 0], [-.14, .98, 0], '#222');
     const sad = new THREE.Mesh(new THREE.BoxGeometry(.22, .05, .1), M('#4a3526')); sad.position.set(-.16, 1.0, 0); bike.add(sad);
     bike.position.set(bk[0], PROM, bk[1]); bike.rotation.y = -yaw + PI / 2; bike.rotation.z = .12; bike.traverse(o => { if (o.isMesh) o.castShadow = true; }); window.__BIKE = bike;
+    window.__BIKES = [[-7, .3], [6, -.25], [15, .1]].map(([o, tilt]) => { const b = bike.clone(); const q = bankPoint(ORWs[clamp(START_I + o, 0, ORWs.length - 1)], 13.9); b.position.set(q[0], PROM, q[1]); b.rotation.z = .12 + tilt * .3; b.rotation.y += tilt; return b; });
+  }
+  { // Weidlinge moored along the bank, a Buvette with umbrellas and chairs, bicycles at the kerb
+    const gw = geo('wood'), gp = geo('plaster'), hull = lin('#5a4634'), bench = lin('#8a7355');
+    for (const [off, side] of [[-14, 1], [-22, 1], [22, -1], [31, 1]]){
+      const i = clamp(START_I + Math.round(off / 4), 1, ORWs.length - 2), p = ORWs[i], q = ORWs[i + 1];
+      const yaw = Math.atan2(q[0] - p[0], q[1] - p[1]), c = bankPoint(p, -3.2 - (side > 0 ? 0 : 2.5));
+      const ax = [Math.sin(yaw), Math.cos(yaw)], bx = [-ax[1], ax[0]];
+      const P = (u, v) => [c[0] + ax[0] * u + bx[0] * v, c[1] + ax[1] * u + bx[1] * v];
+      const poly = [P(-6, -.3), P(-5.2, -.8), P(5.2, -.8), P(6.4, 0), P(5.2, .8), P(-5.2, .8), P(-6, .3)];
+      walls(gw, poly, -.2, .55, hull, 2, 1, false); cap(gw, poly, .55, hull.map(v => v * .85), 1);
+      const inner = [P(-5.4, -.55), P(5, -.55), P(5, .55), P(-5.4, .55)]; cap(gw, inner, .2, lin('#6b5742'), 1);
+      for (const u of [-3.5, -1, 1.5, 4]){ const m = P(u, 0); boxAt(gw, m[0], .5, m[1], .25, .05, 1.3, yaw, bench, 1); }
+      const bow = P(6.4, 0); boxAt(gp, bow[0], 1.0, bow[1], .08, 1.2, .08, 0, lin('#2a2a2a'), 1);
+    }
+    { // the Buvette: a kiosk, three umbrellas, tables and chairs on the promenade
+      const i = clamp(START_I + 9, 1, ORWs.length - 3), p = ORWs[i], q = ORWs[i + 1], yaw = Math.atan2(q[0] - p[0], q[1] - p[1]);
+      const k = bankPoint(p, 16.5); boxAt(gw, k[0], PROM + 1.35, k[1], 4.2, 2.7, 2.6, yaw, lin('#c8b89a'), 1);
+      boxAt(gp, k[0], PROM + 2.85, k[1], 4.8, .25, 3.2, yaw, lin('#5e5048'), 1);
+      const [, qw] = waterNear(k[0], k[1]); const tw = Math.atan2(qw[0] - k[0], qw[1] - k[1]);
+      const ha = boxAt(gp, k[0] + Math.sin(tw) * 1.5, PROM + 2.25, k[1] + Math.cos(tw) * 1.5, 4.4, .08, 1.2, yaw, lin('#b94a3c'), 1);   // awning
+      for (const [u, v] of [[-3.2, 3.6], [0, 4.4], [3.4, 3.4]]){
+        const ax = [Math.sin(yaw), Math.cos(yaw)], t = [k[0] + ax[0] * u + Math.sin(tw) * v, k[1] + ax[1] * u + Math.cos(tw) * v];
+        boxAt(gp, t[0], PROM + .37, t[1], .08, .72, .08, 0, lin('#3a3a3a'), 1); boxAt(gw, t[0], PROM + .74, t[1], .8, .04, .8, yaw + .3, lin('#d9d2c2'), 1);
+        boxAt(gp, t[0], PROM + 1.5, t[1], .06, 2.2, .06, 0, lin('#d8d2c4'), 1); pyramid(gp, ngon(t[0], t[1], 1.35, 8, 0), PROM + 2.15, [t[0], PROM + 2.6, t[1]], lin('#c9533f'), 1);
+        for (const a of [0, PI / 2, PI, -PI / 2]){ const cx = t[0] + Math.sin(a + yaw) * .75, cz = t[1] + Math.cos(a + yaw) * .75;
+          boxAt(gw, cx, PROM + .44, cz, .42, .04, .42, a + yaw, lin('#9c8a6c'), 1); boxAt(gw, cx - Math.sin(a + yaw) * .2, PROM + .7, cz - Math.cos(a + yaw) * .2, .42, .5, .04, a + yaw, lin('#9c8a6c'), 1);
+          for (const [lx, lz] of [[-.18, -.18], [.18, -.18], [-.18, .18], [.18, .18]]) boxAt(gp, cx + lx, PROM + .22, cz + lz, .03, .44, .03, 0, lin('#3a3a3a'), 1); }
+      }
+    }
   }
   // kerb along the promenade edge
   for (let i = 0; i < ORWs.length - 1; i++){
@@ -785,17 +825,17 @@ if (!renderer.getContext()) document.getElementById('err').style.display = 'flex
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-const FOG = new THREE.Color('#ead9bd');
+const FOG = new THREE.Color('#dcd6c6');
 scene.fog = new THREE.FogExp2(FOG, 0.0009);
 const camera = new THREE.PerspectiveCamera(52, 1, 0.3, 4000);
 
 const SUN = new THREE.Vector3(-0.69, 0.25, -0.68).normalize();   // summer evening, north-west
-const sun = new THREE.DirectionalLight('#ffcc90', 3.0);
+const sun = new THREE.DirectionalLight('#ffd7a8', 2.3);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 1, far: 700 });
 sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.4;
 scene.add(sun, sun.target);
-scene.add(new THREE.HemisphereLight('#d9dfe2', '#bfae8c', 1.45));
+scene.add(new THREE.HemisphereLight('#d3dadc', '#b5aa92', 1.75));
 const bounce = new THREE.DirectionalLight('#ffd9b0', .75);           // evening light off the river, onto the Grossbasel facades
 bounce.position.set(.55, .35, -.76); scene.add(bounce);
 
@@ -827,7 +867,7 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), new THREE.Shade
       return mix(mix(hs(i), hs(i + vec2(1, 0)), f.x), mix(hs(i + vec2(0, 1)), hs(i + vec2(1, 1)), f.x), f.y); }
     void main(){
       float h = max(vD.y, 0.);
-      vec3 col = mix(L(vec3(.93,.87,.78)), L(vec3(.62,.74,.86)), pow(h, .5));
+      vec3 col = mix(L(vec3(.90,.88,.82)), L(vec3(.64,.73,.80)), pow(h, .55));
       float s = max(dot(normalize(vD), uSun), 0.);
       col += L(vec3(1.,.86,.62)) * (pow(s, 8.) * .35 + pow(s, 900.) * 2.5);
       if (vD.y < 0.) col = L(vec3(.89,.84,.75));
@@ -853,7 +893,7 @@ const water = new THREE.Mesh(new THREE.PlaneGeometry(2200, 2200), new THREE.Shad
   fog: true,
   uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
     uTime: { value: 0 }, uSun: { value: SUN }, tRip: { value: TEX.ripple }, tRefl: { value: null }, tWav: { value: TEX.wavelets }, uTexMat: { value: new THREE.Matrix4() },
-    uDeep: { value: new THREE.Color('#3d5c44') }, uSky: { value: new THREE.Color('#b9c8cc') }, uSunCol: { value: new THREE.Color('#ffe2b0') },
+    uDeep: { value: new THREE.Color('#44594c') }, uSky: { value: new THREE.Color('#b4bfbd') }, uSunCol: { value: new THREE.Color('#ffe2b0') },
   }]),
   vertexShader: `varying vec3 vW; varying vec4 vR; uniform mat4 uTexMat;
 #include <fog_pars_vertex>
@@ -873,7 +913,7 @@ const water = new THREE.Mesh(new THREE.PlaneGeometry(2200, 2200), new THREE.Shad
       float fres = pow(1. - max(dot(N, V), 0.), 4.);
       vec4 rc = vR; rc.xy += vec2(N.x, N.z) * rc.w * .06; rc.xy = clamp(rc.xy / rc.w, .004, .996) * rc.w;
       vec3 refl = texture2DProj(tRefl, rc).rgb; refl = floor(refl * 14.) / 14.;
-      float k = clamp(.42 + fres * .55, 0., .92);
+      float k = clamp(.34 + fres * .55, 0., .88);
       vec3 col = mix(uDeep * (.85 + r1 * .3), refl * vec3(.86, .92, .84), k);
       float dist = length(cameraPosition - vW);
       float wv = texture2D(tWav, vec2(n * .22, (s - uTime * 1.5) * .3)).r;
@@ -898,7 +938,7 @@ water.rotation.x = -PI / 2; scene.add(water);
   const pts = D.T.filter(([x, z]) => !inRiver(x, z));
   const cm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ emissive: '#3a4a22', emissiveIntensity: .45 }), pts.length);
   const tm = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: '#4d4237' }), pts.length);
-  const M4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), greens = ['#566f38', '#4a6432', '#62773d', '#58703f', '#6b7c42'].map(c => new THREE.Color(c));
+  const M4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), greens = ['#5c6a44', '#55633f', '#66714a', '#5e6c47', '#6f7650', '#4f5e3e'].map(c => new THREE.Color(c));
   pts.forEach(([x, z], i) => {
     const r = rng(i * 13 + 5), y = isNorth(x, z) ? northH(waterDist(x, z)) : southH(x, z);
     const s = 3.8 + r() * 1.6, th = (isNorth(x, z) && waterDist(x, z) < 30 ? 5.2 : 3.2) + r() * 1.2;
@@ -1004,7 +1044,7 @@ function pose(p, mode, ph = 0){
   });
 }
 const player = makePerson({ cloth: TEX.jacket, skinTex: TEX.skin, jacket: '#4b6a93', pocket: '#44618a', collar: '#405b82', trousers: '#33363c', shoes: '#3e2c20', skin: '#c99068', hair: '#b2805f', moustache: '#4a3527' });
-scene.add(player, window.__BIKE);
+scene.add(player, window.__BIKE, ...window.__BIKES);
 // ------------------------------------------------------------------ the man: a CC0 low-poly human by Quaternius, restyled
 // (assets/human.glb; palette-textured, so his clothes are painted here)
 const RIG = { ready: false, mixer: null, acts: {}, B: {}, head: null, mesh: null, cur: null };
