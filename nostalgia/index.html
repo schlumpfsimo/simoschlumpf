@@ -1054,7 +1054,7 @@ scene.add(player, window.__BIKE, ...window.__BIKES);
 // (assets/human.glb; palette-textured, so clothes are painted here; the player and the pedestrians share it)
 const RIG = { ready: false, mixer: null, acts: {}, B: {}, head: null, mesh: null, cur: null };
 const PEDS = [];
-let GL = null, GEO_LONG = null, GEO_SHORT = null;
+let GL = null, GEO_LONG = null, GEO_SHORT = null, GEO_PLAYER = null;
 function paletteTex(cols){
   const c = document.createElement('canvas'); c.width = 8; c.height = 32; const g = c.getContext('2d');
   const rows = [[0, 6], [6, 11], [11, 17], [17, 23], [23, 32]];
@@ -1077,8 +1077,8 @@ function makeRig(palette, opts = {}){
   const m = SkeletonUtils.clone(GL.scene); m.scale.setScalar(1.8 / 526);
   const rig = { root: m, B: {}, acts: {}, cur: null, ready: true };
   let mesh; m.traverse(o => { if (o.isSkinnedMesh) mesh = o; });
-  mesh.geometry = opts.short ? GEO_SHORT : GEO_LONG;
-  mesh.material = new THREE.MeshLambertMaterial({ map: paletteTex(palette) }); mesh.frustumCulled = false;
+  mesh.geometry = opts.geo || (opts.short ? GEO_SHORT : GEO_LONG);
+  mesh.material = new THREE.MeshLambertMaterial({ map: paletteTex(palette), vertexColors: !!opts.geo }); mesh.frustumCulled = false;
   mesh.skeleton.bones.forEach(b => rig.B[b.name] = b);
   const M = c => new THREE.MeshLambertMaterial({ color: c });
   const holder = new THREE.Group(); holder.add(m); holder.updateMatrixWorld(true);
@@ -1090,7 +1090,7 @@ function makeRig(palette, opts = {}){
   if (opts.moustache && rig.B.Head && rig.B.HeadTop_End){ const H = rig.B.Head, k = 1 / WS(H);
     const up = rig.B.HeadTop_End.position.clone().normalize();
     const face = new THREE.Vector3(0, 0, 1).applyQuaternion(H.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
-    const mo = new THREE.Mesh(new THREE.BoxGeometry(.085 * k, .028 * k, .03 * k), M('#3a2a22'));
+    const mo = new THREE.Mesh(new THREE.BoxGeometry(.072 * k, .018 * k, .026 * k), M('#2e221c'));
     mo.position.copy(up).multiplyScalar(.088 * k).addScaledVector(face, .112 * k); mo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face); H.add(mo); }
   if (opts.jacket){
     // work jacket details hung on the chest, neck, hips and wrists, placed along each bone's own up/face/side axes
@@ -1141,8 +1141,27 @@ function loadRig(){ new GLTFLoader().load('assets/human.glb', gl => {
   const si = GEO_LONG.attributes.skinIndex, sw = GEO_LONG.attributes.skinWeight, uv = GEO_LONG.attributes.uv;
   for (let i = 0; i < uv.count; i++){ let w = 0; for (let k = 0; k < 4; k++) if (arm.has(si.getComponent(i, k))) w += sw.getComponent(i, k); if (w > .5) uv.setY(i, .375); }
   uv.needsUpdate = true;
+  // the man's own head: hair shaved down to the skull, stubble on the jaw
+  GEO_PLAYER = GEO_LONG.clone();
+  {
+    const g = GEO_PLAYER, P = g.attributes.position, U = g.attributes.uv, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
+    const headI = bones.findIndex(b => b.name === 'Head'), neckI = bones.findIndex(b => b.name === 'Neck');
+    const headW = i => { let w = 0; for (let k = 0; k < 4; k++){ const bi = SI.getComponent(i, k); if (bi === headI) w += SW.getComponent(i, k); } return w; };
+    const isHair = i => { const v = U.getY(i); return v > .47 && v < .66; }, isSkin = i => U.getY(i) > .8;
+    // the skull: centre and radius from the face vertices on the head bone
+    const c = new THREE.Vector3(); let n = 0, cy0 = 1e9, cy1 = -1e9;
+    for (let i = 0; i < P.count; i++) if (headW(i) > .5 && isSkin(i)){ c.x += P.getX(i); c.y += P.getY(i); c.z += P.getZ(i); n++; cy0 = Math.min(cy0, P.getY(i)); cy1 = Math.max(cy1, P.getY(i)); }
+    c.divideScalar(n); c.y = cy0 + (cy1 - cy0) * .62;
+    let r = 0, m = 0; for (let i = 0; i < P.count; i++) if (headW(i) > .5 && isSkin(i) && P.getY(i) > c.y){ r += Math.hypot(P.getX(i) - c.x, P.getY(i) - c.y, P.getZ(i) - c.z); m++; } r /= m;
+    const col = new Float32Array(P.count * 3).fill(1);
+    for (let i = 0; i < P.count; i++){
+      if (headW(i) > .3 && isHair(i)){ const d = new THREE.Vector3(P.getX(i) - c.x, P.getY(i) - c.y, P.getZ(i) - c.z); const L = d.length() || 1; const k = Math.min(1, (r * 1.03) / L); P.setXYZ(i, c.x + d.x * k, c.y + d.y * k, c.z + d.z * k); }
+      if (headW(i) > .5 && isSkin(i) && P.getY(i) < c.y - r * .15 && P.getY(i) > cy0 + (cy1 - cy0) * .08){ col[i * 3] = .86; col[i * 3 + 1] = .82; col[i * 3 + 2] = .8; }   // stubble on the jaw
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); P.needsUpdate = true; g.computeVertexNormals(); smoothNormals(g);
+  }
   // the man
-  Object.assign(RIG, makeRig(['#c99068', '#1f1a18', '#9e7556', '#2f4a73', '#33363c'], { moustache: true, jacket: '#2f4a73' }));
+  Object.assign(RIG, makeRig(['#c99068', '#1f1a18', '#a37c62', '#2f4a73', '#33363c'], { moustache: true, jacket: '#2f4a73', geo: GEO_PLAYER }));
   player.children.slice().forEach(ch => player.remove(ch));
   player.add(RIG.root); blob(player, 1.1, 1.1);
   rigHead(st.mode !== 'sit');
