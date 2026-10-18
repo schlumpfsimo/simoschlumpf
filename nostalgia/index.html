@@ -1090,8 +1090,12 @@ function makeRig(palette, opts = {}){
   if (opts.moustache && rig.B.Head && rig.B.HeadTop_End){ const H = rig.B.Head, k = 1 / WS(H);
     const up = rig.B.HeadTop_End.position.clone().normalize();
     const face = new THREE.Vector3(0, 0, 1).applyQuaternion(H.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
-    const mo = new THREE.Mesh(new THREE.BoxGeometry(.078 * k, .02 * k, .026 * k), M('#2e221c'));
-    mo.position.copy(up).multiplyScalar(.074 * k).addScaledVector(face, .112 * k); mo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face); H.add(mo); }
+    const side = new THREE.Vector3().crossVectors(up, face).normalize(), qf = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, up, face));
+    for (const sd of [-1, 1]){
+      const mo = new THREE.Mesh(new THREE.BoxGeometry(.04 * k, .016 * k, .022 * k), M('#2e221c'));
+      mo.position.copy(up).multiplyScalar(.066 * k).addScaledVector(face, .121 * k).addScaledVector(side, sd * .02 * k);
+      mo.quaternion.copy(qf); mo.rotateZ(sd * -.22); mo.rotateY(sd * .35); H.add(mo);
+    } }
   if (opts.jacket){
     // work jacket details hung on the chest, neck, hips and wrists, placed along each bone's own up/face/side axes
     const axes = (b, childName) => { const up = rig.B[childName].position.clone().normalize(); const face = new THREE.Vector3(0, 0, 1).applyQuaternion(b.getWorldQuaternion(new THREE.Quaternion()).invert()); face.addScaledVector(up, -face.dot(up)).normalize(); const side = new THREE.Vector3().crossVectors(up, face).normalize(); return { up, face, side, q: new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, up, face)), k: 1 / WS(b) }; };
