@@ -445,6 +445,7 @@ const MU = { cx: -86.35, cz: 172.11, a: 143.91 * PI / 180, y: 24 };
 // Grossbasel: pale limestone quay, pink sandstone below the Pfalz, green slopes behind.
 // Kleinbasel: a paved edge where the Rheinbord meets the water.
 const BUSHES = [];
+const KB_STEPS = [70, -20];
 {
   const gStone = geo('stone'), gSand = geo('sand'), col = lin('#e4d8bf'), colTop = lin('#d6cab0'), pink = lin('#e2b6a4');
   const pfK = (x, z) => smooth(clamp((92 - Math.hypot(x - MU.cx, z - MU.cz)) / 22, 0, 1));
@@ -457,6 +458,16 @@ const BUSHES = [];
     if (isNorth(mx, mz)){
       face(gStone, [[a[0], 1.02, a[1]], [b[0], 1.02, b[1]], [b[0] - nx * 1.8, -1.4, b[1] - nz * 1.8], [a[0] - nx * 1.8, -1.4, a[1] - nz * 1.8]],
         [[0, 0], [L / 2, 0], [L / 2, 1], [0, 1]], lin('#b9b2a4'), [-nx, 1, -nz]);
+      // bushes on the grass slope of the Rheinbord
+      if (Math.abs(mx) < 320){
+        const r = rng(Math.floor(mx * 5 + mz * 11) >>> 0);
+        for (let t = 0; t < L; t += 5){
+          if (r() < .55) continue;
+          const k = 4 + r() * 8, f = t / L, x = a[0] + ex * f + nx * k, z = a[1] + ez * f + nz * k;
+          if (Math.abs(x - KB_STEPS[0]) < 18) continue;
+          BUSHES.push([x, northH(k) - .3, z, .45 + r() * .5]);
+        }
+      }
       continue;
     }
     const pf = pfK(mx, mz) > .5, g = gStone, c = pf ? pink : col;
@@ -586,8 +597,21 @@ function resample(line, step){
 }
 const ORWs = resample(ORW, 4);
 {
-  // benches facing the river, lanterns
-  const gw = geo('wood'), gs = geo('stone');
+  // the broad stone stairs down to the water, every forty metres or so
+  const gw = geo('wood'), gs = geo('stone'), STEP = lin('#cfc7b6');
+  for (let i = 5; i < ORWs.length - 5; i += 10){
+    const p = ORWs[i], [, q] = waterNear(p[0], p[1]); if (!q) continue;
+    const yaw = Math.atan2(q[0] - p[0], q[1] - p[1]), wide = (i / 10) % 3 === 1 ? 14 : 6;
+    for (let d = 2.6; d < 13; d += .9){
+      const c = bankPoint(p, d), y = northH(d), yn = northH(d + .9);
+      boxAt(gs, c[0], (y + yn) / 2 - .02, c[1], wide, Math.max(.3, yn - y + .3), .95, -yaw, STEP, 2);
+    }
+  }
+  // kerb along the promenade edge
+  for (let i = 0; i < ORWs.length - 1; i++){
+    const a = bankPoint(ORWs[i], 13.1), b = bankPoint(ORWs[i + 1], 13.1), L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    boxAt(gs, (a[0] + b[0]) / 2, PROM + .1, (a[1] + b[1]) / 2, L + .2, .28, .4, -Math.atan2(b[1] - a[1], b[0] - a[0]), lin('#c4bcab'), 2);
+  }
   for (let i = 3; i < ORWs.length - 3; i += 6){
     const p = bankPoint(ORWs[i], 13.6), [, q] = waterNear(p[0], p[1]); if (!q) continue;
     const yaw = Math.atan2(q[0] - p[0], q[1] - p[1]), c = Math.cos(yaw), s = Math.sin(yaw), y = PROM;
@@ -609,14 +633,14 @@ const ORWs = resample(ORW, 4);
 function buildTerrain(){
   const H = 760, S = 3, N = Math.round(2 * H / S) + 1;
   const pos = new Float32Array(N * N * 3), col = new Float32Array(N * N * 3), uv = new Float32Array(N * N * 2), kind = new Uint8Array(N * N);
-  const C = { prom: lin('#b8ae9c'), slope: lin('#a19885'), grass: lin('#7f8a58'), low: lin('#a8a196'), under: lin('#5d6b57'), south: lin('#aba393'), pfalz: lin('#c3b79e') };
+  const C = { prom: lin('#b8ae9c'), slope: lin('#a19885'), grass: lin('#6f7f48'), low: lin('#a8a196'), under: lin('#5d6b57'), south: lin('#aba393'), pfalz: lin('#c3b79e') };
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++){
     const x = -H + i * S, z = -H + j * S, k = j * N + i, w = inRiver(x, z), n = isNorth(x, z);
     let y, c;
     if (n){
       const d = waterDist(x, z);
-      y = w ? Math.max(-1.6, 1.0 - d * 0.9) : northH(d);
-      if (w) c = C.under; else if (d < 2.5) c = C.low; else if (d < 13){ const g = vnoise(x / 7, z / 7); c = g > .55 ? C.grass : C.slope; } else c = C.prom;
+      y = w ? Math.max(-1.6, 1.0 - d * 0.9) : northH(d) + (d > 3 && d < 12 ? (vnoise(x / 5, z / 5) - .5) * .5 : 0);
+      if (w) c = C.under; else if (d < 2.5) c = C.low; else if (d < 13){ const g = vnoise(x / 9, z / 9); c = g > .3 ? C.grass : C.slope; } else c = C.prom;
       kind[k] = w ? 0 : 1;
     } else {
       y = w ? -3 : southH(x, z);
@@ -637,7 +661,7 @@ function buildTerrain(){
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: TEX.ground, vertexColors: true }));
+  const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: TEX.ground, vertexColors: true, flatShading: true }));
   m.receiveShadow = true; return m;
 }
 
@@ -648,7 +672,7 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 const FOG = new THREE.Color('#ead9bd');
-scene.fog = new THREE.FogExp2(FOG, 0.0011);
+scene.fog = new THREE.FogExp2(FOG, 0.0009);
 const camera = new THREE.PerspectiveCamera(52, 1, 0.3, 4000);
 
 const SUN = new THREE.Vector3(-0.69, 0.25, -0.68).normalize();   // summer evening, north-west
@@ -671,7 +695,7 @@ function flush(){
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(G.p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(G.n, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(G.u, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(G.c, 3));
-    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ ...MATS[k], vertexColors: true }));
+    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ ...MATS[k], vertexColors: true, flatShading: true }));
     m.castShadow = m.receiveShadow = true; scene.add(m);
     delete GEO[k];
   }
@@ -684,7 +708,7 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), new THREE.Shade
   vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); gl_Position.z = gl_Position.w; }',
   fragmentShader: `varying vec3 vD; uniform vec3 uSun;
     vec3 L(vec3 c){ return pow(c, vec3(2.2)); }
-    float hs(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float hs(vec2 p){ p = mod(p, 256.); vec3 q = fract(vec3(p.xyx) * .1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
     float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
       return mix(mix(hs(i), hs(i + vec2(1, 0)), f.x), mix(hs(i + vec2(0, 1)), hs(i + vec2(1, 1)), f.x), f.y); }
     void main(){
@@ -737,15 +761,15 @@ const water = new THREE.Mesh(new THREE.PlaneGeometry(2200, 2200), new THREE.Shad
       vec3 V = normalize(cameraPosition - vW);
       vec3 N = normalize(vec3((r2 - .5) * .22 + (r3 - .5) * .12, 1., (r1 - .5) * .18 + (r3 - .5) * .12));
       float fres = pow(1. - max(dot(N, V), 0.), 4.);
-      vec4 rc = vR; rc.xy += vec2(N.x, N.z) * rc.w * .06;
-      vec3 refl = texture2DProj(tRefl, rc).rgb;
+      vec4 rc = vR; rc.xy += vec2(N.x, N.z) * rc.w * .06; rc.xy = clamp(rc.xy / rc.w, .004, .996) * rc.w;
+      vec3 refl = texture2DProj(tRefl, rc).rgb; refl = floor(refl * 14.) / 14.;
       float k = clamp(.42 + fres * .55, 0., .92);
       vec3 col = mix(uDeep * (.85 + r1 * .3), refl * vec3(.86, .92, .84), k);
       float dist = length(cameraPosition - vW);
       float wv = texture2D(tWav, vec2(n * .22, (s - uTime * 1.5) * .3)).r;
       col *= mix(1., .82 + wv * .36, exp(-dist / 45.) * .9);
       vec3 H = normalize(V + uSun);
-      col += uSunCol * pow(max(dot(N, H), 0.), 260.) * 2.2;
+      col += uSunCol * pow(max(dot(N, H), 0.), 60.) * .35;
       gl_FragColor = vec4(col, 1.);
 #include <fog_fragment>
     }`,
@@ -757,12 +781,12 @@ water.rotation.x = -PI / 2; scene.add(water);
   const crown = (() => {
     const parts = [[0, 0, 0, 1], [.55, -.18, .25, .72], [-.52, -.12, -.25, .74], [.12, .38, -.32, .64], [-.2, .3, .42, .6], [.45, .2, -.4, .55]];
     const p = [], n = [];
-    for (const [x, y, z, r] of parts){ const g = new THREE.IcosahedronGeometry(r, 2); g.translate(x, y, z); p.push(...g.attributes.position.array); n.push(...g.attributes.normal.array); }
+    for (const [x, y, z, r] of parts){ const g = new THREE.IcosahedronGeometry(r, 1); g.translate(x, y, z); p.push(...g.attributes.position.array); n.push(...g.attributes.normal.array); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(n, 3)); return g;
   })();
   const trunk = new THREE.CylinderGeometry(.18, .26, 1, 6); trunk.translate(0, .5, 0);
   const pts = D.T.filter(([x, z]) => !inRiver(x, z));
-  const cm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial(), pts.length);
+  const cm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ flatShading: true }), pts.length);
   const tm = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: '#4d4237' }), pts.length);
   const M4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), greens = ['#566f38', '#4a6432', '#62773d', '#58703f', '#6b7c42'].map(c => new THREE.Color(c));
   pts.forEach(([x, z], i) => {
@@ -773,7 +797,7 @@ water.rotation.x = -PI / 2; scene.add(water);
     M4.compose(new THREE.Vector3(x, y + th + s * .75, z), q, new THREE.Vector3(s, s * .95, s)); cm.setMatrixAt(i, M4);
     cm.setColorAt(i, greens[Math.floor(r() * greens.length)]);
   });
-  const bm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial(), BUSHES.length);
+  const bm = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ flatShading: true }), BUSHES.length);
   BUSHES.forEach(([x, y, z, s], i) => {
     const r = rng(i * 7 + 3); e.set(0, r() * PI * 2, 0); q.setFromEuler(e);
     M4.compose(new THREE.Vector3(x, y + s * .55, z), q, new THREE.Vector3(s, s * (s > 2.5 ? 1.3 : .8), s)); bm.setMatrixAt(i, M4);
@@ -785,11 +809,11 @@ water.rotation.x = -PI / 2; scene.add(water);
 // ------------------------------------------------------------------ people
 function makePerson(o){
   const g = new THREE.Group(), mats = {};
-  const M = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c }));
+  const M = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
   const add = (geom, c, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geom, M(c)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
   // a limb segment hanging down from its joint
-  const seg = (r0, r1, len, c, parent, x = 0, y = 0, z = 0, sz = 1) => { const q = new THREE.CylinderGeometry(r0, r1, len, 10); q.translate(0, -len / 2, 0); q.scale(1, 1, sz); return add(q, c, parent, x, y, z); };
-  const ball = (rx, ry, rz, c, parent, x = 0, y = 0, z = 0) => { const q = new THREE.SphereGeometry(1, 12, 9); q.scale(rx, ry, rz); return add(q, c, parent, x, y, z); };
+  const seg = (r0, r1, len, c, parent, x = 0, y = 0, z = 0, sz = 1) => { const q = new THREE.CylinderGeometry(r0, r1, len, 6); q.translate(0, -len / 2, 0); q.scale(1, 1, sz); return add(q, c, parent, x, y, z); };
+  const ball = (rx, ry, rz, c, parent, x = 0, y = 0, z = 0) => { const q = new THREE.SphereGeometry(1, 7, 5); q.scale(rx, ry, rz); return add(q, c, parent, x, y, z); };
   const joint = (parent, x, y, z) => { const j = new THREE.Group(); j.position.set(x, y, z); parent.add(j); return j; };
   const hip = joint(g, 0, .95, 0);
   ball(.165, .11, .11, o.trousers, hip, 0, -.03, 0);
@@ -828,7 +852,7 @@ function makePerson(o){
     add(new THREE.BoxGeometry(.034, .008, .01), o.hair, head, s * .037, .042, .1); // brows
   }
   // hair as a cap over the skull; short = buzz cut
-  const hg = new THREE.SphereGeometry(1, 14, 8, 0, PI * 2, 0, PI * (o.long ? .66 : .56));
+  const hg = new THREE.SphereGeometry(1, 8, 5, 0, PI * 2, 0, PI * (o.long ? .66 : .56));
   hg.scale(.1012, .1215, .1112);
   add(hg, o.hair, head, 0, .003, -.004).rotation.x = -.42;
   if (o.moustache) for (const s of [-1, 1]){ const m = ball(.033, .012, .016, o.moustache, head, s * .025, -.036, .1); m.rotation.z = s * .28; }
@@ -897,7 +921,7 @@ const ferry = new THREE.Group();
   ferry.traverse(o => { if (o.isMesh) o.castShadow = true; });
   scene.add(ferry);
 }
-const KB_STEPS = [70, -20], KB_LAND = bankPoint(KB_STEPS, 0);
+const KB_LAND = bankPoint(KB_STEPS, 0);
 const GB_LAND = (() => { const [, q] = waterNear(-52, 112); return q; })();
 const FERRY = (() => {
   const d = [GB_LAND[0] - KB_LAND[0], GB_LAND[1] - KB_LAND[1]], L = Math.hypot(...d), u = [d[0] / L, d[1] / L];
@@ -974,7 +998,7 @@ flush();
 // ------------------------------------------------------------------ post: GTA-style trails + Colville grade
 const post = { scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
 const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); post.scene.add(quad);
-const RT = () => new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
+const RT = () => new THREE.WebGLRenderTarget(4, 4, { type: THREE.UnsignedByteType, colorSpace: THREE.SRGBColorSpace });
 const rtScene = RT(), rtAcc = [RT(), RT()], rtRefl = RT();
 water.material.uniforms.tRefl.value = rtRefl.texture;
 const mirrorCam = new THREE.PerspectiveCamera(), clipUp = [new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.05)];
@@ -995,17 +1019,16 @@ const accMat = new THREE.ShaderMaterial({ uniforms: { tCur: { value: null }, tPr
   fragmentShader: 'varying vec2 vUv; uniform sampler2D tCur, tPrev; uniform float k; void main(){ gl_FragColor = vec4(mix(texture2D(tCur, vUv).rgb, texture2D(tPrev, vUv).rgb, k), 1.); }' });
 const outMat = new THREE.ShaderMaterial({ uniforms: { tSrc: { value: null }, uTime: { value: 0 }, uRes: { value: new THREE.Vector2() } }, vertexShader: vs,
   fragmentShader: `varying vec2 vUv; uniform sampler2D tSrc; uniform float uTime; uniform vec2 uRes;
-    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    float h(vec2 p){ vec3 q = fract(vec3(p.xyx) * .1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
     void main(){
-      vec3 c = texture2D(tSrc, vUv).rgb;
-      c = c / (1. + c * .18);                                             // soft shoulder
-      c = pow(max(c, 0.), vec3(1. / 2.2));
+      vec3 c = pow(max(texture2D(tSrc, vUv).rgb, 0.), vec3(1. / 2.2));
       float l = dot(c, vec3(.299, .587, .114));
       c = mix(vec3(l), c, .9);                                            // muted, Colville
-      c = c * vec3(1.03, 1., .93) + vec3(.02, .015, 0.);                  // warm, slightly lifted blacks
+      c = c * vec3(1.02, 1., .95) + vec3(.015, .01, 0.);                  // warm, slightly lifted blacks
       c = mix(c, c * c * (3. - 2. * c), .25);
-      vec2 q = vUv - .5; c *= 1. - dot(q, q) * .55;
-      c += (h(floor(vUv * uRes) + fract(uTime * 7.3) * 91.) - .5) * .045;  // grain
+      c = mix(c, floor(c * 22. + .5) / 22., .6);                            // posterised, like a painting
+      vec2 q = vUv - .5; c *= 1. - dot(q, q) * .4;
+      c += (h(mod(floor(vUv * uRes), 512.) + floor(fract(uTime * 7.3) * 91.)) - .5) * .07;  // grain
       gl_FragColor = vec4(c, 1.);
     }` });
 
@@ -1149,11 +1172,11 @@ function toggleMute(){
 // ------------------------------------------------------------------ resize
 let W = 0, H = 0;
 function resize(){
-  const pr = Math.min(window.devicePixelRatio || 1, clamp(640 / innerHeight, .5, 1));
+  const pr = Math.min(window.devicePixelRatio || 1, clamp(500 / innerHeight, .4, 1));
   renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false);
-  W = Math.round(innerWidth * pr); H = Math.round(innerHeight * pr);
+  W = Math.ceil(innerWidth * pr / 8) * 8; H = Math.ceil(innerHeight * pr / 8) * 8;
   for (const r of [rtScene, ...rtAcc]) r.setSize(W, H);
-  rtRefl.setSize(Math.round(W / 2), Math.round(H / 2));
+  rtRefl.setSize(W / 2, H / 2);
   outMat.uniforms.uRes.value.set(W, H);
   camera.aspect = innerWidth / innerHeight; camera.fov = innerWidth < innerHeight ? 68 : 52; camera.updateProjectionMatrix();
 }
@@ -1278,11 +1301,13 @@ function update(dt){
   // --- sound: lapping louder near the water
   if (AC && river){ const d = waterDist(player.position.x, player.position.z); river.userData.lap.gain.setTargetAtTime(clamp(1 - d / 14, 0, 1) * .05, AC.currentTime, .5); }
 }
+const DBG = new URLSearchParams(location.search);
 let rtI = 0;
 function frame(){
   const dt = Math.min(clock.getDelta(), .1);
   update(dt);
-  renderReflection();
+  if (!DBG.has('norefl')) renderReflection();
+  if (DBG.has('raw')){ renderer.setRenderTarget(null); renderer.render(scene, camera); requestAnimationFrame(frame); return; }
   renderer.setRenderTarget(rtScene); renderer.render(scene, camera);
   quad.material = accMat; accMat.uniforms.tCur.value = rtScene.texture; accMat.uniforms.tPrev.value = rtAcc[rtI].texture;
   accMat.uniforms.k.value = st.mode === 'sit' ? .28 : .32;
@@ -1293,7 +1318,7 @@ function frame(){
   requestAnimationFrame(frame);
 }
 frame();
-window.__ready = true; window.__st = st;
+window.__ready = true; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
 </script>
 </body>
 </html>
