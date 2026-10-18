@@ -438,7 +438,7 @@ const FACADES = ['#e6e0d3', '#e2d8c4', '#d9ccb4', '#d8c8a2', '#dbc4b4', '#e9e5db
 const ROOFS = ['#74534a', '#66483e', '#5a443c', '#7a5748', '#4e3e39', '#6e5146', '#5a5450', '#6b5c52'].map(lin);
 const WHITE = [1, 1, 1];
 
-const NORTH_BLDG = [];
+const NORTH_BLDG = [], ALL_BLDG = [];
 for (const [t, h0, name, flat, seed] of D.B){
   const pts = pairs(flat);
   const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cz = pts.reduce((s, p) => s + p[1], 0) / pts.length;
@@ -482,6 +482,7 @@ for (const [t, h0, name, flat, seed] of D.B){
     pyramid(geo('roof'), sq, ty + 34, [tx, ty + 45, tz], lin('#6e4236'));
   }
   if (north && dmin < 60) NORTH_BLDG.push(pts);
+  ALL_BLDG.push({ p: pts, bb: [Math.min(...pts.map(q => q[0])), Math.min(...pts.map(q => q[1])), Math.max(...pts.map(q => q[0])), Math.max(...pts.map(q => q[1]))] });
 }
 
 // ------------------------------------------------------------------ the Münster
@@ -1054,7 +1055,7 @@ scene.add(player, window.__BIKE, ...window.__BIKES);
 // (assets/human.glb; palette-textured, so clothes are painted here; the player and the pedestrians share it)
 const RIG = { ready: false, mixer: null, acts: {}, B: {}, head: null, mesh: null, cur: null };
 const PEDS = [];
-let GL = null, GEO_LONG = null, GEO_SHORT = null;
+let GL = null, GEO_LONG = null, GEO_SHORT = null, GEO_PLAYER = null;
 function paletteTex(cols){
   const c = document.createElement('canvas'); c.width = 8; c.height = 32; const g = c.getContext('2d');
   const rows = [[0, 6], [6, 11], [11, 17], [17, 23], [23, 32]];
@@ -1077,8 +1078,8 @@ function makeRig(palette, opts = {}){
   const m = SkeletonUtils.clone(GL.scene); m.scale.setScalar(1.8 / 526);
   const rig = { root: m, B: {}, acts: {}, cur: null, ready: true };
   let mesh; m.traverse(o => { if (o.isSkinnedMesh) mesh = o; });
-  mesh.geometry = opts.short ? GEO_SHORT : GEO_LONG;
-  mesh.material = new THREE.MeshLambertMaterial({ map: paletteTex(palette) }); mesh.frustumCulled = false;
+  mesh.geometry = opts.geo || (opts.short ? GEO_SHORT : GEO_LONG);
+  mesh.material = new THREE.MeshLambertMaterial({ map: paletteTex(palette), vertexColors: !!opts.geo }); mesh.frustumCulled = false;
   mesh.skeleton.bones.forEach(b => rig.B[b.name] = b);
   const M = c => new THREE.MeshLambertMaterial({ color: c });
   const holder = new THREE.Group(); holder.add(m); holder.updateMatrixWorld(true);
@@ -1090,8 +1091,12 @@ function makeRig(palette, opts = {}){
   if (opts.moustache && rig.B.Head && rig.B.HeadTop_End){ const H = rig.B.Head, k = 1 / WS(H);
     const up = rig.B.HeadTop_End.position.clone().normalize();
     const face = new THREE.Vector3(0, 0, 1).applyQuaternion(H.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
-    const mo = new THREE.Mesh(new THREE.BoxGeometry(.085 * k, .028 * k, .03 * k), M('#3a2a22'));
-    mo.position.copy(up).multiplyScalar(.088 * k).addScaledVector(face, .112 * k); mo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face); H.add(mo); }
+    const side = new THREE.Vector3().crossVectors(up, face).normalize(), qf = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, up, face));
+    for (const sd of [-1, 1]){
+      const mo = new THREE.Mesh(new THREE.BoxGeometry(.04 * k, .016 * k, .022 * k), M('#2e221c'));
+      mo.position.copy(up).multiplyScalar(.066 * k).addScaledVector(face, .121 * k).addScaledVector(side, sd * .02 * k);
+      mo.quaternion.copy(qf); mo.rotateZ(sd * -.22); mo.rotateY(sd * .35); H.add(mo);
+    } }
   if (opts.jacket){
     // work jacket details hung on the chest, neck, hips and wrists, placed along each bone's own up/face/side axes
     const axes = (b, childName) => { const up = rig.B[childName].position.clone().normalize(); const face = new THREE.Vector3(0, 0, 1).applyQuaternion(b.getWorldQuaternion(new THREE.Quaternion()).invert()); face.addScaledVector(up, -face.dot(up)).normalize(); const side = new THREE.Vector3().crossVectors(up, face).normalize(); return { up, face, side, q: new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, up, face)), k: 1 / WS(b) }; };
@@ -1141,8 +1146,27 @@ function loadRig(){ new GLTFLoader().load('assets/human.glb', gl => {
   const si = GEO_LONG.attributes.skinIndex, sw = GEO_LONG.attributes.skinWeight, uv = GEO_LONG.attributes.uv;
   for (let i = 0; i < uv.count; i++){ let w = 0; for (let k = 0; k < 4; k++) if (arm.has(si.getComponent(i, k))) w += sw.getComponent(i, k); if (w > .5) uv.setY(i, .375); }
   uv.needsUpdate = true;
+  // the man's own head: hair shaved down to the skull, stubble on the jaw
+  GEO_PLAYER = GEO_LONG.clone();
+  {
+    const g = GEO_PLAYER, P = g.attributes.position, U = g.attributes.uv, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
+    const headI = bones.findIndex(b => b.name === 'Head'), neckI = bones.findIndex(b => b.name === 'Neck');
+    const headW = i => { let w = 0; for (let k = 0; k < 4; k++){ const bi = SI.getComponent(i, k); if (bi === headI) w += SW.getComponent(i, k); } return w; };
+    const isHair = i => { const v = U.getY(i); return v > .47 && v < .66; }, isSkin = i => U.getY(i) > .8;
+    // the skull: centre and radius from the face vertices on the head bone
+    const c = new THREE.Vector3(); let n = 0, cy0 = 1e9, cy1 = -1e9;
+    for (let i = 0; i < P.count; i++) if (headW(i) > .5 && isSkin(i)){ c.x += P.getX(i); c.y += P.getY(i); c.z += P.getZ(i); n++; cy0 = Math.min(cy0, P.getY(i)); cy1 = Math.max(cy1, P.getY(i)); }
+    c.divideScalar(n); c.y = cy0 + (cy1 - cy0) * .62;
+    let r = 0, m = 0; for (let i = 0; i < P.count; i++) if (headW(i) > .5 && isSkin(i) && P.getY(i) > c.y){ r += Math.hypot(P.getX(i) - c.x, P.getY(i) - c.y, P.getZ(i) - c.z); m++; } r /= m;
+    const col = new Float32Array(P.count * 3).fill(1);
+    for (let i = 0; i < P.count; i++){
+      // the hair keeps its hairline but hugs the skull: a buzz cut, not a cap
+      if (headW(i) > .3 && isHair(i)){ const d = new THREE.Vector3(P.getX(i) - c.x, P.getY(i) - c.y, P.getZ(i) - c.z); const L = d.length() || 1; const k = Math.max(.965, Math.min(1, (r * 1.06) / L)); P.setXYZ(i, c.x + d.x * k, c.y + d.y * k, c.z + d.z * k); }
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); P.needsUpdate = true; g.computeVertexNormals(); smoothNormals(g);
+  }
   // the man
-  Object.assign(RIG, makeRig(['#c99068', '#1f1a18', '#9e7556', '#2f4a73', '#33363c'], { moustache: true, jacket: '#2f4a73' }));
+  Object.assign(RIG, makeRig(['#c99068', '#1f1a18', '#b48a66', '#2f4a73', '#33363c'], { moustache: true, jacket: '#2f4a73', geo: GEO_PLAYER }));
   player.children.slice().forEach(ch => player.remove(ch));
   player.add(RIG.root); blob(player, 1.1, 1.1);
   rigHead(st.mode !== 'sit');
@@ -1230,9 +1254,11 @@ function makeCar(kind, col){
   box(.38, .09, .01, '#e8e6dc', 0, .5, K.L / 2 + .07); box(.38, .09, .01, '#e8e6dc', 0, .5, -K.L / 2 - .07);   // blank plates
   if (K.rack) for (const s of [-1, 1]) box(.04, .05, 1.8, '#5a5a5a', s * .5, 1.5, -.5);
   for (const [x, z] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]){
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .2, 12), M('#1e1e1e')); w.rotation.z = PI / 2; w.position.set(x * (K.W / 2 - .08), .3, z * (K.L / 2 - .8)); g.add(w);
+    const pivot = new THREE.Group(); pivot.position.set(x * (K.W / 2 - .08), .3, z * (K.L / 2 - .8)); g.add(pivot);
+    const roll = new THREE.Group(); roll.rotation.z = PI / 2; pivot.add(roll);
+    roll.add(new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .2, 12), M('#1e1e1e')), new THREE.Mesh(new THREE.CylinderGeometry(.19, .19, .21, 10), M('#c8c6ba')));
     const arch = new THREE.Mesh(new THREE.CylinderGeometry(.38, .38, .02, 14), M('#141414')); arch.rotation.z = PI / 2; arch.position.set(x * (K.W / 2 - .01), .36, z * (K.L / 2 - .8)); g.add(arch);
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.19, .19, .21, 10), M('#c8c6ba')); hub.rotation.z = PI / 2; hub.position.copy(w.position); g.add(hub);
+    g.userData.wheels = g.userData.wheels || []; g.userData.wheels.push({ pivot, roll, front: z > 0 });
   }
   blob(g, K.W + .6, K.L + .4, .02);
   g.userData.K = K;
@@ -1246,11 +1272,103 @@ const CARS = [], CAR_COLS = ['#d8cfae', '#b8862b', '#6e2a2f', '#e9e6dc', '#2f4a3
     let p, q, ok = false; for (const dd of [17.4, 16.6, 18.2]){ p = bankPoint(ORWs[i], dd); q = bankPoint(ORWs[i + 1], dd); if (!inB(p[0], p[1]) && !inB(q[0], q[1])){ ok = true; break; } } if (!ok) continue;
     const car = makeCar(['small', 'estate', 'sedan'][Math.floor(r() * 3)], CAR_COLS[Math.floor(r() * CAR_COLS.length)]);
     car.position.set(p[0], PROM, p[1]); car.rotation.y = Math.atan2(q[0] - p[0], q[1] - p[1]) + (r() < .5 ? 0 : PI); scene.add(car);
-    COLL.boxes.push([p[0], p[1], car.userData.K.W / 2 + .15, car.userData.K.L / 2 + .15, car.rotation.y]); window.__PARKED = window.__PARKED || []; window.__PARKED.push(car);
+    car.userData.collIdx = COLL.boxes.length; COLL.boxes.push([p[0], p[1], car.userData.K.W / 2 + .15, car.userData.K.L / 2 + .15, car.rotation.y]); window.__PARKED = window.__PARKED || []; window.__PARKED.push(car);
   }
   for (const [phase, lane, kind] of [[.1, 5.5, 'sedan'], [.6, -5.5, 'estate'], [.85, 5.5, 'small']]){
     const car = makeCar(kind, CAR_COLS[Math.floor(r() * CAR_COLS.length)]); scene.add(car); CARS.push({ car, phase, lane, B: BRIDGES.wettstein, dir: lane > 0 ? 1 : -1, per: 34 });
   }
+}
+// ------------------------------------------------------------------ driving: get into a parked car, arcade handling, four-corner collision
+const DRIVE = { car: null, speed: 0, steer: 0, throttle: 0, collIdx: -1 };
+function onBridge(x, z){
+  for (const k in BRIDGES){ const B = BRIDGES[k], dx = x - B.a[0], dz = z - B.a[1], t = dx * B.dir[0] + dz * B.dir[1], off = dx * B.perp[0] + dz * B.perp[1];
+    if (t > 0 && t < B.len && Math.abs(off) < B.w / 2 - 1.2) return { B, t }; }
+  return null;
+}
+// where a car's wheels sit: terrain, or a bridge deck with a short ramp at each end
+function carGround(x, z){
+  const ob = onBridge(x, z);
+  if (ob){ const { B, t } = ob, deck = B.y(t) - (B === BRIDGES.mittlere ? .9 : 0), g = groundH(x, z), e = Math.min(t, B.len - t); return e < 14 ? lerp(g, deck, smooth(e / 14)) : deck; }
+  return groundH(x, z);
+}
+function inBuilding(x, z){
+  for (const b of ALL_BLDG){ if (x < b.bb[0] || x > b.bb[2] || z < b.bb[1] || z > b.bb[3]) continue; let c = false; const P = b.p;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++){ const a = P[i], q = P[j]; if ((a[1] > z) !== (q[1] > z) && x < (q[0] - a[0]) * (z - a[1]) / (q[1] - a[1]) + a[0]) c = !c; }
+    if (c) return true; }
+  return false;
+}
+function carBlocked(x, z){
+  if (onBridge(x, z)) return false;
+  if (inRiver(x, z)) return true;
+  if (isNorth(x, z) && waterDist(x, z) < 13.3) return true;      // the promenade and the steps are not for cars
+  if (blocked(x, z)) return true;
+  for (const b of ALL_BLDG){ if (x < b.bb[0] || x > b.bb[2] || z < b.bb[1] || z > b.bb[3]) continue; let c = false; const P = b.p;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++){ const a = P[i], q = P[j]; if ((a[1] > z) !== (q[1] > z) && x < (q[0] - a[0]) * (z - a[1]) / (q[1] - a[1]) + a[0]) c = !c; }
+    if (c) return true; }
+  return false;
+}
+function carCorners(x, z, yaw, K, inset = .15){
+  const s = Math.sin(yaw), c = Math.cos(yaw), hw = K.W / 2 - inset, hl = K.L / 2 - inset, out = [];
+  for (const [u, v] of [[-hw, -hl], [hw, -hl], [hw, hl], [-hw, hl], [0, hl], [0, -hl]]) out.push([x + c * u + s * v, z - s * u + c * v]);
+  return out;
+}
+function nearestCar(){
+  let best = null, bd = 3.2;
+  for (const c of (window.__PARKED || [])){ const d = Math.hypot(c.position.x - player.position.x, c.position.z - player.position.z) - c.userData.K.L * .25; if (d < bd){ bd = d; best = c; } }
+  return best;
+}
+function enterCar(car){
+  DRIVE.car = car; DRIVE.speed = 0; DRIVE.steer = 0;
+  DRIVE.collIdx = car.userData.collIdx; if (DRIVE.collIdx >= 0) COLL.boxes[DRIVE.collIdx] = null;
+  player.visible = false; st.mode = 'drive'; CIN.on = false; CIN.idle = 0;
+  camYaw = car.rotation.y;
+  if (AC) engineOn(true);
+}
+function exitCar(){
+  const car = DRIVE.car, y = car.rotation.y;
+  for (const sd of [1, -1]){ const px = car.position.x + Math.cos(y) * sd * (car.userData.K.W / 2 + .7), pz = car.position.z - Math.sin(y) * sd * (car.userData.K.W / 2 + .7);
+    if (walkable(px, pz) || sd === -1){ player.position.set(px, groundH(px, pz), pz); break; } }
+  if (DRIVE.collIdx >= 0) COLL.boxes[DRIVE.collIdx] = [car.position.x, car.position.z, car.userData.K.W / 2 + .15, car.userData.K.L / 2 + .15, car.rotation.y];
+  player.visible = true; st.mode = 'walk'; st.yaw = y; camYaw = y; camPitch = .12; DRIVE.car = null;
+  if (AC) engineOn(false);
+}
+function updateDrive(dt, ix, iz, brake){
+  const car = DRIVE.car, K = car.userData.K;
+  const fwd = DRIVE.speed >= 0;
+  // throttle and brake: W/forward accelerates, S brakes then reverses
+  let acc = 0;
+  if (iz > .1) acc = fwd ? 7 * iz : 12;                 // reverse → brake first
+  else if (iz < -.1) acc = fwd && DRIVE.speed > .3 ? -11 : -4.5;
+  if (brake) acc = fwd ? -14 : 14;
+  const drag = .35 + Math.abs(DRIVE.speed) * .045;
+  DRIVE.speed += acc * dt; DRIVE.speed -= Math.sign(DRIVE.speed) * Math.min(Math.abs(DRIVE.speed), drag * dt * (acc === 0 ? 4 : 1));
+  DRIVE.speed = clamp(DRIVE.speed, -6, 24);
+  DRIVE.throttle = lerp(DRIVE.throttle, Math.abs(iz), Math.min(1, dt * 5));
+  // steering tightens as speed drops, a little slide at speed
+  const sMax = .5 / (1 + Math.abs(DRIVE.speed) / 11);
+  DRIVE.steer = lerp(DRIVE.steer, -ix * sMax, Math.min(1, dt * (brake ? 9 : 6)));
+  const yawRate = DRIVE.speed / (K.L * .62) * Math.tan(DRIVE.steer) * (brake ? 1.6 : 1);
+  const ny = car.rotation.y + yawRate * dt;
+  const dx = Math.sin(ny) * DRIVE.speed * dt, dz = Math.cos(ny) * DRIVE.speed * dt;
+  const nx = car.position.x + dx, nz = car.position.z + dz;
+  let hit = false; for (const [cx, cz] of carCorners(nx, nz, ny, K)) if (carBlocked(cx, cz)){ hit = true; break; }
+  if (hit){
+    // try sliding along one axis, else bounce
+    const tryX = !carCorners(nx, car.position.z, car.rotation.y, K).some(([a, b]) => carBlocked(a, b)), tryZ = !carCorners(car.position.x, nz, car.rotation.y, K).some(([a, b]) => carBlocked(a, b));
+    if (tryX){ car.position.x = nx; DRIVE.speed *= .6; } else if (tryZ){ car.position.z = nz; DRIVE.speed *= .6; } else { DRIVE.speed *= -.25; }
+  } else { car.position.x = nx; car.position.z = nz; car.rotation.y = ny; }
+  const gy = carGround(car.position.x, car.position.z); car.position.y = lerp(car.position.y, gy, Math.min(1, dt * 8));
+  // wheels roll and the front pair steers
+  for (const w of car.userData.wheels){ w.roll.rotation.y += DRIVE.speed * dt / .3; if (w.front) w.pivot.rotation.y = DRIVE.steer * 1.1; }
+  // the camera: behind and above, with lag; the engine
+  if (look.id === null){ let d = car.rotation.y - camYaw; d = Math.atan2(Math.sin(d), Math.cos(d)); camYaw += d * Math.min(1, dt * (2 + Math.abs(DRIVE.speed) * .15)); }
+  if (AC && AC.eng){ const r = .6 + Math.abs(DRIVE.speed) / 24 * 1.6; AC.eng.osc.frequency.setTargetAtTime(55 * r, AC.currentTime, .1); AC.eng.osc2.frequency.setTargetAtTime(110 * r + 2, AC.currentTime, .1); AC.eng.g.gain.setTargetAtTime(.025 + DRIVE.throttle * .035 + Math.abs(DRIVE.speed) / 24 * .02, AC.currentTime, .15); }
+}
+function engineOn(on){
+  if (!AC) return;
+  if (!AC.eng){ const osc = AC.createOscillator(), osc2 = AC.createOscillator(), g = AC.createGain(), lp = AC.createBiquadFilter(); osc.type = 'sawtooth'; osc2.type = 'square'; lp.type = 'lowpass'; lp.frequency.value = 420; g.gain.value = 0;
+    osc.connect(lp); osc2.connect(lp); lp.connect(g).connect(master); osc.start(); osc2.start(); AC.eng = { osc, osc2, g }; }
+  if (!on) AC.eng.g.gain.setTargetAtTime(0, AC.currentTime, .3);
 }
 function updateCars(T){
   for (const C of CARS){
@@ -1382,7 +1500,7 @@ const outMat = new THREE.ShaderMaterial({ uniforms: { tSrc: { value: null }, uTi
 const keys = {};
 const ui = { sit: document.getElementById('sit'), mute: document.getElementById('mute'), zone: document.getElementById('zone'), help: document.getElementById('help'), stick: document.getElementById('stick'), intro: document.getElementById('intro') };
 addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyE') toggleSit(); if (e.code === 'KeyM') toggleMute(); if (e.code === 'Space') jump(); if (started) e.preventDefault(); });
-function jump(){ if (!started || st.mode === 'sit' || st.jump) return; st.jump = { vy: 3.0 }; CIN.on = false; CIN.idle = 0; }
+function jump(){ if (!started || st.mode === 'sit' || st.mode === 'drive' || st.jump) return; st.jump = { vy: 3.0 }; CIN.on = false; CIN.idle = 0; }
 addEventListener('keyup', e => { keys[e.code] = false; });
 const joy = { id: null, x: 0, y: 0, ox: 0, oy: 0 }, look = { id: null, lx: 0, ly: 0 };
 let camYaw = 0, camPitch = .12, lookIdle = 0;
@@ -1423,7 +1541,7 @@ loadRig();
 }
 function blocked(x, z){
   for (const [cx, cz, r] of COLL.circles) if ((x - cx) ** 2 + (z - cz) ** 2 < r * r) return true;
-  for (const [cx, cz, hw, hl, yaw] of COLL.boxes){ const dx = x - cx, dz = z - cz, c = Math.cos(yaw), s = Math.sin(yaw); const u = dx * c - dz * s, v = dx * s + dz * c; if (Math.abs(u) < hw && Math.abs(v) < hl) return true; }
+  for (const bx of COLL.boxes){ if (!bx) continue; const [cx, cz, hw, hl, yaw] = bx; const dx = x - cx, dz = z - cz, c = Math.cos(yaw), s = Math.sin(yaw); const u = dx * c - dz * s, v = dx * s + dz * c; if (Math.abs(u) < hw && Math.abs(v) < hl) return true; }
   return false;
 }
 function walkable(x, z){
@@ -1441,6 +1559,8 @@ function walkable(x, z){
 const canSit = () => { const d = waterDist(player.position.x, player.position.z); return d > .5 && d < 13.4; };
 function toggleSit(){
   if (!started) return;
+  if (st.mode === 'drive'){ exitCar(); return; }
+  if (st.mode !== 'sit' && !st.jump){ const c = nearestCar(); if (c){ enterCar(c); return; } }
   if (st.mode === 'sit'){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; rigHead(true); }
   else if (canSit()){
     st.mode = 'sit'; st.sitT = 0; player.userData.head.visible = false; rigHead(false);
@@ -1601,7 +1721,8 @@ function update(dt){
   const il = Math.hypot(ix, iz);
   if (started && st.mode === 'sit' && il > .2){ st.mode = 'walk'; camYaw = st.yaw; camPitch = .12; player.userData.head.visible = true; rigHead(true); }
   const run = keys.ShiftLeft || keys.ShiftRight || il > .95 && joy.id !== null;
-  if (st.mode !== 'sit' && il > .1){
+  if (st.mode === 'drive'){ updateDrive(dt, ix, iz, !!keys.Space); player.position.copy(DRIVE.car.position); st.yaw = DRIVE.car.rotation.y; }
+  else if (st.mode !== 'sit' && il > .1){
     const fx = Math.sin(camYaw), fz = Math.cos(camYaw), k = Math.min(il, 1) / il;
     const mx = (fx * iz - fz * ix) * k, mz = (fz * iz + fx * ix) * k;
     const sp = run ? 4.6 : 1.7, target = Math.atan2(mx, mz);
@@ -1615,20 +1736,20 @@ function update(dt){
     st.mode = run ? 'run' : 'walk';
     if (look.id === null) lookIdle += dt;
     if (lookIdle > 1.2){ let dy = st.yaw - camYaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); camYaw += dy * Math.min(1, dt * .9); }
-  } else if (st.mode !== 'sit'){ st.speed = 0; st.ph = 0; st.mode = 'walk'; }
-  for (const P of PEDS){ const dx = player.position.x - P.g.position.x, dz = player.position.z - P.g.position.z, d = Math.hypot(dx, dz); if (d < .7 && d > 1e-3){ const nx = player.position.x + dx / d * (.7 - d), nz = player.position.z + dz / d * (.7 - d); if (walkable(nx, nz)){ player.position.x = nx; player.position.z = nz; } } }
-  const gnd = northH(waterDist(player.position.x, player.position.z));
+  } else if (st.mode !== 'sit' && st.mode !== 'drive'){ st.speed = 0; st.ph = 0; st.mode = 'walk'; }
+  if (st.mode !== 'drive') for (const P of PEDS){ const dx = player.position.x - P.g.position.x, dz = player.position.z - P.g.position.z, d = Math.hypot(dx, dz); if (d < .7 && d > 1e-3){ const nx = player.position.x + dx / d * (.7 - d), nz = player.position.z + dz / d * (.7 - d); if (walkable(nx, nz)){ player.position.x = nx; player.position.z = nz; } } }
+  const gnd = st.mode === 'drive' ? player.position.y : northH(waterDist(player.position.x, player.position.z));
   if (st.jump){ player.position.y += st.jump.vy * dt; st.jump.vy -= 11 * dt; if (st.jump.vy < 0 && player.position.y <= gnd){ player.position.y = gnd; st.jump = null; } }
   else player.position.y = lerp(player.position.y, gnd, Math.min(1, dt * 10));
   player.rotation.y = st.yaw;
-  if (RIG.ready) rigPose(st.jump ? 'jump' : st.mode, dt, st.speed); else pose(player, st.mode === 'sit' ? 'sit' : st.mode, st.ph);
+  if (st.mode === 'drive'){} else if (RIG.ready) rigPose(st.jump ? 'jump' : st.mode, dt, st.speed); else pose(player, st.mode === 'sit' ? 'sit' : st.mode, st.ph);
   updatePeds(dt); updateCars(T);
   const z = zoneAt(player.position.x); if (started && z !== zoneNow){ zoneNow = z; showZone(z); }
 
   // --- camera
   const head = tmp.set(player.position.x, player.position.y + 1.45, player.position.z);
   let wantPos, wantLook;
-  if (st.mode !== 'sit'){
+  if (st.mode !== 'sit' && st.mode !== 'drive'){
     if (il < .1 && look.id === null && !st.jump) CIN.idle += dt; else { CIN.idle = 0; CIN.on = false; }
     if (CIN.idle > 9 && (!CIN.on || T > CIN.next)) cinCut();
   } else { CIN.on = false; CIN.idle = 0; }
@@ -1641,6 +1762,13 @@ function update(dt){
     const eye = new THREE.Vector3(player.position.x - Math.sin(st.yaw) * .06, player.position.y + .44 + .86 + .1, player.position.z - Math.cos(st.yaw) * .06);
     wantPos = eye;
     wantLook = new THREE.Vector3(eye.x + Math.sin(yaw) * Math.cos(pitch) * 10, eye.y + Math.sin(pitch) * 10, eye.z + Math.cos(yaw) * Math.cos(pitch) * 10);
+  } else if (st.mode === 'drive'){
+    const c = DRIVE.car.position, d = 7.5 + Math.abs(DRIVE.speed) * .12;
+    wantPos = new THREE.Vector3(c.x - Math.sin(camYaw) * d, c.y + 2.6 + Math.max(0, camPitch) * 4, c.z - Math.cos(camYaw) * d);
+    wantLook = new THREE.Vector3(c.x + Math.sin(DRIVE.car.rotation.y) * 3, c.y + .9, c.z + Math.cos(DRIVE.car.rotation.y) * 3);
+    const gy = carGround(wantPos.x, wantPos.z); if (wantPos.y < gy + 1.2) wantPos.y = gy + 1.2;
+    // never behind a wall: walk the camera out from the car and stop short of the first building
+    { const from = new THREE.Vector3(c.x, c.y + 1.2, c.z), best = from.clone(); for (let i = 1; i <= 10; i++){ const q = from.clone().lerp(wantPos, i / 10); if (inBuilding(q.x, q.z)) break; best.copy(q); } wantPos.copy(best); }
   } else {
     const d = 3.0;
     wantPos = new THREE.Vector3(head.x - Math.sin(camYaw) * d * Math.cos(camPitch), head.y + .2 + Math.sin(camPitch) * d, head.z - Math.cos(camYaw) * d * Math.cos(camPitch));
@@ -1648,7 +1776,7 @@ function update(dt){
     const gy = camGround(wantPos.x, wantPos.z); if (wantPos.y < gy + .7) wantPos.y = gy + .7;
     if (CIN.on){ wantPos = CIN.pos; wantLook = new THREE.Vector3(head.x, head.y - .4, head.z); }
   }
-  const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 2.5 : CIN.on ? 1.2 : 3.2));
+  const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 2.5 : CIN.on ? 1.2 : st.mode === 'drive' ? 4 : 3.2));
   camPos.lerp(wantPos, k); camLook.lerp(wantLook, k); first = false;
   camera.position.copy(camPos); camera.lookAt(camLook);
   if (window.__CAM){ const c = window.__CAM; camera.position.set(c[0], c[1], c[2]); camera.lookAt(c[3], c[4], c[5]); }
@@ -1716,7 +1844,7 @@ function frame(){
   requestAnimationFrame(frame);
 }
 frame();
-window.__ready = true; window.__walkable = walkable; window.__RIG = RIG; window.__CIN = CIN; window.__PEDS = PEDS; window.__player = player; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
+window.__ready = true; window.__DRIVE = DRIVE; window.__enterCar = enterCar; window.__keys = keys; window.__walkable = walkable; window.__RIG = RIG; window.__CIN = CIN; window.__PEDS = PEDS; window.__player = player; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
 </script>
 </body>
 </html>
