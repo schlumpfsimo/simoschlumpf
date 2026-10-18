@@ -51,6 +51,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js';
 
 const D = window.BASEL, DBG = new URLSearchParams(location.search);
 const PI = Math.PI;
@@ -711,7 +712,7 @@ const ORWs = resample(ORW, 4);
       boxAt(gs, c[0], (y + yn) / 2 - .02, c[1], 16, Math.max(.3, yn - y + .3), .95, -yaw, STEP, 2);
     }
     const along = [ORWs[START_I + 1][0] - p[0], ORWs[START_I + 1][1] - p[1]], al = Math.hypot(...along); along[0] /= al; along[1] /= al;
-    window.__START = { p, yaw, along };
+    window.__START = { p, yaw, along }; window.__START_I = START_I;
     // two Wickelfisch bags left on the steps, a bicycle against the kerb, bollards by the landing
     const bag = (d, side, col) => { const c = bankPoint(p, d); boxAt(geo('plaster'), c[0] + along[0] * side, northH(d) + .33, c[1] + along[1] * side, .34, .3, .5, -yaw + .4, lin(col), 1);
       boxAt(geo('plaster'), c[0] + along[0] * side, northH(d) + .52, c[1] + along[1] * side, .36, .1, .14, -yaw + .4, lin(col).map(v => v * .8), 1); };
@@ -742,7 +743,7 @@ const ORWs = resample(ORW, 4);
     }
     { // the Buvette: a kiosk, three umbrellas, tables and chairs on the promenade
       const i = clamp(START_I + 9, 1, ORWs.length - 3), p = ORWs[i], q = ORWs[i + 1], yaw = Math.atan2(q[0] - p[0], q[1] - p[1]);
-      const k = bankPoint(p, 16.5); boxAt(gw, k[0], PROM + 1.35, k[1], 4.2, 2.7, 2.6, yaw, lin('#c8b89a'), 1);
+      const k = bankPoint(p, 16.5); window.__BUV = k; boxAt(gw, k[0], PROM + 1.35, k[1], 4.2, 2.7, 2.6, yaw, lin('#c8b89a'), 1);
       boxAt(gp, k[0], PROM + 2.85, k[1], 4.8, .25, 3.2, yaw, lin('#5e5048'), 1);
       const [, qw] = waterNear(k[0], k[1]); const tw = Math.atan2(qw[0] - k[0], qw[1] - k[1]);
       const ha = boxAt(gp, k[0] + Math.sin(tw) * 1.5, PROM + 2.25, k[1] + Math.cos(tw) * 1.5, 4.4, .08, 1.2, yaw, lin('#b94a3c'), 1);   // awning
@@ -822,11 +823,11 @@ function buildTerrain(){
 // ------------------------------------------------------------------ renderer, scene, light
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
 if (!renderer.getContext()) document.getElementById('err').style.display = 'flex';
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.enabled = false;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-const FOG = new THREE.Color('#dcd6c6');
-scene.fog = new THREE.FogExp2(FOG, 0.0009);
+const FOG = new THREE.Color('#d3d3ca');
+scene.fog = new THREE.FogExp2(FOG, 0.0021);
 const camera = new THREE.PerspectiveCamera(52, 1, 0.3, 4000);
 
 const SUN = new THREE.Vector3(-0.69, 0.25, -0.68).normalize();   // summer evening, north-west
@@ -869,7 +870,7 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), new THREE.Shade
       float h = max(vD.y, 0.);
       vec3 col = mix(L(vec3(.90,.88,.82)), L(vec3(.64,.73,.80)), pow(h, .55));
       float s = max(dot(normalize(vD), uSun), 0.);
-      col += L(vec3(1.,.86,.62)) * (pow(s, 8.) * .35 + pow(s, 900.) * 2.5);
+      col += L(vec3(1.,.88,.66)) * (pow(s, 6.) * .3 + smoothstep(.9986, .9991, s) * 3.);
       if (vD.y < 0.) col = L(vec3(.89,.84,.75));
       gl_FragColor = vec4(col, 1.);
     }`,
@@ -1045,9 +1046,11 @@ function pose(p, mode, ph = 0){
 }
 const player = makePerson({ cloth: TEX.jacket, skinTex: TEX.skin, jacket: '#4b6a93', pocket: '#44618a', collar: '#405b82', trousers: '#33363c', shoes: '#3e2c20', skin: '#c99068', hair: '#b2805f', moustache: '#4a3527' });
 scene.add(player, window.__BIKE, ...window.__BIKES);
-// ------------------------------------------------------------------ the man: a CC0 low-poly human by Quaternius, restyled
-// (assets/human.glb; palette-textured, so his clothes are painted here)
+// ------------------------------------------------------------------ people on the rig: a CC0 low-poly human by Quaternius, restyled
+// (assets/human.glb; palette-textured, so clothes are painted here; the player and the pedestrians share it)
 const RIG = { ready: false, mixer: null, acts: {}, B: {}, head: null, mesh: null, cur: null };
+const PEDS = [];
+let GL = null, GEO_LONG = null, GEO_SHORT = null;
 function paletteTex(cols){
   const c = document.createElement('canvas'); c.width = 8; c.height = 32; const g = c.getContext('2d');
   const rows = [[0, 6], [6, 11], [11, 17], [17, 23], [23, 32]];
@@ -1060,74 +1063,153 @@ function smoothNormals(geo){
   for (let i = 0; i < p.count; i++){ const a = acc.get(key(i)), l = Math.hypot(...a) || 1; n.setXYZ(i, a[0] / l, a[1] / l, a[2] / l); }
   n.needsUpdate = true;
 }
-function loadRig(){ new GLTFLoader().load('assets/human.glb', gl => {
-  const m = gl.scene; m.scale.setScalar(1.8 / 526); player.add(m); m.updateMatrixWorld(true);
+// the soft blob under everything that stands on the ground, GTA-style, instead of cast shadows
+const BLOB = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 4, 32, 32, 30); gr.addColorStop(0, 'rgba(0,0,0,.5)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c); })();
+function blob(parent, w, l, y = .03){ const m = new THREE.Mesh(new THREE.PlaneGeometry(w, l), new THREE.MeshBasicMaterial({ map: BLOB, transparent: true, depthWrite: false })); m.rotation.x = -PI / 2; m.position.y = y; m.renderOrder = 1; parent.add(m); return m; }
+// one restyled instance of the human: palette colours, long or short sleeves, shoes, optional moustache
+function makeRig(palette, opts = {}){
+  const m = SkeletonUtils.clone(GL.scene); m.scale.setScalar(1.8 / 526);
+  const rig = { root: m, B: {}, acts: {}, cur: null, ready: true };
   let mesh; m.traverse(o => { if (o.isSkinnedMesh) mesh = o; });
-  mesh.material = new THREE.MeshLambertMaterial({ map: paletteTex(['#c99068', '#1f1a18', '#a97a58', '#4b6a93', '#33363c']) });
-  mesh.frustumCulled = false; mesh.castShadow = true; smoothNormals(mesh.geometry);
-  const bones = mesh.skeleton.bones; bones.forEach(b => RIG.B[b.name] = b);
-  // long sleeves: arm vertices take the shirt colour, hands stay skin
-  const arm = new Set(bones.map((b, i) => (/Arm$|ForeArm$/.test(b.name) ? i : -1)).filter(i => i >= 0));
-  const si = mesh.geometry.attributes.skinIndex, sw = mesh.geometry.attributes.skinWeight, uv = mesh.geometry.attributes.uv;
-  for (let i = 0; i < uv.count; i++){ let w = 0; for (let k = 0; k < 4; k++) if (arm.has(si.getComponent(i, k))) w += sw.getComponent(i, k); if (w > .5) uv.setY(i, .375); }
-  uv.needsUpdate = true;
-  // shoes on the foot bones, a moustache under the nose (model units are centimetres)
+  mesh.geometry = opts.short ? GEO_SHORT : GEO_LONG;
+  mesh.material = new THREE.MeshLambertMaterial({ map: paletteTex(palette) }); mesh.frustumCulled = false;
+  mesh.skeleton.bones.forEach(b => rig.B[b.name] = b);
   const M = c => new THREE.MeshLambertMaterial({ color: c });
-  const WS = b => b.getWorldScale(new THREE.Vector3()).x;   // metres per bone unit
-  for (const side of ['Left', 'Right']){ const f = RIG.B[side + 'Foot'], t = RIG.B[side + 'ToeBase']; if (!f || !t) continue; const k = 1 / WS(f);
-    // the shoe runs from the ankle to the toe, along the toe bone's direction in the foot's own space
+  const holder = new THREE.Group(); holder.add(m); holder.updateMatrixWorld(true);
+  const WS = b => b.getWorldScale(new THREE.Vector3()).x;
+  for (const side of ['Left', 'Right']){ const f = rig.B[side + 'Foot'], t = rig.B[side + 'ToeBase']; if (!f || !t) continue; const k = 1 / WS(f);
     const dir = t.position.clone(), len = dir.length(); dir.normalize();
-    const sh = new THREE.Mesh(new THREE.BoxGeometry(.095 * k, .075 * k, len * 1.55), M('#3e2c20'));
-    sh.position.copy(dir).multiplyScalar(len * .55); sh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir); sh.castShadow = true; f.add(sh); RIG['shoe' + side] = sh; }
-  if (RIG.B.Head && RIG.B.HeadTop_End){ const H = RIG.B.Head, k = 1 / WS(H);
-    const up = RIG.B.HeadTop_End.position.clone().normalize();
+    const sh = new THREE.Mesh(new THREE.BoxGeometry(.095 * k, .075 * k, len * 1.55), M(opts.shoes || '#3e2c20'));
+    sh.position.copy(dir).multiplyScalar(len * .55); sh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir); f.add(sh); }
+  if (opts.moustache && rig.B.Head && rig.B.HeadTop_End){ const H = rig.B.Head, k = 1 / WS(H);
+    const up = rig.B.HeadTop_End.position.clone().normalize();
     const face = new THREE.Vector3(0, 0, 1).applyQuaternion(H.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
     const mo = new THREE.Mesh(new THREE.BoxGeometry(.065 * k, .02 * k, .025 * k), M('#4a3527'));
-    mo.position.copy(up).multiplyScalar(.1 * k).addScaledVector(face, .1 * k); mo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face); H.add(mo); RIG.mo = mo; }
-  RIG.mixer = new THREE.AnimationMixer(m);
-  for (const [k, re] of [['idle', /Idle/], ['walk', /Walk/], ['run', /Run/]]){ const c = gl.animations.find(a => re.test(a.name)); if (c) RIG.acts[k] = RIG.mixer.clipAction(c); }
-  RIG.mesh = mesh; RIG.root = m; RIG.head = RIG.B.Head; RIG.ready = true;
-  player.children.slice().forEach(ch => { if (ch !== m) player.remove(ch); });
-  rigHead(st.mode !== 'sit');
-}, undefined, e => console.warn('rig', e)); }
-function rigHead(show){ if (RIG.head) RIG.head.scale.setScalar(show ? 1 : .001); }
-function rigPose(mode, dt, speed){
-  if (!RIG.ready) return;
+    mo.position.copy(up).multiplyScalar(.1 * k).addScaledVector(face, .1 * k); mo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face); H.add(mo); }
+  holder.remove(m);
+  rig.mixer = new THREE.AnimationMixer(m);
+  for (const [k, re] of [['idle', /Idle/], ['walk', /Walk/], ['run', /Run/], ['jump', /Jump/]]){ const c = GL.animations.find(a => re.test(a.name)); if (c) rig.acts[k] = rig.mixer.clipAction(c); }
+  if (rig.acts.jump){ rig.acts.jump.setLoop(THREE.LoopOnce); rig.acts.jump.clampWhenFinished = true; }
+  rig.mesh = mesh; rig.head = rig.B.Head;
+  return rig;
+}
+function rigPoseFor(rig, mode, dt, speed){
   if (mode === 'sit'){
-    RIG.mixer.stopAllAction(); RIG.cur = null; RIG.mesh.skeleton.pose();
-    const B = RIG.B, q = (DBG.get('sit') || '').split(',').map(Number), S = { ul: q[0] || 1.5, lg: q[1] || 1.3, arm: q[2] || 1.15, sp: q[3] || .12, fa: q[4] || .75 };
-    RIG.root.position.y = -.55;
+    if (rig.cur !== 'sit'){ rig.mixer.stopAllAction(); rig.cur = 'sit'; }
+    rig.mesh.skeleton.pose();
+    const B = rig.B, q = (DBG.get('sit') || '').split(',').map(Number), S = { ul: q[0] || 1.5, lg: q[1] || 1.3, arm: q[2] || 1.15, sp: q[3] || .12, fa: q[4] || .75 };
+    rig.root.position.y = -.55;
     for (const s of ['Left', 'Right']){ B[s + 'UpLeg'].rotation.x += S.ul; B[s + 'Leg'].rotation.x += S.lg; B[s + 'Arm'].rotation.x += S.arm; B[s + 'ForeArm'].rotation.z += (s === 'Left' ? 1 : -1) * S.fa; }
     B.Spine.rotation.x += S.sp;
     return;
   }
-  RIG.root.position.y = 0;
-  const want = mode === 'run' ? 'run' : speed > .15 ? 'walk' : 'idle', act = RIG.acts[want] || RIG.acts.idle;
-  if (RIG.cur !== act){ if (RIG.cur) RIG.cur.fadeOut(.25); act.reset().fadeIn(.25).play(); RIG.cur = act; }
+  rig.root.position.y = 0;
+  const want = mode === 'jump' ? 'jump' : mode === 'run' ? 'run' : speed > .15 ? 'walk' : 'idle', act = rig.acts[want] || rig.acts.idle;
+  if (rig.cur !== act){ if (rig.cur && rig.cur.fadeOut) rig.cur.fadeOut(.2); act.reset().fadeIn(.2).play(); rig.cur = act; }
   if (want === 'walk') act.timeScale = clamp(speed / 1.7, .6, 1.4);
-  RIG.mixer.update(dt);
+  rig.mixer.update(dt);
+}
+function rigPose(mode, dt, speed){ if (RIG.ready) rigPoseFor(RIG, mode, dt, speed); }
+function rigHead(show){ if (RIG.head) RIG.head.scale.setScalar(show ? 1 : .001); }
+function loadRig(){ new GLTFLoader().load('assets/human.glb', gl => {
+  GL = gl;
+  let mesh; gl.scene.traverse(o => { if (o.isSkinnedMesh) mesh = o; });
+  smoothNormals(mesh.geometry);
+  GEO_SHORT = mesh.geometry; GEO_LONG = mesh.geometry.clone();
+  // long sleeves: arm vertices take the shirt colour, hands stay skin
+  const bones = mesh.skeleton.bones, arm = new Set(bones.map((b, i) => (/Arm$|ForeArm$/.test(b.name) ? i : -1)).filter(i => i >= 0));
+  const si = GEO_LONG.attributes.skinIndex, sw = GEO_LONG.attributes.skinWeight, uv = GEO_LONG.attributes.uv;
+  for (let i = 0; i < uv.count; i++){ let w = 0; for (let k = 0; k < 4; k++) if (arm.has(si.getComponent(i, k))) w += sw.getComponent(i, k); if (w > .5) uv.setY(i, .375); }
+  uv.needsUpdate = true;
+  // the man
+  Object.assign(RIG, makeRig(['#c99068', '#1f1a18', '#a97a58', '#4b6a93', '#33363c'], { moustache: true }));
+  player.children.slice().forEach(ch => player.remove(ch));
+  player.add(RIG.root); blob(player, 1.1, 1.1);
+  rigHead(st.mode !== 'sit');
+  spawnPeds();
+}, undefined, e => console.warn('rig', e)); }
+
+// ------------------------------------------------------------------ pedestrians: waypoints along the promenade, a pause now and then, some on the benches
+const LANES = [ORWs.map(p => bankPoint(p, 12.7)), ORWs.map(p => bankPoint(p, 15.3))];
+const LOOKS = [
+  ['#e0b597', '#1f1a18', '#8b6b45', '#d9d2c2', '#5a5e66'], ['#c99677', '#1f1a18', '#1f1b18', '#9c3a32', '#2f3a4a'],
+  ['#e3bc9e', '#1f1a18', '#c9b28a', '#d9c27a', '#cfc8b8'], ['#b98266', '#1f1a18', '#2a221d', '#3e4b3a', '#2a2b2e'],
+  ['#e0b597', '#1f1a18', '#5a412c', '#eeece6', '#2f4a6b'], ['#d6a585', '#1f1a18', '#6b4a32', '#6f8a9c', '#3a3a3a'],
+  ['#c99068', '#1f1a18', '#2a221d', '#b7b2a6', '#4a3b32'], ['#e8c3a6', '#1f1a18', '#8a2f26', '#2f5c4a', '#d8d0c0'],
+  ['#c28a6a', '#1f1a18', '#1a1614', '#f0e6d2', '#3b3f48'], ['#e0b597', '#1f1a18', '#9c7a52', '#c75a3c', '#2c2c30'],
+];
+function spawnPeds(){
+  const r = rng(77);
+  const S0 = window.__START_I;
+  [-34, -20, -9, 5, 13, 24, 38].forEach((off, i) => {
+    const lane = i % 2, L = LANES[lane], idx = clamp(S0 + off, 3, L.length - 4);
+    const rig = makeRig(LOOKS[i % LOOKS.length], { short: r() < .5, shoes: r() < .5 ? '#2b2a28' : '#5a4634' });
+    const g = new THREE.Group(); g.add(rig.root); blob(g, 1.1, 1.1); g.position.set(L[idx][0], PROM, L[idx][1]); scene.add(g);
+    PEDS.push({ rig, g, lane, idx, dir: r() < .5 ? 1 : -1, state: 'walk', t: 5 + r() * 20, speed: 1.1 + r() * .5, phase: r() * 10 });
+  });
+  // three sitting on the benches, facing the river
+  let n = 0;
+  const benches = []; for (let i = 3; i < ORWs.length - 3; i += 6) benches.push(i); benches.sort((a, b) => Math.abs(a - S0) - Math.abs(b - S0));
+  for (const i of benches.slice(1, 4)){
+    { const p = bankPoint(ORWs[i], 13.6), [, q] = waterNear(p[0], p[1]); if (!q) continue;
+      const rig = makeRig(LOOKS[(n + 7) % LOOKS.length], { short: n !== 1 });
+      const g = new THREE.Group(); g.add(rig.root); g.position.set(p[0], PROM + .05, p[1]); g.rotation.y = Math.atan2(q[0] - p[0], q[1] - p[1]); scene.add(g);
+      PEDS.push({ rig, g, state: 'sit' }); n++; }
+  }
+}
+function updatePeds(dt){
+  for (const P of PEDS){
+    if (P.state === 'sit'){ rigPoseFor(P.rig, 'sit', dt, 0); continue; }
+    const L = LANES[P.lane];
+    if (P.state === 'idle'){ P.t -= dt; rigPoseFor(P.rig, 'walk', dt, 0); if (P.t <= 0){ P.state = 'walk'; P.t = 8 + Math.random() * 25; } continue; }
+    const tgt = L[P.idx], dx = tgt[0] - P.g.position.x, dz = tgt[1] - P.g.position.z, d = Math.hypot(dx, dz);
+    if (d < .4){ P.idx += P.dir; if (P.idx <= 1 || P.idx >= L.length - 2){ P.dir = -P.dir; P.idx += 2 * P.dir; } }
+    else {
+      const yaw = Math.atan2(dx, dz); let dy = yaw - P.g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); P.g.rotation.y += dy * Math.min(1, dt * 6);
+      P.g.position.x += dx / d * P.speed * dt; P.g.position.z += dz / d * P.speed * dt;
+    }
+    P.t -= dt; if (P.t <= 0){ P.state = 'idle'; P.t = 3 + Math.random() * 6; }
+    rigPoseFor(P.rig, 'walk', dt, P.speed);
+  }
 }
 
-// a few others on the Rheinbord and the Pfalz, Colville-still
-const extras = [];
+// ------------------------------------------------------------------ cars: a few 1990s shapes from boxes, dusty paint
+function makeCar(kind, col){
+  const g = new THREE.Group(), M = c => new THREE.MeshLambertMaterial({ color: c });
+  const box = (w, h, l, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), M(c)); m.position.set(x, y, z); g.add(m); return m; };
+  const K = { hatch: { L: 3.6, W: 1.55, cab: [1.9, .2], h: .5 }, golf: { L: 4.0, W: 1.65, cab: [2.0, .3], h: .52 }, sedan: { L: 4.75, W: 1.72, cab: [2.1, -.1], h: .5 } }[kind];
+  box(K.W, K.h, K.L, col, 0, .42 + K.h / 2, 0);                                            // body
+  box(K.W - .1, .5, K.cab[0], col, 0, .42 + K.h + .25, K.cab[1]);                           // cabin
+  box(K.W - .04, .3, K.cab[0] - .3, '#2a3036', 0, .42 + K.h + .3, K.cab[1]);                // glass band
+  box(K.W - .2, .06, K.cab[0] - .4, col, 0, .42 + K.h + .53, K.cab[1]);                     // roof
+  box(K.W + .06, .14, .14, '#44464a', 0, .42, K.L / 2); box(K.W + .06, .14, .14, '#44464a', 0, .42, -K.L / 2);   // bumpers
+  for (const s of [-1, 1]){ box(.26, .12, .06, '#e8e4cf', s * (K.W / 2 - .25), .66, K.L / 2 + .02); box(.26, .12, .06, '#8a2a22', s * (K.W / 2 - .25), .66, -K.L / 2 - .02); }
+  for (const [x, z] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]){
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .2, 10), M('#1e1e1e')); w.rotation.z = PI / 2; w.position.set(x * (K.W / 2 - .05), .3, z * (K.L / 2 - .75)); g.add(w);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .21, 8), M('#b9b5a8')); hub.rotation.z = PI / 2; hub.position.copy(w.position); g.add(hub);
+  }
+  blob(g, K.W + .6, K.L + .4, .02);
+  return g;
+}
+const CARS = [], CAR_COLS = ['#b8ae94', '#7a2e2a', '#d8d4c8', '#5f6f7e', '#4b6a4e', '#2e3034', '#c7b36a'];
 {
-  const looks = [
-    { jacket: '#e8e3d6', trousers: '#6b6a5e', shoes: '#2b2a28', skin: '#e0b597', hair: '#8b6b45' },
-    { jacket: '#9c3a32', trousers: '#2f3a4a', shoes: '#2b2a28', skin: '#c99677', hair: '#1f1b18' },
-    { jacket: '#d9c27a', trousers: '#e6e0d2', shoes: '#6b4a32', skin: '#e3bc9e', hair: '#c9b28a' },
-    { jacket: '#3e4b3a', trousers: '#2a2b2e', shoes: '#2b2a28', skin: '#b98266', hair: '#2a221d' },
-    { jacket: '#f0efe9', trousers: '#2f4a6b', shoes: '#ddd', skin: '#e0b597', hair: '#5a412c' },
-  ];
-  const spots = [[0.18, 7.5], [0.33, 9], [0.47, 6.5], [0.66, 8], [0.8, 10]];
-  spots.forEach(([f, d], i) => {
-    const p0 = ORWs[Math.floor(f * ORWs.length)], p = bankPoint(p0, d), [, q] = waterNear(p[0], p[1]);
-    const m = makePerson(looks[i]); pose(m, 'sit');
-    m.position.set(p[0], northH(d) - .02, p[1]); m.rotation.y = Math.atan2(q[0] - p[0], q[1] - p[1]) + (rand() - .5) * .6;
-    scene.add(m); extras.push(m);
-  });
-  // two on the Pfalz terrace by the parapet, one on the bridge
-  for (const [x, z, c] of [[-44, 124, 3], [-50, 120, 0]]){
-    const m = makePerson(looks[c]); pose(m, 'walk', 0); m.position.set(x, southH(x, z), z); m.rotation.y = Math.atan2(140, -170); scene.add(m);
+  const r = rng(91), inB = (x, z) => NORTH_BLDG.some(b => { let c = false; for (let i = 0, j = b.length - 1; i < b.length; j = i++){ const a = b[i], q = b[j]; if ((a[1] > z) !== (q[1] > z) && x < (q[0] - a[0]) * (z - a[1]) / (q[1] - a[1]) + a[0]) c = !c; } return c; });
+  for (let i = 2; i < ORWs.length - 2; i += 7){
+    if (r() < .35) continue;
+    let p, q, ok = false; for (const dd of [17.4, 16.6, 18.2]){ p = bankPoint(ORWs[i], dd); q = bankPoint(ORWs[i + 1], dd); if (!inB(p[0], p[1]) && !inB(q[0], q[1])){ ok = true; break; } } if (!ok) continue;
+    const car = makeCar(['hatch', 'golf', 'sedan'][Math.floor(r() * 3)], CAR_COLS[Math.floor(r() * CAR_COLS.length)]);
+    car.position.set(p[0], PROM, p[1]); car.rotation.y = Math.atan2(q[0] - p[0], q[1] - p[1]) + (r() < .5 ? 0 : PI); scene.add(car);
+  }
+  for (const [phase, lane, kind] of [[.1, 5.5, 'sedan'], [.6, -5.5, 'golf'], [.85, 5.5, 'hatch']]){
+    const car = makeCar(kind, CAR_COLS[Math.floor(r() * CAR_COLS.length)]); scene.add(car); CARS.push({ car, phase, lane, B: BRIDGES.wettstein, dir: lane > 0 ? 1 : -1, per: 34 });
+  }
+}
+function updateCars(T){
+  for (const C of CARS){
+    const p = (T / C.per + C.phase) % 1, s = C.dir > 0 ? p : 1 - p, B = C.B, t = lerp(-30, B.len + 30, s), tt = clamp(t, 0, B.len), c = B.at(tt, C.lane);
+    C.car.visible = t > -4 && t < B.len + 4; C.car.position.set(c[0], B.y(tt), c[1]); C.car.rotation.y = Math.atan2(B.dir[0], B.dir[1]) + (C.dir > 0 ? 0 : PI);
   }
 }
 
@@ -1253,7 +1335,8 @@ const outMat = new THREE.ShaderMaterial({ uniforms: { tSrc: { value: null }, uTi
 // ------------------------------------------------------------------ input
 const keys = {};
 const ui = { sit: document.getElementById('sit'), mute: document.getElementById('mute'), zone: document.getElementById('zone'), help: document.getElementById('help'), stick: document.getElementById('stick'), intro: document.getElementById('intro') };
-addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyE') toggleSit(); if (e.code === 'KeyM') toggleMute(); if (started) e.preventDefault(); });
+addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyE') toggleSit(); if (e.code === 'KeyM') toggleMute(); if (e.code === 'Space') jump(); if (started) e.preventDefault(); });
+function jump(){ if (!started || st.mode === 'sit' || st.jump) return; st.jump = { vy: 4.4 }; CIN.on = false; CIN.idle = 0; }
 addEventListener('keyup', e => { keys[e.code] = false; });
 const joy = { id: null, x: 0, y: 0, ox: 0, oy: 0 }, look = { id: null, lx: 0, ly: 0 };
 let camYaw = 0, camPitch = .12, lookIdle = 0;
@@ -1346,6 +1429,37 @@ function initAudio(){
   const dl = AC.createDelay(1); dl.delayTime.value = .23; const fb = AC.createGain(); fb.gain.value = .35; const wet = AC.createGain(); wet.gain.value = .5;
   const bus = AC.createGain(); bus.connect(master); bus.connect(dl); dl.connect(fb).connect(dl); dl.connect(wet).connect(master);
   AC.bus = bus;
+  // traffic on the bridges: a low hum that swells now and then
+  const tr = AC.createBufferSource(); tr.buffer = buf; tr.loop = true; tr.playbackRate.value = .6;
+  const tlp = AC.createBiquadFilter(); tlp.type = 'lowpass'; tlp.frequency.value = 160; const tg = AC.createGain(); tg.gain.value = .035;
+  tr.connect(tlp).connect(tg).connect(master); tr.start();
+  const tlfo = AC.createOscillator(), tlg = AC.createGain(); tlfo.frequency.value = .05; tlg.gain.value = .015; tlfo.connect(tlg).connect(tg.gain); tlfo.start();
+  // pedestrians: a faint murmur of voices
+  const mu = AC.createBufferSource(); mu.buffer = wbuf; mu.loop = true;
+  const mbp = AC.createBiquadFilter(); mbp.type = 'bandpass'; mbp.frequency.value = 420; mbp.Q.value = 2.5; const mg = AC.createGain(); mg.gain.value = .006;
+  mu.connect(mbp).connect(mg).connect(master); mu.start();
+  const mlfo = AC.createOscillator(), mlg = AC.createGain(); mlfo.type = 'triangle'; mlfo.frequency.value = .9; mlg.gain.value = .004; mlfo.connect(mlg).connect(mg.gain); mlfo.start();
+  // the radio at the Buvette: a slow lo-fi loop, heard through a small speaker
+  AC.radio = AC.createGain(); AC.radio.gain.value = 0;
+  const rbp = AC.createBiquadFilter(); rbp.type = 'bandpass'; rbp.frequency.value = 1100; rbp.Q.value = .7; rbp.connect(AC.radio).connect(master);
+  const chords = [[220, 261.6, 329.6], [174.6, 220, 261.6], [130.8, 164.8, 196], [196, 246.9, 293.7]];
+  const bar = 2.5; let t0 = AC.currentTime + .5;
+  const playBar = (n) => { const t = t0 + n * bar, ch = chords[n % 4];
+    for (const f of ch){ const o = AC.createOscillator(), v = AC.createGain(); o.type = 'triangle'; o.frequency.value = f; o.detune.value = (Math.random() - .5) * 12;
+      v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(.05, t + .15); v.gain.setValueAtTime(.05, t + bar - .3); v.gain.linearRampToValueAtTime(0, t + bar); o.connect(v).connect(rbp); o.start(t); o.stop(t + bar + .05); }
+    for (let k = 0; k < 4; k++){ const o = AC.createOscillator(), v = AC.createGain(); o.type = 'square'; o.frequency.value = ch[0] / 2 * (k === 2 ? 1.5 : 1);
+      v.gain.setValueAtTime(0, t + k * bar / 4); v.gain.linearRampToValueAtTime(.045, t + k * bar / 4 + .02); v.gain.exponentialRampToValueAtTime(.001, t + k * bar / 4 + .5); o.connect(v).connect(rbp); o.start(t + k * bar / 4); o.stop(t + k * bar / 4 + .55);
+      const h = AC.createBufferSource(); h.buffer = wbuf; const hv = AC.createGain(); hv.gain.setValueAtTime(.03, t + k * bar / 4 + bar / 8); hv.gain.exponentialRampToValueAtTime(.001, t + k * bar / 4 + bar / 8 + .06); h.connect(hv).connect(rbp); h.start(t + k * bar / 4 + bar / 8); h.stop(t + k * bar / 4 + bar / 8 + .08); }
+  };
+  let barN = 0; const tick = () => { if (AC){ while (t0 + barN * bar < AC.currentTime + 4){ playBar(barN); barN++; } } setTimeout(tick, 1000); }; tick();
+  // a car passing on the Wettsteinbrücke every so often
+  const carPass = () => { if (AC && !muted){ const t = AC.currentTime, n = AC.createBufferSource(); n.buffer = wbuf; n.loop = true;
+      const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2; f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(380, t + 3);
+      const v = AC.createGain(); v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(.02, t + 1.4); v.gain.linearRampToValueAtTime(0, t + 3);
+      const pn = AC.createStereoPanner ? AC.createStereoPanner() : null; if (pn){ pn.pan.setValueAtTime(-1, t); pn.pan.linearRampToValueAtTime(1, t + 3); n.connect(f).connect(v).connect(pn).connect(master); } else n.connect(f).connect(v).connect(master);
+      n.start(t); n.stop(t + 3.1); }
+    setTimeout(carPass, 15000 + Math.random() * 30000); };
+  setTimeout(carPass, 9000);
   scheduleBells(8); scheduleSwifts(5);
 }
 function bell(t, f, g = .06){
@@ -1393,7 +1507,7 @@ function toggleMute(){
 // ------------------------------------------------------------------ resize
 let W = 0, H = 0;
 function resize(){
-  const pr = Math.min(window.devicePixelRatio || 1, clamp(500 / innerHeight, .4, 1));
+  const pr = Math.min(window.devicePixelRatio || 1, clamp(440 / innerHeight, .36, 1));
   renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false);
   W = Math.ceil(innerWidth * pr / 8) * 8; H = Math.ceil(innerHeight * pr / 8) * 8;
   for (const r of [rtScene, ...rtAcc]) r.setSize(W, H);
@@ -1418,6 +1532,13 @@ const clock = new THREE.Clock();
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), tmp = new THREE.Vector3();
 let first = true, T = 0;
 const MU_LOOK = new THREE.Vector3(MU.cx, MU.y + 18, MU.cz);
+// the cinematic camera: stand still long enough and it cuts to fixed wide angles, like the old games
+const CIN = { on: false, idle: 0, next: 0, pos: new THREE.Vector3() };
+function cinCut(){
+  const a = Math.random() * PI * 2, d = 7 + Math.random() * 8, px = player.position.x + Math.sin(a) * d, pz = player.position.z + Math.cos(a) * d;
+  CIN.pos.set(px, Math.max(camGround(px, pz) + .8, player.position.y + 1 + Math.random() * 4), pz);
+  CIN.on = true; CIN.next = T + 6 + Math.random() * 3; camPos.copy(CIN.pos); camLook.set(player.position.x, player.position.y + 1, player.position.z);
+}
 function update(dt){
   T += dt;
   // --- player
@@ -1441,16 +1562,23 @@ function update(dt){
     st.ph += dt * st.speed * 3.6;
     st.mode = run ? 'run' : 'walk';
     if (look.id === null) lookIdle += dt;
-    if (lookIdle > 1.2){ let dy = st.yaw - camYaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); camYaw += dy * Math.min(1, dt * 1.2); }
+    if (lookIdle > 1.2){ let dy = st.yaw - camYaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); camYaw += dy * Math.min(1, dt * .9); }
   } else if (st.mode !== 'sit'){ st.speed = 0; st.ph = 0; st.mode = 'walk'; }
-  player.position.y = lerp(player.position.y, northH(waterDist(player.position.x, player.position.z)), Math.min(1, dt * 10));
+  const gnd = northH(waterDist(player.position.x, player.position.z));
+  if (st.jump){ player.position.y += st.jump.vy * dt; st.jump.vy -= 11 * dt; if (st.jump.vy < 0 && player.position.y <= gnd){ player.position.y = gnd; st.jump = null; } }
+  else player.position.y = lerp(player.position.y, gnd, Math.min(1, dt * 10));
   player.rotation.y = st.yaw;
-  if (RIG.ready) rigPose(st.mode, dt, st.speed); else pose(player, st.mode === 'sit' ? 'sit' : st.mode, st.ph);
+  if (RIG.ready) rigPose(st.jump ? 'jump' : st.mode, dt, st.speed); else pose(player, st.mode === 'sit' ? 'sit' : st.mode, st.ph);
+  updatePeds(dt); updateCars(T);
   const z = zoneAt(player.position.x); if (started && z !== zoneNow){ zoneNow = z; showZone(z); }
 
   // --- camera
   const head = tmp.set(player.position.x, player.position.y + 1.45, player.position.z);
   let wantPos, wantLook;
+  if (st.mode !== 'sit'){
+    if (il < .1 && look.id === null && !st.jump) CIN.idle += dt; else { CIN.idle = 0; CIN.on = false; }
+    if (CIN.idle > 9 && (!CIN.on || T > CIN.next)) cinCut();
+  } else { CIN.on = false; CIN.idle = 0; }
   if (st.mode === 'sit'){
     if (st.sitT === 0){ camYaw = st.yaw; camPitch = 0; lookIdle = 0; }
     st.sitT += dt;
@@ -1465,8 +1593,9 @@ function update(dt){
     wantPos = new THREE.Vector3(head.x - Math.sin(camYaw) * d * Math.cos(camPitch), head.y + .2 + Math.sin(camPitch) * d, head.z - Math.cos(camYaw) * d * Math.cos(camPitch));
     wantLook = new THREE.Vector3(head.x + Math.sin(camYaw) * 5, head.y - .35, head.z + Math.cos(camYaw) * 5);
     const gy = camGround(wantPos.x, wantPos.z); if (wantPos.y < gy + .7) wantPos.y = gy + .7;
+    if (CIN.on){ wantPos = CIN.pos; wantLook = new THREE.Vector3(head.x, head.y - .4, head.z); }
   }
-  const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 2.5 : 5));
+  const k = first ? 1 : Math.min(1, dt * (st.mode === 'sit' ? 2.5 : CIN.on ? 1.2 : 3.2));
   camPos.lerp(wantPos, k); camLook.lerp(wantLook, k); first = false;
   camera.position.copy(camPos); camera.lookAt(camLook);
   if (DBG.has('closeup')){ const a = +DBG.get('closeup') || 0, hy = player.position.y + (st.mode === 'sit' ? .9 : 1.45); camera.position.set(player.position.x + Math.sin(st.yaw + a) * 1.7, hy + .1, player.position.z + Math.cos(st.yaw + a) * 1.7); camera.lookAt(player.position.x, hy - .25, player.position.z); }
@@ -1514,7 +1643,8 @@ function update(dt){
   water.material.uniforms.uTime.value = T;
 
   // --- sound: lapping louder near the water
-  if (AC && river){ const d = waterDist(player.position.x, player.position.z); river.userData.lap.gain.setTargetAtTime(clamp(1 - d / 14, 0, 1) * .05, AC.currentTime, .5); }
+  if (AC && river){ const d = waterDist(player.position.x, player.position.z); river.userData.lap.gain.setTargetAtTime(clamp(1 - d / 14, 0, 1) * .05, AC.currentTime, .5);
+    if (AC.radio && window.__BUV){ const dd = Math.hypot(player.position.x - window.__BUV[0], player.position.z - window.__BUV[1]); AC.radio.gain.setTargetAtTime(.9 / (1 + dd * dd / 60), AC.currentTime, .5); } }
 }
 let rtI = 0;
 function frame(){
@@ -1532,7 +1662,7 @@ function frame(){
   requestAnimationFrame(frame);
 }
 frame();
-window.__ready = true; window.__RIG = RIG; window.__player = player; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
+window.__ready = true; window.__RIG = RIG; window.__CIN = CIN; window.__PEDS = PEDS; window.__player = player; window.__st = st; window.__trams = trams; window.__scene = scene; window.__water = water; window.__rtRefl = rtRefl; window.__renderer = renderer; window.__accMat = accMat;
 </script>
 </body>
 </html>
