@@ -577,7 +577,8 @@ const central = { x: CENTRAL.x, z: CENTRAL.z, alive: true, central: true };
     const m = new THREE.Mesh(g, lmat); m.position.set(x, y, z); scene.add(m);
     return m;
   };
-  word(CENTRAL.x + 45, groundAt(CENTRAL.x + 45, 0) + 0.06, 0, 46);
+  central.frontWord = word(CENTRAL.x + 45, groundAt(CENTRAL.x + 45, 0) + 0.06, 0, 46);
+  central.wordSize = 46;
   word(CENTRAL.x - 42, groundAt(CENTRAL.x - 42, 0) + 0.06, 0, 46);
   central.roofWord = word(CENTRAL.x + 3, y0 + 14.32, 0, 30);
 }
@@ -759,7 +760,7 @@ function bridgeY(x, z){
       bb.box(x, y - 0.4, z, Wd, 0.8, L, ang, [0.5, 0.49, 0.46]);
       for (const sd of [-1, 1]) bb.box(x + uz * sd * Wd / 2, y + 0.5, z - ux * sd * Wd / 2, 0.25, 1.0, L, ang, [0.36, 0.36, 0.36]);
       for (const k of [-1, 0, 1]) bb.box(x + ux * k * 24, y - 4, z + uz * k * 24, Wd * 0.7, 7, 1.6, ang, [0.42, 0.41, 0.39]);
-      bridges.push({ x, z, ux, uz, L, W: Wd, y });
+      bridges.push({ x, z, ux, uz, L, W: Wd, y, road: r, s: r.ss[i] });
       addObstacle({ x, z, box: true, c: Math.cos(ang), s: Math.sin(ang), hw: Wd / 2, hl: L / 2, top: y }, L / 2);
       break;
     }
@@ -827,7 +828,7 @@ function bridgeY(x, z){
   const wb = new Builder();
   for (let k = 0; k < 50; k++){
     const r = pick(ROADS.slice(0, 3)), s = rr(400, r.len - 900), p = roadAt(r, s, {});
-    const side = rr(-14, 14), x = p.x - p.dz * side, z = p.z + p.dx * side, y = groundAt(x, z), a = rr(0, 6.3), c = rr(0.12, 0.2);
+    const side = (rnd() < 0.5 ? -1 : 1) * rr(10, 18), x = p.x - p.dz * side, z = p.z + p.dx * side, y = groundAt(x, z), a = rr(0, 6.3), c = rr(0.12, 0.2);
     wb.box(x, y + 0.9, z, 2.8, 1.6, 6.4, a, [c, c, c * 0.95], rr(-.1, .1), rr(-.2, .2));
     wb.box(x + rr(-.5, .5), y + 2, z, 1.8, 0.8, 2.2, a + rr(-.6, .6), [c, c, c]);
   }
@@ -922,7 +923,7 @@ function fx(pos, fire, size0, size1, life, vel, opacity = 1, grav = 0, tint = SM
   p.o0 = fire ? opacity : opacity * (tint === DEBRIS ? 1 : smokeOpacity);
   if (vel) p.v.copy(vel); else p.v.set(0, 0, 0);
 }
-const _ev = new THREE.Vector3();
+const _ev = new THREE.Vector3(), _p4 = new THREE.Vector3();
 function explosion(pos, big = 1, ground = false){
   fx(pos, true, 6 * big, 40 * big, 0.12);
   fx(pos, true, 4 * big, 22 * big, 0.55);
@@ -1103,10 +1104,16 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyN') act('vision');
   if (e.code === 'KeyM' || e.code === 'Tab') act('mode');
   if (e.code === 'KeyE') act('det');
+  if (e.code === 'KeyR' && paused) act('restart');
 });
+function restartGame(){
+  try { sessionStorage.setItem('interceptor-restart', '1'); } catch (e) {}
+  location.reload();
+}
 function act(a){
   if (ended){ if (endPhase() > 7 && (a === 'arm' || a === 'det')) location.reload(); return; }
   if (a === 'pause') return setPaused(!paused);
+  if (paused && (a === 'restart' || a === 'det')) return restartGame();
   if (a === 'screen') return cycleGoggle();
   if (a === 'vision') return setVision(vision === 'day' ? 'thermal' : 'day');
   if (paused) return;
@@ -1166,7 +1173,9 @@ const P = {
   thr: 0, T: 0, armed: false, alive: true, mode: 'ACRO', psi: 0, used: 0, time: 0, deadAt: 0, onGround: true,
   sp: 0, sr: 0, sy: 0
 };
-let flash = 0, staticAmt = 0, killBlink = 0;
+let flash = 0, staticAmt = 0, killBlink = 0, hitMsg = 0, hitWhat = '';
+// a confirmed hit: counter, a short text and one low tone (a clear signal, not a reward)
+function confirmHit(what){ kills++; killBlink = 3; hitMsg = 3; hitWhat = what; beep(440, 0.25); }
 
 function respawn(){
   P.pos.set(START.x, groundAt(START.x, START.z) + 0.05, START.z);
@@ -1195,7 +1204,7 @@ function die(how){
   if (how === 'boom' || how === 'hit'){
     explosion(P.pos.clone(), how === 'boom' ? 0.8 : 0.3, P.pos.y - groundAt(P.pos.x, P.pos.z) < 3);
     for (const g of gerans) if (g.state !== 'down' && g.pos.distanceTo(P.pos) < 14) killGeran(g, 'player');
-    if (how === 'boom') for (const v of vehicles) if (v.alive && v.pos.distanceTo(P.pos) < 7) v.kill();
+    if (how === 'boom') for (const v of vehicles) if (v.alive && v.pos.distanceTo(P.pos) < 7){ v.kill(); if (!seq.active) confirmHit(v.type === 'mtlb' ? 'MT-LB' : v.type.toUpperCase()); }
   }
   if (how === 'boom'){ flash = 1; boom(0, 1.6); } else if (how === 'hit') boom(0, 0.3);
   staticAmt = 1;
@@ -1349,7 +1358,7 @@ class Geran {
       if (this.wi < this.wp.length){ [tx, tz] = this.wp[this.wi]; if (Math.hypot(tx - this.pos.x, tz - this.pos.z) < 200) this.wi++; }
       else { tx = this.aimP.x; tz = this.aimP.z; }
       const hd = Math.hypot(this.aimP.x - this.pos.x, this.aimP.z - this.pos.z);
-      if (this.state === 'cruise' && this.wi >= this.wp.length && hd < Math.max(420, (this.pos.y - this.aimP.y) * 2.6)) this.state = 'dive';
+      if (this.state === 'cruise' && this.wi >= this.wp.length && hd < (this.diveDist || Math.max(420, (this.pos.y - this.aimP.y) * 2.6))) this.state = 'dive';
       if (this.state === 'cruise'){
         let want = Math.atan2(tx - this.pos.x, tz - this.pos.z);
         if (this.t.weave && P.alive && P.armed && this.pos.distanceTo(P.pos) < 400) want += Math.sin(clock * 1.3 + this.ph) * 0.7;
@@ -1421,7 +1430,7 @@ function destroyHouse(h){
 }
 function killGeran(g, by){
   if (g.state === 'down') return;
-  if (by === 'player'){ kills++; killBlink = 3; } else aaKills++;
+  if (by === 'player') confirmHit('GERAN'); else aaKills++;
   explosion(g.pos.clone(), 2.2);
   boom(g.pos.distanceTo(camera.position), 3);
   g.shootDown();
@@ -1447,9 +1456,15 @@ const PROFILES = {
 };
 function zMark(b, side, y, z){
   const x = side * 1.47;
-  b.box(x, y + 0.3, z, 0.03, 0.12, 0.8, 0, ZW);
-  b.box(x, y - 0.3, z, 0.03, 0.12, 0.8, 0, ZW);
-  b.box(x, y, z, 0.03, 0.12, 1.0, 0, ZW, side * 0.64, 0);
+  b.box(x, y + 0.32, z, 0.04, 0.2, 1.1, 0, ZW);
+  b.box(x, y - 0.32, z, 0.04, 0.2, 1.1, 0, ZW);
+  b.box(x, y, z, 0.04, 0.2, 1.3, 0, ZW, side * 0.53, 0);
+}
+// "Z" painted on the roof, readable from above (front of the vehicle = +z)
+function zRoof(b, y, z){
+  b.box(0, y, z + 0.5, 1.3, 0.04, 0.24, 0, ZW);
+  b.box(0, y, z - 0.5, 1.3, 0.04, 0.24, 0, ZW);
+  b.box(0, y, z, 0.24, 0.04, 1.45, 0.73, ZW);
 }
 function makeVehicle(type){
   const grp = new THREE.Group(), turret = new THREE.Group();
@@ -1462,7 +1477,7 @@ function makeVehicle(type){
     eb.box(0, 2.0, -2.6, 2.0, 0.08, 1.6, 0, OLIVE);
     tb.box(0, 0.25, 0, 1.2, 0.5, 1.3, 0, OLIVE); barrel = [0.15, 0.3, 1.6, 2.0, 0.06];
     turret.position.set(0, 2.05, 0.5);
-    zMark(hb, 1, 1.4, -1.2); zMark(hb, -1, 1.4, -1.2);
+    zMark(hb, 1, 1.45, -1.2); zMark(hb, -1, 1.45, -1.2); zRoof(hb, 2.08, -1.8);
   } else {
     const L = type === 'bmp' ? 6.6 : 6.3;
     for (const sx of [-1, 1]){
@@ -1474,13 +1489,13 @@ function makeVehicle(type){
       tb.box(0, 0.3, 0, 2.0, 0.6, 1.9, 0, OLIVE); tb.add(G_CYL, 0, 0.62, -0.2, 1.3, 0.2, 1.3, 0, OLIVE);
       barrel = [0.3, 0.35, 1.0, 3.0, 0.09];
       turret.position.set(0, 1.95, -0.3);
-      zMark(hb, 1, 1.3, -1.8); zMark(hb, -1, 1.3, -1.8);
+      zMark(hb, 1, 1.45, -1.8); zMark(hb, -1, 1.45, -1.8); zRoof(hb, 1.95, 2.1);
     } else {
       eb.box(-0.3, 1.79, 0.6, 1.4, 0.08, 1.4, 0, OLIVE);
       tb.add(G_CYL, 0, 0.22, 0, 0.9, 0.45, 0.9, 0, OLIVE);
       barrel = [0, 0.3, 0.5, 1.2, 0.05];
       turret.position.set(0.8, 1.8, 2.0);
-      zMark(hb, 1, 1.1, -1.5); zMark(hb, -1, 1.1, -1.5);
+      zMark(hb, 1, 1.3, -1.5); zMark(hb, -1, 1.3, -1.5); zRoof(hb, 1.83, -1.6);
     }
   }
   tb.add(G_CYL, barrel[0], barrel[1], barrel[2] + barrel[3] / 2, barrel[4] * 2, barrel[3], barrel[4] * 2, 0, DARKG, Math.PI / 2);
@@ -1531,7 +1546,7 @@ class Vehicle {
     this.place(dt);
     if (this.s >= this.road.len - 4 && !seq.active) endFeed();
     this.dustT -= dt;
-    if (this.dustT <= 0 && speed > 2 && !this.hidden){ this.dustT = 0.12; fx(_p3.set(this.pos.x, this.pos.y + 0.8, this.pos.z).addScaledVector(this.vel, -0.4), false, 3, 16, 7, _ev.set(rr(-0.5, 0.5), 1.2, rr(-0.5, 0.5)), 0.6, 0, DUST); }
+    if (this.dustT <= 0 && speed > 2 && !this.hidden && !this.noDust){ this.dustT = 0.12; fx(_p3.set(this.pos.x, this.pos.y + 0.8, this.pos.z).addScaledVector(this.vel, -0.4), false, 3, 16, 7, _ev.set(rr(-0.5, 0.5), 1.2, rr(-0.5, 0.5)), 0.6, 0, DUST); }
     if (AU.ready){ if (!this.snd) this.snd = makeVehicleSound(); updateSrcSound(this.snd, this.pos, this.vel, true); }
     this.shoot(dt);
   }
@@ -1748,7 +1763,8 @@ let nextGeran = 90, nextColumn = 600 - COLUMN_TIME, nextTrainer = 20, nextForest
 const pending = [];
 // a slow vehicle on the east road to practise on: no fire for 3 min, it cannot reach the village before the first column
 function spawnTrainer(){
-  const road = ROADS[0], speed = 5, v = new Vehicle(rnd() < 0.5 ? 'bmp' : 'mtlb', road, Math.max(0, road.len - speed * (660 - clock)));
+  const road = ROADS[0], br = bridges.find(b => b.road === road), s0 = br ? br.s + br.L / 2 + 25 : road.len - 1500;
+  const speed = (road.len - s0) / (660 - clock), v = new Vehicle(rnd() < 0.5 ? 'bmp' : 'mtlb', road, s0);
   v.colSpeed = speed; v.noShootUntil = clock + 180; vehicles.push(v);
 }
 // vehicles that crawl through the forests: no recon mark, easy to see only in thermal
@@ -1819,12 +1835,12 @@ const K = 0.2;
 const post = new THREE.ShaderMaterial({
   uniforms: {
     tScene: { value: rt.texture }, tOSD: { value: osdTex }, uRes: { value: new THREE.Vector2(RW, RH) },
-    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.3 }, uTherm: { value: 0 }, uBlack: { value: 0 }, uClean: { value: 0 }
+    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.3 }, uTherm: { value: 0 }, uBlack: { value: 0 }, uClean: { value: 0 }, uOsdTop: { value: 0 }
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader: `
     uniform sampler2D tScene, tOSD; uniform vec2 uRes;
-    uniform float uTime, uNoise, uStatic, uFlash, uK, uGain, uTherm, uBlack, uClean;
+    uniform float uTime, uNoise, uStatic, uFlash, uK, uGain, uTherm, uBlack, uClean, uOsdTop;
     varying vec2 vUv;
     float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main(){
@@ -1858,6 +1874,8 @@ const post = new THREE.ShaderMaterial({
       float sn = h(vec2(px.x * 0.5 + tq, px.y * 1.7 + tq * 13.0));
       float ln = h(vec2(row, tq * 1.3));
       col = mix(col, vec3(sn * 0.75 + ln * 0.25) * vec3(0.92, 0.9, 0.86), uStatic);
+      vec4 o3 = texture2D(tOSD, vec2(vUv.x + sin(vUv.y * 30.0 + uTime * 2.0) * 0.0008, vUv.y));
+      col = mix(col, o3.rgb, o3.a * uOsdTop);
       col = mix(col, vec3(1.0, 0.97, 0.9), uFlash);
       col = mix(col, vec3(0.0), uBlack);
       vec4 o2 = texture2D(tOSD, vUv);
@@ -1930,11 +1948,14 @@ function drawCompass(){
 function drawOSD(){
   oc.setTransform(OW / W, 0, 0, OH / H, 0, 0);
   oc.clearRect(0, 0, W, H);
-  if (seq.active){ drawSeq(); return; }
+  if (seq.active && !(seq.phase === 'hit' && P.alive)){ drawSeq(); return; }
   if (ended){ drawEnd(); return; }
-  if (!P.alive) return;
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle';
   oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
+  if (hitMsg > 0){
+    txt('HIT CONFIRMED', W / 2, H / 2 - 45, 'center'); txt(hitWhat, W / 2, H / 2 - 33, 'center');
+  }
+  if (!P.alive) return;
   oc.lineJoin = 'round';
   const blink = (clock * 2.5 | 0) % 2 === 0;
 
@@ -2044,7 +2065,7 @@ function drawPause(intro = false){
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle'; oc.lineJoin = 'round';
   oc.lineWidth = 2.5; oc.strokeStyle = 'rgba(0,0,0,0.8)'; oc.fillStyle = INK;
   txt(intro ? 'CONTROLS' : 'PAUSE', 80, 12, 'center');
-  txt(intro ? (renderer.xr.isPresenting ? '[A] START' : '[ENTER] START') : '[P] RESUME', W - 8, 12, 'right');
+  txt(intro ? (renderer.xr.isPresenting ? '[A] START' : '[ENTER] START') : (renderer.xr.isPresenting ? '[L-STICK] RESUME  [B] RESTART' : '[P] RESUME  [R] RESTART'), W - 8, 12, 'right');
 
   const thr = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
   const pit = (keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0);
@@ -2112,15 +2133,16 @@ const SEQ_TEXT = {
   t2: 'THE INVASION WAS STOPPED',
   t3: 'BUT THE TERROR CONTINUES.',
 };
-const SEQ_TIME = { t1: 3, column: 7, t2: 3, hit: 4.6, t3: 3, swarm: 14, yes: 15, deti: 4 };
+const SEQ_TIME = { t1: 5, column: 7, t2: 3, hit: 4.6, t3: 3, swarm: 14, yes: 17, deti: 4 };
 const SEQ_NEXT = { t1: 'column', column: 't2', t2: 'hit', hit: 't3', t3: 'swarm', swarm: 'question', yes: 'deti' };
 const SEQ_BLACK = ['gate', 't1', 't2', 't3', 'question', 'deti', 'controls'];
 // position of the white "Z" on the right side of each vehicle type
-const ZPOS = { bmp: [1.47, 1.3, -1.8], btr: [1.47, 1.4, -1.2], mtlb: [1.47, 1.1, -1.5] };
+const ZPOS = { bmp: [1.47, 1.45, -1.8], btr: [1.47, 1.45, -1.2], mtlb: [1.47, 1.3, -1.5] };
 const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const so = { col: [], swarm: [], camFrom: new THREE.Vector3(), rp: {} };
 
 function seqGo(phase){
+  if (seq.phase === 'hit'){ P.alive = true; P.armed = false; P.vel.set(0, 0, 0); }
   seq.phase = phase; seq.t = 0;
   seq.black = SEQ_BLACK.includes(phase) ? 1 : 0;
   if (!seq.black) seq.static = 0.9;
@@ -2141,9 +2163,9 @@ function seqColumn(){
   ['btr', 'bmp', 'mtlb', 'bmp'].forEach((t, k) => { const v = new Vehicle(t, road, s0 - k * 28); v.colSpeed = 9; vehicles.push(v); so.col.push(v); });
 }
 function seqCamColumn(){
-  const lead = so.col[0], p = roadAt(ROADS[0], so.s0 + 80 + (seq.phase === 't2' ? 21 + seq.t * 3 : seq.t * 3), so.rp);
-  const x = p.x - p.dz * 22, z = p.z + p.dx * 22;
-  camera.position.set(x, groundAt(x, z) + 6 + Math.sin(seq.t * 0.8) * 0.6, z);
+  const lead = so.col[0], p = roadAt(ROADS[0], lead.s + 18 - seq.t * (seq.phase === 't2' ? 1 : 2), so.rp);
+  const x = p.x + p.dz * 8, z = p.z - p.dx * 8;  // the side away from the power line
+  camera.position.set(x, groundAt(x, z) + 4 + Math.sin(seq.t * 0.8) * 0.4, z);
   camera.lookAt(lead.pos.x, lead.pos.y + 1.5, lead.pos.z);
 }
 // scene 2: an FPV drone dives into the "Z" of the second vehicle
@@ -2153,39 +2175,48 @@ function seqHitStart(){
   const T = v.grp.localToWorld(new THREE.Vector3(...ZPOS[v.type]));
   const right = new THREE.Vector3(1, 0, 0).transformDirection(v.grp.matrixWorld), fwd = new THREE.Vector3(0, 0, 1).transformDirection(v.grp.matrixWorld);
   so.camFrom.copy(T).addScaledVector(right, 170).addScaledVector(fwd, 60);
+  for (const c of so.col) c.noDust = true;  // the dive comes in clear air
   so.camFrom.y = groundAt(so.camFrom.x, so.camFrom.z) + 55;
-  so.hitDone = false;
+  so.hitDone = false; so.prev = null;
 }
 function seqCamHit(){
   const v = so.col[1];
   v.grp.updateMatrixWorld(true);
   const T = v.grp.localToWorld(_w.set(...ZPOS[v.type]));
   const right = _v.set(1, 0, 0).transformDirection(v.grp.matrixWorld);
-  const k = clamp(seq.t / 3.4, 0, 1), e = Math.pow(k, 1.8);
-  const end = _p3.copy(T).addScaledVector(right, 0.7);
+  const k = clamp(seq.t / 3.8, 0, 1);
   if (!so.hitDone){
-    camera.position.lerpVectors(so.camFrom, end, e);
+    // the same view as in the game: FPV camera, OSD, prop vibration
+    const fwd = _p4.set(0, 0, 1).transformDirection(v.grp.matrixWorld);
+    const near = _p3.copy(T).addScaledVector(right, 13).addScaledVector(fwd, 7); near.y += 3;
+    if (seq.t < 2) camera.position.lerpVectors(so.camFrom, near, sstep(0, 2, seq.t));
+    else camera.position.copy(near).lerp(_ev.copy(T).addScaledVector(right, 0.6).addScaledVector(fwd, 0.3), Math.pow(clamp((seq.t - 2) / 1.8, 0, 1), 1.6));
     camera.lookAt(T);
-    camera.rotateZ(Math.sin(seq.t * 7) * 0.03 * (1 - k));
+    camera.rotateZ(Math.sin(seq.t * 2.3) * 0.12 * (1 - k) + (rnd() - 0.5) * 0.01);
+    camera.rotateX((rnd() - 0.5) * 0.006);
+    if (so.prev && seq.t > so.prevT) P.vel.subVectors(camera.position, so.prev).divideScalar(seq.t - so.prevT);
+    so.prev = (so.prev || new THREE.Vector3()).copy(camera.position); so.prevT = seq.t;
+    P.pos.copy(camera.position); P.alive = P.armed = true; P.onGround = false; P.mode = 'ACRO';
+    P.T = MAXT * (0.75 + 0.1 * Math.sin(seq.t * 5)); P.used = 0.25; P.time = 214 + seq.t;
   }
-  if (k >= 1 && !so.hitDone){ so.hitDone = true; v.kill(); flash = 1; boom(0, 1.6); }
+  if (k >= 1 && !so.hitDone){ so.hitDone = true; P.alive = P.armed = false; v.kill(); flash = 1; boom(0, 1.6); }
   if (so.hitDone) seq.static = 1;
 }
 // scene 3: a swarm of Geran-2, the camera starts close and pulls back
 function seqSwarm(){
   so.swarm = [];
   const F = [[0, 0, 55], [35, -30, 60], [35, 30, 58], [80, -70, 64], [80, 70, 62], [130, -115, 66], [130, 115, 63], [60, -150, 52], [60, 150, 54], [170, 0, 68], [200, -60, 60]];
-  const targets = houses.filter(h => h.village && h.alive && h.x > 150 && h.x < 700);
+  const targets = houses.filter(h => h.village && h.alive && h.x > -100 && h.x < 450 && Math.abs(h.z) < 220);
   F.forEach(([back, dz, alt], i) => {
-    const x = 1150 + back;
+    const x = 900 + back;
     const g = new Geran(2, [[x, dz], [-3000, dz]]);
-    g.alt = alt; g.speed = 60; g.heading = -Math.PI / 2;
+    g.alt = alt; g.speed = 70; g.heading = -Math.PI / 2;
     g.pos.set(x, groundAt(x, dz) + alt, dz);
     g.wp = [[x, dz], [-3000, dz]]; g.wi = 1; g.goal = null; g.aimP.set(-3000, 0, dz);
     if (Math.abs(dz) >= 115 && targets.length){
-      targets.sort((a, b) => (Math.abs(a.z - dz) + Math.abs(a.x - 400) * 0.3) - (Math.abs(b.z - dz) + Math.abs(b.x - 400) * 0.3));
+      targets.sort((a, b) => (Math.abs(a.z - dz) + Math.abs(a.x - 250) * 0.3) - (Math.abs(b.z - dz) + Math.abs(b.x - 250) * 0.3));
       const h = targets.shift();
-      g.goal = h; g.aimP.set(h.x, h.y + 3, h.z); g.wp = [[x, dz]];
+      g.goal = h; g.aimP.set(h.x, h.y + 3, h.z); g.wp = [[x, dz]]; g.diveDist = 110;
     }
     if (i === 0) g.hp = 1e9;
     gerans.push(g); so.swarm.push(g);
@@ -2212,9 +2243,13 @@ function seqTheater(){
   so.th = 0; so.fireT = 0;
 }
 function seqCamTheater(dt){
-  const t = seq.t, c = CENTRAL;
-  camera.position.set(c.x + 100 - t * 1.5, central.y + 115 - t * 1.5, 16 + t * 0.5);
-  camera.lookAt(c.x + 12, central.y, 0);
+  const t = seq.t, c = CENTRAL, w = central.frontWord.position;
+  // 0-8 s oblique view of the strikes, 8-11 s move to straight above the word, 11-17 s hold
+  const k = sstep(8, 11, t);
+  _v.set(c.x + 100 - Math.min(t, 8) * 1.5, central.y + 115 - Math.min(t, 8) * 1.5, 16 + Math.min(t, 8) * 0.5);
+  camera.position.lerpVectors(_v, _w.set(w.x, w.y + 62, w.z), k);
+  camera.up.set(0, 1, 0).lerp(_ev.set(-1, 0, 0), k).normalize();
+  camera.lookAt(_p3.set(c.x + 12, central.y, 0).lerp(w, k));
   const times = [0.3, 1.4, 2.6, 3.8];
   if (so.th < times.length && t >= times[so.th]){
     so.th++;
@@ -2230,6 +2265,14 @@ function seqCamTheater(dt){
     fx(_p3.set(c.x + rr(-11, 11), central.y + rr(2, 10), rr(-18, 18)), true, rr(4, 8), rr(10, 18), rr(0.8, 1.6), _ev.set(0, rr(3, 7), 0));
   }
 }
+// where the painted word sits on the screen at the end of the YES scene
+function seqDetiSpot(){
+  camera.updateMatrixWorld();
+  const w = central.frontWord.position, half = central.wordSize / 2;
+  const [cx, cy] = toScreen(_p3.copy(w));
+  const [ax, ay] = toScreen(_v.set(w.x, w.y, w.z + half)), [bx, by] = toScreen(_w.set(w.x, w.y, w.z - half));
+  seq.detiSpot = { x: cx, y: cy, size: 150 * Math.hypot(bx - ax, by - ay) / 512 };
+}
 function theaterHit(){
   explosion(_p3.set(CENTRAL.x + rr(-8, 8), central.y + 8, rr(-12, 12)), 4, true);
   if (central.ruined) return;
@@ -2240,8 +2283,20 @@ function theaterHit(){
     burners.push({ x: CENTRAL.x + dx, y: central.y + 4, z: dz, r, until: clock + 999, t: 0 });
 }
 
+// artillery and strikes in the distance during the opening scenes
+function seqBackground(dt){
+  if ((so.bgT = (so.bgT || 0) - dt) > 0) return;
+  so.bgT = rr(0.7, 1.8);
+  const f = _v.set(0, 0, -1).applyQuaternion(camera.quaternion); f.y = 0; f.normalize();
+  const a = rr(-1, 1), d = rr(450, 1600);
+  const x = camera.position.x + (f.x * Math.cos(a) - f.z * Math.sin(a)) * d, z = camera.position.z + (f.z * Math.cos(a) + f.x * Math.sin(a)) * d;
+  const pos = new THREE.Vector3(x, groundAt(x, z) + 1, z);
+  explosion(pos, rr(1.5, 3.5), true);
+  boom(d, rr(2, 4));
+}
 function seqUpdate(dt){
   seq.t += dt;
+  if (['column', 't2', 'hit', 'swarm'].includes(seq.phase)) seqBackground(dt);
   noise = 0.04;
   seq.static = Math.max(0, seq.static - dt * 2.5);
   const ph = seq.phase;
@@ -2250,8 +2305,10 @@ function seqUpdate(dt){
   else if (ph === 'swarm') seqCamSwarm();
   else if (ph === 'yes') seqCamTheater(dt);
   else if (ph === 'gate' || ph === 'controls'){ camera.position.copy(P.pos); camera.quaternion.copy(P.q).multiply(UPTILT); }
+  if (ph !== 'yes') camera.up.set(0, 1, 0);
+  if (ph === 'yes' && seq.t + dt >= SEQ_TIME.yes) seqDetiSpot();
   if (SEQ_TIME[ph] && seq.t >= SEQ_TIME[ph]){
-    if (ph === 'deti') endFeed();
+    if (ph === 'deti'){ camera.up.set(0, 1, 0); endFeed(); }
     else seqGo(SEQ_NEXT[ph]);
   }
 }
@@ -2279,7 +2336,7 @@ function startGame(){
   for (const h of seq.destroyed) restoreHouse(h);
   seq.destroyed.length = 0;
   for (const s of guns){ s.burst = 0; s.target = null; }
-  kills = leaks = aaKills = 0; clock = 0;
+  kills = leaks = aaKills = 0; hitMsg = 0; clock = 0;
   nextGeran = 90; nextColumn = 600 - COLUMN_TIME; nextTrainer = 20; nextForest = 0;
   respawn(); staticAmt = 1; flash = 0;
 }
@@ -2366,7 +2423,12 @@ function drawSeq(){
     if (seq.ptr){ oc.fillStyle = INK; oc.beginPath(); oc.arc(seq.ptr[0], seq.ptr[1], 2.5, 0, 7); oc.fill(); }
     return;
   }
-  if (ph === 'deti'){ oc.font = 'bold 34px Arial, Helvetica, sans-serif'; oc.textAlign = 'center'; oc.fillStyle = INK; oc.fillText('ДЕТИ', W / 2, H / 2); return; }
+  if (ph === 'deti'){
+    const d = seq.detiSpot || { x: W / 2, y: H / 2, size: 34 };
+    oc.font = 'bold ' + d.size.toFixed(1) + 'px Arial, Helvetica, sans-serif'; oc.textAlign = 'center'; oc.fillStyle = INK;
+    oc.fillText('\u0414\u0415\u0422\u0418', d.x, d.y + d.size * 0.04);
+    return;
+  }
   if (ph === 'controls') drawPause(true);
 }
 
@@ -2375,6 +2437,8 @@ const _p0 = new THREE.Vector3(), _rel = new THREE.Vector3(), _dr = new THREE.Vec
 let noise = 0;
 respawn();
 setVision('day');
+// a restart from the pause menu skips the opening sequence
+try { if (sessionStorage.getItem('interceptor-restart')){ sessionStorage.removeItem('interceptor-restart'); startGame(); } } catch (e) {}
 
 function updateSticks(dt){
   const acro = P.mode === 'ACRO';
@@ -2441,7 +2505,7 @@ function update(dt){
 
   flash = Math.max(0, flash - dt * 6);
   if (P.alive) staticAmt = Math.max(0, staticAmt - dt * 4);
-  killBlink = Math.max(0, killBlink - dt);
+  killBlink = Math.max(0, killBlink - dt); hitMsg = Math.max(0, hitMsg - dt);
 }
 
 // ---------------------------------------------------------------- Meta Quest: head-locked goggle screen
@@ -2515,6 +2579,7 @@ function render(){
   const black = clamp((endPhase() - 5) / 1.5, 0, 1);
   post.uniforms.uBlack.value = black;
   post.uniforms.uClean.value = paused ? 1 : 0;
+  post.uniforms.uOsdTop.value = !P.alive && hitMsg > 0 ? 1 : 0;  // the hit message stays readable over the static
   if (seq.active){
     post.uniforms.uStatic.value = seq.static;
     post.uniforms.uBlack.value = seq.black;
