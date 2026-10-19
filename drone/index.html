@@ -1430,7 +1430,7 @@ function destroyHouse(h){
 }
 function killGeran(g, by){
   if (g.state === 'down') return;
-  if (by === 'player') confirmHit('GERAN'); else aaKills++;
+  if (by === 'player') confirmHit('GERAN-' + g.type); else aaKills++;
   explosion(g.pos.clone(), 2.2);
   boom(g.pos.distanceTo(camera.position), 3);
   g.shootDown();
@@ -1953,7 +1953,7 @@ function drawOSD(){
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle';
   oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
   if (hitMsg > 0){
-    txt('HIT CONFIRMED', W / 2, H / 2 - 45, 'center'); txt(hitWhat, W / 2, H / 2 - 33, 'center');
+    txt('HIT CONFIRMED', W / 2, H / 2 + 54, 'center'); txt(hitWhat, W / 2, H / 2 + 66, 'center');  // under DISARMED and the arm keys
   }
   if (!P.alive) return;
   oc.lineJoin = 'round';
