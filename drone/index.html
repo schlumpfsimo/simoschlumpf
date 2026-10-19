@@ -2468,11 +2468,26 @@ function cycleGoggle(){
   goggle.material.uniforms.uScale.value = GOGGLE_SCALES[goggleSize];
   try { localStorage.setItem('interceptor-vr-size', goggleSize); } catch (e) {}
 }
-function vrQuality(on){
-  treeIM.count = on ? Math.floor(treeIM.instanceMatrix.count * 0.45) : treeIM.instanceMatrix.count;
-  bushIM.count = on ? 2200 : bushIM.instanceMatrix.count;
-  for (const m of birchIM) m.count = on ? Math.floor(m.instanceMatrix.count * 0.45) : m.instanceMatrix.count;
+// automatic quality: when the frame rate is too low, draw fewer trees (they are shuffled, so the thinning is even);
+// from the third step on, the crowns use a simpler shape. Trees that are not drawn are not solid.
+const quality = { level: 0, levels: [1, 0.7, 0.5, 0.35, 0.22], acc: 0, n: 0, cool: 4 };
+const CROWN_FULL = new THREE.IcosahedronGeometry(1, 0), CROWN_SIMPLE = new THREE.OctahedronGeometry(1, 0);
+function applyQuality(){
+  const f = quality.levels[quality.level] * (renderer.xr.isPresenting ? 0.45 : 1);
+  for (const m of [treeIM, ...birchIM]) m.count = Math.floor(m.instanceMatrix.count * f);
+  bushIM.count = Math.floor(bushIM.instanceMatrix.count * Math.min(1, f * 1.2));
+  const crown = quality.level >= 2 || renderer.xr.isPresenting ? CROWN_SIMPLE : CROWN_FULL;
+  for (const m of [treeIM, birchIM[1], bushIM]) m.geometry = crown;
 }
+function watchQuality(rawDt){
+  if (paused || seq.phase === 'gate') return;
+  quality.cool -= rawDt; quality.acc += rawDt; quality.n++;
+  if (quality.acc < 2) return;
+  const avg = quality.acc / quality.n, limit = renderer.xr.isPresenting ? 1 / 55 : 1 / 40;
+  quality.acc = 0; quality.n = 0;
+  if (quality.cool <= 0 && avg > limit && quality.level < quality.levels.length - 1){ quality.level++; applyQuality(); quality.cool = 3; }
+}
+const vrQuality = () => applyQuality();
 if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
   if (!ok) return;
   const b = document.createElement('button');
@@ -2535,13 +2550,14 @@ function render(){
 }
 
 function frame(now){
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
+  if (!document.hidden) watchQuality(Math.min(raw, 0.25));
   readPads();
   if (!paused) update(dt);
   render();
 }
 renderer.setAnimationLoop(frame);
-if (location.hash === '#dbg') window.__d = { seq, seqGo, startGame, groundAt, P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; },
+if (location.hash === '#dbg') window.__d = { seq, seqGo, startGame, groundAt, P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; }, quality, applyQuality,
   vrPreview(){ renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(feedRT); renderer.render(postScene, postCam); renderer.setRenderTarget(null); vrCam.aspect = RW / RH; vrCam.fov = 75; vrCam.updateProjectionMatrix(); renderer.render(vrScene, vrCam); },
   vrQuality, pad,
   get state(){ return { clock, ended, kills, leaks, aaKills, alive: houses.filter(h => h.village && h.alive).length }; } };
