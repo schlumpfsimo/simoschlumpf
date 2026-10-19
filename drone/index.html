@@ -947,6 +947,7 @@ addEventListener('keydown', e => {
 function act(a){
   if (ended){ if (endPhase() > 7 && (a === 'arm' || a === 'det')) location.reload(); return; }
   if (a === 'pause') return setPaused(!paused);
+  if (a === 'screen') return cycleGoggle();
   if (a === 'vision') return setVision(vision === 'day' ? 'thermal' : 'day');
   if (paused) return;
   if (a === 'arm') toggleArm();
@@ -970,7 +971,7 @@ function readPads(){
       pad.active = true;
       if (src.handedness === 'right'){
         pad.roll = expo(dead(ax[2] || 0)); pad.pitch = -expo(dead(ax[3] || 0));
-        edge('A', bt[4] && bt[4].pressed, 'arm'); edge('B', bt[5] && bt[5].pressed, 'det');
+        edge('A', bt[4] && bt[4].pressed, 'arm'); edge('B', bt[5] && bt[5].pressed, 'det'); edge('RS', bt[3] && bt[3].pressed, 'screen');
       } else if (src.handedness === 'left'){
         pad.yaw = expo(dead(ax[2] || 0)); pad.climb = -dead(ax[3] || 0);
         pad.thr = bt[0] ? bt[0].value : 0;
@@ -1886,6 +1887,7 @@ function drawPause(){
   if (renderer.xr.isPresenting){
     txt('A ARM  B DET  TRIG THR', 8, 218);
     txt('Y ACRO/ANGL X THERMAL', 8, 229);
+    txt('R-STICK CLICK: SCREEN SIZE', 162, 229);
   } else {
     txt('SPACE ARM   E DETONATE', 8, 218);
     txt('M ACRO/ANGL N THERMAL', 8, 229);
@@ -1987,14 +1989,23 @@ const feedRT = new THREE.WebGLRenderTarget(RW, RH, { minFilter: THREE.NearestFil
 const vrScene = new THREE.Scene();
 vrScene.background = new THREE.Color(0);
 const vrCam = new THREE.PerspectiveCamera();
-// the quad is placed in view space, so it stays fixed to the head in both eyes: ~50 degrees wide at 1.5 m
+// the quad is placed in view space, so it stays fixed to the head in both eyes; base size 1.4 m = 50 degrees at 1.5 m,
+// uScale makes it wider (right stick click cycles the sizes)
+const GOGGLE_SCALES = [1.8, 2.34, 1.36]; // ~80, ~95, ~65 degrees wide
+let goggleSize = 0;
+try { goggleSize = (+localStorage.getItem('interceptor-vr-size') || 0) % GOGGLE_SCALES.length; } catch (e) {}
 const goggle = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.05), new THREE.ShaderMaterial({
-  uniforms: { map: { value: feedRT.texture } }, depthTest: false, depthWrite: false,
-  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy, -1.5, 1.0); }`,
+  uniforms: { map: { value: feedRT.texture }, uScale: { value: GOGGLE_SCALES[goggleSize] } }, depthTest: false, depthWrite: false,
+  vertexShader: `uniform float uScale; varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * uScale, -1.5, 1.0); }`,
   fragmentShader: `uniform sampler2D map; varying vec2 vUv; void main(){ gl_FragColor = texture2D(map, vUv); }`
 }));
 goggle.frustumCulled = false;
 vrScene.add(goggle);
+function cycleGoggle(){
+  goggleSize = (goggleSize + 1) % GOGGLE_SCALES.length;
+  goggle.material.uniforms.uScale.value = GOGGLE_SCALES[goggleSize];
+  try { localStorage.setItem('interceptor-vr-size', goggleSize); } catch (e) {}
+}
 function vrQuality(on){
   treeIM.count = on ? Math.floor(treeIM.instanceMatrix.count * 0.45) : treeIM.instanceMatrix.count;
   bushIM.count = on ? 2200 : bushIM.instanceMatrix.count;
