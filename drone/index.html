@@ -24,19 +24,20 @@ import * as THREE from 'three';
 THREE.ColorManagement.enabled = false;
 
 // ---------------------------------------------------------------- setup
-const W = 320, H = 240, RW = 384, RH = 288; // W, H: OSD layout units; RW, RH: feed pixels
+// W, H: OSD layout units; RW, RH: camera pixels (analog look); OW, OH: output pixels (sharp OSD and menus)
+const W = 320, H = 240, RW = 480, RH = 360, OW = 1024, OH = 768;
 const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
 renderer.setPixelRatio(1);
-renderer.setSize(RW, RH, false);
+renderer.setSize(OW, OH, false);
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 renderer.xr.enabled = true;
 renderer.xr.setReferenceSpaceType('local');
 const cv = renderer.domElement;
 document.body.appendChild(cv);
 function fit(){
-  const s = Math.min(innerWidth / RW, innerHeight / RH);
-  cv.style.width = (RW * s) + 'px';
-  cv.style.height = (RH * s) + 'px';
+  const s = Math.min(innerWidth / OW, innerHeight / OH);
+  cv.style.width = (OW * s) + 'px';
+  cv.style.height = (OH * s) + 'px';
 }
 addEventListener('resize', fit); fit();
 
@@ -1621,28 +1622,31 @@ function setVision(name){
 }
 
 // ---------------------------------------------------------------- post processing (analog FPV feed)
-const osd = document.createElement('canvas'); osd.width = RW; osd.height = RH;
+const osd = document.createElement('canvas'); osd.width = OW; osd.height = OH;
 const oc = osd.getContext('2d');
 const osdTex = new THREE.CanvasTexture(osd);
-osdTex.minFilter = osdTex.magFilter = THREE.NearestFilter;
+osdTex.minFilter = osdTex.magFilter = THREE.LinearFilter;
+osdTex.generateMipmaps = false;
 const K = 0.2;
 const post = new THREE.ShaderMaterial({
   uniforms: {
     tScene: { value: rt.texture }, tOSD: { value: osdTex }, uRes: { value: new THREE.Vector2(RW, RH) },
-    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.3 }, uTherm: { value: 0 }, uBlack: { value: 0 }
+    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.3 }, uTherm: { value: 0 }, uBlack: { value: 0 }, uClean: { value: 0 }
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader: `
     uniform sampler2D tScene, tOSD; uniform vec2 uRes;
-    uniform float uTime, uNoise, uStatic, uFlash, uK, uGain, uTherm, uBlack;
+    uniform float uTime, uNoise, uStatic, uFlash, uK, uGain, uTherm, uBlack, uClean;
     varying vec2 vUv;
     float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main(){
       vec2 uv = vUv;
+      vec2 px = floor(vUv * uRes);
       float tq = floor(uTime * 30.0);
       float row = floor(uv.y * uRes.y);
       float jit = (h(vec2(row, tq)) - 0.5) * (0.003 + uNoise * 0.06) * step(0.7 - uNoise * 0.6, h(vec2(row * 0.37, tq + 1.7)));
       jit += sin(uv.y * 30.0 + uTime * 2.0) * 0.0008;
+      jit *= 1.0 - uClean;
       uv.x += jit;
       vec2 c = uv * 2.0 - 1.0;
       c *= (1.0 + uK * dot(c, c)) / (1.0 + 2.0 * uK);
@@ -1657,19 +1661,20 @@ const post = new THREE.ShaderMaterial({
       col = mix(graded + chroma * 0.5, vec3(mix(0.03, 0.96, l)), uTherm);
       vec4 o = texture2D(tOSD, vec2(vUv.x + jit, vUv.y));
       col = mix(col, o.rgb, o.a);
-      float n = h(gl_FragCoord.xy + vec2(tq * 7.13, tq * 3.7));
+      float n = h(px + vec2(tq * 7.13, tq * 3.7));
       col += (n - 0.5) * (0.05 + uNoise * 0.55);
-      col += step(1.0 - uNoise * 0.03, h(gl_FragCoord.xy * 1.31 + tq)) * 0.8;
+      col += step(1.0 - uNoise * 0.03, h(px * 1.31 + tq)) * 0.8;
       float band = fract(vUv.y + uTime * 0.11);
       col *= 1.0 - 0.06 * smoothstep(0.0, 0.04, band) * smoothstep(0.1, 0.04, band);
       vec2 vc = vUv - 0.5; col *= 1.0 - dot(vc, vc) * 0.85;
-      float sn = h(vec2(gl_FragCoord.x * 0.5 + tq, gl_FragCoord.y * 1.7 + tq * 13.0));
+      float sn = h(vec2(px.x * 0.5 + tq, px.y * 1.7 + tq * 13.0));
       float ln = h(vec2(row, tq * 1.3));
       col = mix(col, vec3(sn * 0.75 + ln * 0.25) * vec3(0.92, 0.9, 0.86), uStatic);
       col = mix(col, vec3(1.0, 0.97, 0.9), uFlash);
       col = mix(col, vec3(0.0), uBlack);
       vec4 o2 = texture2D(tOSD, vUv);
-      col = mix(col, o2.rgb, o2.a * uBlack);
+      // end screen and pause menu: text on top of all feed effects, so it stays sharp
+      col = mix(col, o2.rgb, o2.a * max(uBlack, uClean));
       gl_FragColor = vec4(col, 1.0);
     }`
 });
@@ -1735,7 +1740,7 @@ function drawCompass(){
   }
 }
 function drawOSD(){
-  oc.setTransform(RW / W, 0, 0, RH / H, 0, 0);
+  oc.setTransform(OW / W, 0, 0, OH / H, 0, 0);
   oc.clearRect(0, 0, W, H);
   if (ended){ drawEnd(); return; }
   if (!P.alive) return;
@@ -1844,7 +1849,7 @@ function outlined(draw, w = 1){
 }
 function drawPause(){
   const now = performance.now(), pdt = Math.min(0.05, (now - pauseLast) / 1000); pauseLast = now;
-  oc.setTransform(RW / W, 0, 0, RH / H, 0, 0);
+  oc.setTransform(OW / W, 0, 0, OH / H, 0, 0);
   oc.clearRect(0, 0, W, H);
   oc.fillStyle = 'rgba(0,0,0,0.6)'; oc.fillRect(0, 0, W, H);
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle'; oc.lineJoin = 'round';
@@ -1859,7 +1864,7 @@ function drawPause(){
 
   const cx = 80, cy = 124;
   outlined(() => { for (const m of MOTORS){ oc.moveTo(cx, cy); oc.lineTo(m.x, m.y); } }, 2);
-  oc.fillStyle = 'rgba(0,0,0,0.8)'; oc.fillRect(cx - 12, cy - 18, 24, 36);
+  oc.fillStyle = '#000'; oc.fillRect(cx - 12, cy - 18, 24, 36);
   outlined(() => oc.rect(cx - 11, cy - 17, 22, 34));
   outlined(() => oc.rect(cx - 5, cy - 17, 10, 7));
   oc.fillStyle = INK;
@@ -1985,7 +1990,7 @@ function update(dt){
 
 // ---------------------------------------------------------------- Meta Quest: head-locked goggle screen
 let lastFeed = 0;
-const feedRT = new THREE.WebGLRenderTarget(RW, RH, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+const feedRT = new THREE.WebGLRenderTarget(OW, OH, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
 const vrScene = new THREE.Scene();
 vrScene.background = new THREE.Color(0);
 const vrCam = new THREE.PerspectiveCamera();
@@ -2036,6 +2041,7 @@ function render(){
   post.uniforms.uFlash.value = ended ? 0 : flash;
   const black = clamp((endPhase() - 5) / 1.5, 0, 1);
   post.uniforms.uBlack.value = black;
+  post.uniforms.uClean.value = paused ? 1 : 0;
 
   if (AU.ready){
     const tf = P.T / MAXT, on = P.alive && P.armed && !ended;
