@@ -116,13 +116,44 @@ function prioChip(m) { const p = prioOf(m); return `<span class="prio p${p}" tit
 /* Sperre / Entschlüsselung                                               */
 /* ===================================================================== */
 (function lockUI() {
-  const ring = document.getElementById('ring');
-  if (ring) { let html = ''; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r = 215; const x = 500 + Math.cos(a) * r, y = 350 + Math.sin(a) * r; const sx = (0.7 + Math.random() * 0.9).toFixed(2), sy = (0.7 + Math.random() * 0.9).toFixed(2), rot = Math.round(Math.random() * 60 - 30), sk = Math.round(Math.random() * 40 - 20);
-      html += `<use href="#star" x="-26" y="-26" width="52" height="52" filter="url(#glow)" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot}) skewX(${sk}) scale(${sx} ${sy})"><animateTransform attributeName="transform" type="rotate" additive="sum" from="0 0 0" to="${i % 2 ? 360 : -360} 0 0" dur="${40 + i * 7}s" repeatCount="indefinite"/></use>`; }
-    ring.innerHTML = html; ring.innerHTML += '<animateTransform attributeName="transform" type="rotate" from="0 500 350" to="360 500 350" dur="240s" repeatCount="indefinite"/>'; }
+  // Sterne als Glitch, wie der OSD-Text im Drohnenspiel: niedrige Auflösung, zeilenweises Zittern, Körnung, Aussetzer
+  const cv = document.getElementById('glitch');
+  if (cv) {
+    const W = cv.width, H = cv.height, ctx = cv.getContext('2d');
+    const off = document.createElement('canvas'); off.width = W; off.height = H; const oc = off.getContext('2d');
+    const star = (x, y, r) => { oc.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.42 : r; oc.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } oc.closePath(); oc.fill(); };
+    const drawClean = t => {
+      oc.fillStyle = '#fff'; oc.fillRect(0, 0, W, H); oc.fillStyle = '#000';
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + t * 0.03; star(W / 2 + Math.cos(a) * 88, H / 2 + Math.sin(a) * 88, 11); }
+      oc.font = 'bold 22px monospace'; oc.textAlign = 'center'; oc.textBaseline = 'middle'; oc.fillText('TURBO', W / 2, H / 2 + 1);
+      oc.imageSmoothingEnabled = false;
+    };
+    const h = (a, b) => { const x = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return x - Math.floor(x); };
+    let t = 0, burst = 0;
+    const frame = () => {
+      t += 1 / 30; drawClean(t);
+      const tq = Math.floor(t * 30);
+      if (Math.random() < 0.012) burst = 6 + Math.random() * 10; burst = Math.max(0, burst - 1);
+      const noise = burst > 0 ? 0.5 : 0.04;
+      ctx.imageSmoothingEnabled = false; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+      for (let y = 0; y < H; y++) {
+        const gate = h(y * 0.37, tq + 1.7) > 0.7 - noise * 0.6;
+        let jit = gate ? (h(y, tq) - 0.5) * (1 + noise * 40) : 0;
+        jit += Math.sin(y * 0.13 + t * 2) * 0.6;
+        ctx.drawImage(off, 0, y, W, 1, Math.round(jit), y, W, 1);
+      }
+      // Körnung und Aussetzer
+      const grains = burst > 0 ? 400 : 60;
+      for (let i = 0; i < grains; i++) { const x = (h(i, tq * 7.13) * W) | 0, y = (h(i * 1.3, tq * 3.7) * H) | 0; ctx.fillStyle = h(i, tq) > 0.5 ? '#000' : '#fff'; ctx.fillRect(x, y, 1 + (h(i, y) > 0.8 ? 2 : 0), 1); }
+      if (burst > 0) { const yb = (h(tq, 5) * H) | 0; ctx.fillStyle = '#fff'; ctx.fillRect(0, yb, W, 2 + (h(tq, 9) * 6 | 0)); }
+      // Laufendes Band
+      const band = ((t * 0.11) % 1) * H; ctx.fillStyle = 'rgba(0,0,0,.05)'; ctx.fillRect(0, band, W, 10);
+    };
+    setInterval(frame, 1000 / 24); frame();
+  }
   const pw = document.getElementById('pw'), code = document.getElementById('code');
   const cells = () => [...code.querySelectorAll('.cell')];
-  const paint = () => { const v = pw.value; cells().forEach((c, i) => { c.textContent = v[i] ? '•' : ''; c.classList.toggle('on', !!v[i]); c.classList.toggle('cursor', i === Math.min(v.length, 3) && document.activeElement === pw); }); };
+  const paint = () => { const v = pw.value; cells().forEach((c, i) => { c.textContent = v[i] ? '*' : ''; c.classList.toggle('on', !!v[i]); c.classList.toggle('cursor', i === Math.min(v.length, 3) && document.activeElement === pw); }); };
   code.addEventListener('click', () => pw.focus()); pw.addEventListener('input', paint); pw.addEventListener('focus', paint); pw.addEventListener('blur', paint);
   document.getElementById('lock').addEventListener('click', e => { if (e.target.closest('form') && !e.target.closest('label,button')) pw.focus(); });
   setTimeout(() => pw.focus(), 200);
@@ -158,8 +189,6 @@ document.getElementById('lockform').addEventListener('submit', async ev => {
 (async () => { let saved = null; try { saved = localStorage.getItem(PW_KEY) || sessionStorage.getItem(PW_KEY); } catch (e) {}
   if (saved) { try { await tryUnlock(saved, !!localStorage.getItem(PW_KEY)); } catch (e) { try { localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); } catch (_) {} } } })();
 document.getElementById('lockbtn').addEventListener('click', () => { try { localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); } catch (e) {} location.reload(); });
-document.getElementById('themebtn').addEventListener('click', () => { const cur = document.documentElement.getAttribute('data-theme'); const next = cur === 'light' ? '' : 'light'; if (next) document.documentElement.setAttribute('data-theme', next); else document.documentElement.removeAttribute('data-theme'); try { localStorage.setItem('turbo.theme', next); } catch (e) {} });
-try { const t = localStorage.getItem('turbo.theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 document.getElementById('who').addEventListener('click', () => { const n = prompt('Dein Name/Kürzel (erscheint im Änderungsverlauf):', Store.user || ''); if (n !== null) { Store.user = n.trim(); saveJ('turbo.user', Store.user); paintWho(); } });
 function paintWho() { document.getElementById('whoname').textContent = Store.user || 'Name setzen'; }
 
@@ -235,6 +264,7 @@ function renderStart(main) {
         ${[f.kommission, ...f.mitbericht].map(k => { const ms = komm(k); return ms.length ? `<div style="margin:8px 0"><b>${esc(k)}</b> <span class="small muted">(${ms.length})</span>${barHtml(aggregate(ms, f.id))}${sumLine(aggregate(ms, f.id))}</div>` : ''; }).join('')}
         <a class="btn sm" href="#/dossier/${f.id}">Dossier öffnen</a></div>`).join('')}
     </div>
+    <div class="card section"><h3>Nächste Termine</h3><ul class="list small">${(D.bilaterale.termine || []).filter(t => t.bis >= today()).sort((a, b) => a.von.localeCompare(b.von)).slice(0, 12).map(t => `<li><span class="num">${fmtDate(t.von)}${t.bis !== t.von ? '–' + fmtDate(t.bis) : ''}</span> · <b>${esc(t.gremium)}</b> · ${esc(t.text)}</li>`).join('') || '<li class="muted">Keine Termine erfasst.</li>'}</ul></div>
     <div class="grid two" style="margin-top:12px">
       <div class="card"><h3>Nächste Schritte</h3>${openSteps.length ? `<ul class="list small">${openSteps.slice(0, 15).map(x => `<li><span class="${x.t.naechsterTermin && x.t.naechsterTermin < today() ? 'due' : 'num'}">${fmtDate(x.t.naechsterTermin) || '–'}</span> · <a href="#/person/${x.m.id}">${esc(fullName(x.m))}</a> ${frChip(x.m)}<br>${esc(x.t.naechsterSchritt || '')}${x.t.owner ? ` <span class="pill">${esc(x.t.owner)}</span>` : ''}</li>`).join('')}</ul>` : '<p class="muted small">Noch keine nächsten Schritte erfasst. Im Profil einer Person unter «Tracking» eintragen.</p>'}</div>
       <div class="card"><h3>Zuletzt geändert</h3>${recent.length ? `<ul class="list small">${recent.map(([k, e]) => { const mid = k.split(':')[1]; const m = member(mid); return `<li><span class="muted">${fmtTs(e.ts)}</span> · ${esc(e.by || '')} · ${m ? `<a href="#/person/${m.id}">${esc(fullName(m))}</a>` : esc(k)} <span class="muted">${esc(k.split(':')[0])}</span></li>`; }).join('')}</ul>` : '<p class="muted small">Noch keine Änderungen.</p>'}</div>
@@ -417,7 +447,7 @@ function renderPerson(main, id) {
       <div class="tablewrap"><table class="t">
         <thead><tr><th>Frage</th><th>Einschätzung</th><th>Basis</th><th>Belege</th></tr></thead>
         <tbody>${D.bilaterale.fragen.map(f => { const pp = effStance(m, f.id); const comp = m.positionen[f.id]; const focus = ['staendemehr', 'erasmus'].includes(f.id);
-          return `<tr ${focus ? 'style="background:rgba(255,214,23,.06)"' : ''}><td>${focus ? '★ ' : ''}<b>${esc(f.label)}</b><br><span class="small muted">${esc(f.frage)}</span><br><span class="small muted">${esc(f.kommission)}${f.mitbericht.length ? ' · Mitbericht ' + esc(f.mitbericht.join(', ')) : ''}</span></td>
+          return `<tr ${focus ? 'style="background:#f4f4f4"' : ''}><td>${focus ? '★ ' : ''}<b>${esc(f.label)}</b><br><span class="small muted">${esc(f.frage)}</span><br><span class="small muted">${esc(f.kommission)}${f.mitbericht.length ? ' · Mitbericht ' + esc(f.mitbericht.join(', ')) : ''}</span></td>
             <td><button class="chip st ${pp.stance} ${pp.override ? 'override' : ''} ovbtn" data-f="${f.id}" style="border:0;font-size:.9rem">${STANCE_LABEL[pp.stance]}</button>${pp.override ? `<div class="small muted">berechnet: ${STANCE_LABEL[comp.stance]}${pp.note ? ' · ' + esc(pp.note) : ''}${pp.by ? ' · ' + esc(pp.by) : ''}</div>` : ''}</td>
             <td class="small">${esc(pp.basis)}</td>
             <td class="small">${comp.signale.map(x => `<div>• <span class="st chip ${x.stance}">${STANCE_LABEL[x.stance]}</span> ${esc(x.text)} ${x.quelle ? `<a href="${esc(x.quelle)}" target="_blank" rel="noopener">↗</a>` : ''}</div>`).join('')}${comp.abstimmungen.map(v => `<div>• ${fmtDate(v.datum)}: <b>${esc(v.entscheid)}</b> – ${esc(v.label)}</div>`).join('')}${!comp.signale.length && !comp.abstimmungen.length ? '<span class="muted">keine individuellen Belege</span>' : ''}</td></tr>`; }).join('')}</tbody>
@@ -512,16 +542,16 @@ function renderNetzwerk(main) {
     </div>
     <div class="gpanel"><div><canvas id="graph"></canvas><div class="legend" id="n_leg" style="margin-top:6px"></div></div><div class="card" id="n_side"><p class="muted small">Person anklicken: Verbindungen und Brücken. Ziehen zum Verschieben, Rad/Pinch zum Zoomen.</p><div id="n_bridges"></div></div></div>`;
   const canvas = document.getElementById('graph');
-  const g = TurboGraph(canvas, { onSelect: id => { sel = id; side(); } });
-  const colorOf = m => { if (S.mode === 'fraktion') return frColor(m.fraktion); if (S.mode === 'status') return statusOf(m.id).color; const st = effStance(m, S.mode).stance; return { ja: '#38d47a', eher_ja: '#a6e22e', offen: '#9fb0e0', eher_nein: '#ffb454', nein: '#ff5c5c' }[st]; };
+  const g = TurboGraph(canvas, { onSelect: id => { sel = id; side(); }, labelColor: '#000', edgeColor: 'rgba(0,0,0,.14)', hlColor: 'rgba(0,0,0,.85)', ringP3: '#000', ringWon: '#0a7a2f', outline: '#000' });
+  const colorOf = m => { if (S.mode === 'fraktion') return frColor(m.fraktion); if (S.mode === 'status') return statusOf(m.id).color; const st = effStance(m, S.mode).stance; return { ja: '#0a7a2f', eher_ja: '#8fbf2a', offen: '#bbb', eher_nein: '#f0a040', nein: '#b00020' }[st]; };
   const build = () => {
     let ms = D.members.filter(m => (!S.ko || m.kommissionen.some(k => k.nr == S.ko)) && (!S.fr || m.fraktion === S.fr) && (!S.onlyPrio || prioOf(m) >= 2 || isWon(m.id)));
     const ids = new Set(ms.map(m => m.id));
     const manual = relations().filter(r => r.b).map(r => ({ a: r.a, b: r.b, w: 6, gem: [{ typ: 'manuell', label: r.typ }] }));
     const edges = [...D.edges.filter(e => e.w >= S.min), ...manual].filter(e => ids.has(e.a) && ids.has(e.b));
-    g.setData(ms.map(m => ({ id: m.id, label: m.name, color: colorOf(m), size: 4 + prioOf(m) * 1.5 + (isWon(m.id) ? 2 : 0), ring: isWon(m.id) ? '#38d47a' : (prioOf(m) === 3 ? '#ffd617' : null), always: prioOf(m) === 3 })), edges);
+    g.setData(ms.map(m => ({ id: m.id, label: m.name, color: colorOf(m), size: 4 + prioOf(m) * 1.5 + (isWon(m.id) ? 2 : 0), ring: isWon(m.id) ? '#0a7a2f' : (prioOf(m) === 3 ? '#000' : null), always: prioOf(m) === 3 })), edges);
     setTimeout(() => g.fit(), 600);
-    document.getElementById('n_leg').innerHTML = (S.mode === 'status' ? statuses().map(s => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('') : S.mode === 'fraktion' ? Object.entries(D.fraktionen).map(([k, v]) => `<span><i style="background:${v.farbe}"></i>${esc(k)}</span>`).join('') : STANCES.map(s => `<span><i style="background:${{ ja: '#38d47a', eher_ja: '#a6e22e', offen: '#9fb0e0', eher_nein: '#ffb454', nein: '#ff5c5c' }[s]}"></i>${STANCE_LABEL[s]}</span>`).join('')) + '<span><i style="border:2px solid #38d47a;background:transparent"></i>Ring grün = dabei</span><span><i style="border:2px solid #ffd617;background:transparent"></i>Ring gelb = P3</span>';
+    document.getElementById('n_leg').innerHTML = (S.mode === 'status' ? statuses().map(s => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('') : S.mode === 'fraktion' ? Object.entries(D.fraktionen).map(([k, v]) => `<span><i style="background:${v.farbe}"></i>${esc(k)}</span>`).join('') : STANCES.map(s => `<span><i style="background:${{ ja: '#0a7a2f', eher_ja: '#8fbf2a', offen: '#bbb', eher_nein: '#f0a040', nein: '#b00020' }[s]}"></i>${STANCE_LABEL[s]}</span>`).join('')) + '<span><i style="border:2px solid #0a7a2f;background:transparent"></i>Ring grün = dabei</span><span><i style="border:2px solid #000;background:transparent"></i>Ring schwarz = P3</span>';
     if (sel) g.select(sel); side();
   };
   const side = () => {
@@ -571,13 +601,34 @@ function renderBilaterale(main) {
 /* Dossiers Ständemehr / Erasmus+                                          */
 /* ===================================================================== */
 const DOSSIERS = {
-  staendemehr: { titel: 'Ständemehr / obligatorisches Referendum', frage: 'staendemehr', ziel: 'Kein Ständemehr: fakultatives Referendum gemäss Bundesrat (Variante Ständerat «sui generis» und BB 11 verhindern).',
-    lage: ['Ständerat (30.09.2026): fakultatives Referendum abgelehnt 23:17:3; obligatorisches Referendum «sui generis» mit Ständemehr beschlossen; zusätzlich Verfassungsvorlage BB 11 (SPK-S, pa. Iv. 26.425) angenommen.', 'SPK-N (22.05.2026): unterstützt Verfassungsgrundlage 15:10; bittet SPK-S 16:9, Referendum sui generis zu prüfen; eigene Kommissionsinitiative 26.427 (15:10).', 'APK-N (02.06.2026): lehnt pa. Iv. 26.425 mit 15:9 ab; Präsidentin Sibel Arslan. Kompetenzstreit APK-N/SPK-N durch Büro NR zugunsten APK-N entschieden (20.05.2026).', 'Im Nationalrat stehen drei Varianten zur Wahl: fakultatives Referendum (Bundesrat), sui generis (Ständerat), Verfassungsänderung (BB 11). APK-N behandelt 26.425 am 21.10. und 18.11.2026; Plenum voraussichtlich Wintersession 2026.', 'Hebel: Mitte- und FDP-Mitglieder, die im Ständerat für das Ständemehr stimmten, haben Pendants in der grossen Kammer; GLP, SP, Grüne, EVP dagegen; SVP, EDU, Lega dafür. Entscheidend sind Mitte und FDP (zusammen 58 Sitze).'],
+  staendemehr: { titel: 'Ständemehr / obligatorisches Referendum', frage: 'staendemehr', seite: 'nein', ziel: 'Kein Ständemehr: fakultatives Referendum gemäss Bundesrat (Variante Ständerat «sui generis» und BB 11 verhindern).',
+    lage: ['Ständerat (30.09.2026): fakultatives Referendum abgelehnt 23:17:3; obligatorisches Referendum «sui generis» mit Ständemehr beschlossen; zusätzlich Verfassungsvorlage BB 11 (SPK-S, pa. Iv. 26.425) angenommen.', 'SPK-N (22.05.2026): unterstützt Verfassungsgrundlage 15:10; bittet SPK-S 16:9, Referendum sui generis zu prüfen; eigene Kommissionsinitiative 26.427 (15:10).', 'APK-N (02.06.2026): lehnt pa. Iv. 26.425 mit 15:9 ab; Präsidentin Sibel Arslan. Kompetenzstreit APK-N/SPK-N durch Büro NR zugunsten APK-N entschieden (20.05.2026).', 'Im Nationalrat stehen drei Varianten zur Wahl: fakultatives Referendum (Bundesrat), sui generis (Ständerat), Verfassungsänderung (BB 11). APK-N behandelt 26.425 am 21.10. und 18.11.2026; Plenum voraussichtlich Wintersession 2026.', 'Hebel: Mitte- und FDP-Mitglieder, die im Ständerat für das Ständemehr stimmten, haben Pendants in der grossen Kammer; GLP, SP, Grüne, EVP dagegen; SVP, EDU, Lega dafür. Entscheidend sind Mitte und FDP (zusammen 58 Sitze).', 'Kommissionsbild (abgeleitet aus Sitzverteilung): In der SPK-N stimmten sechs der acht Mitte/FDP/GLP/EVP-Mitglieder für den Verfassungsweg (15:10), in der APK-N bis auf eine Stimme alle gegen das obligatorische Referendum (15:9). Namentlich gegen das Ständemehr: Schneider-Schneiter, Michel, de Quattro, Gredig; dafür: Pfister, Bregy, Vincenz-Stauffacher (persönlich). Die Mitte legt sich offiziell erst nach den Beratungen fest.', 'SPK-S (15.10.2026): Zweiter Teil der pa. Iv. 26.425, Kodifizierung der Schubert-Praxis (Bundesgesetz geht bei bewusster Abweichung einem Binnenmarktabkommen vor), Eintreten 7:3:1, Vernehmlassung bis 4.12.2026. Das Thema begleitet die Referendumsfrage im Nationalrat (SPK-N 12./13.11., APK-N 16.–18.11.).'],
     kommissionen: ['APK-N', 'SPK-N'], geschaefte: ['26.425', '26.427', '26.314', '26.062', '25.4657', '26.2024'] },
-  erasmus: { titel: 'Erasmus+ (Verpflichtungskredit 2027, BB 9)', frage: 'erasmus', ziel: 'Zustimmung zum Verpflichtungskredit von 193 Mio. Fr. für die Vollassoziierung an Erasmus+ 2027.',
-    lage: ['Ständerat (01.10.2026): Kredit genehmigt; WBK-S beantragte Ja nur knapp, FK-S hatte wegen Bundesfinanzen Nein beantragt. Bundespräsident Parmelin warnte, ein Nein würde von der EU negativ aufgenommen.', 'Nationalrat: APK-N federführend (BB 9), Mitberichte WBK-N und FK-N. FK-N hiess die Kredite BB 6–9 am 16.10.2026 mit 14:8:3 gut (13 Prüfaufträge).', 'Hebel: Bildungs- und Forschungsnähe (WBK-N), Hochschulkantone, Wirtschaftsverbände (Fachkräfte). Gegenargument der Gegner ist der Bundeshaushalt, nicht Erasmus selbst – Finanzpolitiker der FDP/Mitte gezielt angehen.', 'Kein Referendum: Der Kredit ist ein einfacher Bundesbeschluss und entscheidet sich allein im Parlament.'],
+  erasmus: { titel: 'Erasmus+ (Verpflichtungskredit 2027, BB 9)', frage: 'erasmus', seite: 'ja', ziel: 'Zustimmung zum Verpflichtungskredit von 193 Mio. Fr. für die Vollassoziierung an Erasmus+ 2027.',
+    lage: ['Ständerat (01.10.2026): Kredit mit 23:18 bei 3 Enthaltungen genehmigt; WBK-S beantragte Ja nur mit Stichentscheid, FK-S hatte wegen Bundesfinanzen Nein beantragt. Bundespräsident Parmelin warnte, ein Nein würde von der EU negativ aufgenommen.', 'Nationalrat: APK-N federführend (BB 9), Mitberichte WBK-N und FK-N. FK-N (16.10.2026): Erasmus+ mit 18:7 gutgeheissen – die Nein-Stimmen entsprechen den SVP-Sitzen, alle FDP-, Mitte- und GLP-Mitglieder stimmten zu; Kohäsionskredite 14:8:3 (drei Enthaltungen aus dem bürgerlichen Lager). Nächste FK-N-Sitzung 9.–11.11.2026 mit 13 Prüfaufträgen.', 'Hebel: Bildungs- und Forschungsnähe (WBK-N), Hochschulkantone, Wirtschaftsverbände (Fachkräfte). Gegenargument der Gegner ist der Bundeshaushalt, nicht Erasmus selbst – Finanzpolitiker der FDP/Mitte gezielt angehen.', 'Kein Referendum: Der Kredit ist ein einfacher Bundesbeschluss und entscheidet sich allein im Parlament.'],
     kommissionen: ['APK-N', 'WBK-N', 'FK-N'], geschaefte: ['24.4345', '25.3858', '24.7303'] },
 };
+function majorityCalc(members, f, seite, target) {
+  const pro = seite === 'ja' ? ['ja', 'eher_ja'] : ['nein', 'eher_nein'], con = seite === 'ja' ? ['nein', 'eher_nein'] : ['ja', 'eher_ja'];
+  const soft = seite === 'ja' ? 'eher_nein' : 'eher_ja';
+  const side = m => { const s = effStance(m, f).stance; return pro.includes(s) ? 'pro' : con.includes(s) ? 'con' : 'offen'; };
+  const P = members.filter(m => side(m) === 'pro'), C = members.filter(m => side(m) === 'con'), O = members.filter(m => side(m) === 'offen');
+  const fehlen = Math.max(0, target - P.length);
+  const rank = m => { const s = effStance(m, f).stance; return s === 'offen' ? 0 : s === soft ? 1 : 2; };
+  const cache = {};
+  const conns = m => cache[m.id] || (cache[m.id] = connectionsOf(m));
+  const bridges = m => conns(m).filter(c => isWon(c.other.id)).length;
+  const gleich = m => conns(m).filter(c => side(c.other) === 'pro').length;
+  const kandidaten = [...O, ...C].sort((a, b) => rank(a) - rank(b) || prioOf(b) - prioOf(a) || gleich(b) - gleich(a)).slice(0, Math.max(6, fehlen + 6));
+  return { P, C, O, fehlen, kandidaten, bridges, gleich, side };
+}
+function majorityHtml(titel, members, f, seite, target, link) {
+  const r = majorityCalc(members, f, seite, target);
+  const label = seite === 'ja' ? 'Ja' : 'Nein';
+  return `<div style="margin:10px 0;padding-top:8px;border-top:1px solid #ddd"><b>${esc(titel)}</b> <span class="small muted">(${members.length} Mitglieder, Ziel ${target} × ${label})</span>${link ? ` <a class="small" href="${link}">→</a>` : ''}
+    <div class="small" style="margin:4px 0">unsere Seite <b>${r.P.length}</b> · offen <b>${r.O.length}</b> · Gegenseite <b>${r.C.length}</b> · ${r.fehlen ? `<span class="due">fehlen ${r.fehlen}</span>` : '<span style="color:var(--ja);font-weight:700">Ziel erreicht (rechnerisch)</span>'}</div>
+    ${r.kandidaten.length ? `<div class="tablewrap" style="max-height:40vh"><table class="t"><thead><tr><th>Kandidat/in</th><th>Fr.</th><th>Einschätzung</th><th>Status</th><th>Wer</th><th title="Verbindungen zu Personen mit Status «dabei»">Brücken</th><th title="Verbindungen zu Personen, die bereits auf unserer Seite eingeschätzt sind">Gleichgesinnte</th></tr></thead><tbody>${r.kandidaten.map(m => { const p = effStance(m, f), t = tracking(m.id); return `<tr><td><a href="#/person/${m.id}">${esc(fullName(m))}</a> ${prioChip(m)}</td><td>${frChip(m)}</td><td><span class="chip st ${p.stance} ${p.override ? 'override' : ''}">${STANCE_LABEL[p.stance]}</span></td><td>${statusChip(m.id)}</td><td class="small">${esc(t.owner || '')}</td><td class="num">${r.bridges(m)}</td><td class="num">${r.gleich(m)}</td></tr>`; }).join('')}</tbody></table></div>` : ''}</div>`;
+}
 function renderDossier(main, key) {
   const D = DATA, d = DOSSIERS[key] || DOSSIERS.staendemehr; key = DOSSIERS[key] ? key : 'staendemehr';
   const f = D.bilaterale.fragen.find(x => x.id === d.frage);
@@ -592,6 +643,10 @@ function renderDossier(main, key) {
     <div class="card section"><h3>Nationalrat gesamt</h3>${barHtml(aggregate(D.members, f.id))}${sumLine(aggregate(D.members, f.id))}<div style="margin-top:8px"><b>Nach Fraktion</b>${Object.keys(D.fraktionen).map(fr => { const ms = D.members.filter(m => m.fraktion === fr); const c = aggregate(ms, f.id); return `<div class="small" style="margin:4px 0"><span class="chip fr" style="background:${frColor(fr)}">${esc(fr)}</span> ${ms.length} · ${c.ja + c.eher_ja} Ja · ${c.offen} offen · ${c.nein + c.eher_nein} Nein${barHtml(c)}</div>`; }).join('')}</div></div>
     ${d.kommissionen.map(k => { const ms = komm(k); const c = aggregate(ms, f.id); return `<div class="card section"><h3>${esc(k)} (${ms.length}) <a class="small" href="#/kommission/${(D.kommissionen.find(x => x.kurz === k) || {}).nr}">→ Kommission</a></h3>${barHtml(c)}${sumLine(c)}<div style="margin-top:6px">${statusBar(ms)}</div>
       <div class="tablewrap" style="margin-top:8px;max-height:60vh"><table class="t"><thead><tr><th>Mitglied</th><th>Fr.</th><th>Position</th><th>Status</th><th>Wer</th><th>Nächster Schritt</th></tr></thead><tbody>${ms.sort((a, b) => STANCES.indexOf(effStance(a, f.id).stance) - STANCES.indexOf(effStance(b, f.id).stance) || a.name.localeCompare(b.name)).map(m => { const p = effStance(m, f.id), t = tracking(m.id); return `<tr><td><a href="#/person/${m.id}">${esc(fullName(m))}</a>${m.funktion !== 'Mitglied' ? ' <span class="pill">' + esc(m.funktion) + '</span>' : ''} ${prioChip(m)}</td><td>${frChip(m)}</td><td><button class="chip st ${p.stance} ${p.override ? 'override' : ''} ovbtn" data-m="${m.id}" data-f="${f.id}" style="border:0">${STANCE_LABEL[p.stance]}</button></td><td>${statusChip(m.id)}</td><td class="small">${esc(t.owner || '')}</td><td class="small">${esc(t.naechsterSchritt || '')} <span class="${t.naechsterTermin && t.naechsterTermin < today() ? 'due' : 'muted'}">${fmtDate(t.naechsterTermin)}</span></td></tr>`; }).join('')}</tbody></table></div></div>`; }).join('')}
+    <div class="card section"><h3>Mehrheitsrechner</h3><p class="small muted">Unsere Seite = «${d.seite === 'ja' ? 'Ja' : 'Nein'}» zu dieser Frage. Ziel im Plenum 101 von 200 (absolutes Mehr, sicherer Wert), in den Kommissionen 13 von 25. Kandidatinnen und Kandidaten: zuerst Offene, dann «eher Gegenseite», sortiert nach Priorität und gleichgesinnten Verbindungen. «Brücken» zählt Verbindungen zu Personen mit Status «dabei».</p>
+      ${majorityHtml('Nationalrat', D.members, f.id, d.seite, 101)}
+      ${d.kommissionen.map(k => majorityHtml(k, komm(k), f.id, d.seite, 13, '#/kommission/' + ((D.kommissionen.find(x => x.kurz === k) || {}).nr || ''))).join('')}
+    </div>
     <div class="card section"><h3>Wackelkandidatinnen und -kandidaten im Plenum (${swing.length})</h3><p class="small muted">Alle Mitglieder mit Einschätzung offen / eher Ja / eher Nein, nach Priorität.</p><div class="chips">${swing.map(m => `<a class="chip k" href="#/person/${m.id}" style="border-left:4px solid ${statusOf(m.id).color}">${esc(fullName(m))} · ${esc(m.partei)} ${esc(m.kanton)} · <span class="st ${effStance(m, f.id).stance}" style="padding:0 4px;border-radius:4px">${STANCE_SHORT[effStance(m, f.id).stance]}</span></a>`).join('')}</div></div>
     <div class="card section"><h3>Gemeinsame Notizen zum Dossier</h3><textarea class="note" id="dn" placeholder="Strategie, Argumente, Verbündete, Termine …">${esc(notes.text || '')}</textarea><div class="small muted">${notes.ts ? 'zuletzt ' + fmtTs(Store.entry('dossier:' + key).ts) + ' von ' + esc(Store.entry('dossier:' + key).by || '') : ''}</div></div>
     <div class="grid two" style="margin-top:12px"><div class="card"><h3>Chronologie</h3><ul class="timeline">${tl.map(t => `<li><div class="d">${fmtDate(t.datum)} · ${esc(t.wer)}</div><div class="small">${esc(t.text)} ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">↗</a>` : ''}</div></li>`).join('')}</ul></div>
