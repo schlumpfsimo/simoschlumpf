@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-20T00:24:36.851Z",
+ "updated": "2026-10-20T06:05:35.038Z",
  "items": [
   {
    "source": "delors",
@@ -72,15 +72,51 @@
    ]
   },
   {
-   "source": "consilium",
-   "sourceLabel": "Conseil de l'UE",
-   "lang": "en",
-   "section": "EU",
-   "title": "Media advisory - Accreditation for the Special European Council, 26 and 27 November 2026",
-   "summary": "The Special European Council will take place on 26 and 27 November 2026 in the Europa building in Brussels.",
-   "url": "https://www.consilium.europa.eu/en/press/press-releases/2026/10/19/media-advisory-accreditation-for-the-special-european-council-26-and-27-november-2026/",
+   "source": "paris",
+   "sourceLabel": "Le Parisien",
+   "lang": "fr",
+   "city": "Paris",
+   "title": "Paris FC : Pierre Ferracci va passer la main à Antoine Arnault",
+   "summary": "",
+   "url": "https://www.leparisien.fr/sports/football/ligue-1/paris-fc-pierre-ferracci-va-passer-la-main-a-antoine-arnault-19-10-2026-7HXASNK27RCW5FTD3I2RJKK3PM.php",
    "image": "",
-   "date": "2026-10-20T00:23:51.263Z",
+   "date": "2026-10-20T06:04:54.117Z",
+   "categories": []
+  },
+  {
+   "source": "paris",
+   "sourceLabel": "Le Parisien",
+   "lang": "fr",
+   "city": "Paris",
+   "title": "« Identifier les vrais responsables » : face aux victimes de la rue de Trévise, la Ville de Paris, le syndic et l’ombre de GRDF",
+   "summary": "",
+   "url": "https://www.leparisien.fr/faits-divers/identifier-les-vrais-responsables-face-aux-victimes-de-la-rue-de-trevise-la-ville-de-paris-le-syndic-et-lombre-de-grdf-20-10-2026-CRFQOVP3HZFIZMT3LIBU6UBF5E.php",
+   "image": "",
+   "date": "2026-10-20T06:04:54.094Z",
+   "categories": []
+  },
+  {
+   "source": "paris",
+   "sourceLabel": "Le Parisien",
+   "lang": "fr",
+   "city": "Paris",
+   "title": "Prix des carburants dans Paris : où trouver les stations les moins chères ce mardi 20 octobre ?",
+   "summary": "",
+   "url": "https://www.leparisien.fr/economie/consommation/prix-des-carburants-dans-paris-voici-les-stations-les-moins-cheres-ce-mardi-20-octobre-20-10-2026-AHZUAJVV4NGE7G2Z5LYNURA6SA.php",
+   "image": "",
+   "date": "2026-10-20T06:04:54.067Z",
+   "categories": []
+  },
+  {
+   "source": "paris",
+   "sourceLabel": "Le Parisien",
+   "lang": "fr",
+   "city": "Paris",
+   "title": "« Il sert à que dalle » : à Paris, le couvre-feu mis en place après les pillages du 17 octobre respecté… mais contesté",
+   "summary": "",
+   "url": "https://www.leparisien.fr/paris-75/il-sert-a-que-dalle-a-paris-le-couvre-feu-apres-mis-en-place-apres-les-pillages-du-17-octobre-respecte-mais-conteste-20-10-2026-77BUJVDWBVBALHJ7URFOJE6NVQ.php",
+   "image": "",
+   "date": "2026-10-20T06:04:53.734Z",
    "categories": []
   },
   {
@@ -92,7 +128,7 @@
    "summary": "Information about accreditation requirements for the one-year badge (2026)",
    "url": "https://www.consilium.europa.eu/en/press/press-releases/2026/10/19/one-year-badge-2026-accreditation-is-open-3/",
    "image": "",
-   "date": "2026-10-20T00:23:51.263Z",
+   "date": "2026-10-20T06:04:51.331Z",
    "categories": []
   },
   {
@@ -104,7 +140,7 @@
    "summary": "The European Union is carrying out the 2026 edition of its crisis management exercise - EU Integrated Resolve (EU IR26).",
    "url": "https://www.consilium.europa.eu/en/press/press-releases/2026/10/19/eu-integrated-resolve-2026-exercise-enhancing-eu-crisis-response-coordination/",
    "image": "",
-   "date": "2026-10-20T00:23:51.263Z",
+   "date": "2026-10-20T06:04:51.331Z",
    "categories": [
     "Crisis response"
    ]
@@ -118,7 +154,7 @@
    "summary": "The Council has adopted the first bilateral assistance measure under the European Peace Facility, worth €20 million, to support the Nigerian armed forces.",
    "url": "https://www.consilium.europa.eu/en/press/press-releases/2026/10/19/european-peace-facility-council-adopts-assistance-measure-to-support-defence-capacities-of-nigeria/",
    "image": "",
-   "date": "2026-10-20T00:23:51.263Z",
+   "date": "2026-10-20T06:04:51.331Z",
    "categories": [
     "Security & defence",
     "Sub-Saharan Africa"
@@ -133,10 +169,22 @@
    "summary": "The Council has appointed Ilze Brands Kehris as EU Special Representative for Human Rights, from 19 October 2026 to 29 February 2028.",
    "url": "https://www.consilium.europa.eu/en/press/press-releases/2026/10/19/human-rights-eu-appoints-a-new-special-representative/",
    "image": "",
-   "date": "2026-10-20T00:23:51.263Z",
+   "date": "2026-10-20T06:04:51.331Z",
    "categories": [
     "Human rights"
    ]
+  },
+  {
+   "source": "consilium",
+   "sourceLabel": "Conseil de l'UE",
+   "lang": "en",
+   "section": "EU",
+   "title": "Media advisory - Accreditation for the Special European Council, 26 and 27 November 2026",
+   "summary": "The Special European Council will take place on 26 and 27 November 2026 in the Europa building in Brussels.",
+   "url": "https://www.consilium.europa.eu/en/press/press-releases/2026/10/19/media-advisory-accreditation-for-the-special-european-council-26-and-27-november-2026/",
+   "image": "",
+   "date": "2026-10-20T06:04:51.330Z",
+   "categories": []
   },
   {
    "source": "bs",
@@ -147,7 +195,7 @@
    "summary": "Heute Morgen kam es auf der A3 in Fahrtrichtung Basel zu einem gefährlichen Vorfall. Ein 80-jähriger Autofahrer befuhr die Autobahn über eine längere Strecke entgegen der Fahrtrichtung.",
    "url": "https://www.bs.ch/medienmitteilungen/jsd/2026-geisterfahrer-auf-der-a3-schnelle-reaktion-des-detektionssystems-verhindert-schlimmeres",
    "image": "https://media.bs.ch/og_image/1b4c7a5f8513e495cde77c735ccbbf6050748bd7/rathaus-backview.png?h=8abcec71&itok=IW7GrtdN",
-   "date": "2026-10-20T00:23:48.460Z",
+   "date": "2026-10-20T06:04:49.351Z",
    "categories": []
   },
   {
@@ -159,7 +207,7 @@
    "summary": "Am 20. Oktober ist der internationale Tag der nicht sichtbaren Behinderungen. Der Kanton Basel-Stadt beteiligt sich an der internationalen Hidden Disabilities Sunflower Initiative. Damit engagiert er sich für eine Kultur des Respekts, der …",
    "url": "https://www.bs.ch/medienmitteilungen/pd/2026-sonnenblumen-als-zeichen-fuer-nicht-sichtbare-behinderungen",
    "image": "https://media.bs.ch/og_image/1b4c7a5f8513e495cde77c735ccbbf6050748bd7/rathaus-backview.png?h=8abcec71&itok=IW7GrtdN",
-   "date": "2026-10-20T00:23:48.460Z",
+   "date": "2026-10-20T06:04:49.351Z",
    "categories": []
   },
   {
@@ -171,7 +219,7 @@
    "summary": "Der 4. Nationale Bahnkongress Bahn27 am 9. April 2027 fokussiert auf die Frage: Wie viel Zukunft passt ins Netz? Erneut kommen Topvertretende europäischer Bahnen und führende Köpfe der Branche nach Basel. Gastregion ist der Kanton Luzern. …",
    "url": "https://www.bs.ch/medienmitteilungen/bvd/2026-bahnkongress-bahn27-mit-bundesrat-albert-roesti-und-weiteren-nationalen-und-internationalen-entscheidungstraegern-basel",
    "image": "https://media.bs.ch/og_image/1b4c7a5f8513e495cde77c735ccbbf6050748bd7/rathaus-backview.png?h=8abcec71&itok=IW7GrtdN",
-   "date": "2026-10-20T00:23:48.460Z",
+   "date": "2026-10-20T06:04:49.351Z",
    "categories": []
   },
   {
@@ -183,7 +231,7 @@
    "summary": "Das Bau- und Verkehrsdepartement zieht ein positives Zwischenfazit zum Pilotversuch für Recycling bei öffentlichen Abfallkübeln in der Innenstadt. Es konnte die getrennt gesammelten PET-Flaschen und ALU-Dosen gut verwerten. Mit dem Ende …",
    "url": "https://www.bs.ch/medienmitteilungen/bvd/2026-positives-zwischenfazit-fuer-pilotversuch-mit-pet-und-alu-recycling-bei-abfallkuebeln",
    "image": "https://media.bs.ch/og_image/328a25f7bcd1240797b9768be234b4d7b9b77cd4/bild-recycling-sammelstelle.jpg?h=9658c3a2&itok=c32oozko",
-   "date": "2026-10-20T00:23:48.460Z",
+   "date": "2026-10-20T06:04:49.351Z",
    "categories": []
   },
   {
@@ -195,7 +243,7 @@
    "summary": "Basel-Stadt hat seit Frühling ein neues Kulturleitbild für die Jahre 2026 bis 2031. Dieses ist mit einem Wirkungscontrolling verbunden. Um eine verlässliche Datengrundlage zu erhalten, startet derzeit eine Befragung. Diese soll Aufschluss …",
    "url": "https://www.bs.ch/medienmitteilungen/pd/2026-die-situation-der-kulturschaffenden-und-kulturbetriebe-unter-der-lupe",
    "image": "https://media.bs.ch/og_image/1b4c7a5f8513e495cde77c735ccbbf6050748bd7/rathaus-backview.png?h=8abcec71&itok=IW7GrtdN",
-   "date": "2026-10-20T00:23:48.460Z",
+   "date": "2026-10-20T06:04:49.351Z",
    "categories": []
   },
   {
@@ -203,65 +251,1370 @@
    "sourceLabel": "Le Parisien",
    "lang": "fr",
    "city": "Paris",
-   "title": "« C’est l’anarchie » : après deux nuits de pillages dans plusieurs quartiers de la capitale, les Parisiens pris d’angoisse",
+   "title": "Rumeurs sur la mort d’un street médic à Paris : le manifestant de la place de la République toujours en vie, un témoin raconte la scène",
    "summary": "",
-   "url": "https://www.leparisien.fr/paris-75/cest-lanarchie-apres-deux-nuits-de-pillages-dans-plusieurs-quartiers-de-la-capitale-les-parisiens-pris-dangoisse-19-10-2026-42VTTATFOVE37GUTQWVTUX2EVU.php",
+   "url": "https://www.leparisien.fr/paris-75/rumeurs-sur-la-mort-dun-street-medic-a-paris-le-manifestant-de-la-place-de-la-republique-toujours-en-vie-un-temoin-raconte-la-scene-20-10-2026-MQCDQTHJHJHTTFZSFVFJTN7VPQ.php",
    "image": "",
-   "date": "2026-10-20T00:23:47.130Z",
+   "date": "2026-10-20T06:04:47.760Z",
    "categories": []
   },
   {
-   "source": "paris",
-   "sourceLabel": "Le Parisien",
-   "lang": "fr",
-   "city": "Paris",
-   "title": "Violences du 17 octobre : musicien, cuisinier, sans-abri, primo-délinquants… Qui sont les premiers émeutiers présentés à la justice ?",
-   "summary": "",
-   "url": "https://www.leparisien.fr/faits-divers/musicien-cuisinier-sans-abri-primo-delinquants-qui-sont-les-premiers-emeutiers-presentes-a-la-justice-19-10-2026-3WNLAGP7BBATHAGAQQTKLRIIGM.php",
-   "image": "",
-   "date": "2026-10-20T00:23:47.130Z",
+   "source": "euronews",
+   "sourceLabel": "Euronews",
+   "lang": "en",
+   "title": "Europe Today: Blame continues in France, Russia kills two children in Kharkiv",
+   "summary": "Blame in France over protests continues as Sébastien Lecornu accuses the ultra-left of orchestrating the unrest. In Kharkiv, two children are among the victims of a Russian strike on a park as Putin reportedly floats a summit without Kyiv. …",
+   "url": "https://www.euronews.com/2026/10/20/europe-today-blame-continues-in-france-russia-kills-two-children-in-kharkiv",
+   "image": "https://images.euronews.com/articles/stories/09/95/62/95/1200x675_cmsv2_ed1503cf-e3c1-59e2-82da-be5d93bbb31c-9956295.jpg",
+   "date": "2026-10-20T06:01:37.000Z",
    "categories": []
   },
   {
-   "source": "paris",
-   "sourceLabel": "Le Parisien",
-   "lang": "fr",
-   "city": "Paris",
-   "title": "17 octobre : une cagnotte ouverte pour aider un commerçant parisien dont la boutique a été pillée et détruite",
-   "summary": "",
-   "url": "https://www.leparisien.fr/faits-divers/17-octobre-une-cagnotte-ouverte-pour-aider-un-commercant-parisien-dont-la-boutique-a-ete-pillee-et-detruite-19-10-2026-B4JFABBQT5DYFDWVS7DWQRCUPU.php",
+   "source": "berlin",
+   "sourceLabel": "rbb24",
+   "lang": "de",
+   "city": "Berlin",
+   "title": "Europe mit \"The Final Countdown\" im Admiralspalast",
+   "summary": "40 Jahre \"The Final Countdown\", Europe spielen das Welthit-Album komplett. Im Admiralspalast gibt es Rockstarposen, Nostalgie und eine Pizza-Probe.",
+   "url": "https://www.rbb24.de/kultur/beitrag/2026/10/berlin-konzert-europe-admiralspalast.html",
    "image": "",
-   "date": "2026-10-20T00:23:47.130Z",
+   "date": "2026-10-20T06:00:50.000Z",
    "categories": []
   },
   {
-   "source": "paris",
-   "sourceLabel": "Le Parisien",
-   "lang": "fr",
-   "city": "Paris",
-   "title": "Paris FC : Pierre Ferracci va passer la main à Antoine Arnault",
-   "summary": "",
-   "url": "https://www.leparisien.fr/sports/football/ligue-1/paris-fc-pierre-ferracci-va-passer-la-main-a-antoine-arnault-19-10-2026-7HXASNK27RCW5FTD3I2RJKK3PM.php",
-   "image": "",
-   "date": "2026-10-20T00:23:47.129Z",
+   "source": "tagesschau",
+   "sourceLabel": "Tagesschau",
+   "lang": "de",
+   "title": "Wahlen in den USA: Was zu den Midterms wichtig ist",
+   "summary": "Es ist ein wichtiger Stimmungstest für Präsident Trump: In zwei Wochen sind die US-Bürger zu den Zwischenwahlen aufgerufen. Wer wird gewählt, welche Themen bestimmen den Wahlkampf und welche Chancen haben die Demokraten? Von E. Aretz und …",
+   "url": "https://www.tagesschau.de/ausland/amerika/faq-midterms-100.html",
+   "image": "https://images.tagesschau.de/image/e65e8c27-9800-46ae-a646-3b6b2204820f/AAABoVfl1QQ/AAABnSSvrFg/16x9-big/us-kapitol-158.jpg?width=1920",
+   "date": "2026-10-20T06:00:43.000Z",
    "categories": []
   },
   {
-   "source": "paris",
-   "sourceLabel": "Le Parisien",
+   "source": "euronews",
+   "sourceLabel": "Euronews",
+   "lang": "en",
+   "title": "France's traditional smoked sausage under threat – but is Brussels really to blame?",
+   "summary": "Political parties across Brittany are up in arms over the French government's failure to defend andouille de Guémené, a traditional sausage suspected of posing a cancer risk.",
+   "url": "https://www.euronews.com/2026/10/20/frances-traditional-smoked-sausage-under-threat-but-is-brussels-really-to-blame",
+   "image": "https://images.euronews.com/articles/stories/09/95/88/67/1200x675_cmsv2_7534c6f6-1e24-5544-8db8-5b31b15a65cf-9958867.jpg",
+   "date": "2026-10-20T06:00:30.000Z",
+   "categories": []
+  },
+  {
+   "source": "contretemps",
+   "sourceLabel": "Contretemps",
    "lang": "fr",
-   "city": "Paris",
-   "title": "17 Octobre : les défaillances du maintien de l’ordre pointées du doigt",
+   "section": "Luttes",
+   "pp": true,
+   "title": "Palestine : exit, colonialisme et projets macabres",
+   "summary": "Dans cet article minutieusement documenté, Noura Erakat éclaire les relations étroites entre les fondamentalistes du marché partisans de l’exit (sortie du capital), le suprémacisme blanc et le sionisme dans l’élaboration de projets …",
+   "url": "https://www.contretemps.eu/palestine-exit-colonialisme-projets-macabres/",
+   "image": "https://www.contretemps.eu/wp-content/uploads/Capture-decran-2026-10-17-a-13.55.51-1024x584.png",
+   "date": "2026-10-20T06:00:00.000Z",
+   "categories": [
+    "Conjoncture",
+    "Palestine, guerre coloniale et lutte de libération nationale",
+    "Théorie"
+   ]
+  },
+  {
+   "source": "yle",
+   "sourceLabel": "Yle",
+   "lang": "fi",
+   "section": "Suomi",
+   "title": "Itsenäisyyttä kannattaville selvä tappio Kanadan Albertassa",
    "summary": "",
-   "url": "https://www.leparisien.fr/video/actualites/faits-divers/17-octobre-les-defaillances-du-maintien-de-lordre-pointees-du-doigt-19-10-2026-GZVU6GQTGFEDNE7FHSBQWVDHHE.php",
+   "url": "https://yle.fi/a/74-20252275?origin=rss",
+   "image": "https://img.img-cdn.yle.fi/crop_fill,w_1200,h_628/f_auto/39-12692236617e49e05397",
+   "date": "2026-10-20T05:54:37.000Z",
+   "categories": [
+    "Vaalit",
+    "Kanada",
+    "Alberta"
+   ]
+  },
+  {
+   "source": "berlin",
+   "sourceLabel": "rbb24",
+   "lang": "de",
+   "city": "Berlin",
+   "title": "A115: Brennender Pkw löst Stau auf Berliner Avus aus",
+   "summary": "",
+   "url": "https://www.rbb24.de/panorama/beitrag/2026/09/anschlussstelle-huettenweg-avus-sperrung-stau.html",
    "image": "",
-   "date": "2026-10-20T00:23:47.129Z",
+   "date": "2026-10-20T05:49:46.000Z",
    "categories": []
   },
   {
    "source": "rts",
    "sourceLabel": "RTS",
    "lang": "fr",
+   "title": "Au Canada, l'Alberta vote très largement contre l'organisation d'un référendum d'indépendance",
+   "summary": "Les habitants et habitantes de la riche province pétrolière de l'Alberta se sont très largement opposés lundi à l'organisation d'un futur référendum sur leur séparation du Canada, selon une projection du groupe audiovisuel public CBC.",
+   "url": "https://www.rts.ch/info/monde/2026/article/alberta-76-5-de-non-a-un-referendum-d-independance-29390941.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/16960b6b-29390945.image?w=320&h=180",
+   "date": "2026-10-20T05:48:10.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "rts-monde",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "section": "Monde",
+   "title": "Au Canada, l'Alberta vote très largement contre l'organisation d'un référendum d'indépendance",
+   "summary": "Les habitants et habitantes de la riche province pétrolière de l'Alberta se sont très largement opposés lundi à l'organisation d'un futur référendum sur leur séparation du Canada, selon une projection du groupe audiovisuel public CBC.",
+   "url": "https://www.rts.ch/info/monde/2026/article/alberta-76-5-de-non-a-un-referendum-d-independance-29390941.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/16960b6b-29390945.image?w=320&h=180",
+   "date": "2026-10-20T05:48:10.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "euronews",
+   "sourceLabel": "Euronews",
+   "lang": "en",
+   "title": "US allegedly holding up delivery of Patriot air defence missiles, Zelenskyy says",
+   "summary": "Relations between Kyiv and Washington have soured over military aid and intelligence sharing, with Zelenskyy saying that Ukraine received no warning of Russian missile strikes that targeted energy facilities in the capital region.",
+   "url": "https://www.euronews.com/2026/10/20/us-allegedly-holding-up-delivery-of-patriot-air-defence-missiles-zelenskyy-says",
+   "image": "https://images.euronews.com/articles/stories/09/95/93/98/1200x675_cmsv2_122a7e57-d658-518c-8bda-f5dae3d5a4c4-9959398.jpg",
+   "date": "2026-10-20T05:47:02.000Z",
+   "categories": []
+  },
+  {
+   "source": "rts-sport",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "section": "Sport",
+   "title": "Décryptage - Coupes d’Europe: pourquoi les clubs norvégiens réussissent là où la Suisse échoue?",
+   "summary": "Alors que la Norvège envoie quatre clubs en Europe dont deux en Ligue des champions, la Suisse n’a que Lugano et Thoune en Conference League. C’est la deuxième saison consécutive sans représentant suisse en C1. Et pendant ce temps-là, les …",
+   "url": "https://www.rts.ch/sport/football/2026/article/bod-viking-pourquoi-les-clubs-norvegiens-performent-mieux-que-les-les-clubs-suisses-29389989.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/ffba47fe-29390779.image?w=320&h=180",
+   "date": "2026-10-20T05:41:18.000Z",
+   "categories": [
+    "Football"
+   ]
+  },
+  {
+   "source": "rts",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "title": "Après les violences à Milan, l'Italie durcit sa politique sécuritaire visant les mineurs",
+   "summary": "Face aux violences survenues ce week-end à Milan en marge de manifestations contre la vie chère et le coût de l'énergie, le gouvernement italien a choisi la fermeté. Durant une réunion d'urgence lundi, la présidente du Conseil Giorgia …",
+   "url": "https://www.rts.ch/info/monde/2026/article/violences-a-milan-l-italie-durcit-le-ton-contre-les-mineurs-29390816.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/9912eb41-29390820.image?w=320&h=180",
+   "date": "2026-10-20T05:38:16.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "rts-monde",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "section": "Monde",
+   "title": "Après les violences à Milan, l'Italie durcit sa politique sécuritaire visant les mineurs",
+   "summary": "Face aux violences survenues ce week-end à Milan en marge de manifestations contre la vie chère et le coût de l'énergie, le gouvernement italien a choisi la fermeté. Durant une réunion d'urgence lundi, la présidente du Conseil Giorgia …",
+   "url": "https://www.rts.ch/info/monde/2026/article/violences-a-milan-l-italie-durcit-le-ton-contre-les-mineurs-29390816.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/9912eb41-29390820.image?w=320&h=180",
+   "date": "2026-10-20T05:38:16.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "letemps",
+   "sourceLabel": "Le Temps",
+   "lang": "fr",
+   "title": "23% seulement: au Canada, les séparatistes échouent largement dans leur quête d’indépendance de l’Alberta",
+   "summary": "Selon les premières projections, 76,5% des votants veulent que leur province, la plus riche du pays, reste au sein de la Confédération canadienne. La province pétrolière, qui contribue à 15% du PIB canadien, est un maillon essentiel dans …",
+   "url": "https://www.letemps.ch/articles/23-seulement-les-separatistes-echouent-largement-dans-leur-quete-d-independance-de-l-alberta",
+   "image": "https://letemps-17455.kxcdn.com/photos/67d89512-5434-4cb0-ae59-5f8b4ff7123d/medium",
+   "date": "2026-10-20T05:36:49.000Z",
+   "categories": [
+    "Amériques",
+    "Monde"
+   ]
+  },
+  {
+   "source": "rts",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "title": "Une députée australienne percutée volontairement par une voiture perd sa jambe",
+   "summary": "Percutée volontairement par une voiture devant sa permanence électorale, la députée australienne Helen Haines a perdu une jambe, ont annoncé des médias locaux mardi, dans un pays où les menaces visant les parlementaires se multiplient.",
+   "url": "https://www.rts.ch/info/monde/2026/article/australie-une-deputee-percutee-volontairement-perd-sa-jambe-29390919.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/4d835bd7-29390922.image?w=320&h=180",
+   "date": "2026-10-20T05:36:20.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "rts-monde",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "section": "Monde",
+   "title": "Une députée australienne percutée volontairement par une voiture perd sa jambe",
+   "summary": "Percutée volontairement par une voiture devant sa permanence électorale, la députée australienne Helen Haines a perdu une jambe, ont annoncé des médias locaux mardi, dans un pays où les menaces visant les parlementaires se multiplient.",
+   "url": "https://www.rts.ch/info/monde/2026/article/australie-une-deputee-percutee-volontairement-perd-sa-jambe-29390919.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/4d835bd7-29390922.image?w=320&h=180",
+   "date": "2026-10-20T05:36:20.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "tagesschau",
+   "sourceLabel": "Tagesschau",
+   "lang": "de",
+   "title": "Marktbericht: Anleger warten auf US-Bilanzen",
+   "summary": "Vor wichtigen Bilanzen einiger US-Technologieunternehmen wie SpaceX und Meta bleiben die Investoren zurückhaltend. Außerdem wirken die Turbulenzen in Frankreich, Italien und Spanien weiter nach. [ mehr ]",
+   "url": "https://www.tagesschau.de/wirtschaft/finanzen/marktberichte/marktbericht-dax-dow-geldanlage-bilanzsaison-100.html",
+   "image": "https://images.tagesschau.de/image/2609e1b0-d1f0-4c7b-b37c-1557eb7b88f2/AAABn8telGg/AAABnSSvrFg/16x9-big/boerse-536.jpg?width=1920",
+   "date": "2026-10-20T05:35:01.000Z",
+   "categories": []
+  },
+  {
+   "source": "euronews",
+   "sourceLabel": "Euronews",
+   "lang": "en",
+   "title": "Researchers use ChatGPT-style technology to predict stroke risk from a person’s DNA",
+   "summary": "A new AI tool that identifies genetic risk factors for stroke could open the door to more personalised prevention and treatment.",
+   "url": "https://www.euronews.com/2026/10/20/researchers-use-chatgpt-style-technology-to-predict-stroke-risk-from-a-persons-dna",
+   "image": "https://images.euronews.com/articles/stories/09/95/89/27/1200x675_cmsv2_0d5b7bfe-8605-5eac-b681-c2d10e68e954-9958927.jpg",
+   "date": "2026-10-20T05:32:38.000Z",
+   "categories": []
+  },
+  {
+   "source": "rfi",
+   "sourceLabel": "RFI",
+   "lang": "fr",
+   "title": "DIRECT - France: pour Sébastien Lecornu, les couvre-feux ont contribué au «calme», de nouveaux décidés mardi soir",
+   "summary": "En France, les premiers couvre-feux sont entrés en vigueur lundi 19 octobre au soir dans plusieurs villes de France, pour faire suite aux violences qui ont émaillé les manifestations du week-end. Le Premier ministre estime ce mardi qu'ils …",
+   "url": "https://www.rfi.fr/fr/france/20261020-direct-france-une-premi%C3%A8re-nuit-sous-couvre-feu-apr%C3%A8s-les-violences-du-week-end",
+   "image": "https://s.rfi.fr/media/display/b49b96b0-cc44-11f1-b3e8-2d1c143cdef3/w:1024/p:16x9/000-D3RV394.jpg",
+   "date": "2026-10-20T05:32:13.000Z",
+   "categories": [
+    "France"
+   ]
+  },
+  {
+   "source": "courrier",
+   "sourceLabel": "Courrier international",
+   "lang": "fr",
+   "title": "Le sabotage de Starshield, la politique nuit au business, et Musk s’envole en Tesla",
+   "summary": "L’innovation, les start-up et les Gafam… Chaque semaine, l’actualité de la Silicon Valley vue par les médias américains.",
+   "url": "https://www.courrierinternational.com/article/la-lettre-tech-le-sabotage-de-starshield-la-politique-nuit-au-business-et-musk-s-envole-en-tesla_279788",
+   "image": "https://focus.courrierinternational.com/2026/10/15/0/0/7879/5587/644/0/60/0/2c7514c_ftp-1-ys4fuxoidc1e-2026-10-15t222626z-799024124-rc2zudaqsorp-rtrmadp-3-ukraine-crisis-starshield.JPG",
+   "date": "2026-10-20T05:30:06.000Z",
+   "categories": [
+    "La Lettre tech"
+   ]
+  },
+  {
+   "source": "letemps",
+   "sourceLabel": "Le Temps",
+   "lang": "fr",
+   "title": "Limitation des feux d’artifice: l’art difficile de ne pas interdire le plaisir des autres",
+   "summary": "CHRONIQUE. Le 29 novembre, les Suisses votent sur les feux d’artifice. Leur bruit ne me manquera pas. La liberté de ceux qui les aiment, si",
+   "url": "https://www.letemps.ch/articles/limitation-des-feux-d-artifice-l-art-difficile-de-ne-pas-interdire-le-plaisir-des-autres",
+   "image": "https://letemps-17455.kxcdn.com/photos/b94520a6-7130-49b4-9905-7f32090bc64f/medium",
+   "date": "2026-10-20T05:28:56.000Z",
+   "categories": [
+    "Opinions",
+    "Économie",
+    "Suisse"
+   ]
+  },
+  {
+   "source": "aljazeera",
+   "sourceLabel": "Al Jazeera",
+   "lang": "en",
+   "pp": true,
+   "title": "Israel’s elections 2026 explained in maps and charts",
+   "summary": "Israelis vote on October 27 in the sixth election since 2019. Here’s how the system works and who gets left out.",
+   "url": "https://www.aljazeera.com/news/2026/10/20/israels-elections-2026-explained-in-maps-and-charts?traffic_source=rss",
+   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/afp_6acf35b67a05-1791964598.jpg?resize=1920%2C1440",
+   "date": "2026-10-20T05:25:31.000Z",
+   "categories": [
+    "News"
+   ]
+  },
+  {
+   "source": "mediapart",
+   "sourceLabel": "Mediapart",
+   "lang": "fr",
+   "pp": true,
+   "title": "En Belgique, la question des aides publiques aux entreprises s’invite dans le débat sur l’austérité",
+   "summary": "Le groupe pharmaceutique a annoncé vouloir licencier 15% de ses effectifs en Wallonie, après avoir bénéficié d’aides publiques massives. Malgré les protestations de l’opposition, le gouvernement défend sa politique de subventions, tout en …",
+   "url": "https://www.mediapart.fr/journal/international/201026/en-belgique-la-question-des-aides-publiques-aux-entreprises-s-invite-dans-le-debat-sur-l-austerite",
+   "image": "https://static.mediapart.fr/etmagine/default/files/2026/10/19/261019-img-en-belgique-les-aides-publiques.jpg",
+   "date": "2026-10-20T05:25:13.000Z",
+   "categories": [
+    "International"
+   ]
+  },
+  {
+   "source": "berlin",
+   "sourceLabel": "rbb24",
+   "lang": "de",
+   "city": "Berlin",
+   "title": "Positionen zu Israel: Berliner Linke berät über umstrittene Abgeordnete Emde",
+   "summary": "Seit dem Wahlsieg der Berliner Linke wird bundesweit über Antisemitismus und Israel-Kritik in ihren Reihen diskutiert. Nun will die Fraktion klären, wie sie mit einer Abgeordneten umgeht.",
+   "url": "https://www.rbb24.de/politik/berlin-wahl-2026/beitraege/berlin-linke-israel-kritik-vanessa-emde-abgeordnete.html",
+   "image": "",
+   "date": "2026-10-20T05:22:23.000Z",
+   "categories": []
+  },
+  {
+   "source": "letemps",
+   "sourceLabel": "Le Temps",
+   "lang": "fr",
+   "title": "Au Canada, l’Alberta refuse nettement son indépendance, à hauteur de 76%",
+   "summary": "Riche par son pétrole, la province de l’Alberta était saisie de 10 questions dont une portait sur l’ouverture de discussions à propos de son indépendance. Le taux d’approbation, moins de 24%, est plutôt faible par rapport aux espoirs des …",
+   "url": "https://www.letemps.ch/articles/au-canada-l-alberta-refuse-son-independance-a-hauteur-de-76",
+   "image": "https://letemps-17455.kxcdn.com/photos/471699bc-5187-4ddb-8134-209f3410930d/medium",
+   "date": "2026-10-20T05:12:44.000Z",
+   "categories": [
+    "Amériques",
+    "Monde"
+   ]
+  },
+  {
+   "source": "euronews",
+   "sourceLabel": "Euronews",
+   "lang": "en",
+   "title": "Egyptian cucumber farmer helps archaeologists find giant Ramses II statue fragments",
+   "summary": "A farmer’s discovery has led to the remains of two colossal royal statues and ancient inscriptions in Egypt’s Nile Delta. Archaeologists have identified one as Ramses II and are investigating how the finds fit into the area’s history.",
+   "url": "https://www.euronews.com/2026/10/20/egyptian-cucumber-farmer-helps-archaeologists-find-giant-ramses-ii-statue-fragments",
+   "image": "https://images.euronews.com/articles/stories/09/95/34/27/1200x675_cmsv2_631f6251-3468-5ac9-a4b0-6b0578dc6d6a-9953427.jpg",
+   "date": "2026-10-20T05:10:23.000Z",
+   "categories": []
+  },
+  {
+   "source": "letemps",
+   "sourceLabel": "Le Temps",
+   "lang": "fr",
+   "title": "Les rédactions alémaniques de Tamedia manifestent contre 41 licenciements, dont 13 en Suisse romande",
+   "summary": "Une action de protestation est organisée ce mardi à midi devant le siège zurichois du groupe de presse. Le personnel conteste le plan de restructuration annoncé début octobre par la direction",
+   "url": "https://www.letemps.ch/articles/les-redactions-alemaniques-de-tamedia-manifestent-contre-41-licenciements-dont-13-en-suisse-romande",
+   "image": "https://letemps-17455.kxcdn.com/photos/9175f4b0-9ea6-4830-9985-f0d70d1b184a/medium",
+   "date": "2026-10-20T05:10:09.000Z",
+   "categories": [
+    "Suisse"
+   ]
+  },
+  {
+   "source": "yle",
+   "sourceLabel": "Yle",
+   "lang": "fi",
+   "section": "Suomi",
+   "title": "Työttömyys lähti taas kasvuun",
+   "summary": "Työttömiä oli syyskuussa lähes 300 000, mikä oli 39 000 enemmän kuin vuosi sitten, kertoo Tilastokeskus.",
+   "url": "https://yle.fi/a/74-20252260?origin=rss",
+   "image": "https://img.img-cdn.yle.fi/crop_extract,w_6395,h_3597,x_14,y_677/crop_fill,w_1200,h_628/f_auto/39-16843536a6c381bd8995/1785477650",
+   "date": "2026-10-20T05:07:53.000Z",
+   "categories": [
+    "Työllisyys",
+    "Työttömyys",
+    "Tilastokeskus"
+   ]
+  },
+  {
+   "source": "nzz",
+   "sourceLabel": "NZZ",
+   "lang": "de",
+   "title": "Australische Abgeordnete mit Auto angefahren und schwer verletzt – Anti-Terror-Ermittler eingeschaltet",
+   "summary": "Laut dem australischen Premierminister Anthony Albanese wurde ein Verdächtiger festgenommen.",
+   "url": "https://www.nzz.ch/panorama/australische-abgeordnete-mit-auto-angefahren-und-schwer-verletzt-anti-terror-ermittler-eingeschaltet-ld.10038878",
+   "image": "https://img-msp-prod.nzz.ch/2026/10/20/2ea5d9cf-7f19-46e5-a88f-2e81b350b75a.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=5238,5238,x0,y0",
+   "date": "2026-10-20T05:07:45.000Z",
+   "categories": []
+  },
+  {
+   "source": "yle",
+   "sourceLabel": "Yle",
+   "lang": "fi",
+   "section": "Suomi",
+   "title": "Presidentti Stubb tapaa Zelenskyin Norjassa – Oslossa neuvotellaan tänään Ukrainan tilanteesta",
+   "summary": "Yhdysvalloista paikalle on menossa mediatietojen mukaan erityislähettiläs Steve Witkoff.",
+   "url": "https://yle.fi/a/74-20252259?origin=rss",
+   "image": "https://img.img-cdn.yle.fi/crop_extract,w_1919,h_1080,x_0,y_0/crop_fill,w_1200,h_628/f_auto/39-17120726ab3e880c4701/1790175426",
+   "date": "2026-10-20T05:06:26.000Z",
+   "categories": [
+    "Venäjän hyökkäys",
+    "Ukraina",
+    "Alexander Stubb"
+   ]
+  },
+  {
+   "source": "srf-neu",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "title": "Forschung aus Genf – Warum Faulheit eigentlich ganz vernünftig ist",
+   "summary": "Menschen vermeiden Anstrengungen nicht grundsätzlich, sagt die Forschung. Sondern wägen ab, ob sie sich lohnen.",
+   "url": "https://www.srf.ch/news/dialog/forschung-aus-genf-warum-faulheit-eigentlich-ganz-vernuenftig-ist",
+   "image": "https://www.srf.ch/static/cms/images//320ws/916ff4.webp",
+   "date": "2026-10-20T05:04:18.000Z",
+   "categories": []
+  },
+  {
+   "source": "yle-en",
+   "sourceLabel": "Yle News",
+   "lang": "en",
+   "section": "Finland",
+   "title": "Finns rank Kone as most reputable company, Temu and Shein least",
+   "summary": "The annual survey saw big gains this year for Kone, Posti and the K-Group.",
+   "url": "https://yle.fi/a/74-20252257?origin=rss",
+   "image": "https://img.img-cdn.yle.fi/crop_extract,w_4241,h_2385,x_0,y_449/crop_fill,w_1200,h_628/f_auto/39-163455969f193183ed4e/1777439828",
+   "date": "2026-10-20T05:03:33.000Z",
+   "categories": [
+    "Business"
+   ]
+  },
+  {
+   "source": "cda",
+   "sourceLabel": "Connaissance des Arts",
+   "lang": "fr",
+   "section": "Exposition",
+   "title": "Paris : 55 galeries réunies place de la Concorde pour une édition résolument internationale de Moderne Art Fair",
+   "summary": "Avec ses pavillons éphémères idéalement situés place de la Concorde, Moderne Art Fair garde sa singularité de foire à la fois très française et très ouverte à l’international. Pilotée avec énergie et talent par Blaise Parinaud, Isabelle …",
+   "url": "https://www.connaissancedesarts.com/marche-art/salons-foires/paris-55-galeries-reunies-place-de-la-concorde-pour-une-edition-resolument-internationale-de-moderne-art-fair-11217297/",
+   "image": "https://www.connaissancedesarts.com/wp-content/thumbnails/uploads/2026/10/cdaoct26_modern-art-fair_adnan-tt-width-653-height-443-fill-0-crop-0-bgcolor-eeeeee.jpg",
+   "date": "2026-10-20T05:00:57.000Z",
+   "categories": [
+    "Marché de l'Art",
+    "Galeries d'art",
+    "Salons et Foires"
+   ]
+  },
+  {
+   "source": "lemonde-livres",
+   "sourceLabel": "Le Monde des livres",
+   "lang": "fr",
+   "section": "Livres",
+   "title": "« Aladdin et moi » : les mille et un voyages intérieurs de l’écrivain britannique Jeanette Winterson",
+   "summary": "Mi-essai, mi-récit, le nouveau livre de la romancière raconte comme « Les Mille et Une Nuits » l’ont façonnée.",
+   "url": "https://www.lemonde.fr/livres/article/2026/10/20/aladdin-et-moi-les-mille-et-un-voyages-interieurs-de-l-ecrivain-britannique-jeanette-winterson_6797874_3260.html",
+   "image": "https://img.lemde.fr/2026/10/16/420/0/5040/2520/644/322/60/0/c050607_upload-1-6tp3jgrkjfb5-opaleplus-diool260721a-04.jpg",
+   "date": "2026-10-20T05:00:32.000Z",
+   "categories": []
+  },
+  {
+   "source": "beauxarts",
+   "sourceLabel": "Beaux Arts",
+   "lang": "fr",
+   "section": "Exposition",
+   "title": "Des maillots de foot et des affiches peintes par Nadjib Ben Ali : le PSG met l’art à l’honneur en s’associant avec Art Basel Paris",
+   "summary": "On aurait pu croire ces deux univers inconciliables. Pourtant, et pour la troisième année consécutive, le club de football du Paris Saint-Germain (PSG) s’allie avec la foire d’art contemporain Art Basel Paris pour faire entrer l’art au …",
+   "url": "https://www.beauxarts.com/vu/des-maillots-de-foot-et-des-affiches-peintes-par-nadjib-ben-ali-le-psg-met-lart-a-lhonneur-en-sassociant-avec-art-basel-paris/",
+   "image": "https://media.beauxarts.com/uploads/2026/10/et-on-dansera-nadjib-ben-ali-x-psg-x-art-basel-1300x904.jpg",
+   "date": "2026-10-20T05:00:13.000Z",
+   "categories": [
+    "Art contemporain",
+    "Expos",
+    "Insolite"
+   ]
+  },
+  {
+   "source": "mediapart",
+   "sourceLabel": "Mediapart",
+   "lang": "fr",
+   "pp": true,
+   "title": "Foucault: une nouvelle archéologie de la sexualité et des questions sans réponse",
+   "summary": "«La Croisade des enfants», nouvel inédit de Foucault qui paraît en cette rentrée, s’interroge sur l’apparition, au XVIIIe siècle, d’un interdit médical de la masturbation. En refermant ce livre reconstitué à partir de notes, des zones …",
+   "url": "https://www.mediapart.fr/journal/culture-et-idees/201026/foucault-une-nouvelle-archeologie-de-la-sexualite-et-des-questions-sans-reponse",
+   "image": "https://static.mediapart.fr/etmagine/default/files/2026/10/16/261016-img-foucault-une-nouvelle-archeologie-de-la-sexualite-et-des-questions-sans-reponses.jpg",
+   "date": "2026-10-20T04:54:24.000Z",
+   "categories": [
+    "Foucault, penseur du présent (2/2)"
+   ]
+  },
+  {
+   "source": "basel",
+   "sourceLabel": "Radio X",
+   "lang": "de",
+   "city": "Bâle",
+   "title": "Yanik Soland im Kunsthaus Baselland: Riesige Instrumente, mystische Klänge und Zeichnungen",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxNa01IRk0xMW96Rkp5UEhQRGNfX0o2dHFPWHcwaUo0MGZiTXBwZDZjVVM2QmNCNV9BeXNFbzgzakVUU294QUtyN0UxLVg1ODV2bFZBbWNPQVdLTnBORGdUTHBjU2Rwb1IzajVpS0lHMnFPWWlXUGRIQ2hLWWxQRjNyVG1PblhHSGVZWHRsZF9iMzRnc1ctZWlYRllOeVBzYWM?oc=5",
+   "image": "",
+   "date": "2026-10-20T04:53:44.000Z",
+   "categories": []
+  },
+  {
+   "source": "basel-kultur",
+   "sourceLabel": "Radio X",
+   "lang": "de",
+   "city": "Bâle · culture",
+   "title": "Yanik Soland im Kunsthaus Baselland: Riesige Instrumente, mystische Klänge und Zeichnungen",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxNa01IRk0xMW96Rkp5UEhQRGNfX0o2dHFPWHcwaUo0MGZiTXBwZDZjVVM2QmNCNV9BeXNFbzgzakVUU294QUtyN0UxLVg1ODV2bFZBbWNPQVdLTnBORGdUTHBjU2Rwb1IzajVpS0lHMnFPWWlXUGRIQ2hLWWxQRjNyVG1PblhHSGVZWHRsZF9iMzRnc1ctZWlYRllOeVBzYWM?oc=5",
+   "image": "",
+   "date": "2026-10-20T04:53:44.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf-neu",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "title": "Neue Weltordnung – Historiker Brendan Simms: «Die Machtpolitik ist definitiv zurück»",
+   "summary": "Die liberale Weltordnung weicht der Machtpolitik. Historiker Brendan Simms über die Folgen – auch für die Schweiz.",
+   "url": "https://www.srf.ch/news/international/neue-weltordnung-historiker-brendan-simms-die-machtpolitik-ist-definitiv-zurueck",
+   "image": "https://www.srf.ch/static/cms/images//320ws/111871.webp",
+   "date": "2026-10-20T04:45:46.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf-int",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "International",
+   "title": "Neue Weltordnung – Historiker Brendan Simms: «Die Machtpolitik ist definitiv zurück»",
+   "summary": "Die liberale Weltordnung weicht der Machtpolitik. Historiker Brendan Simms über die Folgen – auch für die Schweiz.",
+   "url": "https://www.srf.ch/news/international/neue-weltordnung-historiker-brendan-simms-die-machtpolitik-ist-definitiv-zurueck",
+   "image": "https://www.srf.ch/static/cms/images//320ws/111871.webp",
+   "date": "2026-10-20T04:45:46.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf-neu",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "title": "Verschärfung geplant – Heimatschutz für Schweizer Immobilien: Streit um Lex Koller",
+   "summary": "Wer darf in der Schweiz Immobilien kaufen? Nur wer hier wohnt, meint Jacqueline Badran. Viel zu streng, sagt Beat Walti.",
+   "url": "https://www.srf.ch/news/wirtschaft/verschaerfung-geplant-heimatschutz-fuer-schweizer-immobilien-streit-um-lex-koller",
+   "image": "https://www.srf.ch/static/cms/images//320ws/0881d4.webp",
+   "date": "2026-10-20T04:42:31.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf-wirtschaft",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "Wirtschaft",
+   "title": "Verschärfung geplant – Heimatschutz für Schweizer Immobilien: Streit um Lex Koller",
+   "summary": "Wer darf in der Schweiz Immobilien kaufen? Nur wer hier wohnt, meint Jacqueline Badran. Viel zu streng, sagt Beat Walti.",
+   "url": "https://www.srf.ch/news/wirtschaft/verschaerfung-geplant-heimatschutz-fuer-schweizer-immobilien-streit-um-lex-koller",
+   "image": "https://www.srf.ch/static/cms/images//320ws/0881d4.webp",
+   "date": "2026-10-20T04:42:31.000Z",
+   "categories": []
+  },
+  {
+   "source": "rfi",
+   "sourceLabel": "RFI",
+   "lang": "fr",
+   "title": "«Le kadhafisme, c'est aussi le reflet d'une histoire et de bouleversements d'une société»",
+   "summary": "Quinze ans après la mort de Mouammar Kadhafi, le 20 octobre 2011, que reste-t-il de son idéologie et de son héritage en Libye mais aussi au-delà de ses frontières ? Éléments d’analyse et de réflexion avec Virginie Collombier, docteure en …",
+   "url": "https://www.rfi.fr/fr/afrique/20261020-le-kadhafisme-c-est-aussi-le-reflet-d-une-histoire-et-de-bouleversements-d-une-soci%C3%A9t%C3%A9",
+   "image": "https://s.rfi.fr/media/display/8a9506ac-0d2f-11ea-8619-005056a9aa4d/w:1024/p:16x9/kadhafi_3.jpg",
+   "date": "2026-10-20T04:41:43.000Z",
+   "categories": [
+    "Afrique"
+   ]
+  },
+  {
+   "source": "aljazeera",
+   "sourceLabel": "Al Jazeera",
+   "lang": "en",
+   "pp": true,
+   "title": "US Supreme Court to hear case on race in school admissions",
+   "summary": "A group of parents claims local admission policy boosts Black and Latino students while constraining Asian applicants.",
+   "url": "https://www.aljazeera.com/news/2026/10/20/us-supreme-court-to-hear-case-on-race-in-school-admissions?traffic_source=rss",
+   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/AP25176586450360-1792465146.jpg?resize=1920%2C1440",
+   "date": "2026-10-20T04:38:07.000Z",
+   "categories": [
+    "News"
+   ]
+  },
+  {
+   "source": "srf-neu",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "title": "Zwischenwahlen in den USA – Darum geht es bei den Midterms",
+   "summary": "Am 3. November geht es in den USA um die Macht im Kongress. Die wichtigsten Antworten zu den US-Midterms.",
+   "url": "https://www.srf.ch/news/international/usa/zwischenwahlen-in-den-usa-darum-geht-es-bei-den-midterms",
+   "image": "https://www.srf.ch/static/cms/images//320ws/275d73.webp",
+   "date": "2026-10-20T04:36:03.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf-int",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "International",
+   "title": "Zwischenwahlen in den USA – Darum geht es bei den Midterms",
+   "summary": "Am 3. November geht es in den USA um die Macht im Kongress. Die wichtigsten Antworten zu den US-Midterms.",
+   "url": "https://www.srf.ch/news/international/usa/zwischenwahlen-in-den-usa-darum-geht-es-bei-den-midterms",
+   "image": "https://www.srf.ch/static/cms/images//320ws/275d73.webp",
+   "date": "2026-10-20T04:36:03.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf-neu",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "title": "Unabhängigkeitsbewegung – «Make Alberta Great Again»: In Kanadas Westen macht Trump Schule",
+   "summary": "Im der Provinz Alberta hat sich eine rechte Bewegung nach US-Vorbild gebildet. Doch der Weg zur Unabhängigkeit ist weit.",
+   "url": "https://www.srf.ch/news/international/unabhaengigkeitsbewegung-make-alberta-great-again-in-kanadas-westen-macht-trump-schule",
+   "image": "https://www.srf.ch/static/cms/images//320ws/152cc5.webp",
+   "date": "2026-10-20T04:35:42.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf-int",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "International",
+   "title": "Unabhängigkeitsbewegung – «Make Alberta Great Again»: In Kanadas Westen macht Trump Schule",
+   "summary": "Im der Provinz Alberta hat sich eine rechte Bewegung nach US-Vorbild gebildet. Doch der Weg zur Unabhängigkeit ist weit.",
+   "url": "https://www.srf.ch/news/international/unabhaengigkeitsbewegung-make-alberta-great-again-in-kanadas-westen-macht-trump-schule",
+   "image": "https://www.srf.ch/static/cms/images//320ws/152cc5.webp",
+   "date": "2026-10-20T04:35:42.000Z",
+   "categories": []
+  },
+  {
+   "source": "lgc",
+   "sourceLabel": "Le Grand Continent",
+   "lang": "fr",
+   "title": "Pour comprendre les manifestations en Europe, faut-il regarder le prix du gaz ?",
+   "summary": "Le prix du gaz impacte d’abord les industriels, qui utilisent l’énergie dans leurs processus de fabrication. Dans certains pays européens, le prix du mégawattheure (MWh) de gaz peut également peser sur le budget des ménages, notamment là …",
+   "url": "https://legrandcontinent.eu/fr/2026/10/20/pour-comprendre-les-manifestations-en-europe-faut-il-regarder-le-prix-du-gaz/",
+   "image": "https://legrandcontinent.eu/fr/wp-content/uploads/sites/2/2026/10/share-Le-prix-du-gaz-a-augmente-de-72-en-moyenne-pour-les-menages-europeens-depuis-2021.png",
+   "date": "2026-10-20T04:30:00.000Z",
+   "categories": [
+    "Énergie et environnement"
+   ]
+  },
+  {
+   "source": "nzz",
+   "sourceLabel": "NZZ",
+   "lang": "de",
+   "title": "DER ANDERE BLICK - Mehr Steuern gehen in Deutschland immer. Weniger fast nie.",
+   "summary": "Zucker, Kryptowährungen, künstliche Intelligenz: Wenn es um neue Steuern geht, entfalten Politiker grosse Kreativität. In die Gegenrichtung sieht es anders aus. Das müsste nicht so sein.",
+   "url": "https://www.nzz.ch/der-andere-blick/mehr-steuern-gehen-in-deutschland-immer-weniger-fast-nie-ld.10038707",
+   "image": "https://img-msp-prod.nzz.ch/2026/10/12/70248eb5-858f-42e2-974f-0d9b196bf780.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=3407,3407,x852,y0",
+   "date": "2026-10-20T04:30:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "rts",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "title": "Une enquête révèle comment Securitas contourne les règles sur le temps de travail",
+   "summary": "L'entreprise de sécurité Securitas a enfreint des milliers de fois la loi sur le travail en Suisse centrale, révèlent des recherches de SRF. Des spécialistes parlent de graves dysfonctionnements. Securitas reconnaît des erreurs.",
+   "url": "https://www.rts.ch/info/regions/autres-cantons/2026/article/securitas-20-000-infractions-a-la-loi-sur-le-travail-29390107.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/info/regions/autres-cantons/2026/image/e2ec046a-29390415.image?w=320&h=180",
+   "date": "2026-10-20T04:29:09.000Z",
+   "categories": [
+    "Autres cantons"
+   ]
+  },
+  {
+   "source": "rts-regions",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "section": "Régions",
+   "title": "Une enquête révèle comment Securitas contourne les règles sur le temps de travail",
+   "summary": "L'entreprise de sécurité Securitas a enfreint des milliers de fois la loi sur le travail en Suisse centrale, révèlent des recherches de SRF. Des spécialistes parlent de graves dysfonctionnements. Securitas reconnaît des erreurs.",
+   "url": "https://www.rts.ch/info/regions/autres-cantons/2026/article/securitas-20-000-infractions-a-la-loi-sur-le-travail-29390107.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/info/regions/autres-cantons/2026/image/e2ec046a-29390415.image?w=320&h=180",
+   "date": "2026-10-20T04:29:09.000Z",
+   "categories": [
+    "Autres cantons"
+   ]
+  },
+  {
+   "source": "tagesschau",
+   "sourceLabel": "Tagesschau",
+   "lang": "de",
+   "title": "Neue EU-Strategie: Warum die Arktis zum Sicherheitsrisiko wird",
+   "summary": "Lange galt die Arktis als Region mit wenigen Spannungen. Doch die geopolitische Lage hat sich grundlegend geändert, und auch der Klimawandel betrifft den hohen Norden. Eine neue EU-Strategie soll dem Rechnung tragen. Von A. Bartram. [ mehr …",
+   "url": "https://www.tagesschau.de/ausland/europa/arktis-veraenderungen-eu-strategie-100.html",
+   "image": "https://images.tagesschau.de/image/bedb19f4-3c19-4d64-aef7-e6d930b5b74b/AAABoKDNLas/AAABnSSvrFg/16x9-big/landschaft-groenland-100.jpg?width=1920",
+   "date": "2026-10-20T04:27:24.000Z",
+   "categories": []
+  },
+  {
+   "source": "letemps",
+   "sourceLabel": "Le Temps",
+   "lang": "fr",
+   "title": "Qualité de l'eau en Suisse: une plateforme du WWF met en évidence la contamination aux pesticides entre 2019 et 2024",
+   "summary": "Le WWF Suisse met en ligne un outil cartographique inédit pour localiser les cours d'eau et nappes phréatiques touchés. L'ONG dénonce l'opacité des autorités fédérales et l'affaiblissement des normes de protection",
+   "url": "https://www.letemps.ch/articles/pesticides-dans-les-eaux-le-wwf-publie-des-cartes-pour-ameliorer-la-transparence",
+   "image": "https://letemps-17455.kxcdn.com/photos/b688ac27-45ad-415c-832d-f7f20f82e421/medium",
+   "date": "2026-10-20T04:20:46.000Z",
+   "categories": [
+    "Suisse",
+    "Sciences",
+    "Environnement"
+   ]
+  },
+  {
+   "source": "dna",
+   "sourceLabel": "dna.fr",
+   "lang": "fr",
+   "city": "Alsace",
+   "title": "Colmar. Changement climatique : comment la municipalité prévoit d’adapter la ville",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxNRk5rMXoxRW9INnprLTNMTDNQQVFMT2lCZE9Dd0NpUHlDUEU4YjdaR3ByYV90bVpRaTNiXzZ5bUZzZ2hOOVp1d1ZlMW9UWTMyWVR5ZWVCM0RHYVIzVHVkeEVTeVF0aHNnSXJYZUNDMzNlT1Fxc0xnWWJmSGFNbGRZWjFCVDJTS3VUUC1MTm5qUjNMZVg0RkE?oc=5",
+   "image": "",
+   "date": "2026-10-20T04:18:51.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "title": "Trente ans après la « marche blanche » consécutive à l’affaire Dutroux, la Belgique essaie de mieux protéger ses enfants",
+   "summary": "Le 20 octobre 1996, plus de 300 000 Belges défilaient en blanc à Bruxelles pour dénoncer les failles qui avaient permis à Marc Dutroux d’enlever, de séquestrer et de tuer des fillettes. Un choc qui a débouché sur une refonte profonde des …",
+   "url": "https://www.lemonde.fr/international/article/2026/10/20/trente-ans-apres-la-marche-blanche-consecutive-a-l-affaire-dutroux-la-belgique-essaie-de-mieux-proteger-ses-enfants_6797867_3210.html",
+   "image": "https://img.lemde.fr/2026/10/19/250/0/1984/992/644/322/60/0/f86f7fa_upload-1-noxu2ihaa46u-ap96102001543.jpg",
+   "date": "2026-10-20T04:15:09.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde-europe",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "section": "Europe",
+   "title": "Trente ans après la « marche blanche » consécutive à l’affaire Dutroux, la Belgique essaie de mieux protéger ses enfants",
+   "summary": "Le 20 octobre 1996, plus de 300 000 Belges défilaient en blanc à Bruxelles pour dénoncer les failles qui avaient permis à Marc Dutroux d’enlever, de séquestrer et de tuer des fillettes. Un choc qui a débouché sur une refonte profonde des …",
+   "url": "https://www.lemonde.fr/international/article/2026/10/20/trente-ans-apres-la-marche-blanche-consecutive-a-l-affaire-dutroux-la-belgique-essaie-de-mieux-proteger-ses-enfants_6797867_3210.html",
+   "image": "https://img.lemde.fr/2026/10/19/250/0/1984/992/644/322/60/0/f86f7fa_upload-1-noxu2ihaa46u-ap96102001543.jpg",
+   "date": "2026-10-20T04:15:09.000Z",
+   "categories": []
+  },
+  {
+   "source": "lgc",
+   "sourceLabel": "Le Grand Continent",
+   "lang": "fr",
+   "title": "Le piège italien de la politique française",
+   "summary": "Si l’histoire de la République italienne est jalonnée de décisions prises en dehors de ses frontières, il ne faut pas appréhender celles-ci comme relevant uniquement de la politique étrangère. La formation des majorités, les choix …",
+   "url": "https://legrandcontinent.eu/fr/2026/10/20/le-piege-italien-de-la-politique-francaise/",
+   "image": "https://legrandcontinent.eu/fr/wp-content/uploads/sites/2/2026/10/gc-share-franceitalie.jpg",
+   "date": "2026-10-20T04:13:57.000Z",
+   "categories": [
+    "Histoire"
+   ]
+  },
+  {
+   "source": "aljazeera",
+   "sourceLabel": "Al Jazeera",
+   "lang": "en",
+   "pp": true,
+   "title": "Japan launches historic mission to bring back Mars moon samples",
+   "summary": "Japan has launched a five-year uncrewed mission to collect samples from Phobos, one of Mars’ two moons.",
+   "url": "https://www.aljazeera.com/video/newsfeed/2026/10/20/japan-launches-historic-mission-to-bring-back-mars-moon-samples?traffic_source=rss",
+   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/image-1792469288.jpg?resize=1920%2C1080&quality=80",
+   "date": "2026-10-20T04:08:33.000Z",
+   "categories": [
+    "News"
+   ]
+  },
+  {
+   "source": "vienne",
+   "sourceLabel": "ORF Wien",
+   "lang": "de",
+   "city": "Vienne",
+   "title": "Landtag beschließt neue AirBnB-Regeln",
+   "summary": "Der Wiener Landtag beschließt am Dienstag strengere Regeln für Kurzzeitvermietungen, etwa über AirBnB. Ab Jänner brauchen Vermieterinnen und Vermieter eine Registrierungsnummer. Außerdem fordert die ÖVP mit einem dringlichen Antrag eine …",
+   "url": "https://wien.orf.at/stories/3375904/",
+   "image": "https://oekastatic.orf.at/mims/2024/26/03/crops/w=1280/2256196_opener_857403_schluesseltresore_o.jpg?s=6d16ebdbb43856a73ac8c3dae035af3a57e4828e",
+   "date": "2026-10-20T04:05:00.000Z",
+   "categories": [
+    "Politik Inland"
+   ]
+  },
+  {
+   "source": "yle",
+   "sourceLabel": "Yle",
+   "lang": "fi",
+   "section": "Suomi",
+   "title": "Kalifornia voi ottaa käyttöön maailman ensimmäisen miljardööriveron – superrikkaat vastustavat",
+   "summary": "Äänestäjät päättävät marraskuun välivaaleissa, korvataanko liittovaltion leikkaamat määrärahat terveydenhuollosta verottamalla superrikkaita.",
+   "url": "https://yle.fi/a/74-20250053?origin=rss",
+   "image": "https://img.img-cdn.yle.fi/crop_extract,w_2999,h_1687,x_0,y_49/crop_fill,w_1200,h_628/f_auto/39-17186906ac5fe808335b/1791360776",
+   "date": "2026-10-20T04:00:35.000Z",
+   "categories": [
+    "Yhdysvallat",
+    "USA:n välivaalit 2026",
+    "Kalifornia"
+   ]
+  },
+  {
+   "source": "lemonde",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "title": "En Australie, la députée renversée intentionnellement par un conducteur est « dans un état critique »",
+   "summary": "« Ce n’était pas un accident. Il s’agi[ssai]t d’un acte délibéré », a déclaré lundi le premier ministre australien, Anthony Albanese, ajoutant qu’un suspect se trouvait en garde à vue. L’unité antiterroriste a été saisie, mais le mobile de …",
+   "url": "https://www.lemonde.fr/international/article/2026/10/20/en-australie-la-deputee-renversee-intentionnellement-par-un-conducteur-est-dans-un-etat-critique_6797519_3211.html",
+   "image": "https://img.lemde.fr/2026/10/19/379/0/7623/3811/644/322/60/0/1e6ddbc_ftp-1-vxunnqxnrupj-2026-10-19t092930z-2139155525-rc2tenaapg5b-rtrmadp-3-australia-haines.JPG",
+   "date": "2026-10-20T04:00:33.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "title": "La Slovaquie, nouveau pôle européen de production de munitions : « Nous nous appuyons sur l’héritage de nos ancêtres »",
+   "summary": "Portées par la demande due à la guerre en Ukraine, les usines slovaques de fabrication d’obus tournent à plein régime. Notamment celles du groupe tchèque CSG, devenu un colosse européen de l’industrie de la défense.",
+   "url": "https://www.lemonde.fr/economie/article/2026/10/20/la-slovaquie-nouveau-pole-europeen-de-production-de-munitions-nous-nous-appuyons-sur-l-heritage-de-nos-ancetres_6797866_3234.html",
+   "image": "https://img.lemde.fr/2026/10/13/468/0/3500/1750/644/322/60/0/ec5e900_upload-1-rnl1rni4fa0f-2025-12-16t125737z-1762493277-rc2khianz895-rtrmadp-3-csg-slovakia-arms-manufacturer.JPG",
+   "date": "2026-10-20T04:00:24.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde-europe",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "section": "Europe",
+   "title": "La Slovaquie, nouveau pôle européen de production de munitions : « Nous nous appuyons sur l’héritage de nos ancêtres »",
+   "summary": "Portées par la demande due à la guerre en Ukraine, les usines slovaques de fabrication d’obus tournent à plein régime. Notamment celles du groupe tchèque CSG, devenu un colosse européen de l’industrie de la défense.",
+   "url": "https://www.lemonde.fr/economie/article/2026/10/20/la-slovaquie-nouveau-pole-europeen-de-production-de-munitions-nous-nous-appuyons-sur-l-heritage-de-nos-ancetres_6797866_3234.html",
+   "image": "https://img.lemde.fr/2026/10/13/468/0/3500/1750/644/322/60/0/ec5e900_upload-1-rnl1rni4fa0f-2025-12-16t125737z-1762493277-rc2khianz895-rtrmadp-3-csg-slovakia-arms-manufacturer.JPG",
+   "date": "2026-10-20T04:00:24.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde-defense",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "section": "Défense",
+   "title": "La Slovaquie, nouveau pôle européen de production de munitions : « Nous nous appuyons sur l’héritage de nos ancêtres »",
+   "summary": "Portées par la demande due à la guerre en Ukraine, les usines slovaques de fabrication d’obus tournent à plein régime. Notamment celles du groupe tchèque CSG, devenu un colosse européen de l’industrie de la défense.",
+   "url": "https://www.lemonde.fr/economie/article/2026/10/20/la-slovaquie-nouveau-pole-europeen-de-production-de-munitions-nous-nous-appuyons-sur-l-heritage-de-nos-ancetres_6797866_3234.html",
+   "image": "https://img.lemde.fr/2026/10/13/468/0/3500/1750/644/322/60/0/ec5e900_upload-1-rnl1rni4fa0f-2025-12-16t125737z-1762493277-rc2khianz895-rtrmadp-3-csg-slovakia-arms-manufacturer.JPG",
+   "date": "2026-10-20T04:00:24.000Z",
+   "categories": []
+  },
+  {
+   "source": "eflux",
+   "sourceLabel": "e-flux",
+   "lang": "en",
+   "section": "Exposition",
+   "title": "Eva Schlegel: Falling up - E-Flux",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBTd0NfN3pvWG5KbFQ4TjJSNlB2QUJWUF9lalhET3JPbEVYNU1zc2M1Y3hjRHRTYWg4WEFwcXNDUXd3QU5Nemc1cjFKNGtVNnNRczBEZUlVUDZUcW1MeG1yOUJ3SDQzaWJJSDBCRTVBTzVfWGlqQkE?oc=5",
+   "image": "",
+   "date": "2026-10-20T04:00:06.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "title": "Italie, Espagne, Belgique, Portugal : en Europe, la colère sociale gagne du terrain, sur fond de flambée des prix de l’énergie et de crise du logement",
+   "summary": "Il n’y a pas qu’en France que le coût de la vie mobilise : les images de manifestations, parfois violentes, se multiplient à travers l’Europe. Les Italiens sont appelés à une grève générale le 20 novembre, tandis qu’un mouvement similaire …",
+   "url": "https://www.lemonde.fr/international/article/2026/10/20/italie-espagne-belgique-portugal-en-europe-la-colere-sociale-gagne-du-terrain-sur-fond-de-flambee-des-prix-de-l-energie-et-de-crise-du-logement_6797862_3210.html",
+   "image": "https://img.lemde.fr/2026/10/17/85/0/1024/512/644/322/60/0/e69281a_ftp-1-m1zajatifpuw-afp-d3lk2m4-1024.jpg",
+   "date": "2026-10-20T04:00:03.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde-europe",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "section": "Europe",
+   "title": "Italie, Espagne, Belgique, Portugal : en Europe, la colère sociale gagne du terrain, sur fond de flambée des prix de l’énergie et de crise du logement",
+   "summary": "Il n’y a pas qu’en France que le coût de la vie mobilise : les images de manifestations, parfois violentes, se multiplient à travers l’Europe. Les Italiens sont appelés à une grève générale le 20 novembre, tandis qu’un mouvement similaire …",
+   "url": "https://www.lemonde.fr/international/article/2026/10/20/italie-espagne-belgique-portugal-en-europe-la-colere-sociale-gagne-du-terrain-sur-fond-de-flambee-des-prix-de-l-energie-et-de-crise-du-logement_6797862_3210.html",
+   "image": "https://img.lemde.fr/2026/10/17/85/0/1024/512/644/322/60/0/e69281a_ftp-1-m1zajatifpuw-afp-d3lk2m4-1024.jpg",
+   "date": "2026-10-20T04:00:03.000Z",
+   "categories": []
+  },
+  {
+   "source": "strasbourg",
+   "sourceLabel": "Rue89 Strasbourg",
+   "lang": "fr",
+   "city": "Strasbourg",
+   "title": "À Haguenau, la clinique Saint-François ferme son centre de soins non programmés",
+   "summary": "La clinique Saint-François a annoncé la fermeture définitive du centre de soins non programmés à partir du vendredi 26 octobre. Après plusieurs semaines d'incertitudes, le personnel a été informé via une note de service.",
+   "url": "https://www.rue89strasbourg.com/haguenau-clinique-saint-francois-soins-non-programmes-399990",
+   "image": "https://www.rue89strasbourg.com/wp-content/uploads/2026/10/clinique-st-francois.jpg__rs?x=50&y=50",
+   "date": "2026-10-20T04:00:00.000Z",
+   "categories": [
+    "En bref",
+    "clinique Saint-François",
+    "Santé"
+   ]
+  },
+  {
+   "source": "strasbourg",
+   "sourceLabel": "Rue89 Strasbourg",
+   "lang": "fr",
+   "city": "Strasbourg",
+   "title": "En Alsace, des salles catholiques continuent d’accueillir les réunions d’Égalité et Réconciliation",
+   "summary": "Trois salles paroissiales catholiques ont hébergé plusieurs réunions du mouvement Égalité et Réconciliation en 2025 et 2026. Alerté sur le sujet dès 2024, le diocèse de Strasbourg semble incapable d'empêcher l'accueil des conférences de ce …",
+   "url": "https://www.rue89strasbourg.com/alertes-salles-catholiques-accueillent-les-reunions-egalite-reconciliation-399967",
+   "image": "https://www.rue89strasbourg.com/wp-content/uploads/2026/10/gu1ug-dxyaafr4k-scaled.jpeg__rs?x=50&y=50",
+   "date": "2026-10-20T04:00:00.000Z",
+   "categories": [
+    "Édition abonnés",
+    "antisémitisme",
+    "archevêché de Strasbourg"
+   ]
+  },
+  {
+   "source": "bajour",
+   "sourceLabel": "Bajour",
+   "lang": "de",
+   "city": "Bâle",
+   "title": "Referendum gegen «Dreispitz Nord» offenbar gescheitert",
+   "summary": "Das anonyme Referendumskomitee habe den Aufwand des Unterschriften-Sammelns unterschätzt.",
+   "url": "https://bajour.ch/a/referendum-gegen-dreispitz-nord-offenbar-gescheitert",
+   "image": "",
+   "date": "2026-10-20T04:00:00.000Z",
+   "categories": [
+    "Kurz-News"
+   ]
+  },
+  {
+   "source": "bajour",
+   "sourceLabel": "Bajour",
+   "lang": "de",
+   "city": "Bâle",
+   "title": "FDP Basel-Stadt nominiert Nationalratskandidat*innen",
+   "summary": "Bereits ein Jahr vor den Wahlen geben die Freisinnigen ihr Viergespann bekannt.",
+   "url": "https://bajour.ch/a/fdp-basel-stadt-nominiert-nationalratskandidatinnen",
+   "image": "",
+   "date": "2026-10-20T04:00:00.000Z",
+   "categories": [
+    "Kurz-News"
+   ]
+  },
+  {
+   "source": "basel-museen",
+   "sourceLabel": "NZZ Bellevue",
+   "lang": "de",
+   "city": "Bâle · culture",
+   "section": "Exposition",
+   "title": "Filigrane Kunst aus Draht: Die neue Ausstellung zu Ruth Asawa in der Fondation Beyeler",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNcEl0ZE5iSUFHRzI2U2lvOHpVVk9EbjBEd0JHRmhSLVY1OU9hSzVpcXhaVnk0WjNkbjRCUHAwN2ZjbEFENjc2SjgzUWFiSV80c29hVlRaTHc4WDZBc24wVXEwVUg5MnRPZy1zZkpldTZmakJ6bFB0Zjcwdm5hVDd2Mmt3WHg2WnpzSWo2dHJUOFNBQ3NIelJGMTVuNm1BMmZPOE12OUZ3dGNNUGhNMGxjM1lteXNVUHdNQXdj?oc=5",
+   "image": "",
+   "date": "2026-10-20T04:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "basel-kultur",
+   "sourceLabel": "NZZ Bellevue",
+   "lang": "de",
+   "city": "Bâle · culture",
+   "title": "Filigrane Kunst aus Draht: Die neue Ausstellung zu Ruth Asawa in der Fondation Beyeler",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNcEl0ZE5iSUFHRzI2U2lvOHpVVk9EbjBEd0JHRmhSLVY1OU9hSzVpcXhaVnk0WjNkbjRCUHAwN2ZjbEFENjc2SjgzUWFiSV80c29hVlRaTHc4WDZBc24wVXEwVUg5MnRPZy1zZkpldTZmakJ6bFB0Zjcwdm5hVDd2Mmt3WHg2WnpzSWo2dHJUOFNBQ3NIelJGMTVuNm1BMmZPOE12OUZ3dGNNUGhNMGxjM1lteXNVUHdNQXdj?oc=5",
+   "image": "",
+   "date": "2026-10-20T04:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "aljazeera",
+   "sourceLabel": "Al Jazeera",
+   "lang": "en",
+   "pp": true,
+   "title": "Fourteen dead in illegal Colombian gold mine collapse",
+   "summary": "Fourteen dead in illegal Colombian gold mine collapse",
+   "url": "https://www.aljazeera.com/video/newsfeed/2026/10/20/fourteen-dead-in-illegal-colombian-gold-mine-collapse?traffic_source=rss",
+   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/gold-mine-horizontal-thumb-1792468447.jpg?resize=1920%2C1080&quality=80",
+   "date": "2026-10-20T03:55:27.000Z",
+   "categories": [
+    "Show Types"
+   ]
+  },
+  {
+   "source": "courrier",
+   "sourceLabel": "Courrier international",
+   "lang": "fr",
+   "title": "Ukraine, Kenya, Yémen, États-Unis et Colombie : les informations de la nuit",
+   "summary": "Les principales actualités de ces dernières heures vues par la presse internationale.",
+   "url": "https://www.courrierinternational.com/article/pendant-que-vous-dormiez-ukraine-kenya-yemen-etats-unis-et-colombie-les-informations-de-la-nuit_279876",
+   "image": "https://focus.courrierinternational.com/2026/10/19/0/0/4000/2667/644/0/60/0/2755b57_ftp-1-c27f2c4maid5-trump-scene-14.JPG",
+   "date": "2026-10-20T03:55:01.000Z",
+   "categories": [
+    "Pendant que vous dormiez"
+   ]
+  },
+  {
+   "source": "courrier",
+   "sourceLabel": "Courrier international",
+   "lang": "fr",
+   "title": "Immigration, LFI, casseurs, désorganisation, Macron : le “jeu des responsables” pour les émeutes a débuté",
+   "summary": "Un couvre-feu a été instauré dans plusieurs grandes villes françaises, signe de l’image de fermeté que veut renvoyer le gouvernement. Mais Emmanuel Macron est en déplacement dans le Golfe et Donald Trump pointe le rôle de l’immigration …",
+   "url": "https://www.courrierinternational.com/article/vu-de-l-etranger-immigration-lfi-casseurs-desorganisation-macron-le-jeu-des-responsables-pour-les-emeutes-a-debute_279843",
+   "image": "https://focus.courrierinternational.com/2026/10/19/0/0/8256/5504/644/0/60/0/702e719_ftp-1-wddfkly0cf5n-afp-d3rv396.jpg",
+   "date": "2026-10-20T03:55:01.000Z",
+   "categories": [
+    "Vu de l'étranger"
+   ]
+  },
+  {
+   "source": "srf-int",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "International",
+   "title": "Von Frankreich bis Albanien – Warum Proteste ansteckend sein können",
+   "summary": "Ihre Forderungen sind teilweise unterschiedlich – trotzdem scheinen sich die Proteste in Europa gegenseitig zu befeuern.",
+   "url": "https://www.srf.ch/news/international/von-frankreich-bis-albanien-warum-proteste-ansteckend-sein-koennen",
+   "image": "https://www.srf.ch/static/cms/images//320ws/79f5c7.webp",
+   "date": "2026-10-20T03:53:37.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "Schweiz",
+   "title": "Brand, Attentat und Grounding – Der Katastrophenherbst 2001: Die politischen Folgen sind enorm",
+   "summary": "Nach dem Gotthard-Inferno, dem Zuger Attentat und dem Swissair-Grounding werden Milliarden in die Sicherheit investiert.",
+   "url": "https://www.srf.ch/news/schweiz/brand-attentat-und-grounding-der-katastrophenherbst-2001-die-politischen-folgen-sind-enorm",
+   "image": "https://www.srf.ch/static/cms/images//320ws/eddfc97.webp",
+   "date": "2026-10-20T03:52:42.000Z",
+   "categories": []
+  },
+  {
+   "source": "srf",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "Schweiz",
+   "title": "Ribcraft-Ausbildungsboot – Drei Armeeangehörige bei Bootsunfall im Raum Gersau SZ verletzt",
+   "summary": "Alle drei Personen wurden beim Unfall auf dem Vierwaldstättersee verletzt und mussten ins Spital, teilte die Armee mit.",
+   "url": "https://www.srf.ch/news/schweiz/ribcraft-ausbildungsboot-drei-armeeangehoerige-bei-bootsunfall-im-raum-gersau-sz-verletzt",
+   "image": "https://www.srf.ch/static/cms/images//320ws/6c3fa8a.webp",
+   "date": "2026-10-20T03:52:05.000Z",
+   "categories": []
+  },
+  {
+   "source": "vienne",
+   "sourceLabel": "ORF Wien",
+   "lang": "de",
+   "city": "Vienne",
+   "title": "Macht und Intrigen der Antike im KHM",
+   "summary": "Kleopatra, Caesar und Augustus: Die KHM-Ausstellung „Tatort Ephesos“ in der Neuen Hofburg soll in die Machtkämpfe zwischen Ägypten und Rom einführen. Bis Ende März sind rund 100 Objekte zu sehen, darunter Leihgaben aus dem Louvre und dem …",
+   "url": "https://wien.orf.at/stories/3375915/",
+   "image": "https://oekastatic.orf.at/mims/2026/43/22/crops/w=1280/3222239_opener_1250422_11-prev_sa_26_001_tatort_ephesos_ds_102026-15.jpg?s=eac5d254b259a8ce91a4be7b8de22a11fe1a859b",
+   "date": "2026-10-20T03:50:00.000Z",
+   "categories": [
+    "Kultur"
+   ]
+  },
+  {
+   "source": "srf",
+   "sourceLabel": "SRF",
+   "lang": "de",
+   "section": "Schweiz",
+   "title": "Eröffnung Pilatus Tower – Wer hier oben wohnen will, braucht sehr viel Geld",
+   "summary": "Das Krienser Hochhaus ist fast ausverkauft – trotz teurer Wohnungen. Die Stadt freut es, Kritiker sind nicht begeistert.",
+   "url": "https://www.srf.ch/news/schweiz/eroeffnung-pilatus-tower-wer-hier-oben-wohnen-will-braucht-sehr-viel-geld",
+   "image": "https://www.srf.ch/static/cms/images//320ws/264d81a.webp",
+   "date": "2026-10-20T03:49:41.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "title": "En Algérie, les commentaires non autorisés sur l’économie exposent à des sanctions",
+   "summary": "La condamnation à quatre ans de prison d’un universitaire pour ses propos sur l’industrie extractive fait suite à la rétrogradation d’un ministre en vue en raison de ses propos dénonçant l’envolée des prix de la tomate.",
+   "url": "https://www.lemonde.fr/afrique/article/2026/10/20/en-algerie-les-commentaires-non-autorises-sur-l-economie-exposent-a-des-sanctions_6797860_3212.html",
+   "image": "https://img.lemde.fr/2026/10/19/93/0/2651/1325/644/322/60/0/5ffa0f3_upload-1-u0bxnqehlm6r-000-b4ng2a2.jpg",
+   "date": "2026-10-20T03:45:02.000Z",
+   "categories": []
+  },
+  {
+   "source": "lemonde-europe",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "section": "Europe",
+   "title": "A Madrid, Woody Allen filme la capitale rêvée des autorités locales",
+   "summary": "A presque 91 ans, le cinéaste américain tourne son 51ᵉ film, soutenu à hauteur de 3 millions d’euros par la mairie et la région. Elles entendent ainsi renforcer le rayonnement international de la ville secouée par une crise du logement.",
+   "url": "https://www.lemonde.fr/international/article/2026/10/20/a-madrid-woody-allen-filme-la-capitale-revee-des-autorites-locales_6797859_3210.html",
+   "image": "https://img.lemde.fr/2026/10/20/90/0/2454/1227/644/322/60/0/5c444c8_upload-1-zkmjhxq4sfyc-capture-d-e-cran-2026-10-20-a-03-54-39.png",
+   "date": "2026-10-20T03:35:03.000Z",
+   "categories": []
+  },
+  {
+   "source": "nzz",
+   "sourceLabel": "NZZ",
+   "lang": "de",
+   "title": "KOMMENTAR - Cannabislegalisierung – mit der neuen Freiheit wird es nichts werden",
+   "summary": "Lasche Gesetze in der Drogenpolitik haben gefährliche Nebenwirkungen – das gilt auch für eine vermeintlich harmlose Substanz wie Cannabis. Eine kluge Legalisierung bringt deshalb mehr als weniger Kontrolle.",
+   "url": "https://www.nzz.ch/meinung/cannabislegalisierung-mit-der-neuen-freiheit-wird-es-nichts-werden-ld.10032979",
+   "image": "https://img-msp-prod.nzz.ch/2026/10/19/06b9a91c-57ef-40a0-94e2-2f0029ea72e2.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=4002,4002,x1998,y0",
+   "date": "2026-10-20T03:35:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "nzz",
+   "sourceLabel": "NZZ",
+   "lang": "de",
+   "title": "Ein erfundener General, Phantasiemilliarden und endlose Nachsicht mit Putin: Wie Donald Trump Fake News über die Ukraine verbreitet",
+   "summary": "Der amerikanische Präsident tischt regelmässig Halbwahrheiten und Falschbehauptungen zum Ukraine-Krieg auf. Drei Beispiele aus seinem jüngsten Fernsehinterview illustrieren, wie er dabei vorgeht.",
+   "url": "https://www.nzz.ch/international/ukraine-fake-news-von-trump-ein-erfundener-general-phantasiemilliarden-und-endlose-nachsicht-mit-putin-ld.10038220",
+   "image": "https://img-msp-prod.nzz.ch/2026/10/19/b466d806-c367-4317-9a76-90c7ea9ac67c.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=3964,3964,x702,y0",
+   "date": "2026-10-20T03:30:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "nzz",
+   "sourceLabel": "NZZ",
+   "lang": "de",
+   "title": "KOMMENTAR - Drohnen im Kampf gegen Raser? Die Polizei darf nicht allein bestimmen, wie weit die Überwachung geht",
+   "summary": "Die Kantonspolizei St. Gallen führt aus der Luft Verkehrskontrollen mit Drohnen durch. Ob es dafür eine genügende gesetzliche Grundlage gibt, ist umstritten – doch dies wäre zum Schutz der Privatsphäre zwingend.",
+   "url": "https://www.nzz.ch/meinung/drohnen-im-kampf-gegen-raser-die-polizei-darf-nicht-allein-bestimmen-wie-weit-die-ueberwachung-geht-ld.10038174",
+   "image": "https://img-msp-prod.nzz.ch/2026/10/19/6223b532-e219-4ab7-a2e9-b9d55d9975ab.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=793,793,x772,y364",
+   "date": "2026-10-20T03:30:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "aljazeera",
+   "sourceLabel": "Al Jazeera",
+   "lang": "en",
+   "pp": true,
+   "title": "‘Deliberate’ car ramming of Australian MP an isolated incident, police say",
+   "summary": "A 43-year-old man accused of deliberately hitting Helen Haines outside her office is in police custody.",
+   "url": "https://www.aljazeera.com/news/2026/10/20/deliberate-car-ramming-of-australian-mp-an-isolated-incident-police-say?traffic_source=rss",
+   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/2026-10-19T231844Z_2004721125_RC2TENAAPG5B_RTRMADP_3_AUSTRALIA-HAINES-1792460777.jpg?resize=1920%2C1440",
+   "date": "2026-10-20T03:24:18.000Z",
+   "categories": [
+    "News"
+   ]
+  },
+  {
+   "source": "lemonde-europe",
+   "sourceLabel": "Le Monde",
+   "lang": "fr",
+   "section": "Europe",
+   "title": "EN DIRECT, guerre en Ukraine : « La Russie s’est bien comportée avec l’Ukraine. Elle n’a pas fait grand-chose », estime Donald Trump",
+   "summary": "Le président américain a renouvelé, lundi, ses critiques de Volodymyr Zelensky en disant qu’il « était temps » pour l’Ukraine de changer de dirigeant. Le président ukrainien a, lui, accusé Washington de retarder la livraison à Kiev de …",
+   "url": "https://www.lemonde.fr/international/live/2026/10/20/en-direct-guerre-en-ukraine-la-russie-s-est-bien-comportee-avec-l-ukraine-elle-n-a-pas-fait-grand-chose-estime-donald-trump_6796922_3210.html",
+   "image": "https://img.lemde.fr/2026/10/19/726/0/8094/4047/644/322/60/0/6571a1e_ftp-1-0r4srxcqkrfb-d820246eb270471f96ba348adf723ee9-0-a67d0b5779eb4f6e91760746416a70b8.jpg",
+   "date": "2026-10-20T03:19:15.000Z",
+   "categories": []
+  },
+  {
+   "source": "tagesschau",
+   "sourceLabel": "Tagesschau",
+   "lang": "de",
+   "title": "Wahrscheinliches Steuer-Plus weckt Begehrlichkeiten",
+   "summary": "Von heute an berät der Arbeitskreis Steuerschätzung darüber, mit wie vielen Steuereinnahmen Bund und Länder rechnen können. Es könnte mehr sein als bislang erwartet. Das weckt Begehrlichkeiten. Von Philipp Eckstein. [ mehr ]",
+   "url": "https://www.tagesschau.de/inland/innenpolitik/steuereinnahmen-bund-laender-steuerschaetzung-100.html",
+   "image": "https://images.tagesschau.de/image/15dfef23-d764-46ed-89b8-ff6c12569e9e/AAABoVT6oRw/AAABnSSvrFg/16x9-big/merz-klingbeil-170.jpg?width=1920",
+   "date": "2026-10-20T03:15:05.000Z",
+   "categories": []
+  },
+  {
+   "source": "rfi",
+   "sourceLabel": "RFI",
+   "lang": "fr",
+   "title": "Mobilisation en France: après les violences, les premières condamnations sont tombées",
+   "summary": "Alors que l'exécutif a annoncé le placement en garde à vue de 2 513 personnes et l'incarcération de 67 autres individus après les violences du week-end des 17 et 18 octobre en France, les premières comparutions immédiates ont eu lieu dans …",
+   "url": "https://www.rfi.fr/fr/france/20261020-mobilisation-en-france-apr%C3%A8s-les-violences-les-premi%C3%A8res-condamnations-sont-tomb%C3%A9es",
+   "image": "https://s.rfi.fr/media/display/931290aa-cc0a-11f1-a267-2d1c143cdef3/w:1024/p:16x9/AP26292579033067.jpg",
+   "date": "2026-10-20T03:08:08.000Z",
+   "categories": [
+    "France"
+   ]
+  },
+  {
+   "source": "courrier",
+   "sourceLabel": "Courrier international",
+   "lang": "fr",
+   "title": "Alamut, cette forteresse qui a inspiré le jeu vidéo “Assassin’s Creed”",
+   "summary": "Iran – XIᵉ-XIIᵉ siècle. Le 26 juillet dernier, l’Unesco a inscrit au patrimoine mondial de l’humanité la forteresse d’Alamut. Ce site isolé dans les montagnes iraniennes a alimenté de nombreuses légendes, notamment celle d’une secte …",
+   "url": "https://www.courrierinternational.com/article/histoire-alamut-cette-forteresse-qui-a-inspire-le-jeu-video-assassin-s-creed_274689",
+   "image": "https://focus.courrierinternational.com/2026/10/13/0/0/3543/2362/644/0/60/0/7ea8dcc_upload-1-hbj6r9eiovmu-web-1876-site-1770-0002.jpg",
+   "date": "2026-10-20T03:00:32.000Z",
+   "categories": [
+    "Histoire"
+   ]
+  },
+  {
+   "source": "courrier",
+   "sourceLabel": "Courrier international",
+   "lang": "fr",
+   "title": "Le duel annoncé pour la présidentielle française mène droit à une crise de la dette en Europe",
+   "summary": "Aucun des deux candidats en tête des sondages ne s’attaque sérieusement au problème de la dette colossale du pays. Jean-Luc Mélenchon veut la geler et risque une crise de la zone euro ; le budget de Marine Le Pen retranche deux tiers de la …",
+   "url": "https://www.courrierinternational.com/article/vu-du-royaume-uni-le-duel-annonce-pour-la-presidentielle-francaise-mene-droit-a-une-crise-de-la-dette-en-europe_279233",
+   "image": "https://focus.courrierinternational.com/2026/10/19/0/0/2388/1668/644/0/60/0/014b31d_upload-1-niizjk454eb4-morales-izq-2022-04-10-7038.jpg",
+   "date": "2026-10-20T03:00:29.000Z",
+   "categories": [
+    "Vu du Royaume-Uni"
+   ]
+  },
+  {
+   "source": "politico",
+   "sourceLabel": "POLITICO.eu",
+   "lang": "en",
+   "section": "Brussels",
+   "title": "French riots lay bare risks and opportunities for 2027 election candidates",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxOMkwyOVp6UU5QbHBYYWR0aDljVVhmSV9XTnRBQ0JSbVgtVnlwTXdaUTBzUktYZzllRXZEb05Td0NvVWM5elpDMVJUZGd3V2NSY1NHZDRNekNTZXZoM19NVGtiU1BKMzNJRWtMRU9SZlVMNkdrcGQ5aVZZcVpldGd4RlRDb2hYbGhubUY0MVNtRnJONEd2WkdmOXJNdHBzSU5jRTV5Y2MzcjdTbE0?oc=5",
+   "image": "",
+   "date": "2026-10-20T03:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "basel",
+   "sourceLabel": "bz Basel",
+   "lang": "de",
+   "city": "Bâle",
+   "title": "«Verkehr 45» oder Stillstand: Das sind die fünf dicksten Brocken für die Region Basel",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOWS11SENqcEpBdmN0NVpUQUdNbGQ3T3NUVzNDQ1JudFBDQ0VVZktlMnFYcFpLSTR5MnNBUzB5SDl0dWFaZWtWOVMtRHFtVE9PX1pYRW9oUVhZMC1xTXR0Y05UZFJ5ODZncGdRQ2stMWxnT0xJbXA1RDU5by1hZm8zM1U1WS1UQk1UMTBMaHNmSUh2MElUQ1g1bFpORHdnS0JjeVJ2VDkxUnFzajdocFlaY3BkVUNqdElzSHltc19TODVON1E?oc=5",
+   "image": "",
+   "date": "2026-10-20T03:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "bz",
+   "sourceLabel": "bz Basel",
+   "lang": "de",
+   "city": "Bâle",
+   "title": "«Verkehr 45» oder Stillstand: Das sind die fünf dicksten Brocken für die Region Basel",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOWS11SENqcEpBdmN0NVpUQUdNbGQ3T3NUVzNDQ1JudFBDQ0VVZktlMnFYcFpLSTR5MnNBUzB5SDl0dWFaZWtWOVMtRHFtVE9PX1pYRW9oUVhZMC1xTXR0Y05UZFJ5ODZncGdRQ2stMWxnT0xJbXA1RDU5by1hZm8zM1U1WS1UQk1UMTBMaHNmSUh2MElUQ1g1bFpORHdnS0JjeVJ2VDkxUnFzajdocFlaY3BkVUNqdElzSHltc19TODVON1E?oc=5",
+   "image": "",
+   "date": "2026-10-20T03:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "republik",
+   "sourceLabel": "Republik",
+   "lang": "de",
+   "title": "Über die Gefahren extremer Männlichkeit. Ausserdem: Die Philosophie-Kolumne. Und was passiert, wenn niemand mehr liest? Eine neue «Gute Frage!»",
+   "summary": "Beitrag öffnen",
+   "url": "https://www.republik.ch/2026/10/20/republik-heute?utm_medium=rss",
+   "image": "",
+   "date": "2026-10-20T03:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "rts",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "title": "L'Ukraine accuse les Etats-Unis de retarder délibérément la livraison de missiles",
+   "summary": "Le président ukrainien Volodymyr Zelensky a accusé lundi Washington de retarder à dessein la livraison prévue de missiles intercepteurs à son pays, dans une phase de crispation avec Donald Trump, qui s'est dit prêt à rencontrer Vladimir …",
+   "url": "https://www.rts.ch/info/monde/2026/article/l-ukraine-accuse-les-etats-unis-de-retarder-la-livraison-de-missiles-29390897.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/c9508795-29390896.image?w=320&h=180",
+   "date": "2026-10-20T02:51:09.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "rts-monde",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "section": "Monde",
+   "title": "L'Ukraine accuse les Etats-Unis de retarder délibérément la livraison de missiles",
+   "summary": "Le président ukrainien Volodymyr Zelensky a accusé lundi Washington de retarder à dessein la livraison prévue de missiles intercepteurs à son pays, dans une phase de crispation avec Donald Trump, qui s'est dit prêt à rencontrer Vladimir …",
+   "url": "https://www.rts.ch/info/monde/2026/article/l-ukraine-accuse-les-etats-unis-de-retarder-la-livraison-de-missiles-29390897.html?rts_source=rss_t",
+   "image": "https://img.rts.ch/articles/2026/image/c9508795-29390896.image?w=320&h=180",
+   "date": "2026-10-20T02:51:09.000Z",
+   "categories": [
+    "Monde"
+   ]
+  },
+  {
+   "source": "republik",
+   "sourceLabel": "Republik",
+   "lang": "de",
+   "title": "«Es sind die politisierten Muskeln, die gefährlich sind»",
+   "summary": "Die Radikalisierungs­expertin Julia Ebner forscht zu Gefahren extremer Männlichkeit. Ein Gespräch über den Zusammen­hang von Fitness und Faschismus, die Abgründe der manosphere und darüber, was ihr trotz allem Hoffnung gibt.",
+   "url": "https://www.republik.ch/2026/10/20/es-sind-die-politisierten-muskeln-die-gefaehrlich-sind?utm_medium=rss",
+   "image": "https://media.repub.ch/images/obvmvrpv/production/cff169d07c4fc472325dc0e3cc75455bbcfd0f4c-2400x1600.jpg?rect=0,170,2400,1260&w=1200&h=630&fm=jpg&auto=format",
+   "date": "2026-10-20T02:50:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "republik",
+   "sourceLabel": "Republik",
+   "lang": "de",
+   "title": "Was passiert, wenn niemand mehr liest?",
+   "summary": "Eine neue Podcast-Folge über ständige Ablenkung, das Vorlesen am Abend und darüber, was Deutsch­lehrer womöglich mit Winzerinnen gemeinsam haben.",
+   "url": "https://www.republik.ch/2026/10/20/gute-frage-was-passiert-wenn-niemand-mehr-liest?utm_medium=rss",
+   "image": "https://media.repub.ch/images/obvmvrpv/production/08d30ab7ae7923af2c010afa8736f456837e3a30-2697x1348.jpg?rect=65,0,2568,1348&w=1200&h=630&fm=jpg&auto=format",
+   "date": "2026-10-20T02:47:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "republik",
+   "sourceLabel": "Republik",
+   "lang": "de",
+   "title": "Gott spielen",
+   "summary": "Tech-Milliardäre wie Peter Thiel und Elon Musk bringen die Religion zurück in die Politik – und sehen sich dabei selbst als Allmächtige. Über die politische Theologie der Gegenwart.",
+   "url": "https://www.republik.ch/2026/10/20/strassberg-gott-spielen?utm_medium=rss",
+   "image": "https://www.republik.ch/api/og?slug=%2F2026%2F10%2F20%2Fstrassberg-gott-spielen",
+   "date": "2026-10-20T02:45:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "yle",
+   "sourceLabel": "Yle",
+   "lang": "fi",
+   "section": "Suomi",
+   "title": "Tutkija selvitti: opettajat hakeutuvat huono-osaisten alueiden kouluihin töihin ja viihtyvät siellä",
+   "summary": "Oppilaat eivät ole syy, miksi opettajat vaihtavat kouluja. Suurin syy työpaikan vaihtamiseen on työsuhteen päättyminen, sanoo professori Sonja Kosunen.",
+   "url": "https://yle.fi/a/74-20251674?origin=rss",
+   "image": "https://img.img-cdn.yle.fi/crop_extract,w_4319,h_2429,x_1020,y_609/crop_fill,w_1200,h_628/f_auto/39-17206276ac8eb23681ed/1791552609",
+   "date": "2026-10-20T02:30:35.000Z",
+   "categories": [
+    "Koulutus",
+    "Opettajat",
+    "Opettajuus"
+   ]
+  },
+  {
+   "source": "tagesschau",
+   "sourceLabel": "Tagesschau",
+   "lang": "de",
+   "title": "Uruguay: Ein Land, fast unabhängig von Öl und Gas",
+   "summary": "Das 3,5-Millionen-Einwohner-Land in Südamerika steckte 2008 in einer Energiekrise. Heute gilt Uruguay als Klima-Champion. Wie hat das Land die Energiewende geschafft - und würde das auch für andere Länder funktionieren? Von Anne Herrberg …",
+   "url": "https://www.tagesschau.de/ausland/amerika/uruguay-erneuerbare-energie-klima-100.html",
+   "image": "https://images.tagesschau.de/image/5cf93ee8-200a-47a1-8e88-9347f10a2703/AAABoVcFSkg/AAABnSSvrFg/16x9-big/montevideo-110.jpg?width=1920",
+   "date": "2026-10-20T02:30:18.000Z",
+   "categories": []
+  },
+  {
+   "source": "guardian",
+   "sourceLabel": "The Guardian",
+   "lang": "en",
+   "section": "Europe",
+   "title": "Trump attacks ‘migrants and communists’ as he tries to exploit France unrest",
+   "summary": "President at Kansas rally tries to turn protests into cautionary tale for US as Republicans face midterm losses",
+   "url": "https://www.theguardian.com/us-news/2026/oct/19/trump-france-protests",
+   "image": "https://i.guim.co.uk/img/media/bb8acbeda5813061b047e083e0695bf1b83fae2a/632_0_6295_5039/master/6295.jpg?width=140&quality=85&auto=format&fit=max&s=4982084a10186351f194a3373a010d66",
+   "date": "2026-10-20T02:01:22.000Z",
+   "categories": [
+    "Donald Trump",
+    "US politics",
+    "US news"
+   ]
+  },
+  {
+   "source": "feminisme",
+   "sourceLabel": "Orange Actualités",
+   "lang": "fr",
+   "section": "Féminisme",
+   "pp": true,
+   "title": "Des nonnes bouddhistes défendent le féminisme avec du Kung-fu",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOTjE2dlJLRjJjcV9CTWw4Zkl0YVp2RnZucldKM3FvQWZfUzZsMk4yNkl4UDg5UEVGc09PTlNGLU5KSlI3QmNjTDdVOWFsYmNzSUxBZ1dHRlQ5TXJ2NUNFN1IzbUZicXRfdVFpamVUSURWdE81MUI4anVacXRwcHF3TnBNN1czWWQ0ZkZCNm9vemgybjFxTVlkZGV2WkpGWUlJZFBhUUIyNnAwRDlKaVdaSHM4SGFhdjE2QV9j?oc=5",
+   "image": "",
+   "date": "2026-10-20T00:45:35.000Z",
+   "categories": []
+  },
+  {
+   "source": "rts-sciences",
+   "sourceLabel": "RTS",
+   "lang": "fr",
+   "section": "Sciences",
    "title": "Une sonde japonaise décolle vers les lunes de Mars pour une mission inédite",
    "summary": "Une sonde spatiale et deux engins français ont commencé mardi leur voyage vers les lunes de Mars pour tenter l'exploit inédit d'y récupérer des échantillons et peut-être de lever le voile sur les origines du Système solaire et de la vie …",
    "url": "https://www.rts.ch/info/sciences-tech/2026/article/espace-une-sonde-japonaise-s-elance-vers-les-lunes-de-mars-29390884.html?rts_source=rss_t",
@@ -286,45 +1639,6 @@
     "Protest",
     "Europe"
    ]
-  },
-  {
-   "source": "aljazeera",
-   "sourceLabel": "Al Jazeera",
-   "lang": "en",
-   "pp": true,
-   "title": "Hegseth meets Netanyahu in unannounced Israel visit",
-   "summary": "Hegseth has travelled to Israel to meet Netanyahu ahead of a closely contested election, Axios reported, citing sources.",
-   "url": "https://www.aljazeera.com/news/2026/10/20/hegseth-meets-netanyahu-in-unannounced-israel-visit?traffic_source=rss",
-   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/2026-07-28T175706Z_848845793_RC25NMA8QQQU_RTRMADP_3_PEOPLE-LINDSEY-GRAHAM-1792452329.jpg?resize=1920%2C1440",
-   "date": "2026-10-20T00:08:01.000Z",
-   "categories": [
-    "News"
-   ]
-  },
-  {
-   "source": "aljazeera",
-   "sourceLabel": "Al Jazeera",
-   "lang": "en",
-   "pp": true,
-   "title": "Exiled critic of Rwandan president found beheaded in Uganda",
-   "summary": "Ugandan police say a male body has been found in a village near Kampala, and his head has yet to be located.",
-   "url": "https://www.aljazeera.com/news/2026/10/20/exiled-critic-of-rwandan-president-found-beheaded-in-uganda?traffic_source=rss",
-   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/ap_6ad6b1a840116-1792455080.jpg?resize=1920%2C1440",
-   "date": "2026-10-20T00:06:00.000Z",
-   "categories": [
-    "News"
-   ]
-  },
-  {
-   "source": "lemonde",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "title": "Les rapatriés d’Indochine obtiennent reconnaissance et réparation de la France, soixante-dix ans après",
-   "summary": "Après les députés en 2025, ce sont les sénateurs, lundi, qui ont adopté un texte ouvrant la voie à des « réparations de préjudices » pour le traitement réservé aux milliers de personnes placées dans des camps aux conditions indignes, après …",
-   "url": "https://www.lemonde.fr/politique/article/2026/10/20/les-rapatries-d-indochine-obtiennent-reconnaissance-et-reparation-de-la-france-soixante-dix-ans-apres_6797718_823448.html",
-   "image": "https://img.lemde.fr/2026/10/19/480/0/5760/2880/644/322/60/0/3eb4a51_upload-1-jug1f4m4trpl-000-par7868212.jpg",
-   "date": "2026-10-20T00:00:42.000Z",
-   "categories": []
   },
   {
    "source": "basel",
@@ -385,46 +1699,28 @@
    ]
   },
   {
-   "source": "aljazeera",
-   "sourceLabel": "Al Jazeera",
-   "lang": "en",
-   "pp": true,
-   "title": "Iran war live: Trump says US hits Iran hard ‘economically and militarily’",
-   "summary": "Trump says US continues to hit Iran 'economically and militarily' while praising Russia for doing 'nothing' to aid Iran.",
-   "url": "https://www.aljazeera.com/news/liveblog/2026/10/20/draft-3?traffic_source=rss",
-   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/AFP__20260217__97WL4GM__v1__HighRes__IranUsConflictIrgcDrills-1792449681.jpg?resize=1920%2C1440",
+   "source": "bund-fr",
+   "sourceLabel": "Confédération",
+   "lang": "fr",
+   "section": "Conseil fédéral",
+   "title": "3e trimestre 2026 : hausse du commerce extérieur",
+   "summary": "Durant le 3 e trimestre 2026, le commerce extérieur suisse a confirmé sa reprise amorcée au trimestre précédent. En termes désaisonnalisés, les exportations se sont renforcées de 2,6% à 75,0 milliards de francs (réel : +3,3%). Les …",
+   "url": "https://www.admin.ch/fr/newnsb/wc1jMSz1i7l2",
+   "image": "",
    "date": "2026-10-20T00:00:00.000Z",
-   "categories": [
-    "News"
-   ]
+   "categories": []
   },
   {
-   "source": "aljazeera",
-   "sourceLabel": "Al Jazeera",
-   "lang": "en",
-   "pp": true,
-   "title": "Mahmoud Khalil takes deportation fight to the US Supreme Court",
-   "summary": "Lawyers for the former student leader seek to overturn an appeals court decision that would allow for his removal.",
-   "url": "https://www.aljazeera.com/news/2026/10/19/mahmoud-khalil-takes-deportation-fight-to-the-us-supreme-court?traffic_source=rss",
-   "image": "https://www.aljazeera.com/wp-content/uploads/2025/08/afp_68b348afefe8-1756580016.jpg?resize=1920%2C1440",
-   "date": "2026-10-19T23:56:32.000Z",
-   "categories": [
-    "News"
-   ]
-  },
-  {
-   "source": "aljazeera",
-   "sourceLabel": "Al Jazeera",
-   "lang": "en",
-   "pp": true,
-   "title": "Colombia illegal gold mine collapse kills 14 people",
-   "summary": "Illegal gold mine collapse in southwestern Columbia leaves 14 people dead, 7 injured.",
-   "url": "https://www.aljazeera.com/news/2026/10/19/colombia-illegal-gold-mine-collapse-kills-14-people?traffic_source=rss",
-   "image": "https://www.aljazeera.com/wp-content/uploads/2026/10/ap_6ad6ad2341abe-1792453923.jpg?resize=1920%2C1440",
-   "date": "2026-10-19T23:56:17.000Z",
-   "categories": [
-    "News"
-   ]
+   "source": "bund-de",
+   "sourceLabel": "Bund",
+   "lang": "de",
+   "section": "Bundesrat",
+   "title": "Drittes Quartal 2026: Aussenhandel im Plus",
+   "summary": "Nach der Erholung im Vorquartal erzielte der Schweizer Aussenhandel auch im dritten Quartal 2026 in beiden Verkehrsrichtungen ein Plus. Die Exporte stiegen gegenüber dem Vorquartal saisonbereinigt um 2,6 Prozent (real: +3,3 Prozent) auf …",
+   "url": "https://www.admin.ch/de/newnsb/wc1jMSz1i7l2",
+   "image": "",
+   "date": "2026-10-20T00:00:00.000Z",
+   "categories": []
   },
   {
    "source": "queerty",
@@ -472,45 +1768,6 @@
     "Politics",
     "Richard Grenell"
    ]
-  },
-  {
-   "source": "guardian",
-   "sourceLabel": "The Guardian",
-   "lang": "en",
-   "section": "Europe",
-   "title": "Trump borrows from far right to blame unrest in France on immigration",
-   "summary": "President ignores school conditions and cost of living and says he warned Macron ‘the whole world was coming in’",
-   "url": "https://www.theguardian.com/us-news/2026/oct/19/trump-france-protests",
-   "image": "https://i.guim.co.uk/img/media/7af7475c0c38138ac1582d163a679a1609c431da/725_0_4853_3883/master/4853.jpg?width=140&quality=85&auto=format&fit=max&s=cf57a606bb189f5cf65b1363a72d9ddc",
-   "date": "2026-10-19T22:48:35.000Z",
-   "categories": [
-    "Donald Trump",
-    "US politics",
-    "US news"
-   ]
-  },
-  {
-   "source": "lemonde",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "title": "EN DIRECT, guerre en Ukraine : Volodymyr Zelensky accuse Washington de retarder la livraison à Kiev de missiles « déjà payés »",
-   "summary": "Le président ukrainien a également assuré que des pays européens étaient prêts à livrer des missiles intercepteurs Patriot, les seuls à pouvoir abattre les engins russes les plus sophistiqués et dont Kiev manque cruellement, mais qu’ils …",
-   "url": "https://www.lemonde.fr/international/live/2026/10/20/en-direct-guerre-en-ukraine-volodymyr-zelensky-accuse-washington-de-retarder-la-livraison-a-kiev-de-missiles-deja-payes_6796922_3210.html",
-   "image": "https://img.lemde.fr/2026/10/19/259/0/3000/1500/644/322/60/0/beffb24_upload-1-4857nreapefx-hva-xibxyaa6xom.jpeg",
-   "date": "2026-10-19T22:40:35.000Z",
-   "categories": []
-  },
-  {
-   "source": "lemonde-europe",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "section": "Europe",
-   "title": "EN DIRECT, guerre en Ukraine : Volodymyr Zelensky accuse Washington de retarder la livraison à Kiev de missiles « déjà payés »",
-   "summary": "Le président ukrainien a également assuré que des pays européens étaient prêts à livrer des missiles intercepteurs Patriot, les seuls à pouvoir abattre les engins russes les plus sophistiqués et dont Kiev manque cruellement, mais qu’ils …",
-   "url": "https://www.lemonde.fr/international/live/2026/10/20/en-direct-guerre-en-ukraine-volodymyr-zelensky-accuse-washington-de-retarder-la-livraison-a-kiev-de-missiles-deja-payes_6796922_3210.html",
-   "image": "https://img.lemde.fr/2026/10/19/259/0/3000/1500/644/322/60/0/beffb24_upload-1-4857nreapefx-hva-xibxyaa6xom.jpeg",
-   "date": "2026-10-19T22:40:35.000Z",
-   "categories": []
   },
   {
    "source": "guardian",
@@ -620,18 +1877,6 @@
    ]
   },
   {
-   "source": "basel",
-   "sourceLabel": "Blick",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "Swiss Indoors: Sechs Schweizer dürfen in Basel auf Coup hoffen",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNNl9ZbS1laUkyVXA3RnJ5NEYzWEdCN0RoSmM0RnZKa2JBVTQ4WVNfLUt4T201MVZWMHFMcUZmZks0NE84b3YzTGQ4OXZrNjlaNkozSDI4dnJrd0NMN0JWTzZNbVV6X093NnNqbEhBbmV2WjVEbkFsTl9MaE10RGdzVUg1T2dxUHEwN2d0eXRPTDVLSDBHQ3JicS1RQXo0TnQyZWN4akNTaw?oc=5",
-   "image": "",
-   "date": "2026-10-19T21:17:54.000Z",
-   "categories": []
-  },
-  {
    "source": "hyperallergic",
    "sourceLabel": "Hyperallergic",
    "lang": "en",
@@ -644,28 +1889,6 @@
    "categories": [
     "News"
    ]
-  },
-  {
-   "source": "euronews",
-   "sourceLabel": "Euronews",
-   "lang": "en",
-   "title": "Nvidia CEO Jensen Huang warns Germany is falling behind in AI race",
-   "summary": "German Chancellor Friedrich Merz and Huang are set to unveil a joint AI pact intended to speed up the integration of AI products across German industry.",
-   "url": "https://www.euronews.com/2026/10/19/nvidia-ceo-jensen-huang-warns-germany-is-falling-behind-in-ai-race",
-   "image": "https://images.euronews.com/articles/stories/09/95/85/79/1200x675_cmsv2_a22828be-8820-5942-9263-7a5d89b7f1ee-9958579.jpg",
-   "date": "2026-10-19T21:12:22.000Z",
-   "categories": []
-  },
-  {
-   "source": "srf-neu",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "title": "Fussball aus den Topligen – Tottenham kann doch noch siegen",
-   "summary": "Hier finden Sie die wichtigsten Meldungen aus Europas Topligen.",
-   "url": "https://www.srf.ch/sport/fussball/internationale-ligen/fussball-aus-den-topligen-tottenham-kann-doch-noch-siegen",
-   "image": "https://www.srf.ch/static/cms/images//320ws/5350c5.webp",
-   "date": "2026-10-19T21:08:50.000Z",
-   "categories": []
   },
   {
    "source": "artforum",
@@ -745,53 +1968,6 @@
    ]
   },
   {
-   "source": "rts",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "title": "Les nombreux objets connectés de nos maisons sont des cibles de choix pour les hackers",
-   "summary": "Pratiques, les équipements connectés de nos maisons qui permettent de commander à distance la lumière, les volets, le chauffage, le frigo ou encore les caméras sont aussi une cible prisée des hackers et une porte d'entrée vers notre vie …",
-   "url": "https://www.rts.ch/info/societe/2026/article/cyberattaque-les-objets-connectes-des-cibles-privilegiees-pour-les-hackers-29390425.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/a9133987-29390424.image?w=320&h=180",
-   "date": "2026-10-19T20:52:29.000Z",
-   "categories": [
-    "Société"
-   ]
-  },
-  {
-   "source": "basel",
-   "sourceLabel": "SWI swissinfo.ch",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "FDP Basel-Stadt will mit vier Nominierten Nationalratssitz holen",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxPdGdVSk4yQnJOd0g0dVhZbUN1MkZTN1JHdHRxcE5zcXMtY2dwT1piem1VbnB5Rl9odUszNEkxNTBFZG1GSUZIRkU4TnNHY3pNbTh0NXg3cmFaaDJhdE1fb2lKV0RkOWt6S3NIcjRZTGRjcUhfMUdIc044MTh3QXp4M1FMVUxENGJYVWRoa25LbEVWN3BYRnhKQ2txZm8wZ2c2bnJpMg?oc=5",
-   "image": "",
-   "date": "2026-10-19T20:47:40.000Z",
-   "categories": []
-  },
-  {
-   "source": "srf-neu",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "title": "Kunstturn-WM: Vor Teamfinal – «Sturzfrei bleiben» als Ziel – die «Big 5» wohl kaum zu schlagen",
-   "summary": "Die Schweizer Kunstturner liefern auch an der WM in Rotterdam ab. Am Dienstagabend steht der Teamfinal an.",
-   "url": "https://www.srf.ch/sport/mehr-sport/kunstturnen/kunstturn-wm-vor-teamfinal-sturzfrei-bleiben-als-ziel-die-big-5-wohl-kaum-zu-schlagen",
-   "image": "https://www.srf.ch/static/cms/images//320ws/316a89.webp",
-   "date": "2026-10-19T20:43:36.000Z",
-   "categories": []
-  },
-  {
-   "source": "srf-neu",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "title": "Kunstturn-WM in Rotterdam – Freudentränen inklusive: Schweizerinnen mit Top-15-Quali-Ergebnis",
-   "summary": "Die Schweizer Kunstturnerinnen zeigen an der WM eine tolle Leistung in der Qualifikation.",
-   "url": "https://www.srf.ch/sport/mehr-sport/kunstturnen/kunstturn-wm-in-rotterdam-freudentraenen-inklusive-schweizerinnen-mit-top-15-quali-ergebnis",
-   "image": "https://www.srf.ch/static/cms/images//320ws/72bf66.webp",
-   "date": "2026-10-19T20:42:59.000Z",
-   "categories": []
-  },
-  {
    "source": "rfi",
    "sourceLabel": "RFI",
    "lang": "fr",
@@ -803,17 +1979,6 @@
    "categories": [
     "Europe"
    ]
-  },
-  {
-   "source": "euronews",
-   "sourceLabel": "Euronews",
-   "lang": "en",
-   "title": "Pope Leo XIV holds call with Zelenskyy, Vatican says",
-   "summary": "Chicago-born Leo, 71, has been calling for a humanitarian truce in Oleshky, a city under Russian siege, to allow food and medical aid to arrive and for civilians to be evacuated safely.",
-   "url": "https://www.euronews.com/2026/10/19/pope-leo-xiv-holds-call-with-zelenskyy-vatican-says",
-   "image": "https://images.euronews.com/articles/stories/09/95/90/34/1200x675_cmsv2_a30a2e45-71f5-5e84-8aa9-a8522a590c3e-9959034.jpg",
-   "date": "2026-10-19T20:40:35.000Z",
-   "categories": []
   },
   {
    "source": "berlin",
@@ -842,28 +2007,6 @@
     "Europe",
     "Emmanuel Macron"
    ]
-  },
-  {
-   "source": "euronews",
-   "sourceLabel": "Euronews",
-   "lang": "en",
-   "title": "Video: Priest dies after cross falls on him during Mass in Ecuador",
-   "summary": "Ecuadorian priest Patricio Sánchez died after a large cross fell on him while he was celebrating Mass in the city of Guayaquil.",
-   "url": "https://www.euronews.com/video/2026/10/19/video-priest-dies-after-cross-falls-on-him-during-mass-in-ecuador",
-   "image": "https://images.euronews.com/articles/stories/09/95/91/67/1200x675_cmsv2_bcbedf1d-c644-5902-83cc-53fabed10f87-9959167.jpg",
-   "date": "2026-10-19T20:34:13.000Z",
-   "categories": []
-  },
-  {
-   "source": "srf-neu",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "title": "Nach Sondierungen – Berlin: Grüne und SPD für Koalitionsgespräche mit der Linken",
-   "summary": "Die Grünen und die SPD in Berlin wollen mit der Wahlsiegerin gemeinsame Koalitionsverhandlungen aufnehmen.",
-   "url": "https://www.srf.ch/news/international/nach-sondierungen-berlin-gruene-und-spd-fuer-koalitionsgespraeche-mit-der-linken",
-   "image": "https://www.srf.ch/static/cms/images//320ws/ed2056.webp",
-   "date": "2026-10-19T20:33:41.000Z",
-   "categories": []
   },
   {
    "source": "srf-int",
@@ -926,28 +2069,6 @@
    ]
   },
   {
-   "source": "euronews",
-   "sourceLabel": "Euronews",
-   "lang": "en",
-   "title": "Cristiano Ronaldo suspended for 30 days after quitting Portugal camp",
-   "summary": "On 30 September, the former Real Madrid and Manchester United star walked out of an international camp before a training session at Parken Stadium in Copenhagen.",
-   "url": "https://www.euronews.com/2026/10/19/cristiano-ronaldo-suspended-for-30-days-after-quitting-portugal-camp",
-   "image": "https://images.euronews.com/articles/stories/09/95/90/47/1200x675_cmsv2_845e8f4e-72a2-5aab-bd9d-09c6d5d7470c-9959047.jpg",
-   "date": "2026-10-19T20:04:42.000Z",
-   "categories": []
-  },
-  {
-   "source": "euronews",
-   "sourceLabel": "Euronews",
-   "lang": "en",
-   "title": "Deadly floods sweep through eastern Spain after torrential rain",
-   "summary": "Torrential rain triggered severe flooding in eastern Spain, sweeping away cars, submerging roads and leaving at least four people dead.",
-   "url": "https://www.euronews.com/video/2026/10/19/deadly-floods-sweep-through-eastern-spain-after-torrential-rain",
-   "image": "https://images.euronews.com/articles/stories/09/95/85/43/1200x675_cmsv2_5ebc98ef-be77-5d74-87dc-3561152b6ba9-9958543.jpg",
-   "date": "2026-10-19T20:00:41.000Z",
-   "categories": []
-  },
-  {
    "source": "queerty",
    "sourceLabel": "Queerty",
    "lang": "en",
@@ -964,14 +2085,15 @@
    ]
   },
   {
-   "source": "tagesschau",
-   "sourceLabel": "Tagesschau",
+   "source": "bz",
+   "sourceLabel": "bz Basel",
    "lang": "de",
-   "title": "Berlin: Grüne und SPD stimmen für Koalitionsgespräche mit Linke",
-   "summary": "Die Grünen und die SPD wollen in Berlin mit der Linkspartei Koalitionsverhandlungen aufnehmen. Beide Parteien entschieden sich am Abend für die Gespräche - die Abstimmung bei der Linken steht noch aus.[ mehr ]",
-   "url": "https://www.tagesschau.de/inland/berlin-wahl-spd-gruene-koalitionsverhandlungen-100.html",
-   "image": "https://images.tagesschau.de/image/367106a4-4c0e-4842-bb0f-420e633097b1/AAABoVW5ZZw/AAABnSSvrFg/16x9-big/gruene-berlin-abstimmung-100.jpg?width=1920",
-   "date": "2026-10-19T19:52:35.000Z",
+   "city": "Bâle",
+   "title": "Krawalle in Frankreich: «Das nächste Mal steigen sie in die Wohnungen hoch»",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxPOUMzV1BQV0w4NlRZMTRiM0RYY0hMS2F4eE15eHN6b2NJMTE0YlRac1VCLUpFdXBkUjhialRwbzZkSDl3MlRyY2dwd0szcHd0Xy1VajZVa2QzWGFOTm9xMTZZanMtQjhKdnVKX1BvWGJpdzIzYk5Cc3pmVlY3U003bmw4Qm9aX1ptY2Q3Q0daTmZDMXY5ZG9SQTlETU43YmlqdEljUnVPSFBJQ3Z0alpIXzVIeXVJS0JhcDA0cEx3?oc=5",
+   "image": "",
+   "date": "2026-10-19T19:52:07.000Z",
    "categories": []
   },
   {
@@ -991,30 +2113,6 @@
    ]
   },
   {
-   "source": "lemonde",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "title": "En tournée dans le golfe Persique, Emmanuel Macron cherche une issue à la flambée des prix du carburant",
-   "summary": "Le président de la République a entamé, lundi, un déplacement de trois jours au Koweït, aux Emirats arabes unis, au Bahreïn et au Qatar, avec l’ambition de « sécuriser [les] approvisionnements » énergétiques de la France. Mais les …",
-   "url": "https://www.lemonde.fr/international/article/2026/10/19/en-tournee-dans-le-golfe-persique-emmanuel-macron-cherche-une-issue-a-la-flambee-des-prix-du-carburant_6797585_3210.html",
-   "image": "https://img.lemde.fr/2026/10/19/600/0/4189/2094/644/322/60/0/bb667a7_ftp-1-la92shpxqj77-2026-10-19t092903z-164028296-rc286oaprspn-rtrmadp-3-gulf-france-kuwait.JPG",
-   "date": "2026-10-19T19:45:39.000Z",
-   "categories": []
-  },
-  {
-   "source": "rts",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "title": "Sebastian Roché: \"La répression policière en France est une impasse\"",
-   "summary": "Les violences du week-end en France sont \"la conséquence d'une politique de répression de la jeunesse comme on n'en a pas connu depuis 40 ans\", a estimé lundi sur les ondes de la RTS le sociologue Sebastian Roché, spécialiste des relations …",
-   "url": "https://www.rts.ch/info/monde/2026/article/emeutes-en-france-la-politique-de-repression-denoncee-29390671.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/4da73539-29390762.image?w=320&h=180",
-   "date": "2026-10-19T19:40:33.000Z",
-   "categories": [
-    "Monde"
-   ]
-  },
-  {
    "source": "rts-monde",
    "sourceLabel": "RTS",
    "lang": "fr",
@@ -1029,49 +2127,17 @@
    ]
   },
   {
-   "source": "yle",
-   "sourceLabel": "Yle",
-   "lang": "fi",
-   "section": "Suomi",
-   "title": "Trump avoin tapaamiselle Putinin ja Xin kanssa",
-   "summary": "Yhdysvaltalaislehti Wall Street Journal kertoi aiemmin, että Putin oli ehdottanut kolminkeskistä tapaamista Trumpin ja Xin kanssa.",
-   "url": "https://yle.fi/a/74-20252237?origin=rss",
-   "image": "https://img.img-cdn.yle.fi/crop_extract,w_6144,h_3456,x_0,y_640/crop_fill,w_1200,h_628/f_auto/39-17237646ad2f6f7e8efe/1792210906",
-   "date": "2026-10-19T19:39:49.000Z",
-   "categories": [
-    "Venäjän hyökkäys",
-    "Donald Trump",
-    "Vladimir Putin"
-   ]
-  },
-  {
    "source": "mediapart",
    "sourceLabel": "Mediapart",
    "lang": "fr",
    "pp": true,
-   "title": "«On nous demande d’écrire que LFI est derrière le mouvement»: autour du 17 octobre, la fabrique d’un bouc-émissaire",
+   "title": "«On nous demande d’écrire que LFI est derrière le mouvement»: autour du 17 octobre, la fabrique d’un bouc émissaire",
    "summary": "Si le gouvernement désigne «l’ultragauche» et LFI comme responsables des nombreux pillages et incendies de ce week-end, des policiers réfutent ces accusations. Un commissaire des services de renseignement affirme même avoir eu pour …",
    "url": "https://www.mediapart.fr/journal/france/191026/nous-demande-d-ecrire-que-lfi-est-derriere-le-mouvement-autour-du-17-octobre-la-fabrique-d-un-bouc-emissai",
    "image": "https://static.mediapart.fr/etmagine/default/files/2026/10/19/261019-img-lfi-derriere-les-violences.jpg",
    "date": "2026-10-19T19:35:46.000Z",
    "categories": [
     "France"
-   ]
-  },
-  {
-   "source": "yle",
-   "sourceLabel": "Yle",
-   "lang": "fi",
-   "section": "Suomi",
-   "title": "Ulkonaliikkumiskielto voimaan useissa ranskalaiskaupungeissa",
-   "summary": "Osaan kaupunkeja ulkonaliikkumiskielto määrättiin vain yksin liikkuville alaikäisille.",
-   "url": "https://yle.fi/a/74-20252236?origin=rss",
-   "image": "https://img.img-cdn.yle.fi/crop_extract,w_4785,h_2691,x_0,y_144/crop_fill,w_1200,h_628/f_auto/39-17245366ad61949ee9f0/1792416683",
-   "date": "2026-10-19T19:31:31.000Z",
-   "categories": [
-    "Ranska",
-    "Ulkonaliikkumiskielto",
-    "Mielenosoitukset"
    ]
   },
   {
@@ -1121,79 +2187,6 @@
    ]
   },
   {
-   "source": "tagesschau",
-   "sourceLabel": "Tagesschau",
-   "lang": "de",
-   "title": "Bundesregierung vereinbart KI-Kooperation mit Nvidia",
-   "summary": "Deutschland und der US-Chip-Gigant Nvidia haben eine Zusammenarbeit bei der Entwicklung Künstlicher Intelligenz beschlossen. Die Vereinbarung wurde beim ersten \"Invest-in-Germany\"-Gipfel verkündet - und soll die deutsche …",
-   "url": "https://www.tagesschau.de/inland/innenpolitik/bund-nvidia-zusammenarbeit-ki-100.html",
-   "image": "https://images.tagesschau.de/image/e19d0a95-b875-4988-84b7-8d602ae653f5/AAABoVWeRv8/AAABnSSvrFg/16x9-big/merz-huang-100.jpg?width=1920",
-   "date": "2026-10-19T19:23:41.000Z",
-   "categories": []
-  },
-  {
-   "source": "srf-neu",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "title": "Bekannte Journalistin – Nach 43 Jahren: Christiane Amanpour verlässt CNN",
-   "summary": "Eine Ära endet: Christiane Amanpour beendet ihre Karriere bei CNN im Juni 2027.",
-   "url": "https://www.srf.ch/news/international/bekannte-journalistin-nach-43-jahren-christiane-amanpour-verlaesst-cnn",
-   "image": "https://www.srf.ch/static/cms/images//320ws/7f2332.webp",
-   "date": "2026-10-19T19:23:20.000Z",
-   "categories": []
-  },
-  {
-   "source": "srf-int",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "International",
-   "title": "Bekannte Journalistin – Nach 43 Jahren: Christiane Amanpour verlässt CNN",
-   "summary": "Eine Ära endet: Christiane Amanpour beendet ihre Karriere bei CNN im Juni 2027.",
-   "url": "https://www.srf.ch/news/international/bekannte-journalistin-nach-43-jahren-christiane-amanpour-verlaesst-cnn",
-   "image": "https://www.srf.ch/static/cms/images//320ws/7f2332.webp",
-   "date": "2026-10-19T19:23:20.000Z",
-   "categories": []
-  },
-  {
-   "source": "yle",
-   "sourceLabel": "Yle",
-   "lang": "fi",
-   "section": "Suomi",
-   "title": "”Musta blokki” nousi Ranskan protestien keskiöön – Tutkija: Pikemmin anarkistinen kuin äärivasemmistolainen liike",
-   "summary": "Tutkija Timo Miettinen luonnehtii A-studiossa Ranskan viime päivien mielenosoituksissa nähtyjä fyysisiä tuhoja poikkeuksellisiksi.",
-   "url": "https://yle.fi/a/74-20252235?origin=rss",
-   "image": "https://img.img-cdn.yle.fi/crop_extract,w_1919,h_1080,x_0,y_0/crop_fill,w_1200,h_628/f_auto/39-12857966644fc8a02658/1715797168",
-   "date": "2026-10-19T19:20:03.000Z",
-   "categories": [
-    "Mielenosoitukset",
-    "Ranska",
-    "A-studio"
-   ]
-  },
-  {
-   "source": "nzz",
-   "sourceLabel": "NZZ",
-   "lang": "de",
-   "title": "DIE NEUESTEN ENTWICKLUNGEN - Proteste in Frankreich: Behörden verhängen Ausgangssperren in mehreren Städten +++ Bürgermeister erheben Vorwürfe gegen Macron",
-   "summary": "Ende September gehen Schüler, Lehrpersonen und Gewerkschaften auf die Strasse und fordern bessere Lernbedingungen – und lösen damit eine landesweite Bewegung aus. Die neusten Entwicklungen.",
-   "url": "https://www.nzz.ch/international/neue-schuelerproteste-in-frankreich-droht-eine-ausweitung-der-ausschreitungen-ld.10026904",
-   "image": "https://img-msp-prod.nzz.ch/2026/10/18/b9d5d880-b188-4506-9c1a-6699e6f90b3d.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=3975,3975,x1987,y0",
-   "date": "2026-10-19T19:15:21.000Z",
-   "categories": []
-  },
-  {
-   "source": "berlin",
-   "sourceLabel": "rbb24",
-   "lang": "de",
-   "city": "Berlin",
-   "title": "Attacke im Kreuzberg: Nach Gewaltangriff schwebt 28-Jähriger weiter in Lebensgefahr",
-   "summary": "",
-   "url": "https://www.rbb24.de/panorama/beitrag/2026/10/gewalt-spaeti-28-jaehriger-lebensgefahr-verletzungen-mordkommission-kreuzberg.html",
-   "image": "",
-   "date": "2026-10-19T19:13:21.000Z",
-   "categories": []
-  },
-  {
    "source": "srf",
    "sourceLabel": "SRF",
    "lang": "de",
@@ -1203,17 +2196,6 @@
    "url": "https://www.srf.ch/news/schweiz/schweizer-fluesse-hitzesommer-schlaegt-auf-stromproduktion",
    "image": "https://www.srf.ch/static/cms/images//320ws/424ca3.webp",
    "date": "2026-10-19T19:11:41.000Z",
-   "categories": []
-  },
-  {
-   "source": "tagesschau",
-   "sourceLabel": "Tagesschau",
-   "lang": "de",
-   "title": "Proteste in vielen Ländern Europas - aus ähnlichen Gründen",
-   "summary": "Die gewalttätigen Proteste in Frankreich dominieren seit Tagen die Schlagzeilen. Doch auch in anderen Ländern Europas gibt es derzeit Großdemos und Ausschreitungen, die Gründe ähneln einander vielfach. Wer protestiert gerade in welchen …",
-   "url": "https://www.tagesschau.de/ausland/europa/proteste-europa-100.html",
-   "image": "https://images.tagesschau.de/image/4f416987-4ea4-45e6-8936-b3ddba049b28/AAABoVWQUXU/AAABnSSvrFg/16x9-big/ausschreitungen-bruessel-102.jpg?width=1920",
-   "date": "2026-10-19T19:08:04.000Z",
    "categories": []
   },
   {
@@ -1265,18 +2247,6 @@
    ]
   },
   {
-   "source": "srf-int",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "International",
-   "title": "Olivenernte im Westjordanland – «Das ist unser Land. Wir bleiben»",
-   "summary": "Die Olivenernte sichert vielen palästinensischen Familien das Einkommen. Diesen Herbst ist sie gefährlicher denn je.",
-   "url": "https://www.srf.ch/news/international/nahost/olivenernte-im-westjordanland-das-ist-unser-land-wir-bleiben",
-   "image": "https://www.srf.ch/static/cms/images//320ws/241c6c8.webp",
-   "date": "2026-10-19T18:59:27.000Z",
-   "categories": []
-  },
-  {
    "source": "mediapart",
    "sourceLabel": "Mediapart",
    "lang": "fr",
@@ -1288,19 +2258,6 @@
    "date": "2026-10-19T18:58:01.000Z",
    "categories": [
     "Politique"
-   ]
-  },
-  {
-   "source": "rts",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "title": "Un coffre-fort glacial pour sauver la flore suisse au Jardin botanique de Genève",
-   "summary": "Apercevoir une saxifrage dorée, une petite fleur à l'allure pourtant commune, est rare. Menacée d'extinction en Suisse, cette plante incarne aujourd'hui le combat de la banque de semences du Jardin botanique de Genève: sauvegarder la …",
-   "url": "https://www.rts.ch/info/environnement/2026/article/jardin-botanique-de-geneve-800-especes-conservees-a-20-c-29390418.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/medias/2026/image/f2ad6755-29390703.image?w=320&h=180",
-   "date": "2026-10-19T18:53:03.000Z",
-   "categories": [
-    "Environnement"
    ]
   },
   {
@@ -1318,17 +2275,6 @@
    ]
   },
   {
-   "source": "lemonde",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "title": "Benyamin Nétanyahou met en scène sa proximité avec Donald Trump, à une semaine des élections législatives en Israël",
-   "summary": "Dimanche, le président américain a apporté son soutien au premier ministre israélien avant les élections législatives israéliennes très disputées du 27 octobre.",
-   "url": "https://www.lemonde.fr/international/article/2026/10/19/benyamin-netanyahou-met-en-scene-sa-proximite-avec-donald-trump-a-une-semaine-des-elections-legislatives-en-israel_6797582_3210.html",
-   "image": "https://img.lemde.fr/2026/10/18/85/0/1023/511/644/322/60/0/2f2998e_ftp-1-pxdscihx4op1-afp-d3ne7g3-1024.jpg",
-   "date": "2026-10-19T18:52:52.000Z",
-   "categories": []
-  },
-  {
    "source": "rts-sport",
    "sourceLabel": "RTS",
    "lang": "fr",
@@ -1341,17 +2287,6 @@
    "categories": [
     "Football"
    ]
-  },
-  {
-   "source": "nzz",
-   "sourceLabel": "NZZ",
-   "lang": "de",
-   "title": "«Wasserschloss Schweiz in Gefahr» – Verbände bangen um die Versorgung mit Trinkwasser",
-   "summary": "Die führenden Wasserverbände der Schweiz sehen die lokale Wasserversorgung von Schweizer Gemeinden bedroht. Sie fordern den Ausbau von Rohrinfrastruktur zwischen den Ortschaften – und dass kein Regenwasser mehr verschwendet wird.",
-   "url": "https://www.nzz.ch/schweiz/wasserschloss-schweiz-in-gefahr-verbaende-bangen-um-die-versorgung-mit-trinkwasser-ld.10038076",
-   "image": "https://img-msp-prod.nzz.ch/2026/10/19/f2ce59db-69c0-4a1a-85db-f4fd7f75729e.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=4000,4000,x954,y0",
-   "date": "2026-10-19T18:51:13.000Z",
-   "categories": []
   },
   {
    "source": "defensenews",
@@ -1400,19 +2335,6 @@
    ]
   },
   {
-   "source": "rfi",
-   "sourceLabel": "RFI",
-   "lang": "fr",
-   "title": "Manifestations en France: «dès qu'il y a un problème social», la droite européenne «rend les politiques migratoires responsables»",
-   "summary": "Après les scènes de chaos dans plusieurs villes de France en marge des manifestations du 17 octobre, les alliés européens traditionnels de Paris sont restés discrets, à l'exception notable de plusieurs dirigeants de formations d'extrême …",
-   "url": "https://www.rfi.fr/fr/europe/20261019-manifestations-en-france-d%C3%A8s-qu-il-y-a-un-probl%C3%A8me-social-la-droite-europ%C3%A9enne-rend-les-politiques-migratoires-responsables",
-   "image": "https://s.rfi.fr/media/display/adc51614-cbdf-11f1-9de2-d1d2c32ebb87/w:1024/p:16x9/AP26290464234778.jpg",
-   "date": "2026-10-19T18:43:03.000Z",
-   "categories": [
-    "Europe"
-   ]
-  },
-  {
    "source": "lgc",
    "sourceLabel": "Le Grand Continent",
    "lang": "fr",
@@ -1437,73 +2359,6 @@
    "date": "2026-10-19T18:36:11.000Z",
    "categories": [
     "Politique"
-   ]
-  },
-  {
-   "source": "yle",
-   "sourceLabel": "Yle",
-   "lang": "fi",
-   "section": "Suomi",
-   "title": "101-vuotiaana kuollut Hilkka Kinnunen nousi tähdeksi operetilla",
-   "summary": "Operettiteatterin perustaja, oopperalaulaja Hilkka Kinnunen on kuollut. Hän oli 101-vuotias. Kinnunen teki musiikkiteatterista bisneksen 1960-luvulla.",
-   "url": "https://yle.fi/a/74-20031460?origin=rss",
-   "image": "https://img.img-cdn.yle.fi/crop_extract,w_1200,h_675,x_0,y_0/crop_fill,w_1200,h_628/f_auto/39-1103761644788e0e420b/1682410439",
-   "date": "2026-10-19T18:35:52.000Z",
-   "categories": [
-    "Teatteri",
-    "Hilkka Kinnunen",
-    "Oopperalaulajat"
-   ]
-  },
-  {
-   "source": "tagesschau",
-   "sourceLabel": "Tagesschau",
-   "lang": "de",
-   "title": "Jemen: Mehr als 50 Tote bei Huthi-Angriff auf Militärlager",
-   "summary": "Die Huthi-Miliz beschießt im Jemen ein Militärlager offenbar mit mehreren ballistischen Raketen. Mindestens 53 Soldaten kommen ums Leben. Die proiranische Miliz spricht von Vergeltung gegen Saudi-Arabien.[ mehr ]",
-   "url": "https://www.tagesschau.de/ausland/asien/jemen-huthi-angriff-militaerlager-viele-tote-100.html",
-   "image": "https://images.tagesschau.de/image/55e94a4e-f119-41e0-9b71-0e8d3ca95dce/AAABn1ul6LM/AAABnSSvrFg/16x9-big/karte-jemen-sanaa-106.jpg?width=1920",
-   "date": "2026-10-19T18:35:46.000Z",
-   "categories": []
-  },
-  {
-   "source": "rts",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "title": "Les émeutes peuvent \"bénéficier\" à Marine Le Pen, estime le directeur de l'IFOP",
-   "summary": "A six mois de la présidentielle, les émeutes qui ont secoué la France ce week-end \"peuvent\" profiter à Marine Le Pen, représentent \"un risque\" pour Jean-Luc Mélenchon et \"gênent\" Emmanuel Macron, selon Frédéric Dabi, directeur général de …",
-   "url": "https://www.rts.ch/info/monde/2026/article/emeutes-en-france-marine-le-pen-pourrait-en-profiter-29390560.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/7dd65cdf-29390723.image?w=320&h=180",
-   "date": "2026-10-19T18:31:49.000Z",
-   "categories": [
-    "Monde"
-   ]
-  },
-  {
-   "source": "rts-monde",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "section": "Monde",
-   "title": "Les émeutes peuvent \"bénéficier\" à Marine Le Pen, estime le directeur de l'IFOP",
-   "summary": "A six mois de la présidentielle, les émeutes qui ont secoué la France ce week-end \"peuvent\" profiter à Marine Le Pen, représentent \"un risque\" pour Jean-Luc Mélenchon et \"gênent\" Emmanuel Macron, selon Frédéric Dabi, directeur général de …",
-   "url": "https://www.rts.ch/info/monde/2026/article/emeutes-en-france-marine-le-pen-pourrait-en-profiter-29390560.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/7dd65cdf-29390723.image?w=320&h=180",
-   "date": "2026-10-19T18:31:49.000Z",
-   "categories": [
-    "Monde"
-   ]
-  },
-  {
-   "source": "courrier",
-   "sourceLabel": "Courrier international",
-   "lang": "fr",
-   "title": "Les troubles en France inquiètent les investisseurs étrangers",
-   "summary": "Au lendemain d’un week-end de violence, le CAC 40 a fermé à la baisse, tandis que l’écart entre les taux d’emprunt de la France et de l’Allemagne continuait de se creuser. L’idée de voir Paris mettre la main à la poche pour calmer la …",
-   "url": "https://www.courrierinternational.com/article/economie-les-troubles-en-france-inquietent-les-investisseurs-etrangers_279826",
-   "image": "https://focus.courrierinternational.com/2026/10/18/0/0/6000/4000/644/0/60/0/e0339cb_ftp-1-irdpa6vsmch1-2026-10-18t121255z-1183136344-rc2o5oa6kj7v-rtrmadp-3-france-protest.JPG",
-   "date": "2026-10-19T18:30:01.000Z",
-   "categories": [
-    "Économie"
    ]
   },
   {
@@ -1538,45 +2393,6 @@
    ]
   },
   {
-   "source": "rfi",
-   "sourceLabel": "RFI",
-   "lang": "fr",
-   "title": "Royaume-Uni: l'ombre d'Elon Musk plane sur le nouveau procès du militant d'extrême droite Tommy Robinson",
-   "summary": "Un influenceur d'extrême droite bitannique fait face à la justice à partir de ce lundi 19 octobre, accusé de harcèlement envers deux journalistes. Tommy Robinson, figure de proue des nationalistes anglais et à l'origine de plusieurs …",
-   "url": "https://www.rfi.fr/fr/europe/20261019-royaume-uni-l-ombre-d-elon-musk-plane-sur-le-nouveau-proc%C3%A8s-du-militant-d-extr%C3%AAme-droite-tommy-robinson",
-   "image": "https://s.rfi.fr/media/display/781d6166-cbe8-11f1-97ab-2d1c143cdef3/w:1024/p:16x9/ROYAUME-UNI-TOMMY-ROBINSON-JUSTICE.jpg",
-   "date": "2026-10-19T18:13:34.000Z",
-   "categories": [
-    "Europe"
-   ]
-  },
-  {
-   "source": "srf-int",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "International",
-   "title": "Krieg in der Ukraine – Ukraine meldet erste Drohnenrettung eines Verwundeten",
-   "summary": "Ein Video zeigt offenbar, wie eine Drohne einen verwundeten Soldaten aus der Gefahrenzone bringt.",
-   "url": "https://www.srf.ch/news/international/krieg-in-der-ukraine-ukraine-meldet-erste-drohnenrettung-eines-verwundeten",
-   "image": "https://www.srf.ch/static/cms/images//320ws/adaaae.webp",
-   "date": "2026-10-19T18:12:17.000Z",
-   "categories": []
-  },
-  {
-   "source": "mediapart",
-   "sourceLabel": "Mediapart",
-   "lang": "fr",
-   "pp": true,
-   "title": "Après le 17 octobre, des policiers sans boussole: «On peut pas se retaper ça une deuxième fois»",
-   "summary": "Alors que les autorités politiques et policières ont fini par reconnaître un certain «débordement», les forces de l’ordre s’inquiètent d’un manque de stratégie claire pour rétablir l’ordre public dans les jours à venir.",
-   "url": "https://www.mediapart.fr/journal/france/191026/apres-le-17-octobre-des-policiers-sans-boussole-peut-pas-se-retaper-ca-une-deuxieme-fois",
-   "image": "https://static.mediapart.fr/etmagine/default/files/2026/10/19/261019-img-apres-le-17-octobre-des-policiers-sans-boussole.jpg",
-   "date": "2026-10-19T18:12:09.000Z",
-   "categories": [
-    "France"
-   ]
-  },
-  {
    "source": "basel-kultur",
    "sourceLabel": "Basler Zeitung",
    "lang": "de",
@@ -1587,19 +2403,6 @@
    "image": "",
    "date": "2026-10-19T18:08:54.000Z",
    "categories": []
-  },
-  {
-   "source": "courrier",
-   "sourceLabel": "Courrier international",
-   "lang": "fr",
-   "title": "Débordements du 17 octobre : la France se “tiers-mondise” et n’est plus un modèle d’inspiration",
-   "summary": "Pour ce journaliste du quotidien panarabe “Al-Araby Al-Jadid”, les scènes de destructions et de pillages ainsi que les revendications concernant l’école, le logement et la santé sont une preuve de plus du déclin de l’Hexagone. Selon lui, …",
-   "url": "https://www.courrierinternational.com/article/opinion-debordements-du-17-octobre-la-france-se-tiers-mondise-et-n-est-plus-un-modele-d-inspiration_279794",
-   "image": "https://focus.courrierinternational.com/2026/10/18/0/0/5923/4000/644/0/60/0/5a371ce_ftp-1-kypnmhi4mhh7-2026-10-18t175948z-1726197260-rc2s5oaoqqut-rtrmadp-3-france-protest.JPG",
-   "date": "2026-10-19T18:05:48.000Z",
-   "categories": [
-    "Opinion"
-   ]
   },
   {
    "source": "pokaa",
@@ -1650,21 +2453,6 @@
    ]
   },
   {
-   "source": "letemps",
-   "sourceLabel": "Le Temps",
-   "lang": "fr",
-   "title": "Surveillance de masse par le renseignement suisse: journalistes, avocats, médecins laissés sans protection",
-   "summary": "CHRONIQUE. La loi actuelle est incompatible avec la Constitution et la Convention européenne des droits de l’homme, a estimé le Tribunal administratif fédéral en décembre dernier. Elle doit donc être corrigée et rapidement. La Berne …",
-   "url": "https://www.letemps.ch/articles/surveillance-de-masse-par-le-renseignement-suisse-journalistes-avocats-medecins-laisses-sans-protection",
-   "image": "https://letemps-17455.kxcdn.com/photos/c7456fa6-ec8a-4bf8-9996-9acd99a79690/medium",
-   "date": "2026-10-19T18:00:13.000Z",
-   "categories": [
-    "Chroniques",
-    "Opinions",
-    "Débats"
-   ]
-  },
-  {
    "source": "euobserver",
    "sourceLabel": "EUobserver",
    "lang": "en",
@@ -1678,45 +2466,6 @@
     "Opinion",
     "Elections",
     "EUobserver voice"
-   ]
-  },
-  {
-   "source": "tagesschau",
-   "sourceLabel": "Tagesschau",
-   "lang": "de",
-   "title": "Berliner SPD für Koalitionsgespräche mit Linkspartei und Grünen",
-   "summary": "Die Berliner SPD stimmt mit großer Mehrheit für Koalitionsverhandlungen mit der Linkspartei und mit den Grünen. Die Grünen wollen noch am Abend über den Beginn der Gespräche entscheiden.[ mehr ]",
-   "url": "https://www.tagesschau.de/inland/innenpolitik/koalitionsverhandlungen-berlin-spd-linke-gruene-100.html",
-   "image": "https://images.tagesschau.de/image/eae47566-c67f-4544-9958-888558010983/AAABoVUKxvE/AAABnSSvrFg/16x9-big/krach-stahr-schirmer-100.jpg?width=1920",
-   "date": "2026-10-19T17:59:59.000Z",
-   "categories": []
-  },
-  {
-   "source": "mediapart",
-   "sourceLabel": "Mediapart",
-   "lang": "fr",
-   "pp": true,
-   "title": "17 octobre: qui sème la violence récolte la révolte",
-   "summary": "À six mois de l’élection présidentielle, Emmanuel Macron fait face à son bilan: le chef de l’État a placé au bord du gouffre un pays dont il a systématiquement refusé d’entendre les difficultés et les aspirations.",
-   "url": "https://www.mediapart.fr/journal/politique/191026/17-octobre-qui-seme-la-violence-recolte-la-revolte",
-   "image": "https://static.mediapart.fr/etmagine/default/files/2026/10/19/261019-img-dix-ans-macronisme.jpg",
-   "date": "2026-10-19T17:58:33.000Z",
-   "categories": [
-    "Politique"
-   ]
-  },
-  {
-   "source": "letemps",
-   "sourceLabel": "Le Temps",
-   "lang": "fr",
-   "title": "Dans un récit intime et politique, Christine Angot raconte la domination masculine à travers la transmission du nom de famille",
-   "summary": "«Je change de nom» revient sur l’inceste que la romancière a subi et explore le poids du patronyme dans sa généalogie familiale. Si Angot reste son nom de plume, à l’état civil, l’écrivaine a repris cette année le nom de sa mère, Schwartz",
-   "url": "https://www.letemps.ch/articles/dans-un-recit-intime-et-politique-christine-angot-raconte-la-domination-masculine-a-travers-la-transmission-du-nom-de-famille",
-   "image": "https://letemps-17455.kxcdn.com/photos/d6ee0429-0e86-4bd9-b2fd-df8f2cec8308/medium",
-   "date": "2026-10-19T17:54:04.000Z",
-   "categories": [
-    "Livres",
-    "Culture"
    ]
   },
   {
@@ -1736,54 +2485,6 @@
    ]
   },
   {
-   "source": "lemonde",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "title": "Le mandat de Giorgia Meloni, des marges italiennes au cœur de la politique européenne",
-   "summary": "« Meloni, quatre années au pouvoir » (1/6). La présidente du conseil affiche le plus long mandat d’un chef de l’exécutif de l’histoire de la République italienne. « Le Monde » raconte en six épisodes comment, sans rien renier de ses …",
-   "url": "https://www.lemonde.fr/international/article/2026/10/19/le-mandat-de-giorgia-meloni-des-marges-italiennes-au-c-ur-de-la-politique-europeenne_6797578_3210.html",
-   "image": "https://img.lemde.fr/2026/10/18/164/0/6000/3000/644/322/60/0/33d04dd_upload-1-3dze4ucqhaiu-000-32ly6nc.jpg",
-   "date": "2026-10-19T17:46:49.000Z",
-   "categories": []
-  },
-  {
-   "source": "lemonde-europe",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "section": "Europe",
-   "title": "Le mandat de Giorgia Meloni, des marges italiennes au cœur de la politique européenne",
-   "summary": "« Meloni, quatre années au pouvoir » (1/6). La présidente du conseil affiche le plus long mandat d’un chef de l’exécutif de l’histoire de la République italienne. « Le Monde » raconte en six épisodes comment, sans rien renier de ses …",
-   "url": "https://www.lemonde.fr/international/article/2026/10/19/le-mandat-de-giorgia-meloni-des-marges-italiennes-au-c-ur-de-la-politique-europeenne_6797578_3210.html",
-   "image": "https://img.lemde.fr/2026/10/18/164/0/6000/3000/644/322/60/0/33d04dd_upload-1-3dze4ucqhaiu-000-32ly6nc.jpg",
-   "date": "2026-10-19T17:46:49.000Z",
-   "categories": []
-  },
-  {
-   "source": "berlin",
-   "sourceLabel": "rbb24",
-   "lang": "de",
-   "city": "Berlin",
-   "title": "BR Volleys: Viel neues Personal und alte Ziele",
-   "summary": "Die BR Volleys setzen zur neuen Saison auf maximale Strahlkraft. Ein neu formierter Kader, die Rückkehr bekannter Gesichter und ein Coach, den Klubchef Kaweh Niroomand als \"Pep Guardiola des Volleyballs\" ankündigt.",
-   "url": "https://www.rbb24.de/sport/beitrag/2026/10/volleyball-bundesliga-br-volleys-saisonstart-anastasi-neuer-trainer.html",
-   "image": "",
-   "date": "2026-10-19T17:43:35.000Z",
-   "categories": []
-  },
-  {
-   "source": "courrier",
-   "sourceLabel": "Courrier international",
-   "lang": "fr",
-   "title": "Débordements du 17 octobre : les médias étrangers désemparés par la colère française",
-   "summary": "Après les violences qui ont secoué la France en marge des manifestations du samedi 17 octobre, les médias étrangers tentent d’expliquer les origines de cette colère. Retour en vidéo.",
-   "url": "https://www.courrierinternational.com/video/video-debordements-du-17-octobre-les-medias-etrangers-desempares-par-la-colere-francaise_279827",
-   "image": "https://focus.courrierinternational.com/2026/10/19/0/0/10848/7232/644/0/60/0/b8bc837_ftp-1-ejihyuxtj84s-2026-10-19t163220z-1866365789-rc265oa3m87k-rtrmadp-3-france-protest-electric-bikes.JPG",
-   "date": "2026-10-19T17:36:32.000Z",
-   "categories": [
-    "Vidéo"
-   ]
-  },
-  {
    "source": "opex360",
    "sourceLabel": "Zone Militaire",
    "lang": "fr",
@@ -1797,34 +2498,6 @@
     "Forces navales",
     "DARPA",
     "drone naval"
-   ]
-  },
-  {
-   "source": "letemps",
-   "sourceLabel": "Le Temps",
-   "lang": "fr",
-   "title": "En Arménie, des graines familiales conservées depuis des générations offrent des pistes d'adaptation au changement climatique",
-   "summary": "Alors qu'Erevan accueille la COP17 sur la biodiversité du 19 au 30 octobre, une expédition dans les montagnes du Caucase collecte variétés locales et savoirs traditionnels. Ces ressources seront étudiées en France",
-   "url": "https://www.letemps.ch/articles/en-armenie-des-graines-familiales-conservees-depuis-des-generations-offrent-des-pistes-d-adaptation-au-changement-climatique",
-   "image": "https://letemps-17455.kxcdn.com/photos/5aae0143-0d22-4281-8d20-1a81e54b8471/medium",
-   "date": "2026-10-19T17:31:32.000Z",
-   "categories": [
-    "Sciences",
-    "Environnement",
-    "Sciences de la vie"
-   ]
-  },
-  {
-   "source": "courrier",
-   "sourceLabel": "Courrier international",
-   "lang": "fr",
-   "title": "Le 17 octobre, la France “a signé la mort du macronisme”",
-   "summary": "En 2017, Emmanuel Macron s’était fait élire sur un projet politique nouveau, en promettant d’écouter la jeunesse et de contenir l’essor des extrêmes. Il avait tout pour y parvenir, estime le correspondant d’“El País” en France. Et …",
-   "url": "https://www.courrierinternational.com/article/vu-d-espagne-le-17-octobre-la-france-a-signe-la-mort-du-macronisme_279796",
-   "image": "https://focus.courrierinternational.com/2026/10/19/0/0/2173/1480/644/0/60/0/395ee76_upload-1-b6tg70fb9rzi-sinisa-2026-10-18-7370.jpg",
-   "date": "2026-10-19T17:30:05.000Z",
-   "categories": [
-    "Vu d'Espagne"
    ]
   },
   {
@@ -1842,44 +2515,6 @@
    ]
   },
   {
-   "source": "rts-monde",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "section": "Monde",
-   "title": "Le gouvernement français annonce plusieurs couvre-feu dès lundi soir après les violences du week-end",
-   "summary": "Le gouvernement français a annoncé lundi ses premières mesures en réponse aux émeutes du week-end dans plusieurs villes du pays, à commencer par des couvre-feu \"partiels\" et \"localisés\", tandis que la crise prend un tournant de plus en …",
-   "url": "https://www.rts.ch/info/monde/2026/article/violences-en-france-macron-refuse-la-demission-de-laurent-nunez-29389818.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/c033c26b-29390624.image?w=320&h=180",
-   "date": "2026-10-19T17:26:00.000Z",
-   "categories": [
-    "Monde"
-   ]
-  },
-  {
-   "source": "nzz",
-   "sourceLabel": "NZZ",
-   "lang": "de",
-   "title": "LIVE-TICKER - Krieg in der Ukraine: Tote nach russischem Drohnenangriff in Charkiw +++ Russland greift Energieanlagen in elf Regionen an",
-   "summary": "Seit über vier Jahren führt Russland Krieg gegen die Ukraine. Die wichtigsten Entwicklungen im Überblick.",
-   "url": "https://www.nzz.ch/international/krieg-in-der-ukraine-ukrainische-regierung-stuetzt-selenski-nach-attacke-trumps-trump-fordert-abloesung-selenskis-ld.10021245",
-   "image": "https://img-msp-prod.nzz.ch/2026/10/18/30ae176e-cbb4-4b44-bdf9-b769fff21f75.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=4128,4128,x922,y0",
-   "date": "2026-10-19T17:21:32.000Z",
-   "categories": []
-  },
-  {
-   "source": "feminisme",
-   "sourceLabel": "Orange Actualités",
-   "lang": "fr",
-   "section": "Féminisme",
-   "pp": true,
-   "title": "Flash Talk : Le féminisme : un gros mot ?",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOOGtOV05fa3M1RXpvRUtfYWdwUDE3M2R4OFF0anpsSXZpSDdiMXFXemFOVy13OTVtaGtMdTk2X1d5bXdVQ2VOdE9iQUEzOE1PVkZZeE55TUljeUpHci1nOGRVTFVzYTVkd3F3MGJ6TFg5WFIzZ0l1WkV1TTNuMVo2TWJhY2JVdHZnUUR1UzRBQW83QkdQbzVreEMwaw?oc=5",
-   "image": "",
-   "date": "2026-10-19T17:16:40.000Z",
-   "categories": []
-  },
-  {
    "source": "vienne",
    "sourceLabel": "ORF Wien",
    "lang": "de",
@@ -1894,55 +2529,15 @@
    ]
   },
   {
-   "source": "letemps",
-   "sourceLabel": "Le Temps",
-   "lang": "fr",
-   "title": "Le défi de la transformation du Canada",
-   "summary": "ÉDITORIAL. A l’heure où la riche province de l’Alberta vote pour son indépendance, le premier ministre canadien rassure les tenants de l’unité confédérale du pays. Son défi: tenir la distance pour que le changement stratégique opéré soit …",
-   "url": "https://www.letemps.ch/articles/le-defi-de-la-transformation-du-canada",
-   "image": "https://letemps-17455.kxcdn.com/photos/6c6a079f-5273-4b5e-a107-0da21c3fb268/medium",
-   "date": "2026-10-19T17:12:10.000Z",
-   "categories": [
-    "Éditoriaux et commentaires",
-    "Opinions",
-    "Amériques"
-   ]
-  },
-  {
-   "source": "letemps",
-   "sourceLabel": "Le Temps",
-   "lang": "fr",
-   "title": "Face à une industrie qui essore les artistes, Billie Bird chante le refuge des étreintes",
-   "summary": "Juste avant de sortir son nouvel album lumineux, la musicienne vaudoise a annoncé qu’elle renonçait à sa tournée. Symbole d’un écosystème où l’on produit plus qu’on s’écoute, regrette Billie Bird",
-   "url": "https://www.letemps.ch/articles/face-a-une-industrie-qui-essore-les-artistes-billie-bird-chante-le-refuge-des-etreintes",
-   "image": "https://letemps-17455.kxcdn.com/photos/1afe5080-d25f-4cd4-b525-a6e7c33d210f/medium",
-   "date": "2026-10-19T17:10:17.000Z",
-   "categories": [
-    "Culture",
-    "Musiques"
-   ]
-  },
-  {
-   "source": "nzz",
-   "sourceLabel": "NZZ",
-   "lang": "de",
-   "title": "VIDEO - Wer steckt hinter den Randalen in Frankreich?",
-   "summary": "Die anfänglichen Schülerproteste haben sich zu landesweiten Ausschreitungen ausgeweitet. Radikale Gruppierungen und Jugendliche dominieren zunehmend das Geschehen auf den Strassen. Während die Gewalt zunimmt, stösst das Krisenmanagement …",
-   "url": "https://www.nzz.ch/shorts/wer-steckt-hinter-den-randalen-in-frankreich-ld.10038617",
-   "image": "https://img-msp-prod.nzz.ch/2026/10/13/45fb2a0b-6f0f-404f-876e-a72e6b8d2531.jpg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=2837,2837,x709,y0",
-   "date": "2026-10-19T17:08:02.000Z",
-   "categories": []
-  },
-  {
-   "source": "berlin",
-   "sourceLabel": "rbb24",
-   "lang": "de",
-   "city": "Berlin",
-   "title": "Nach Angriff auf 14-Jährigen: Fachleute betonen Bedeutung von Prävention",
-   "summary": "Es war eine brutale Tat, die sich vergangene Woche in Frankfurt (Oder) ereignete: Etwa zehn Jugendliche treten auf einen Schüler ein, filmen die Attacke und stellen das Video ins Netz. Dass Jugendgewalt zunimmt, sehen auch Fachleute - und …",
-   "url": "https://www.rbb24.de/panorama/beitrag/2026/10/schlaegerei-oberschule-frankfurt-oder-sozialarbeit-anstieg-gewalt.html",
+   "source": "politico",
+   "sourceLabel": "POLITICO.eu",
+   "lang": "en",
+   "section": "Brussels",
+   "title": "After looting spree, France tells online resellers to crack down on traffic of stolen goods",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxON1RPM29HVXpjMkpqeTlpY3pNREVNRXMzNVJsRVVDRGJFcngtV3dsUlJ0SXR3RXh2bS12S2x5eWVvNTRHaC12WnFYNVRRSFpJelMxTmhiNjdZamJkOFRqYzdkU0VtZ0xvelRqSG93STI4a1lwWFAwVFkyaUp0NUN6YjUtZVRGc1hYeURwVzZlSkFMcXphXzNDN0Z2YTgya2MwbzJn?oc=5",
    "image": "",
-   "date": "2026-10-19T17:06:16.000Z",
+   "date": "2026-10-19T17:09:00.000Z",
    "categories": []
   },
   {
@@ -1991,17 +2586,6 @@
    ]
   },
   {
-   "source": "nzz",
-   "sourceLabel": "NZZ",
-   "lang": "de",
-   "title": "«Steuer-Wirrwarr», «Wundertüte», «Zwängerei»: Eine freisinnig-linke Allianz bekämpft die Steuerinitiative der Mitte",
-   "summary": "Im März nahm das Volk die Individualbesteuerung an und schaffte die Heiratsstrafe ab. Die Abstimmungsvorlage der Mitte verfolgt dasselbe Ziel, setzt aber auf ein anderes Modell. Das sei «undemokratisch», sagen die Gegner.",
-   "url": "https://www.nzz.ch/schweiz/steuer-wirrwar-wundertuete-zwaengerei-eine-freisinnig-linke-allianz-bekaempft-die-steuer-initiative-der-mitte-ld.10038050",
-   "image": "https://img-msp-prod.nzz.ch/2022/02/04/291e3806-ebe9-473f-9de0-24479514b147.jpeg?width=200&height=200&fit=bounds&quality=75&auto=webp&crop=3946,3946,x950,y0",
-   "date": "2026-10-19T16:50:40.000Z",
-   "categories": []
-  },
-  {
    "source": "badische",
    "sourceLabel": "Badische Zeitung",
    "lang": "de",
@@ -2043,19 +2627,6 @@
     "Air",
     "Armies",
     "Around The Globe"
-   ]
-  },
-  {
-   "source": "courrier",
-   "sourceLabel": "Courrier international",
-   "lang": "fr",
-   "title": "L’agence spatiale japonaise va lancer une sonde pour comprendre les mystères d’une lune martienne",
-   "summary": "Vers 21 heures, heure de Paris, l’agence nippone lancera une sonde depuis l’île de Tanegashima, dans le sud de l’archipel. Objectif : rapporter sur Terre 10 grammes d’échantillons de la lune martienne Phobos pour mieux comprendre la …",
-   "url": "https://www.courrierinternational.com/article/espace-l-agence-spatiale-japonaise-va-lancer-une-sonde-pour-comprendre-les-mysteres-d-une-lune-martienne_279805",
-   "image": "https://focus.courrierinternational.com/2026/10/19/0/0/3500/2498/644/0/60/0/3f2f0a4_ftp-1-7jrw7ee1myrr-2026-10-19t075820z-1510975680-rc246oa6a6gt-rtrmadp-3-japan-space-phobos-rocket.JPG",
-   "date": "2026-10-19T16:45:49.000Z",
-   "categories": [
-    "Espace"
    ]
   },
   {
@@ -2119,20 +2690,6 @@
    ]
   },
   {
-   "source": "rts-monde",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "section": "Monde",
-   "title": "Vladimir Poutine évoque un sommet sur l'Ukraine avec Donald Trump et Xi Jinping, sans Volodymyr Zelensky",
-   "summary": "Une rencontre entre les dirigeants russe, chinois et américain en Chine en novembre au sommet de l'Apec a été \"évoquée\", a déclaré lundi le porte-parole du Kremlin. Donald Trump s'est dit prêt à une telle rencontre trilatérale.",
-   "url": "https://www.rts.ch/info/monde/2026/article/guerre-en-ukraine-poutine-propose-un-sommet-avec-trump-et-xi-29389786.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/eae9fdee-29389809.image?w=320&h=180",
-   "date": "2026-10-19T16:12:00.000Z",
-   "categories": [
-    "Monde"
-   ]
-  },
-  {
    "source": "srf",
    "sourceLabel": "SRF",
    "lang": "de",
@@ -2143,20 +2700,6 @@
    "image": "https://www.srf.ch/static/cms/images//320ws/6b5d19.webp",
    "date": "2026-10-19T16:09:26.000Z",
    "categories": []
-  },
-  {
-   "source": "rts-monde",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "section": "Monde",
-   "title": "Qui est Flávio Bolsonaro, l’héritier qui défie Lula au Brésil?",
-   "summary": "Flávio Bolsonaro, fils aîné de l’ancien président brésilien Jair Bolsonaro, est arrivé en tête du premier tour de l’élection présidentielle au Brésil le 4 octobre 2026. Dans quelle mesure s’inscrit-il dans la continuité de son père, …",
-   "url": "https://www.rts.ch/info/monde/2026/article/bresil-qui-est-flavio-bolsonaro-l-heritier-qui-defie-lula-29390532.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/382fedc9-29390511.image?w=320&h=180",
-   "date": "2026-10-19T16:05:18.000Z",
-   "categories": [
-    "Monde"
-   ]
   },
   {
    "source": "artforum",
@@ -2275,18 +2818,6 @@
    ]
   },
   {
-   "source": "srf",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "Schweiz",
-   "title": "Happige Vorwürfe – Klima der Angst – Freiburger Strafanstalt in der Kritik",
-   "summary": "Autoritärer Führungsstil, falsch verbuchte Überstunden. Hinter den Freiburger Gefängnismauern rumort es.",
-   "url": "https://www.srf.ch/news/schweiz/happige-vorwuerfe-klima-der-angst-freiburger-strafanstalt-in-der-kritik",
-   "image": "https://www.srf.ch/static/cms/images//320ws/d13bc66.webp",
-   "date": "2026-10-19T15:52:26.000Z",
-   "categories": []
-  },
-  {
    "source": "touteleurope",
    "sourceLabel": "Toute l'Europe",
    "lang": "fr",
@@ -2319,22 +2850,6 @@
    ]
   },
   {
-   "source": "yle",
-   "sourceLabel": "Yle",
-   "lang": "fi",
-   "section": "Suomi",
-   "title": "Mielikuva kokoomuksesta romahti, ykkösenä SDP – Yle sai haltuunsa puolueiden imagovertailun",
-   "summary": "Yle sai haltuunsa eduskuntapuolueiden tilaaman imago-tutkimuksen. Mielikuva kokoomuksesta on sen mukaan romahtanut kuuden suurimman puolueen vertailussa huonoimmaksi.",
-   "url": "https://yle.fi/a/74-20252213?origin=rss",
-   "image": "https://img.img-cdn.yle.fi/crop_extract,w_5730,h_3223,x_0,y_471/crop_fill,w_1200,h_628/f_auto/39-16566466a257606689c9/1780840263",
-   "date": "2026-10-19T15:41:46.000Z",
-   "categories": [
-    "Politiikka",
-    "Suomen poliittiset puolueet",
-    "Imagotutkimus"
-   ]
-  },
-  {
    "source": "opex360",
    "sourceLabel": "Zone Militaire",
    "lang": "fr",
@@ -2349,18 +2864,6 @@
     "approche",
     "Cosmos 2612"
    ]
-  },
-  {
-   "source": "lemonde-europe",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "section": "Europe",
-   "title": "Dans une Allemagne en crise, le nombre de créations de start-up atteint un record",
-   "summary": "L’intelligence artificielle et les tensions sur le marché du travail expliquent le rebond historique des créations d’entreprises innovantes.",
-   "url": "https://www.lemonde.fr/economie/article/2026/10/19/dans-une-allemagne-en-crise-le-nombre-de-creations-de-start-up-atteint-un-record_6797550_3234.html",
-   "image": "https://img.lemde.fr/2026/10/06/173/0/3352/1676/644/322/60/0/f7a143f_ftp-1-c7wkusfk2pp6-2026-10-06t104521z-1509918795-rc2ttna38y5x-rtrmadp-3-germany-economy-startups.JPG",
-   "date": "2026-10-19T15:30:08.000Z",
-   "categories": []
   },
   {
    "source": "artnewspaper",
@@ -2417,6 +2920,18 @@
    "categories": [
     "La guerre en Ukraine au jour le jour"
    ]
+  },
+  {
+   "source": "basel",
+   "sourceLabel": "Blick",
+   "lang": "de",
+   "city": "Bâle",
+   "title": "Swiss Indoors: Sechs Schweizer dürfen in Basel auf Coup hoffen",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNNl9ZbS1laUkyVXA3RnJ5NEYzWEdCN0RoSmM0RnZKa2JBVTQ4WVNfLUt4T201MVZWMHFMcUZmZks0NE84b3YzTGQ4OXZrNjlaNkozSDI4dnJrd0NMN0JWTzZNbVV6X093NnNqbEhBbmV2WjVEbkFsTl9MaE10RGdzVUg1T2dxUHEwN2d0eXRPTDVLSDBHQ3JicS1RQXo0TnQyZWN4akNTaw?oc=5",
+   "image": "",
+   "date": "2026-10-19T15:17:00.000Z",
+   "categories": []
   },
   {
    "source": "rts-culture",
@@ -2489,18 +3004,6 @@
    ]
   },
   {
-   "source": "srf",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "Schweiz",
-   "title": "Sorge ums Trinkwasser – Immer mehr Gemeinden verlieren ihre eigenen Wasserquellen",
-   "summary": "Die Wasserversorgung in der Schweiz sei zunehmend zentralisiert. Fachverbände sehen die Versorgungssicherheit gefährdet.",
-   "url": "https://www.srf.ch/news/schweiz/sorge-ums-trinkwasser-immer-mehr-gemeinden-verlieren-ihre-eigenen-wasserquellen",
-   "image": "https://www.srf.ch/static/cms/images//320ws/9929ff.webp",
-   "date": "2026-10-19T15:02:14.000Z",
-   "categories": []
-  },
-  {
    "source": "bz",
    "sourceLabel": "bz Basel",
    "lang": "de",
@@ -2548,18 +3051,6 @@
    "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQQTlmdEN2V3BpZUV6VjdvdHFBdEhUU2toVEExenFEQzcxZjF2alpyTmFXVVEzeFJ2azdxQ1BMTGp1cE1YT0JSOWVxYmwydHpzRUpCclh2OW44bEV3OGg4bVo1WDJUN0JsWWZLSGUxX0x1Y1NsR1JLNWdoQmRZNTdoeQ?oc=5",
    "image": "",
    "date": "2026-10-19T14:45:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "srf",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "Schweiz",
-   "title": "Abstimmungen 29. November 2026 – Das sind die Abstimmungsthemen",
-   "summary": "Am 29. November steht ein reich befrachteter Abstimmungssonntag bevor. Vier Vorlagen stehen auf dem Stimmzettel.",
-   "url": "https://www.srf.ch/news/schweiz/abstimmungen-29-november-2026-das-sind-die-abstimmungsthemen",
-   "image": "https://www.srf.ch/static/cms/images//320ws/c74968.webp",
-   "date": "2026-10-19T14:38:00.000Z",
    "categories": []
   },
   {
@@ -2628,18 +3119,6 @@
    ]
   },
   {
-   "source": "politico",
-   "sourceLabel": "POLITICO.eu",
-   "lang": "en",
-   "section": "Brussels",
-   "title": "French PM orders ‘localized’ curfews in response to looting and unrest",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPV0ZJajVxbnpWZFJyTm1RMjJRbG1FWWVEdWhtSERSWXhab2dUbXF2LXZZc2MzaVJuUkg2QzZaZVFIZ1dmeHNtZTJLWTFNNDZVUlc3dVgyM005RmlqSnhqMnJJTDc0VXZrWWxSTm5nZFo5UWhQRUk4U2lzWURyMG9XdjZSZFdqUTBld2JGQ2VtdGx6Zw?oc=5",
-   "image": "",
-   "date": "2026-10-19T14:12:00.000Z",
-   "categories": []
-  },
-  {
    "source": "livreshebdo",
    "sourceLabel": "Livres Hebdo",
    "lang": "fr",
@@ -2694,6 +3173,18 @@
    ]
   },
   {
+   "source": "dna",
+   "sourceLabel": "dna.fr",
+   "lang": "fr",
+   "city": "Alsace",
+   "title": "Concert \"la sacqueboute virtuose au Seicento\" : Concert - Classique à Strasbourg",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxQTGk5dEpHYWNob0JjcnVnNXo1bHlJdXRpZ0pJUXlwUU9MUG44NG1uYWszb1ZUUXNPR0ZhaVZmWVlWVjZuOGF5Ykw5WXFYYmoxY1otZERiV3I2VmF6QlVXalhZSW0xblNtaUduSVdvVUZVTUhwakpOR0F2UEotTmJ1REt2UnVJbW40V05GQnMwcklHYm5ja0tMQmRHbnVNYWstTTNSbXd0Q1JKb3BVcHlEcnlTaVFVNzh4My1rSUdMN3lQV28zQzV1V0ROWEFldFowUmJKVGlHamlRMTZaeXQ4?oc=5",
+   "image": "",
+   "date": "2026-10-19T13:58:11.000Z",
+   "categories": []
+  },
+  {
    "source": "artnewspaper",
    "sourceLabel": "The Art Newspaper",
    "lang": "en",
@@ -2708,32 +3199,6 @@
     "Fitzwilliam Museum",
     "William Morris"
    ]
-  },
-  {
-   "source": "vienne",
-   "sourceLabel": "ORF Wien",
-   "lang": "de",
-   "city": "Vienne",
-   "title": "Jugendliche nach Einbruchsserie in Haft",
-   "summary": "Vier Jugendliche sind nach einer Serie von Geschäftseinbrüchen in Wien-Döbling in der Nacht auf Sonntag auf frischer Tat ertappt worden. Drei 15-Jährige wurden vorläufig festgenommen. Ein 13-Jähriger wurde angezeigt und seinen …",
-   "url": "https://wien.orf.at/stories/3375944/",
-   "image": "https://ibs.orf.at/wie?image=https%3A%2F%2Foekastatic.orf.at%2Fmojo%2F1_4_1%2Fstoryserver%2Foeka%2Fcommon%2Fimages%2Fog-fallback-wie.png%3Fs%3D816df49d08cce86dee09914440bf9b17b74dbe60",
-   "date": "2026-10-19T13:51:53.000Z",
-   "categories": [
-    "Chronik"
-   ]
-  },
-  {
-   "source": "srf-int",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "International",
-   "title": "Schwere Wirtschaftskrise – «Fleisch zu kaufen, ist ein Traum»: Syriens neue Armut",
-   "summary": "Hohe Benzinpreise verschärfen die Krise in Syrien. Der Unmut in der Bevölkerung über die neue Übergangsregierung wächst.",
-   "url": "https://www.srf.ch/news/international/nahost/schwere-wirtschaftskrise-fleisch-zu-kaufen-ist-ein-traum-syriens-neue-armut",
-   "image": "https://www.srf.ch/static/cms/images//320ws/9e3f68.webp",
-   "date": "2026-10-19T13:49:12.000Z",
-   "categories": []
   },
   {
    "source": "orientxxi",
@@ -2763,20 +3228,6 @@
    ]
   },
   {
-   "source": "vienne",
-   "sourceLabel": "ORF Wien",
-   "lang": "de",
-   "city": "Vienne",
-   "title": "Kran brachte neues Teleskop für Urania",
-   "summary": "Technisch aufwendige Arbeiten sind heute bei der Urania Sternwarte auf dem Programm gestanden: Ein neues Teleskop wurde angeliefert und eingebaut. Die einzelnen Teile wurden von einem speziellen Kran in die Kuppel der Sternwarte gehoben.",
-   "url": "https://wien.orf.at/stories/3375805/",
-   "image": "https://ibs.orf.at/wie?image=https%3A%2F%2Foekastatic.orf.at%2Fmims%2F2026%2F43%2F01%2Fcrops%2Fw%3D1200%2Ch%3D627%2Cq%3D75%2F3222100_master_1250501_abd_20261019_abd0069.hr.jpg%3Fs%3Ddd61b5d32628b402244de2c1534a287e0eaa409d",
-   "date": "2026-10-19T13:34:03.000Z",
-   "categories": [
-    "Wissenschaft"
-   ]
-  },
-  {
    "source": "livreshebdo",
    "sourceLabel": "Livres Hebdo",
    "lang": "fr",
@@ -2786,18 +3237,6 @@
    "url": "http://www.livreshebdo.fr/article/le-nenuphar-dalexandrine-descotes-le-bruit-du-monde-un-succes-de-librairie-qui-na-pas-fini",
    "image": "https://www.livreshebdo.fr/sites/default/files/2026-10/Ne%CC%81nuphar%20d%27Alexandrine%20Descotes%20%28Le%20Bruit%20du%20monde%29.png",
    "date": "2026-10-19T13:31:54.000Z",
-   "categories": []
-  },
-  {
-   "source": "lemonde-europe",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "section": "Europe",
-   "title": "En Turquie, des inondations autour d’Istanbul font huit morts et un disparu",
-   "summary": "Les pluies historiques de mercredi ont été les plus fortes enregistrées depuis le début des relevés, en 1942, selon les autorités.",
-   "url": "https://www.lemonde.fr/international/article/2026/10/19/turquie-huit-morts-dans-des-inondations-autour-d-istanbul_6797531_3210.html",
-   "image": "https://img.lemde.fr/2026/10/16/473/0/5674/2837/644/322/60/0/ff3ea7f_ftp-1-ymv3u5ftoxft-2026-10-16t132526z-1238969227-rc2o3oa3zzce-rtrmadp-3-turkey-weather.JPG",
-   "date": "2026-10-19T13:23:36.000Z",
    "categories": []
   },
   {
@@ -2895,18 +3334,6 @@
    "categories": []
   },
   {
-   "source": "lemonde-europe",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "section": "Europe",
-   "title": "Suède : la cheffe des centristes chargée, à son tour, de former un gouvernement",
-   "summary": "La cheffe des sociaux-démocrates Magdalena Andersson, précédemment chargée deux fois de former un gouvernement, a essuyé autant d’échecs.",
-   "url": "https://www.lemonde.fr/international/article/2026/10/19/suede-la-cheffe-des-centristes-chargee-a-son-tour-de-former-un-gouvernement_6797529_3210.html",
-   "image": "https://img.lemde.fr/2026/10/16/85/0/1024/512/644/322/60/0/a1293ab_ftp-1-fupfpp43mid1-afp-d3d23r4-1024.jpg",
-   "date": "2026-10-19T13:06:56.000Z",
-   "categories": []
-  },
-  {
    "source": "defensenews",
    "sourceLabel": "Defense News",
    "lang": "en",
@@ -2949,20 +3376,6 @@
    ]
   },
   {
-   "source": "rts-sport",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "section": "Sport",
-   "title": "Ski alpin - Corinne Suter va disputer à Sölden son premier géant depuis trois saisons",
-   "summary": "Swiss-Ski a dévoilé lundi le nom des dix skieuses qui disputeront le géant d'ouverture de la Coupe du monde samedi à Sölden. Parmi elles figure Corinne Suter.",
-   "url": "https://www.rts.ch/sport/ski/2026/article/solden-corinne-suter-alignee-en-geant-apres-3-ans-29390252.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/0434cc00-29390255.image?w=320&h=180",
-   "date": "2026-10-19T12:52:55.000Z",
-   "categories": [
-    "Ski"
-   ]
-  },
-  {
    "source": "euobserver",
    "sourceLabel": "EUobserver",
    "lang": "en",
@@ -2992,20 +3405,6 @@
     "Land Warfare",
     "Networks & Digital Warfare",
     "Sponsored Post"
-   ]
-  },
-  {
-   "source": "bajour",
-   "sourceLabel": "Bajour",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "80-jähriger Geisterfahrer sorgt auf der A3 für gefährliche Situationen",
-   "summary": "Ein 80-jähriger Autofahrer ist am Montagmorgen auf der A3 bei Basel entgegen der Fahrtrichtung unterwegs gewesen.",
-   "url": "https://bajour.ch/a/80-jaehriger-geisterfahrer-sorgt-auf-der-a3-fuer-gefaehrliche-situationen",
-   "image": "",
-   "date": "2026-10-19T12:42:50.000Z",
-   "categories": [
-    "Kurz-News"
    ]
   },
   {
@@ -3181,22 +3580,6 @@
    "categories": []
   },
   {
-   "source": "beauxarts",
-   "sourceLabel": "Beaux Arts",
-   "lang": "fr",
-   "section": "Exposition",
-   "title": "Nouveau directeur, secteur « Premise » repensé, temps forts… Que faut-il attendre d’Art Basel Paris pour cette édition 2026 ?",
-   "summary": "Art Basel Paris retrouve du 23 au 25 octobre le Grand Palais pour sa cinquième …",
-   "url": "https://www.beauxarts.com/expos/nouveau-directeur-secteur-premise-repense-temps-forts-que-faut-il-attendre-dart-basel-paris-pour-cette-edition-2026/",
-   "image": "https://media.beauxarts.com/uploads/2026/10/art-basel-paris-hr-1300x866.jpg",
-   "date": "2026-10-19T11:26:23.000Z",
-   "categories": [
-    "Art contemporain",
-    "Expos",
-    "Paris"
-   ]
-  },
-  {
    "source": "yle-en",
    "sourceLabel": "Yle News",
    "lang": "en",
@@ -3257,19 +3640,6 @@
     "Arts et Expositions",
     "Expo Paris",
     "Expo Art contemporain"
-   ]
-  },
-  {
-   "source": "lgc",
-   "sourceLabel": "Le Grand Continent",
-   "lang": "fr",
-   "title": "Léon XIV est le dirigeant étranger le plus apprécié des Français",
-   "summary": "Selon une enquête réalisée les 14 et 15 octobre par Cluster 17, 65 % des personnes interrogées ont une « très bonne » ou une « assez bonne » opinion du pape Léon XIV David Lisnard, la surprise libérale », Le Point , 18 octobre 2026.'> 51 . …",
-   "url": "https://legrandcontinent.eu/fr/2026/10/19/leon-xiv-est-le-dirigeant-etranger-le-plus-apprecie-des-francais/",
-   "image": "https://legrandcontinent.eu/fr/wp-content/uploads/sites/2/2026/10/share-Leon-XIV-est-le-dirigeant-etranger-le-plus-apprecie-des-Francais.png",
-   "date": "2026-10-19T10:58:40.000Z",
-   "categories": [
-    "Politique"
    ]
   },
   {
@@ -3587,33 +3957,6 @@
    "categories": []
   },
   {
-   "source": "bajour",
-   "sourceLabel": "Bajour",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "Roche stoppt vorerst neue Investitionen in Deutschland",
-   "summary": "Der Basler Pharmakonzern Roche legt sämtliche neuen Investitionsentscheidungen in Deutschland auf Eis.",
-   "url": "https://bajour.ch/a/roche-stoppt-vorerst-neue-investitionen-in-deutschland",
-   "image": "",
-   "date": "2026-10-19T09:49:49.000Z",
-   "categories": [
-    "Kurz-News"
-   ]
-  },
-  {
-   "source": "rfi",
-   "sourceLabel": "RFI",
-   "lang": "fr",
-   "title": "Après les violences, des couvre-feux dans plusieurs villes de France, dont Paris, Lyon et Lille",
-   "summary": "Des couvre-feux sont entrés en vigueur ce lundi 19 octobre dans plusieurs villes de France, notamment à Paris, Lyon, Lille, Nice et Bordeaux, après un week-end de mobilisation marqué par des violences et des pillages. Ces mesures, limitées …",
-   "url": "https://www.rfi.fr/fr/france/20261019-direct-mobilisation-sociale-en-france-l-acc%C3%A8s-au-mus%C3%A9e-du-louvre-bloqu%C3%A9-par-des-manifestants",
-   "image": "https://s.rfi.fr/media/display/ea549b12-cbe0-11f1-992e-638c1c1f5fd6/w:1024/p:16x9/000-D3RC72V.jpg",
-   "date": "2026-10-19T09:48:22.000Z",
-   "categories": [
-    "France"
-   ]
-  },
-  {
    "source": "touteleurope",
    "sourceLabel": "Toute l'Europe",
    "lang": "fr",
@@ -3677,6 +4020,18 @@
     "17 octobre",
     "gilets jaunes"
    ]
+  },
+  {
+   "source": "bz",
+   "sourceLabel": "bz Basel",
+   "lang": "de",
+   "city": "Bâle",
+   "title": "Konkubinat: Ohne Testament oder Vertrag erhalten die Kinder alles und die Partnerin nichts – so können Sie das regeln",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQMnROZXp2blFiaVBIUW5FSzBKbEpzX1J6NzJYQ09VdlNNYVNSYklsVDNFT2dwdjBjWkQ1bzNqQlp1MDkyMDduS1VLX3hmd1hOb0dNT3dFUm1GS1hsV0tUNnVhUVdQRHR1R0ZhdmhVTkNQVjN0UHRoUlBhNktFOVh0S3h1QTBxMXhPS3FCVW5JRGNSVXY2TzFhcHpxVlhDblEzZkp0c2pfbHA0OFV2dWYtbFRuU0c1X0FyaXNaekFmcjQ2UQ?oc=5",
+   "image": "",
+   "date": "2026-10-19T09:23:00.000Z",
+   "categories": []
   },
   {
    "source": "artnet",
@@ -3839,18 +4194,6 @@
    ]
   },
   {
-   "source": "dna",
-   "sourceLabel": "dna.fr",
-   "lang": "fr",
-   "city": "Alsace",
-   "title": "Construction d'un système d'assainissement dans la commune de Breidenbach",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxNSXhBTTFRWjMwSVNzV2owajRGMnNfdWlzeDh3R20xRjVabVBOODR0U1BEX09jUzRqRG1UbGp4UGNLSTZQSEtJMGttUmhCXzFOWS1KWnBhQUpPb0wta1JZYkt1amtNX1dsUWdQYnExU1VOZ2RRcVktd2dlQnViYzQ1WnJFTm15bGpzN0pERXF0dFBqNzI1a0tjOWpvTUo3dkxqSzc1VkxuNm5EMktCYzlaQU9pUnhWTlk?oc=5",
-   "image": "",
-   "date": "2026-10-19T08:18:44.000Z",
-   "categories": []
-  },
-  {
    "source": "bruxelles",
    "sourceLabel": "The Bulletin",
    "lang": "en",
@@ -3955,18 +4298,6 @@
    "categories": [
     "Livres"
    ]
-  },
-  {
-   "source": "basel",
-   "sourceLabel": "Bâle",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "Bahnkongress Bahn27 mit Bundesrat Albert Rösti und weiteren nationalen und internationalen Entscheidungsträgern in Basel - Kanton Basel-Stadt",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMi-AFBVV95cUxQcHdSOWdrVXZCUkFHNnc0WGNEX0h5V2kwdWVVaXI0QklKWmg0bjFXdGxlRjUxX2ZPRHVqd1NVaUlzMzRWeTFmZ2xmQVdLZDdHaElBNXg3MGtROHc2djNXdWsyV0E5cnhNdHRCbzV2VERNVDEwbmNXOVZYWWl4N2I0RlZkWHdvNVVSREVRR0pRWnhUcnAyMU10Slpkd1Q2S1hlLWxBQ1VzR0loMF9qdEVPOW5xQ00ySGxyTEJyaHZyY3ZXc2ZEWVpQdkVHNlJIOE9NNzFuNkZOWWVKcDZrR0puVjdpR3BzS2p6c1kzQ1h0LU9rc2xZaHFiWQ?oc=5",
-   "image": "",
-   "date": "2026-10-19T07:00:00.000Z",
-   "categories": []
   },
   {
    "source": "bruxelles",
@@ -4083,22 +4414,6 @@
    "categories": []
   },
   {
-   "source": "yle-en",
-   "sourceLabel": "Yle News",
-   "lang": "en",
-   "section": "Finland",
-   "title": "Two Finns supplying Russia with missile tech worth tens of millions",
-   "summary": "A network with ties to Finland supplied Russia with millions of euros' worth of missile components used against Ukraine.",
-   "url": "https://yle.fi/a/74-20250514?origin=rss",
-   "image": "https://img.img-cdn.yle.fi/crop_extract,w_3839,h_2159,x_2161,y_0/crop_fill,w_1200,h_628/f_auto/39-17236886ad21f04d159a/1792155450",
-   "date": "2026-10-19T05:26:14.000Z",
-   "categories": [
-    "Domestic news",
-    "Foreign policy",
-    "Politics"
-   ]
-  },
-  {
    "source": "feminismus",
    "sourceLabel": "GALA.de",
    "lang": "de",
@@ -4168,18 +4483,6 @@
    "categories": []
   },
   {
-   "source": "bz",
-   "sourceLabel": "bz Basel",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "Marco Barotti lässt Korallenriffe mit Meeresklängen neu aufleben",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNMEFSX0xFcFR4Mm1BYkF5NnpOV3pad2xPVEJoa3NPamluVXdIN09YbENsQTRIOEVJbG9IdVZrOXdlTmxoZm9KTkxVZmljTGY2blRlQkhtUHN1TS0xUUlERDFteUloZjlWejRPbFlTWExSTW04VlVld3dtczJjeHUxR1Radk14ZEJydXlZaGtwSE14M3Zvakpzclp6Z0ZfUQ?oc=5",
-   "image": "",
-   "date": "2026-10-19T04:31:16.000Z",
-   "categories": []
-  },
-  {
    "source": "eflux",
    "sourceLabel": "e-flux",
    "lang": "en",
@@ -4190,19 +4493,6 @@
    "image": "",
    "date": "2026-10-19T04:05:37.000Z",
    "categories": []
-  },
-  {
-   "source": "lgc",
-   "sourceLabel": "Le Grand Continent",
-   "lang": "fr",
-   "title": "Au-delà de la France, la crise du coût de la vie embrase l’Europe",
-   "summary": "Des centaines de milliers de personnes ont manifesté ce week-end dans plusieurs pays européens, dont la France, la Belgique, l’Italie, le Portugal et l’Albanie.",
-   "url": "https://legrandcontinent.eu/fr/2026/10/19/au-dela-de-la-france-la-crise-du-cout-de-la-vie-embrase-leurope/",
-   "image": "https://legrandcontinent.eu/fr/wp-content/uploads/sites/2/2026/10/Capture-decran-2026-10-18-a-22.46.35-990x555.png",
-   "date": "2026-10-19T04:00:00.000Z",
-   "categories": [
-    "Politique"
-   ]
   },
   {
    "source": "strasbourg",
@@ -4245,30 +4535,6 @@
    "categories": []
   },
   {
-   "source": "bz",
-   "sourceLabel": "bz Basel",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "«Hobler» Buttenmost wird vorübergehend mit Wasser aus Gempen hergestellt",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOOG9HeUhnd3JyYTFKdWdzMlZicm5EOFJUWXZQQTN2V010LWViSlVUaXlGT3pWZVU1TUJGczJDTG1QektNSDl4Tl9EMEdiY2FZQThCbTg3M0RJRzF6NVBnTlItSUNkR0dfSlBFVWxNV3BsZ1M0RTFDb0tGSnYtdnk4WmpjTmR1eldHTWdmR09NaHNwb1V2RGo1ZnNmRnEzNVRLMllNN3d4YUNTRllHUFVqa1ZfZjRqTEFKSEdV?oc=5",
-   "image": "",
-   "date": "2026-10-19T03:00:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "bz",
-   "sourceLabel": "bz Basel",
-   "lang": "de",
-   "city": "Bâle",
-   "title": "Pascal Ryf will Maya Graf aus dem Stöckli drängen – zuerst hat er Ärger in eigener Partei",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNdGF5dnJYU2ZHLVRwRG8ySE5IcmkyUXZaMHdxTl9oWEE1X0E3U1hHZUphQ1h3VkVzejczei1YSThhYWN6bVNGQlY0RTVpa2lkdzZ4Q3JBclRjQ0JCaHVHZE9vRUl5QTJRSFhVSVZFRi16TmlCZFBNWkliZGUwLTFrTXNCRWtJR1NQWWt0S3UyaGZsNjYtdERVLTZzNzRDN2s1X0VNTFZjZ09VZ3FvZEZXRVl3SkdGOUhBem5BVUkxaVllN2VhY3ZIZg?oc=5",
-   "image": "",
-   "date": "2026-10-19T03:00:00.000Z",
-   "categories": []
-  },
-  {
    "source": "republik",
    "sourceLabel": "Republik",
    "lang": "de",
@@ -4277,39 +4543,6 @@
    "url": "https://www.republik.ch/2026/10/19/republik-heute?utm_medium=rss",
    "image": "",
    "date": "2026-10-19T03:00:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "republik",
-   "sourceLabel": "Republik",
-   "lang": "de",
-   "title": "Die Arbeiterklasse ist nicht rechts",
-   "summary": "Trotz der Erfolge der AfD sind die Arbeiterinnen nicht an den Rechts­radikalismus verloren. Für eine erfolgreiche Gegen­mobilisierung muss sich die Linke aber von falschen Mythen verabschieden.",
-   "url": "https://www.republik.ch/2026/10/19/die-arbeiterklasse-ist-nicht-rechts?utm_medium=rss",
-   "image": "https://media.repub.ch/images/obvmvrpv/production/045d1295b40d5023e73ee99932e8634b7a4ad273-2880x2160.jpg?rect=0,324,2880,1512&w=1200&h=630&fm=jpg&auto=format",
-   "date": "2026-10-19T02:50:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "republik",
-   "sourceLabel": "Republik",
-   "lang": "de",
-   "title": "Beten und lachen als Bewältigungsstrategie",
-   "summary": "Der Fotograf Jeffrey Stockbridge aus Philadelphia, Pennsylvania, stellt uns zwei Menschen vor, die dem täglichen Wahnsinn auf unterschiedliche Art begegnen. Folge 5 der Bildserie aus den USA.",
-   "url": "https://www.republik.ch/2026/10/19/beten-und-lachen-als-bewaeltigungsstrategie?utm_medium=rss",
-   "image": "https://media.repub.ch/images/obvmvrpv/production/43e45d31d2f1e4e8f1a06ab3c74f9a5c08811f93-11648x8736.jpg?rect=0,1311,11648,6115&w=1200&h=630&fm=jpg&auto=format",
-   "date": "2026-10-19T02:47:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "republik",
-   "sourceLabel": "Republik",
-   "lang": "de",
-   "title": "Carlos Hanimann, was wurde aus den Pushbacks im Mittelmeer?",
-   "summary": "Als 2022 bekannt wurde, dass die EU-Grenzagentur Frontex für schwere Menschenrechts­verletzungen verantwortlich ist, war die Empörung gross. Und heute? Zeit für ein Update.",
-   "url": "https://www.republik.ch/2026/10/19/carlos-hanimann-was-wurde-aus-den-pushbacks-im-mittelmeer?utm_medium=rss",
-   "image": "https://media.repub.ch/images/obvmvrpv/production/ba35b144b080d56c5d568a97a1fca6e2dd24a60a-5151x3863.jpg?rect=0,0,5151,2704&w=1200&h=630&fm=jpg&auto=format",
-   "date": "2026-10-19T02:45:00.000Z",
    "categories": []
   },
   {
@@ -4374,18 +4607,6 @@
    "categories": []
   },
   {
-   "source": "bund-fr",
-   "sourceLabel": "Confédération",
-   "lang": "fr",
-   "section": "Conseil fédéral",
-   "title": "Forum sur la sécurité des drones en Suisse 2026: un renforcement de l’écosystème suisse des drones",
-   "summary": "Le 19 octobre 2026, la task force Drones accueille la première édition du Forum sur la sécurité des drones en Suisse. Organisée sur la place d’armes de Thoune, cette manifestation rassemble plus de 300 acteurs issus de la recherche, de …",
-   "url": "https://www.admin.ch/fr/newnsb/-2oUXbw9UUWx",
-   "image": "",
-   "date": "2026-10-19T00:00:00.000Z",
-   "categories": []
-  },
-  {
    "source": "bund-de",
    "sourceLabel": "Bund",
    "lang": "de",
@@ -4429,18 +4650,6 @@
    "title": "Röntgenlicht deckt Wechselspiel von Quasiteilchen im Festkörper auf",
    "summary": "In einem Festkörper können sich verschiedene Arten von Anregungen gegenseitig beeinflussen. Dank einer neuen experimentellen Technik am Schweizer Freie-Elektronen- Röntgenlaser SwissFEL ist es einem Team am Paul Scherrer Institut PSI nun …",
    "url": "https://www.admin.ch/de/newnsb/8CNOjf9IHSvZ",
-   "image": "",
-   "date": "2026-10-19T00:00:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "bund-de",
-   "sourceLabel": "Bund",
-   "lang": "de",
-   "section": "Bundesrat",
-   "title": "Sicherheitsforum Drohnen Schweiz 2026: Stärkung des Schweizer Drohnenökosystems",
-   "summary": "Am 19. Oktober 2026 ist die Taskforce Drohnen Gastgeberin der ersten Ausgabe des Sicherheitsforums Drohnen Schweiz 2026. Der Anlass findet auf dem Waffenplatz in Thun statt und bringt über 300 Akteure aus der Schweizer Forschung, Armee, …",
-   "url": "https://www.admin.ch/de/newnsb/-2oUXbw9UUWx",
    "image": "",
    "date": "2026-10-19T00:00:00.000Z",
    "categories": []
@@ -4494,32 +4703,6 @@
    "categories": [
     "Art World"
    ]
-  },
-  {
-   "source": "rts-regions",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "section": "Régions",
-   "title": "Les habitants de la Vallée de Joux ont désigné tous les membres de leur première municipalité",
-   "summary": "Les habitants de la future commune unifiée de la Vallée de Joux ont voté pour choisir les neuf membres de leur première municipalité. Sébastien Cala et Sophie Matthey-Pierret ont remporté les deux sièges qui revenaient à la commune du …",
-   "url": "https://www.rts.ch/info/regions/vaud/2026/article/vallee-de-joux-la-premiere-municipalite-unifiee-est-connue-29389389.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/a4649678-29389457.image?w=320&h=180",
-   "date": "2026-10-18T20:21:35.000Z",
-   "categories": [
-    "Vaud"
-   ]
-  },
-  {
-   "source": "politico",
-   "sourceLabel": "POLITICO.eu",
-   "lang": "en",
-   "section": "Brussels",
-   "title": "Macron vows looters will ‘pay’ in France after protests turn violent",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxNbldVS0xrZWVESDJlUmZRMktOZW9JN2ZqYmhJVE1uc0d6Z25BWlZUWHhzVDJPY3AtNXYyODlzQ2xnN1JrUG5oYmFsVXVCMVhEeG9SNFV5cjMzblRfOGgzRmtFUFJ0aEU0RGoyWFlhM25GZDR5MWg4Y3BfUGJXNnY4aUZRQ1BVV21rNE04?oc=5",
-   "image": "",
-   "date": "2026-10-18T20:14:00.000Z",
-   "categories": []
   },
   {
    "source": "rts-suisse",
@@ -4734,18 +4917,6 @@
    ]
   },
   {
-   "source": "basel-kultur",
-   "sourceLabel": "Das Wallis im Hosensack",
-   "lang": "de",
-   "city": "Bâle · culture",
-   "title": "Zürich und Genf machen deutlich mehr Gelder locker: Warum sich Basel trotzdem «Musikstadt» nennen darf - Pomona",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxQcFpSQXA3dkFtMzJacjhfUVpYeFdmcjBLM1NnX1liVFlmeTFMbVdOWkY3dzZ0WndCVmZaaGFJNG5GVjFHYkNiOFNtVHZ2Sk9JSDFGaVNPSjNISFRqRkhhaDlfajlCMzdvT2c1eTR4ZWhmMGpXekxiUGZXbTBPUWNpY05rY3dJVmg1TG9TdnotMENsR3FzWHpCYjZOcE51Q3RBdkJGMjN2Ry1jYWJibkUwZ0I4ZzZYX1NHSnowTTZGc2xPTjUxS1cwcmM0Y3NqcERJ?oc=5",
-   "image": "",
-   "date": "2026-10-18T10:07:11.000Z",
-   "categories": []
-  },
-  {
    "source": "visionscarto",
    "sourceLabel": "Visionscarto",
    "lang": "fr",
@@ -4775,34 +4946,6 @@
    ]
   },
   {
-   "source": "cda",
-   "sourceLabel": "Connaissance des Arts",
-   "lang": "fr",
-   "section": "Exposition",
-   "title": "« L’IA ne remplacera jamais la beauté de ce que la main de l’homme fabrique »: à Saint-Denis, ces artisans d’exception qui redonnent vie à la flèche perdue de la basilique",
-   "summary": "À Saint-Denis, la reconstruction de la flèche nord de la basilique , démontée pierre par pierre en 1846, ne se résume pas qu’à un spectaculaire chantier patrimonial. Menée sur cinq ans, l’opération qui doit aboutir en 2030 mobilise quelque …",
-   "url": "https://www.connaissancedesarts.com/metiers_art/savoir-faire/lia-ne-remplacera-jamais-la-beaute-de-ce-que-la-main-de-lhomme-fabrique-a-saint-denis-ces-artisans-dexception-qui-redonnent-vie-a-la-fleche-perdue-de-la-basilique-11217334/",
-   "image": "https://www.connaissancedesarts.com/wp-content/thumbnails/uploads/2026/10/cda26_patrimoine_chantier_basilique_saint_denis_fabrique_de_la_fleche_apprenti-tt-width-653-height-465-fill-0-crop-0-bgcolor-eeeeee.jpg",
-   "date": "2026-10-18T08:00:32.000Z",
-   "categories": [
-    "Artisan d'art",
-    "Métiers d'art",
-    "Savoir-faire"
-   ]
-  },
-  {
-   "source": "lemonde-livres",
-   "sourceLabel": "Le Monde des livres",
-   "lang": "fr",
-   "section": "Livres",
-   "title": "Yasmina Reza, l’inimportance des choses",
-   "summary": "« Nos divertissements sont terminés », son nouveau livre, permet de comprendre la place des héros qui dérapent dans son œuvre littéraire et théâtrale, et vient éclairer d’autres obsessions. Tour d’horizon en quatre mots-clés.",
-   "url": "https://www.lemonde.fr/livres/article/2026/10/18/yasmina-reza-l-inimportance-des-choses_6797044_3260.html",
-   "image": "https://img.lemde.fr/2026/10/14/1159/0/3856/1928/644/322/60/0/5f91ac8_upload-1-9ppleni37uqv-reza-yasmina-2-3.jpg",
-   "date": "2026-10-18T07:00:09.000Z",
-   "categories": []
-  },
-  {
    "source": "bondyblog",
    "sourceLabel": "Bondy Blog",
    "lang": "fr",
@@ -4818,17 +4961,6 @@
     "17 octobre",
     "contre la vie chère"
    ]
-  },
-  {
-   "source": "republik",
-   "sourceLabel": "Republik",
-   "lang": "de",
-   "title": "🛋️ Klavierstunde",
-   "summary": "Beitrag öffnen",
-   "url": "https://www.republik.ch/2026/10/18/-klavierstunde?utm_medium=rss",
-   "image": "",
-   "date": "2026-10-18T06:00:00.000Z",
-   "categories": []
   },
   {
    "source": "contretemps",
@@ -4860,22 +4992,6 @@
    "categories": []
   },
   {
-   "source": "strasbourg",
-   "sourceLabel": "Rue89 Strasbourg",
-   "lang": "fr",
-   "city": "Strasbourg",
-   "title": "Dans sa ferme bio, Marc Ebel soigne les abeilles contre les canicules et la sécheresse",
-   "summary": "À Lutzelhouse, la ferme apicole bio du Sperl est adaptée aux étés de plus en plus chauds et secs. Malgré les canicules et la sécheresse inédite, l'apiculteur professionnel Marc Ebel a atteint son objectif de production : 1,6 tonne de miel …",
-   "url": "https://www.rue89strasbourg.com/ferme-bio-marc-ebel-abeilles-canicules-secheresse-398895",
-   "image": "https://www.rue89strasbourg.com/wp-content/uploads/2026/10/55580570734-b39a6cdb5b-k.jpg__rs?x=50&y=50",
-   "date": "2026-10-18T04:00:00.000Z",
-   "categories": [
-    "Édition abonnés",
-    "Reportage",
-    "apiculture"
-   ]
-  },
-  {
    "source": "feminismus",
    "sourceLabel": "20 Min",
    "lang": "de",
@@ -4886,18 +5002,6 @@
    "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPS3pUVldUZTBkemxIS0M1aDVSSXA2QmpqN0xDdDJ1OTZhamgyci1TVFR4SkhNNUl0T18wNkdCX21PZGtjSzh0bzN4ZXJ0U19xRUlsa2FyV2s0MVlkOVRsV0g3NkRqQWNpVDVfV3FRZk1LNWVpSTVmcDUyWVc5cmlRUHhtR0tzVkVWamdBRFVIaXdoVWpORGRXS25SRUIzQ2dPbk4tYndfN1VJdk9nTlE?oc=5",
    "image": "",
    "date": "2026-10-18T03:07:16.000Z",
-   "categories": []
-  },
-  {
-   "source": "basel-kultur",
-   "sourceLabel": "bz Basel",
-   "lang": "de",
-   "city": "Bâle · culture",
-   "title": "Ein bunter Barfi, bitte! Wir präsentieren: Drei Visionen für einen Platz",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPQklTZFUxT2c4dWV1eDZHSV9WMkVacXByNXVuUjlXMmhQeVpXSnc5eEpYR2t4NTBxWUtpY1dNdFJUV29wQ2w5MC1pT2xZYy1acDFEWXhsbjYtUTlMTEROd3poY1J2d2tEd0hLVm1XUkxGb1VYc0tjX1NNU3laemRFQW96U2QyWGFENXpqR0RESFJTa3FNTlNndnQ0ZGY5Zw?oc=5",
-   "image": "",
-   "date": "2026-10-18T03:00:00.000Z",
    "categories": []
   },
   {
@@ -4987,18 +5091,6 @@
     "17 octobre",
     "manifestation"
    ]
-  },
-  {
-   "source": "strasbourg-eu",
-   "sourceLabel": "Le 5e Lieu",
-   "lang": "fr",
-   "city": "Strasbourg",
-   "title": "Chroniques musicales de la guerre de Trente Ans",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxPenUxU29ONDU2OGNyTUZfeWhsalVYaTJJRG5HVGlSSmRyTmpuX3JTdWttTGxOdm9iWWQ0eTVjWENxRXhnSExPcVN0UHVWZDJPenpkWncwUHRLM1FwRVE2UTQzVlNfRzhlRVNDYkNxYzZIU0huSFQ1RDkxTzdSSGZudFVmZHdsb1NEdG14eQ?oc=5",
-   "image": "",
-   "date": "2026-10-17T14:37:16.000Z",
-   "categories": []
   },
   {
    "source": "diplo",
@@ -5093,18 +5185,6 @@
    "categories": []
   },
   {
-   "source": "srf-wirtschaft",
-   "sourceLabel": "SRF",
-   "lang": "de",
-   "section": "Wirtschaft",
-   "title": "Zeitungsmarkt – Ungewisse Zukunft für Frühzusteller in der Schweiz",
-   "summary": "Wenn die Auflagen gedruckter Zeitungen sinken, wird es auch für Zeitungsverträgerinnen und -verträger schwierig.",
-   "url": "https://www.srf.ch/news/wirtschaft/zeitungsmarkt-ungewisse-zukunft-fuer-fruehzusteller-in-der-schweiz",
-   "image": "https://www.srf.ch/static/cms/images//320ws/9315ce.webp",
-   "date": "2026-10-17T06:00:41.000Z",
-   "categories": []
-  },
-  {
    "source": "bondyblog",
    "sourceLabel": "Bondy Blog",
    "lang": "fr",
@@ -5150,22 +5230,6 @@
     "Cinéma",
     "Algerie",
     "bataille d'alger"
-   ]
-  },
-  {
-   "source": "strasbourg",
-   "sourceLabel": "Rue89 Strasbourg",
-   "lang": "fr",
-   "city": "Strasbourg",
-   "title": "17 octobre : 30 000 personnes ont marché à Strasbourg, de nombreux affrontements avec la police tout au long de la journée",
-   "summary": "Depuis le 8 septembre, de nombreux comptes sur les réseaux sociaux ont appelé à se mobiliser et à mener des actions spontanées samedi 17 octobre. À Strasbourg, des dizaines de milliers de manifestants se sont rejoints place Kléber. Nos …",
-   "url": "https://www.rue89strasbourg.com/direct-strasbourg-journee-17-octobre-399537",
-   "image": "https://www.rue89strasbourg.com/wp-content/uploads/2026/10/55573325328-a981145679-k.jpg__rs?x=50&y=50",
-   "date": "2026-10-17T04:00:00.000Z",
-   "categories": [
-    "Compte-rendu",
-    "manifestation",
-    "mobilisation"
    ]
   },
   {
@@ -5334,6 +5398,30 @@
    "categories": []
   },
   {
+   "source": "avenir",
+   "sourceLabel": "Avenir Suisse",
+   "lang": "de",
+   "section": "Schweiz",
+   "title": "Der Staat wächst im Verborgenen",
+   "summary": "Der Staat wächst im Verborgenen Tanja Rösch Fri, 16 Oct 2026 - 15:26",
+   "url": "https://www.avenir-suisse.ch/de/blog/der-staat-waechst-im-verborgenen-0",
+   "image": "https://www.avenir-suisse.ch/sites/default/files/styles/16_9_1280x720/public/2026-10/eisberg-bundeshaus-frontal-1.png.webp?h=ab4d235c&itok=M-QufRUr",
+   "date": "2026-10-16T13:26:52.000Z",
+   "categories": []
+  },
+  {
+   "source": "avenir",
+   "sourceLabel": "Avenir Suisse",
+   "lang": "de",
+   "section": "Schweiz",
+   "title": "Der Staat wächst im Verborgenen",
+   "summary": "Der Staat wächst im Verborgenen Tanja Rösch Fri, 16 Oct 2026 - 15:26",
+   "url": "https://www.avenir-suisse.ch/de/blog/der-staat-waechst-im-verborgenen-0",
+   "image": "https://www.avenir-suisse.ch/sites/default/files/styles/16_9_1280x720/public/2026-10/eisberg-bundeshaus-frontal-1.png.webp?h=ab4d235c&itok=M-QufRUr",
+   "date": "2026-10-16T13:26:52.000Z",
+   "categories": []
+  },
+  {
    "source": "streetpress",
    "sourceLabel": "StreetPress",
    "lang": "fr",
@@ -5371,6 +5459,18 @@
    "categories": [
     "Economie"
    ]
+  },
+  {
+   "source": "kantone",
+   "sourceLabel": "Kanton Aargau",
+   "lang": "de",
+   "section": "Kantone",
+   "title": "Villmergen: Nach versuchtem Aufbruch eines Ticketautomaten Tatverdächtigen festgenommen",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMikAJBVV95cUxPVDJVc3NKR0VZN1JqaUJTYkdPQ2QwckdTQWEwdW1LeFY3V0d6Z2gtRzB5dGc0ekg4ZGN2RjRrRElYQU5iZlRzZ2xwR0MxOVFYSmsxX1BCcGtWNGxLY3NtUkoxWV9qcllDS2ZNdGNVZFlDZ0JsenVYcE1xQmtweWNHQmQ0MUw0YldvcXRablBjRU15b0xyN2JZeHRuMVpBbE5tZWpoY0hXVm92UHB3cW90TUVtSXNKT3ljVkJ2TmNLS1RnZ3d3V3gzTGRLSGpjdjBXWDVuMzJXc3dSYUZmNUZnR3pvclRIRVJRX0hnWWhaWWVTN2xRU3NqWWU5Z2p5UHhTUld6blFPZU9Vb3JwQU44Wg?oc=5",
+   "image": "",
+   "date": "2026-10-16T11:43:39.000Z",
+   "categories": []
   },
   {
    "source": "verfassungsblog",
@@ -5571,20 +5671,6 @@
    "categories": []
   },
   {
-   "source": "rts-sciences",
-   "sourceLabel": "RTS",
-   "lang": "fr",
-   "section": "Sciences",
-   "title": "Face aux deepfakes, comment le monde politique organise la riposte",
-   "summary": "Les deepfakes permettent désormais d'usurper une identité ou d'attribuer de faux propos à une personnalité en quelques secondes. Une menace grandissante pour les campagnes électorales et le débat public. Giorgia Meloni espère, par exemple, …",
-   "url": "https://www.rts.ch/info/sciences-tech/2026/article/deepfakes-comment-le-monde-politique-organise-la-riposte-29386261.html?rts_source=rss_t",
-   "image": "https://img.rts.ch/articles/2026/image/8a1f006d-29386449.image?w=320&h=180",
-   "date": "2026-10-16T04:23:24.000Z",
-   "categories": [
-    "Sciences-Tech."
-   ]
-  },
-  {
    "source": "eflux",
    "sourceLabel": "e-flux",
    "lang": "en",
@@ -5748,6 +5834,18 @@
    "sourceLabel": "WOZ Die Wochenzeitung",
    "lang": "de",
    "pp": true,
+   "title": "Ökologie und Wissen",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE9LS2JDUXVvYXBHdXV0T1lwVG5TU1RZSUNwOGlPallmTFRrZi1NNVQ4UmJUellXZGZhQTg3WDV6R0pQUHMwRXlJbzZlbGpjQTBibWxGYURjSQ?oc=5",
+   "image": "",
+   "date": "2026-10-15T12:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "woz",
+   "sourceLabel": "WOZ Die Wochenzeitung",
+   "lang": "de",
+   "pp": true,
    "title": "Veranstaltungen zum Nachhören",
    "summary": "",
    "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE12UkFDaG5HQW91ei0yVno4SHJ5TXo3eGRhbkdoYkJ4eGQyWWdXR19NQ0ZFMHJmZ19zNlJVSHZIRkJFRUVFeURfZHUxdw?oc=5",
@@ -5858,23 +5956,6 @@
    "image": "",
    "date": "2026-10-15T08:15:20.000Z",
    "categories": []
-  },
-  {
-   "source": "contretemps",
-   "sourceLabel": "Contretemps",
-   "lang": "fr",
-   "section": "Luttes",
-   "pp": true,
-   "title": "Les mouvements sociaux sont-ils condamnés à perdre ?",
-   "summary": "Arya Meroni vient de publier le livre \"C’est la loose finale\" (éd. La Découverte), dans lequel elle analyse lucidement les échecs de la gauche et des mouvements sociaux, et appelle à transformer nos luttes.",
-   "url": "https://www.contretemps.eu/les-mouvements-sociaux-sont-ils-condamnes-a-perdre/",
-   "image": "https://www.contretemps.eu/wp-content/uploads/Arya.jpg",
-   "date": "2026-10-15T07:30:00.000Z",
-   "categories": [
-    "Stratégie",
-    "émancipation",
-    "féminisme"
-   ]
   },
   {
    "source": "perlentaucher",
@@ -6012,18 +6093,6 @@
    "url": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxPZVp1OWJRai13X0gtbV9tZGdSeHBxN0l3MDBjTldjVWJITU5ZSWlIS0NiSTdPYlE1VFhwZEhlLU9JQTFvOTRnMEZyZ2xnVFdtT2Z3QU03OW1FZndQS05wRjdvWFlXZ2JSUTV4a28tamxJSWJsQzdMQnU1S0dKQzVrZ0l3bjZkMEk2REo5SEhfVVFMUG16cFVhdkVpb3ZfYTc2eU9VNnMtdmNKd0dibjZXVHY1aFVzeDFPOGFfWmNIUUxsNTJSN0N1OUZZSFV2XzN0ZnN4WVVqUm9zUndMT3hhcHk1T2VWcThTNWlmQkpkV25KQmly?oc=5",
    "image": "",
    "date": "2026-10-14T11:22:26.000Z",
-   "categories": []
-  },
-  {
-   "source": "woz",
-   "sourceLabel": "WOZ Die Wochenzeitung",
-   "lang": "de",
-   "pp": true,
-   "title": "Anne Carson: Glas, Girls und Käfige",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1laDFvdl9rSTRILXR4VWQzb096OXZySFFkOEF1ZDlLQ2VFbVUxNnNzX29qX0o0VngxLWFIVWtORWFMS3NaYzkzdmNvdEpfQWV0YlVoRjl3S1dLdnRndTd5R1ZXMjRmRnJmRjZldUZ0aW81OGxsd1hHZEt1eVQ?oc=5",
-   "image": "",
-   "date": "2026-10-14T10:03:02.000Z",
    "categories": []
   },
   {
@@ -6193,6 +6262,18 @@
    "categories": []
   },
   {
+   "source": "strasbourg-eu",
+   "sourceLabel": "Strasbourg.eu",
+   "lang": "fr",
+   "city": "Strasbourg",
+   "title": "Soirée Brézilenne : Rio ne répond plus",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPbzFGN2JKcE9VYmI4NTNocGJaaHRxWm5UWEVmQ1ZtdTd2QkpyR3ZFUEJNRjhEOGEtOUEtd2ZFMUljWHRFTUN3RzFDRlpRNFZoaEhQM0hLYThDbFFNV19fbGN4UUdFRW1sNGZUYWhDdzNDVVhwTENhNFAwOWtLU01ZZmRMaE1BNW9UVGNRZEtQS19yNHN1VVA0VjFR?oc=5",
+   "image": "",
+   "date": "2026-10-13T11:40:53.000Z",
+   "categories": []
+  },
+  {
    "source": "visionscarto",
    "sourceLabel": "Visionscarto",
    "lang": "fr",
@@ -6214,18 +6295,6 @@
    "url": "https://www.visionscarto.net/fiches-de-synthese-etat-des-lieux",
    "image": "https://www.visionscarto.net/local/cache-vignettes/L480xH250/aysegul_=2-3a907.jpg?1791971661",
    "date": "2026-10-13T09:37:12.000Z",
-   "categories": []
-  },
-  {
-   "source": "dna",
-   "sourceLabel": "dna.fr",
-   "lang": "fr",
-   "city": "Alsace",
-   "title": "Soirée Théatre d'improvisation avec la Compagnie du Fil : Spectacle à Ribeauvillé",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMihwJBVV95cUxQcVVMTnpZdV9mUmVXMnJtNWRZSGJpSVZsSjAtYjBvR0pSLWVSV05kdkE2TEpFTDBFOHJrTko0c3N1REhEbDF3R010MFlIakMzRUpiTVJlVl9Rek4tbFZTUFZXTy01TGFVcGZKbGhFWGFTaW1TTHVvTHBOdFh1TFoya3FIbm50emtWdENET3RnWlhJbUYzbWt2bDJsOEZqQ3cyWHZQOG5pNHM5dVBoX2ZhcFZHaUlUcy1GUkpUUmFBUVhTQnIxOTQwNU9mVERDUHJoOEJfLUhsLW55bHBUaldndmJPZ2ROSm00bVpGdjJyVF9zbTBRQU9pRFI1dllxSHMtY0R0SUlHTQ?oc=5",
-   "image": "",
-   "date": "2026-10-13T08:19:31.000Z",
    "categories": []
   },
   {
@@ -6256,18 +6325,6 @@
    "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBQWkp2VVlYZU1TRl9NUVNjTGE0UVl3aU9HTGFpamRYV2pqMmZwdm1qNmplQkNLbE5USl9DcjZFM1NkTHlOS1FOQTAxNFNya0pjbnFrUlZxb3RWR2xGblpnSjl4QmdsalFDVDFMMUhqeV9oQWtoSTJWVE1Vaw?oc=5",
    "image": "",
    "date": "2026-10-13T04:03:29.000Z",
-   "categories": []
-  },
-  {
-   "source": "eflux",
-   "sourceLabel": "e-flux",
-   "lang": "en",
-   "section": "Exposition",
-   "title": "Ana Lupas & S P A T A R U: On Ritual Time / Bendt Eyckermans: The Passenger - E-Flux",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPZWx4dS1Lelg1U3dXal9SLUs2U0xEUG5MRzBsVnRJM0dtdU5KSEtUQm9rZWRmblRpb01jSFZpY05nN2RfcHJ3NXVodXVKdmRoVFotMXF0TGxrellHX3NHQlFiSUhNckp4X0w3SXZodDFleEdqMWZOOWU5WHdXRmFuWGluSE80VVIwWkJsWFlfVUpJSGRnWE85Z2NvWUpYM0pSbGhYZGx6bGFWdndwc2d3Mg?oc=5",
-   "image": "",
-   "date": "2026-10-13T04:01:04.000Z",
    "categories": []
   },
   {
@@ -6425,13 +6482,14 @@
    "categories": []
   },
   {
-   "source": "kantone",
-   "sourceLabel": "Baselland",
-   "lang": "de",
-   "section": "Kantone",
-   "title": "Tätliche Auseinandersetzung zwischen mehreren Personen – die Polizei sucht Zeugen",
+   "source": "afriquexxi",
+   "sourceLabel": "Afrique XXI",
+   "lang": "fr",
+   "section": "Décolonial",
+   "pp": true,
+   "title": "« Mme Pauline » et fils, génocidaires unis pour la vie au Sénégal",
    "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMikgJBVV95cUxQZHNlMGdtZkFjeWx3ZW9lWmFIV2I0U2YxSDdRUWI3TXFuQ3FEOFJEdlZCRHNsV3puYlNSYmtXSWJzZ05LNTE5MWRrUzFocVhCQTB4S0hXc25JSk9jcmY5TWQwMFFNOWhLM0JjSXdSNzZ2QWN3TjNXWE9vUmJWMTk4OW1GQUllRmFRazBtcGh6TVpHRWxUVDZYd3ZUb2Z0ZHhsUkpJQmR5dENlWHhRVzhiOGsxdFJkZnczYnRjZEJBM3FsMVBsdmM5T3J4TkwxeGp3MlByMlZSWUt2Y05OSTEzQ19NYTNHbThiX04wdVl6eWo5TmdRRU4wdV9Vd3RLcmRpXzBnb0RVVTcxSy1SSkVFUTJ3?oc=5",
+   "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxORUV1TEpZR2NhMXlxVk5uMk45LXdkSFhNSDJpWXZFTVVlTGRGZW4wMXh5QWRQbWV0YWxsZGxEdURnaHo3eWs0NlE1eGlHMFNBT0kxMEMzQTB3N1BldDRSRERNcGdnZkxKRWdZMkJnZUpXNVg3eGs4UzNqejRSWmFBQVVBM01zMkNPYVhiNA?oc=5",
    "image": "",
    "date": "2026-10-09T07:00:00.000Z",
    "categories": []
@@ -6446,18 +6504,6 @@
    "url": "https://www.lemonde.fr/economie/article/2026/10/09/defense-les-armees-regrettent-l-abandon-par-berlin-du-projet-de-char-franco-allemand_6790521_3234.html",
    "image": "https://img.lemde.fr/2026/10/09/697/0/7680/3840/644/322/60/0/5a14dd4_upload-1-uerdmt8ywih3-000-34qc4u4.jpg",
    "date": "2026-10-09T05:49:28.000Z",
-   "categories": []
-  },
-  {
-   "source": "lemonde-defense",
-   "sourceLabel": "Le Monde",
-   "lang": "fr",
-   "section": "Défense",
-   "title": "La France enquête sur les contrats de Thales en Azerbaïdjan, dénoncés par un ex-responsable emprisonné",
-   "summary": "« A Bakou, le prisonnier français oublié » (2/2). Mehmet Sahan, Franco-Turc détenu en Azerbaïdjan depuis début 2022 après une plainte de Thales, dénonce de possibles faits de corruption. Le Parquet national financier, qui enquête sur ces …",
-   "url": "https://www.lemonde.fr/les-decodeurs/article/2026/10/09/la-france-enquete-sur-les-contrats-de-thales-en-azerbaidjan-denonces-par-un-ex-responsable-emprisonne_6790512_4355770.html",
-   "image": "https://img.lemde.fr/2026/10/08/250/0/3000/1500/644/322/60/0/2c24db9_upload-1-ifrln7kerjll-frame-1408.jpg",
-   "date": "2026-10-09T04:30:04.000Z",
    "categories": []
   },
   {
@@ -6544,15 +6590,15 @@
    "categories": []
   },
   {
-   "source": "avenir",
-   "sourceLabel": "Avenir Suisse",
-   "lang": "de",
-   "section": "Schweiz",
-   "title": "«Kein Steuerparadies für Kapital»: Die sieben häufigsten Fragen zu unserer Analyse",
-   "summary": "«Kein Steuerparadies für Kapital»: Die sieben häufigsten Fragen zu unserer Analyse Tanja Rösch Thu, 8 Oct 2026 - 10:14",
-   "url": "https://www.avenir-suisse.ch/de/blog/kein-steuerparadies-fuer-kapital-die-sieben-haeufigsten-fragen-zu-unserer-analyse",
-   "image": "https://www.avenir-suisse.ch/themes/ignite/sgt_ignite/ignite_subtheme/assets/images/social/avenir-suisse.png",
-   "date": "2026-10-08T08:14:31.000Z",
+   "source": "strasbourg-eu",
+   "sourceLabel": "Strasbourg.eu",
+   "lang": "fr",
+   "city": "Strasbourg",
+   "title": "ZFE : vers un report de l’interdiction des Crit’Air 3",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNSngwSTliUzZsWGJWeWJUWnRsN1JQQmYtbTZyc0NiclRiUHUyeGc4aHBVT2ZxUmhLYTM0ZXRTcklvWkNxRUUtOU84R056UjJBVERlbVFiVHFFbnhIenRxTXVYOXd6WFhyOVhMaWNzNUhrQVR5by1SMGpra1BDWi1ic2UwS0p0Zw?oc=5",
+   "image": "",
+   "date": "2026-10-08T07:00:00.000Z",
    "categories": []
   },
   {
@@ -6624,18 +6670,6 @@
    ]
   },
   {
-   "source": "strasbourg-eu",
-   "sourceLabel": "Strasbourg Culture",
-   "lang": "fr",
-   "city": "Strasbourg",
-   "title": "Orchestre symphonique",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE82RGM1X2hFbnVYdnEzSlZzckpYRDNSTTE2VENmczZNN3FSU3hsLVRPNU9sRDRPbE5mbEQ5TV93V2cteVJldG9DWVE4TGdLMXloRk90QTNoVklBQ3RBNXNKYUpTenFNTzJwR25WU3hIYWdXTlR6VHlNNVNwdw?oc=5",
-   "image": "",
-   "date": "2026-10-07T13:41:48.000Z",
-   "categories": []
-  },
-  {
    "source": "pdr",
    "sourceLabel": "The Public Domain Review",
    "lang": "en",
@@ -6645,30 +6679,6 @@
    "url": "https://publicdomainreview.org/collection/history-of-the-devil",
    "image": "https://pdr-assets.b-cdn.net//collections/history-of-the-devil/historyofdevilid00caru_0205-thumb.jpg",
    "date": "2026-10-07T13:34:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "strasbourg-eu",
-   "sourceLabel": "Strasbourg Culture",
-   "lang": "fr",
-   "city": "Strasbourg",
-   "title": "RED LIGHT SPECIAL Ball",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFByOGNNQV9sd1RBVUEyaGs4OEFfdVpSSnAtLVhUS2QyZVFFeE1TWnhLazIxQXRMWDdCSHNVVFRxTlBGRmxjbENZQ3VoZ3BRaFZjcG40bERmakJLUkZpTlItaUZtYUN6a1NWeGlMcEd0bFBKM3F2RG5mOVVZcTZqZk0?oc=5",
-   "image": "",
-   "date": "2026-10-07T13:19:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "avenir",
-   "sourceLabel": "Avenir Suisse",
-   "lang": "de",
-   "section": "Schweiz",
-   "title": "Wie KI die Produktivität steigert – statt das Hamsterrad zu beschleunigen",
-   "summary": "Wer die Vorteile der neuen Technologie wirklich nutzen will, muss Prozesse grundlegend neu denken. Sonst führt KI nur zu mehr Geschäftigkeit.",
-   "url": "https://www.avenir-suisse.ch/de/blog/wie-ki-die-produktivitaet-steigert-statt-das-hamsterrad-zu-beschleunigen",
-   "image": "https://www.avenir-suisse.ch/themes/ignite/sgt_ignite/ignite_subtheme/assets/images/social/avenir-suisse.png",
-   "date": "2026-10-07T13:17:43.000Z",
    "categories": []
   },
   {
@@ -6720,19 +6730,6 @@
    "categories": []
   },
   {
-   "source": "basel-museen",
-   "sourceLabel": "BaselLive",
-   "lang": "de",
-   "city": "Bâle · culture",
-   "section": "Exposition",
-   "title": "Auf die Gestaltung kommt es an",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE9FVFd4cWxPUm05SXhMLTZwTUQzZTdFeEpQMmtEQXMyMFpuUWNxRW1FVFhpY1RBbjlEODhIM1ZGdmtkaWZoSElyUENEcnpUam1ELWFMMlVEZUlVWDB1aVhxbUZzTFI3bE5K?oc=5",
-   "image": "",
-   "date": "2026-10-07T09:02:43.000Z",
-   "categories": []
-  },
-  {
    "source": "glorieuses",
    "sourceLabel": "Les Glorieuses",
    "lang": "fr",
@@ -6746,30 +6743,6 @@
    "categories": [
     "Santé"
    ]
-  },
-  {
-   "source": "strasbourg-eu",
-   "sourceLabel": "Strasbourg Culture",
-   "lang": "fr",
-   "city": "Strasbourg",
-   "title": "Les explorateurs du goût",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNQUNvd1dRUUZMdHdfS2hqS1R2ZlZISDhRc0pTcFlwTWRSWmxIbEhBRVR0MXZVWF81NmFZQ0ZBeUVxdGZuVjNpNnNISGFNSTdZbTJVSGFpUU1RTmg1UDNsbzMxUUtzYXkyNWMxQW93bGloZ2poRTgzWHU1c280Sl90UjhR?oc=5",
-   "image": "",
-   "date": "2026-10-07T03:10:06.000Z",
-   "categories": []
-  },
-  {
-   "source": "strasbourg-eu",
-   "sourceLabel": "Le 5e Lieu",
-   "lang": "fr",
-   "city": "Strasbourg",
-   "title": "Premiers spectacles au Bar à vannes, bar et comedy club à Strasbourg",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOZ0JPSkViMkMtQk4wNDBqdGppYVJpQXBXcmQzNnBQYWZTR1hlMUhESWpheEx0aTdBV2pjZUVjQkpEel85YUd3R3BiaDRkYXh4NkU4Z2xuYjZjV3BFZ0pJbkM2M25fdmJNcW8xVEpxTllOU0JrVkZNTG1pdjZ6ZG9xWXpUUlE1NXR6eDFEZmQybmViT19sQ1BGMWZGUEc3Vlk0dGYxYi1WWQ?oc=5",
-   "image": "",
-   "date": "2026-10-06T19:33:39.000Z",
-   "categories": []
   },
   {
    "source": "ebs",
@@ -6903,6 +6876,18 @@
    ]
   },
   {
+   "source": "strasbourg-eu",
+   "sourceLabel": "Strasbourg.eu",
+   "lang": "fr",
+   "city": "Strasbourg",
+   "title": "Résonances 2026",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE94Sk9jUFRFSTF0Rjl5OHNkeDJXdG03LW05X2c0X04yUDhrc2ozcURGSklqeDA2TFdsTXB3YmxpMUJTM01rZU9uV09fWU80THZEbDZLcnRIRXJsQ0E0XzFlazNNWHVFeUY4NUVtWG1TMHNjQXgwOHF5M3R4NFJ1UQ?oc=5",
+   "image": "",
+   "date": "2026-10-02T08:22:50.000Z",
+   "categories": []
+  },
+  {
    "source": "ecfr",
    "sourceLabel": "European Council on Foreign Relations",
    "lang": "en",
@@ -6922,19 +6907,6 @@
    "title": "Albania: The Flamingo Revolution explained",
    "summary": "",
    "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxNeGxBUkdyY0g0NmY1TG9Ec19UdjJWY1lRSXJ4TVN1VkZJdW1Pa3M4ZU1iUWh5bGtHZkpfV0hJY3FOQlE5NEl2NHU0RmhTOEVVdWIyNWMwRGVzRTNnZkJLWS1Eel94VFlZMUxmSzFxZl9WQ2w0TTRCeUp1bk5xQ1c3Tw?oc=5",
-   "image": "",
-   "date": "2026-10-02T07:00:00.000Z",
-   "categories": []
-  },
-  {
-   "source": "afriquexxi",
-   "sourceLabel": "Afrique XXI",
-   "lang": "fr",
-   "section": "Décolonial",
-   "pp": true,
-   "title": "« L’Éthiopie pourrait connaître une famine aussi dramatique qu’en 1984 »",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxOS1FPNndIZjlOb0FsQ2JfQTQ5WVVnUzd2NHA0UlNaTzU0a0lpdUVnZ2JzOGc5SnNOSVAzNHYyUjFlaHU4S2JqSXVCUkI5RE1iZXY5U08xLUVkTktRcHh6UWFuMnM4U1hjTW9ta1FQTzl5MG5RUEYxVFh5d3hRdkF2dGtjR1dtaUJaWDRTbkRUVk1VWWhXcXdR?oc=5",
    "image": "",
    "date": "2026-10-02T07:00:00.000Z",
    "categories": []
@@ -6999,6 +6971,18 @@
    "title": "Wanderausstellung zu den Eucor-Bibliotheken in der UB Freiburg",
    "summary": "",
    "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPRUpaYmZnZnVaQVhYZjFydk9YWGlJS3c0UGt1X1lpTFIzMWsxc0RXQW5ZbXJTTXRQcm5XM1pMUGhxWnFOMlRsWHJydFFzZ1ZoUldDMHREMTF4NGVGbVZBbVVGdkxneDVTaDlKc3BpeEpRYUZCMHdEbXN0QlF5al9zcUczdU11elhRSm5BX2JQbHc?oc=5",
+   "image": "",
+   "date": "2026-09-30T07:00:00.000Z",
+   "categories": []
+  },
+  {
+   "source": "strasbourg-eu",
+   "sourceLabel": "Strasbourg.eu",
+   "lang": "fr",
+   "city": "Strasbourg",
+   "title": "Octobre Rose : Strasbourg et l’Eurométropole se mobilisent",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQT0xiNUljT1J6S3M2NlZrd01yLTdnNGtPTGhPVEp1QVFGVzFfVGdfdkVJWkpxRnFaT2JtUXZISkRaZVUtaFFJcF91dkV0VlByTGtNemdEWkhNRS0zajNaemROQTN4X2VISVhuZkxwUmlzaUZWZFAxdEducUN2YzUtd1B5N0V1SkRCX01yV0kyTlR4RDQ?oc=5",
    "image": "",
    "date": "2026-09-30T07:00:00.000Z",
    "categories": []
@@ -7164,6 +7148,18 @@
    "url": "https://www.cer.eu/media/unpacking-europe-scaling-innovation-europe",
    "image": "https://www.cer.eu/sites/default/files/styles/table_of_contents/public/images/thumbnails/cover_JG_pbrief_stock_markets_10.9.26.jpg?itok=Ow-_A78q",
    "date": "2026-09-24T08:58:24.000Z",
+   "categories": []
+  },
+  {
+   "source": "strasbourg-eu",
+   "sourceLabel": "Strasbourg.eu",
+   "lang": "fr",
+   "city": "Strasbourg",
+   "title": "La Journée mondiale des animaux 2026",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE5GVU1WY3BFa2hsbFJGQmEyamd2SjVpb3JrZHh3U0FYQmJ3VnRTTnItTEJYZnRSRWx1QmVTQXhVWGU3MEcxbUZMLTR6VVVGQzZ4YWJRa3pOTFZ5WmRncXo4eDFHM1RpYXlEN0h4RGlRbFRYUQ?oc=5",
+   "image": "",
+   "date": "2026-09-24T07:00:00.000Z",
    "categories": []
   },
   {
