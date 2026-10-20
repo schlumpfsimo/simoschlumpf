@@ -116,13 +116,44 @@ function prioChip(m) { const p = prioOf(m); return `<span class="prio p${p}" tit
 /* Sperre / Entschlüsselung                                               */
 /* ===================================================================== */
 (function lockUI() {
-  const ring = document.getElementById('ring');
-  if (ring) { let html = ''; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r = 215; const x = 500 + Math.cos(a) * r, y = 350 + Math.sin(a) * r; const sx = (0.7 + Math.random() * 0.9).toFixed(2), sy = (0.7 + Math.random() * 0.9).toFixed(2), rot = Math.round(Math.random() * 60 - 30), sk = Math.round(Math.random() * 40 - 20);
-      html += `<use href="#star" x="-26" y="-26" width="52" height="52" filter="url(#glow)" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot}) skewX(${sk}) scale(${sx} ${sy})"><animateTransform attributeName="transform" type="rotate" additive="sum" from="0 0 0" to="${i % 2 ? 360 : -360} 0 0" dur="${40 + i * 7}s" repeatCount="indefinite"/></use>`; }
-    ring.innerHTML = html; ring.innerHTML += '<animateTransform attributeName="transform" type="rotate" from="0 500 350" to="360 500 350" dur="240s" repeatCount="indefinite"/>'; }
+  // Sterne als Glitch, wie der OSD-Text im Drohnenspiel: niedrige Auflösung, zeilenweises Zittern, Körnung, Aussetzer
+  const cv = document.getElementById('glitch');
+  if (cv) {
+    const W = cv.width, H = cv.height, ctx = cv.getContext('2d');
+    const off = document.createElement('canvas'); off.width = W; off.height = H; const oc = off.getContext('2d');
+    const star = (x, y, r) => { oc.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.42 : r; oc.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } oc.closePath(); oc.fill(); };
+    const drawClean = t => {
+      oc.fillStyle = '#fff'; oc.fillRect(0, 0, W, H); oc.fillStyle = '#000';
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + t * 0.03; star(W / 2 + Math.cos(a) * 88, H / 2 + Math.sin(a) * 88, 11); }
+      oc.font = 'bold 22px monospace'; oc.textAlign = 'center'; oc.textBaseline = 'middle'; oc.fillText('TURBO', W / 2, H / 2 + 1);
+      oc.imageSmoothingEnabled = false;
+    };
+    const h = (a, b) => { const x = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return x - Math.floor(x); };
+    let t = 0, burst = 0;
+    const frame = () => {
+      t += 1 / 30; drawClean(t);
+      const tq = Math.floor(t * 30);
+      if (Math.random() < 0.012) burst = 6 + Math.random() * 10; burst = Math.max(0, burst - 1);
+      const noise = burst > 0 ? 0.5 : 0.04;
+      ctx.imageSmoothingEnabled = false; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+      for (let y = 0; y < H; y++) {
+        const gate = h(y * 0.37, tq + 1.7) > 0.7 - noise * 0.6;
+        let jit = gate ? (h(y, tq) - 0.5) * (1 + noise * 40) : 0;
+        jit += Math.sin(y * 0.13 + t * 2) * 0.6;
+        ctx.drawImage(off, 0, y, W, 1, Math.round(jit), y, W, 1);
+      }
+      // Körnung und Aussetzer
+      const grains = burst > 0 ? 400 : 60;
+      for (let i = 0; i < grains; i++) { const x = (h(i, tq * 7.13) * W) | 0, y = (h(i * 1.3, tq * 3.7) * H) | 0; ctx.fillStyle = h(i, tq) > 0.5 ? '#000' : '#fff'; ctx.fillRect(x, y, 1 + (h(i, y) > 0.8 ? 2 : 0), 1); }
+      if (burst > 0) { const yb = (h(tq, 5) * H) | 0; ctx.fillStyle = '#fff'; ctx.fillRect(0, yb, W, 2 + (h(tq, 9) * 6 | 0)); }
+      // Laufendes Band
+      const band = ((t * 0.11) % 1) * H; ctx.fillStyle = 'rgba(0,0,0,.05)'; ctx.fillRect(0, band, W, 10);
+    };
+    setInterval(frame, 1000 / 24); frame();
+  }
   const pw = document.getElementById('pw'), code = document.getElementById('code');
   const cells = () => [...code.querySelectorAll('.cell')];
-  const paint = () => { const v = pw.value; cells().forEach((c, i) => { c.textContent = v[i] ? '•' : ''; c.classList.toggle('on', !!v[i]); c.classList.toggle('cursor', i === Math.min(v.length, 3) && document.activeElement === pw); }); };
+  const paint = () => { const v = pw.value; cells().forEach((c, i) => { c.textContent = v[i] ? '*' : ''; c.classList.toggle('on', !!v[i]); c.classList.toggle('cursor', i === Math.min(v.length, 3) && document.activeElement === pw); }); };
   code.addEventListener('click', () => pw.focus()); pw.addEventListener('input', paint); pw.addEventListener('focus', paint); pw.addEventListener('blur', paint);
   document.getElementById('lock').addEventListener('click', e => { if (e.target.closest('form') && !e.target.closest('label,button')) pw.focus(); });
   setTimeout(() => pw.focus(), 200);
@@ -158,8 +189,6 @@ document.getElementById('lockform').addEventListener('submit', async ev => {
 (async () => { let saved = null; try { saved = localStorage.getItem(PW_KEY) || sessionStorage.getItem(PW_KEY); } catch (e) {}
   if (saved) { try { await tryUnlock(saved, !!localStorage.getItem(PW_KEY)); } catch (e) { try { localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); } catch (_) {} } } })();
 document.getElementById('lockbtn').addEventListener('click', () => { try { localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); } catch (e) {} location.reload(); });
-document.getElementById('themebtn').addEventListener('click', () => { const cur = document.documentElement.getAttribute('data-theme'); const next = cur === 'light' ? '' : 'light'; if (next) document.documentElement.setAttribute('data-theme', next); else document.documentElement.removeAttribute('data-theme'); try { localStorage.setItem('turbo.theme', next); } catch (e) {} });
-try { const t = localStorage.getItem('turbo.theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 document.getElementById('who').addEventListener('click', () => { const n = prompt('Dein Name/Kürzel (erscheint im Änderungsverlauf):', Store.user || ''); if (n !== null) { Store.user = n.trim(); saveJ('turbo.user', Store.user); paintWho(); } });
 function paintWho() { document.getElementById('whoname').textContent = Store.user || 'Name setzen'; }
 
@@ -417,7 +446,7 @@ function renderPerson(main, id) {
       <div class="tablewrap"><table class="t">
         <thead><tr><th>Frage</th><th>Einschätzung</th><th>Basis</th><th>Belege</th></tr></thead>
         <tbody>${D.bilaterale.fragen.map(f => { const pp = effStance(m, f.id); const comp = m.positionen[f.id]; const focus = ['staendemehr', 'erasmus'].includes(f.id);
-          return `<tr ${focus ? 'style="background:rgba(255,214,23,.06)"' : ''}><td>${focus ? '★ ' : ''}<b>${esc(f.label)}</b><br><span class="small muted">${esc(f.frage)}</span><br><span class="small muted">${esc(f.kommission)}${f.mitbericht.length ? ' · Mitbericht ' + esc(f.mitbericht.join(', ')) : ''}</span></td>
+          return `<tr ${focus ? 'style="background:#f4f4f4"' : ''}><td>${focus ? '★ ' : ''}<b>${esc(f.label)}</b><br><span class="small muted">${esc(f.frage)}</span><br><span class="small muted">${esc(f.kommission)}${f.mitbericht.length ? ' · Mitbericht ' + esc(f.mitbericht.join(', ')) : ''}</span></td>
             <td><button class="chip st ${pp.stance} ${pp.override ? 'override' : ''} ovbtn" data-f="${f.id}" style="border:0;font-size:.9rem">${STANCE_LABEL[pp.stance]}</button>${pp.override ? `<div class="small muted">berechnet: ${STANCE_LABEL[comp.stance]}${pp.note ? ' · ' + esc(pp.note) : ''}${pp.by ? ' · ' + esc(pp.by) : ''}</div>` : ''}</td>
             <td class="small">${esc(pp.basis)}</td>
             <td class="small">${comp.signale.map(x => `<div>• <span class="st chip ${x.stance}">${STANCE_LABEL[x.stance]}</span> ${esc(x.text)} ${x.quelle ? `<a href="${esc(x.quelle)}" target="_blank" rel="noopener">↗</a>` : ''}</div>`).join('')}${comp.abstimmungen.map(v => `<div>• ${fmtDate(v.datum)}: <b>${esc(v.entscheid)}</b> – ${esc(v.label)}</div>`).join('')}${!comp.signale.length && !comp.abstimmungen.length ? '<span class="muted">keine individuellen Belege</span>' : ''}</td></tr>`; }).join('')}</tbody>
@@ -512,16 +541,16 @@ function renderNetzwerk(main) {
     </div>
     <div class="gpanel"><div><canvas id="graph"></canvas><div class="legend" id="n_leg" style="margin-top:6px"></div></div><div class="card" id="n_side"><p class="muted small">Person anklicken: Verbindungen und Brücken. Ziehen zum Verschieben, Rad/Pinch zum Zoomen.</p><div id="n_bridges"></div></div></div>`;
   const canvas = document.getElementById('graph');
-  const g = TurboGraph(canvas, { onSelect: id => { sel = id; side(); } });
-  const colorOf = m => { if (S.mode === 'fraktion') return frColor(m.fraktion); if (S.mode === 'status') return statusOf(m.id).color; const st = effStance(m, S.mode).stance; return { ja: '#38d47a', eher_ja: '#a6e22e', offen: '#9fb0e0', eher_nein: '#ffb454', nein: '#ff5c5c' }[st]; };
+  const g = TurboGraph(canvas, { onSelect: id => { sel = id; side(); }, labelColor: '#000', edgeColor: 'rgba(0,0,0,.14)', hlColor: 'rgba(0,0,0,.85)', ringP3: '#000', ringWon: '#0a7a2f', outline: '#000' });
+  const colorOf = m => { if (S.mode === 'fraktion') return frColor(m.fraktion); if (S.mode === 'status') return statusOf(m.id).color; const st = effStance(m, S.mode).stance; return { ja: '#0a7a2f', eher_ja: '#8fbf2a', offen: '#bbb', eher_nein: '#f0a040', nein: '#b00020' }[st]; };
   const build = () => {
     let ms = D.members.filter(m => (!S.ko || m.kommissionen.some(k => k.nr == S.ko)) && (!S.fr || m.fraktion === S.fr) && (!S.onlyPrio || prioOf(m) >= 2 || isWon(m.id)));
     const ids = new Set(ms.map(m => m.id));
     const manual = relations().filter(r => r.b).map(r => ({ a: r.a, b: r.b, w: 6, gem: [{ typ: 'manuell', label: r.typ }] }));
     const edges = [...D.edges.filter(e => e.w >= S.min), ...manual].filter(e => ids.has(e.a) && ids.has(e.b));
-    g.setData(ms.map(m => ({ id: m.id, label: m.name, color: colorOf(m), size: 4 + prioOf(m) * 1.5 + (isWon(m.id) ? 2 : 0), ring: isWon(m.id) ? '#38d47a' : (prioOf(m) === 3 ? '#ffd617' : null), always: prioOf(m) === 3 })), edges);
+    g.setData(ms.map(m => ({ id: m.id, label: m.name, color: colorOf(m), size: 4 + prioOf(m) * 1.5 + (isWon(m.id) ? 2 : 0), ring: isWon(m.id) ? '#0a7a2f' : (prioOf(m) === 3 ? '#000' : null), always: prioOf(m) === 3 })), edges);
     setTimeout(() => g.fit(), 600);
-    document.getElementById('n_leg').innerHTML = (S.mode === 'status' ? statuses().map(s => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('') : S.mode === 'fraktion' ? Object.entries(D.fraktionen).map(([k, v]) => `<span><i style="background:${v.farbe}"></i>${esc(k)}</span>`).join('') : STANCES.map(s => `<span><i style="background:${{ ja: '#38d47a', eher_ja: '#a6e22e', offen: '#9fb0e0', eher_nein: '#ffb454', nein: '#ff5c5c' }[s]}"></i>${STANCE_LABEL[s]}</span>`).join('')) + '<span><i style="border:2px solid #38d47a;background:transparent"></i>Ring grün = dabei</span><span><i style="border:2px solid #ffd617;background:transparent"></i>Ring gelb = P3</span>';
+    document.getElementById('n_leg').innerHTML = (S.mode === 'status' ? statuses().map(s => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('') : S.mode === 'fraktion' ? Object.entries(D.fraktionen).map(([k, v]) => `<span><i style="background:${v.farbe}"></i>${esc(k)}</span>`).join('') : STANCES.map(s => `<span><i style="background:${{ ja: '#0a7a2f', eher_ja: '#8fbf2a', offen: '#bbb', eher_nein: '#f0a040', nein: '#b00020' }[s]}"></i>${STANCE_LABEL[s]}</span>`).join('')) + '<span><i style="border:2px solid #0a7a2f;background:transparent"></i>Ring grün = dabei</span><span><i style="border:2px solid #000;background:transparent"></i>Ring schwarz = P3</span>';
     if (sel) g.select(sel); side();
   };
   const side = () => {

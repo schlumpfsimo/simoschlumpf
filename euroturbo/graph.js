@@ -38,13 +38,13 @@
       ctx.save(); ctx.translate(G.tx, G.ty); ctx.scale(G.scale, G.scale);
       const selN = G.sel && byId[G.sel]; const neigh = new Set(); if (selN) for (const e of G.edges) { if (e.A === selN) neigh.add(e.B.id); if (e.B === selN) neigh.add(e.A.id); }
       for (const e of G.edges) { const hl = selN && (e.A === selN || e.B === selN); if (selN && !hl) continue;
-        ctx.strokeStyle = hl ? 'rgba(255,214,23,.85)' : 'rgba(159,176,224,.22)'; ctx.lineWidth = Math.min(6, 0.6 + e.w / 4) / G.scale; ctx.beginPath(); ctx.moveTo(e.A.x, e.A.y); ctx.lineTo(e.B.x, e.B.y); ctx.stroke(); }
+        ctx.strokeStyle = hl ? (G.opts.hlColor || 'rgba(0,0,0,.85)') : (G.opts.edgeColor || 'rgba(0,0,0,.14)'); ctx.lineWidth = Math.min(6, 0.6 + e.w / 4) / G.scale; ctx.beginPath(); ctx.moveTo(e.A.x, e.A.y); ctx.lineTo(e.B.x, e.B.y); ctx.stroke(); }
       for (const a of G.nodes) { const r = (a.size || 6); const dim = selN && a !== selN && !neigh.has(a.id);
         ctx.globalAlpha = dim ? 0.25 : 1;
         if (a.ring) { ctx.beginPath(); ctx.arc(a.x, a.y, r + 3, 0, Math.PI * 2); ctx.strokeStyle = a.ring; ctx.lineWidth = 2 / G.scale; ctx.stroke(); }
         ctx.beginPath(); ctx.arc(a.x, a.y, r, 0, Math.PI * 2); ctx.fillStyle = a.color || '#888'; ctx.fill();
-        if (a === selN || a === G.hover) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 / G.scale; ctx.stroke(); }
-        if (G.scale > 0.9 || a === selN || a === G.hover || neigh.has(a.id) || a.always) { ctx.fillStyle = G.opts.labelColor || '#eef2ff'; ctx.font = `${Math.max(9, 11 / G.scale)}px "Share Tech Mono", monospace`; ctx.textAlign = 'center'; ctx.fillText(a.label, a.x, a.y + r + 11 / G.scale); }
+        if (a === selN || a === G.hover) { ctx.strokeStyle = G.opts.outline || '#000'; ctx.lineWidth = 2 / G.scale; ctx.stroke(); }
+        if (G.scale > 0.9 || a === selN || a === G.hover || neigh.has(a.id) || a.always) { ctx.fillStyle = G.opts.labelColor || '#000'; ctx.font = `${Math.max(9, 11 / G.scale)}px ui-monospace, Menlo, Consolas, monospace`; ctx.textAlign = 'center'; ctx.fillText(a.label, a.x, a.y + r + 11 / G.scale); }
         ctx.globalAlpha = 1; }
       ctx.restore();
     }
