@@ -152,3 +152,11 @@ textarea.note{width:100%;min-height:64px;padding:8px;border:1px solid #000;backg
 .tabs2 button{padding:4px 10px;border:1px solid #000;background:#fff;text-transform:uppercase;font-size:.7rem;letter-spacing:.04em;margin-right:-1px}
 .tabs2 button.active{background:#000;color:#fff}
 .pill{display:inline-block;padding:0 5px;font-size:.72rem;border:1px solid #999;color:#333}
+/* ---------- Ständerat ---------- */
+.chip.rat{background:#000;color:#fff;border-color:#000;font-size:.62rem;letter-spacing:.08em;padding:0 5px}
+.v{display:inline-block;font-weight:700;padding:0 6px;font-size:.78rem;border:1px solid transparent;white-space:nowrap}
+.v.Ja{background:var(--ja-bg);color:var(--ja)} .v.Nein{background:var(--nein-bg);color:var(--nein)} .v.Enthaltung{background:var(--enein-bg);color:var(--enein)} .v.abwesend,.v.entschuldigt,.v.Präsidium{background:var(--offen-bg);color:var(--offen)}
+.seg{display:flex;flex-wrap:wrap;margin:0 0 10px}
+.seg button{padding:5px 12px;border:1px solid #000;background:#fff;text-transform:uppercase;font-size:.72rem;letter-spacing:.04em;margin-right:-1px}
+.seg button.active{background:#000;color:#fff}
+.seg button span{color:inherit;opacity:.7;font-weight:400}

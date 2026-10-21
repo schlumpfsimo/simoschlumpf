@@ -41,8 +41,8 @@
         ctx.strokeStyle = hl ? (G.opts.hlColor || 'rgba(0,0,0,.85)') : (G.opts.edgeColor || 'rgba(0,0,0,.14)'); ctx.lineWidth = Math.min(6, 0.6 + e.w / 4) / G.scale; ctx.beginPath(); ctx.moveTo(e.A.x, e.A.y); ctx.lineTo(e.B.x, e.B.y); ctx.stroke(); }
       for (const a of G.nodes) { const r = (a.size || 6); const dim = selN && a !== selN && !neigh.has(a.id);
         ctx.globalAlpha = dim ? 0.25 : 1;
-        if (a.ring) { ctx.beginPath(); ctx.arc(a.x, a.y, r + 3, 0, Math.PI * 2); ctx.strokeStyle = a.ring; ctx.lineWidth = 2 / G.scale; ctx.stroke(); }
-        ctx.beginPath(); ctx.arc(a.x, a.y, r, 0, Math.PI * 2); ctx.fillStyle = a.color || '#888'; ctx.fill();
+        if (a.ring) { ctx.beginPath(); if (a.square) ctx.rect(a.x - r - 3, a.y - r - 3, r * 2 + 6, r * 2 + 6); else ctx.arc(a.x, a.y, r + 3, 0, Math.PI * 2); ctx.strokeStyle = a.ring; ctx.lineWidth = 2 / G.scale; ctx.stroke(); }
+        ctx.beginPath(); if (a.square) ctx.rect(a.x - r, a.y - r, r * 2, r * 2); else ctx.arc(a.x, a.y, r, 0, Math.PI * 2); ctx.fillStyle = a.color || '#888'; ctx.fill();
         if (a === selN || a === G.hover) { ctx.strokeStyle = G.opts.outline || '#000'; ctx.lineWidth = 2 / G.scale; ctx.stroke(); }
         if (G.scale > 0.9 || a === selN || a === G.hover || neigh.has(a.id) || a.always) { ctx.fillStyle = G.opts.labelColor || '#000'; ctx.font = `${Math.max(9, 11 / G.scale)}px ui-monospace, Menlo, Consolas, monospace`; ctx.textAlign = 'center'; ctx.fillText(a.label, a.x, a.y + r + 11 / G.scale); }
         ctx.globalAlpha = 1; }
