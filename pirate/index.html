@@ -20,7 +20,7 @@
       user-select:none; -webkit-user-select:none; touch-action:none; overscroll-behavior:none;
     }
     canvas#lo{
-      position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+      position:fixed; left:50%; top:calc(var(--app-h, 100dvh) / 2); transform:translate(-50%,-50%);
       image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none;
     }
     button{ font:inherit; color:inherit; cursor:pointer; }
@@ -30,7 +30,7 @@
     }
     .px:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 #000a; }
     .px:disabled{ opacity:.4; }
-    .hud{ position:fixed; inset:0; pointer-events:none; }
+    .hud{ position:fixed; left:0; top:0; width:100%; height:var(--app-h, 100dvh); pointer-events:none; }
     .hud > *{ pointer-events:auto; }
     .hidden{ display:none !important; }
 
@@ -54,7 +54,7 @@
     }
     #toast.on{ opacity:1; }
 
-    #left,#right{ position:absolute; bottom:calc(12px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
+    #left,#right{ position:absolute; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
     #left{ left:calc(12px + env(safe-area-inset-left)); flex-direction:column; align-items:flex-start; }
     #right{ right:calc(12px + env(safe-area-inset-right)); flex-direction:column; align-items:flex-end; }
 
@@ -105,8 +105,13 @@
     #actBtn.board{ background:#7a2416; }
 
     .panel{
-      position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#0007; padding:16px;
+      position:fixed; left:0; top:0; width:100%; height:var(--app-h, 100dvh); display:flex; align-items:center; justify-content:center;
+      background:#0007; padding:max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
     }
+    /* long pages scroll inside the card; the buttons stay in view at the bottom */
+    #panel .card{ display:flex; flex-direction:column; overflow:hidden; }
+    #pBody{ flex:1 1 auto; min-height:0; overflow:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; }
+    #pBtns{ flex:0 0 auto; display:flex; flex-wrap:wrap; gap:0 6px; border-top:2px solid #3a281455; margin-top:6px; }
     .card{
       max-width:400px; width:100%; max-height:100%; overflow:auto; background:#e9d9ac; color:#3a2814; border:4px solid #3a2814;
       box-shadow:6px 6px 0 #000a; padding:16px; line-height:1.5;
@@ -132,7 +137,7 @@
     .guide ol{ padding-left:18px; margin:6px 0; font-size:12px; }
     .guide li{ margin:3px 0; }
     .dots{ text-align:center; font-size:10px; letter-spacing:3px; margin-top:6px; }
-    #mapUi{ position:fixed; inset:0; pointer-events:none; }
+    #mapUi{ position:fixed; left:0; top:0; width:100%; height:var(--app-h, 100dvh); pointer-events:none; }
     #mapUi > *{ pointer-events:auto; }
     #mapBtns{
       position:absolute; display:flex; gap:8px;
@@ -432,7 +437,22 @@ function depthAt(x, y){
   for (const I of isles) if (near(I, x, y)){ const e = isleDepth(I, x, y); if (e > d) d = e; }
   return d;
 }
-const land = (x, y) => depthAt(x, y) > 0;
+// depth sampled every 8 m in lazily filled 256 m blocks, bilinear in between
+const DC = 8, DB = 32, DW = DB + 1;
+const dblocks = new Map();
+function depthFast(x, y){
+  const gx = x / DC, gy = y / DC, bx = Math.floor(gx / DB), by = Math.floor(gy / DB);
+  const k = by * 4096 + bx;
+  let b = dblocks.get(k);
+  if (!b){
+    b = new Float32Array(DW * DW);
+    for (let j = 0; j < DW; j++) for (let i = 0; i < DW; i++) b[j * DW + i] = depthAt((bx * DB + i) * DC, (by * DB + j) * DC);
+    dblocks.set(k, b);
+  }
+  const lx = gx - bx * DB, ly = gy - by * DB, i = Math.min(DB - 1, lx | 0), j = Math.min(DB - 1, ly | 0), fx = lx - i, fy = ly - j, o = j * DW + i;
+  return lerp(lerp(b[o], b[o + 1], fx), lerp(b[o + DW], b[o + DW + 1], fx), fy);
+}
+const land = (x, y) => depthFast(x, y) > 0;
 
 // ports
 const ports = [];
@@ -532,7 +552,7 @@ function freeCell(x, y){
 }
 function clearLine(ax, ay, bx, by){
   const n = Math.ceil(Math.hypot(bx - ax, by - ay) / 40);
-  for (let k = 1; k < n; k++) if (depthAt(lerp(ax, bx, k / n), lerp(ay, by, k / n)) > -35) return false;
+  for (let k = 1; k < n; k++) if (depthFast(lerp(ax, bx, k / n), lerp(ay, by, k / n)) > -35) return false;
   return true;
 }
 function astar(a, b){
@@ -624,11 +644,21 @@ function bakeTile(tx, ty){
   const img = g.createImageData(TILE, TILE);
   const px = new Uint32Array(img.data.buffer);
   let any = false;
+  // exact depth every 4 pixels, interpolated in between: the coast is smooth at that scale
+  const S4 = 4, GN = TILE / S4 + 1, grid = new Float32Array(GN * GN);
+  let deep = true;
+  for (let j = 0; j < GN; j++) for (let i = 0; i < GN; i++){
+    const d = grid[j * GN + i] = depth(x0 + i * S4 * MPP, y0 + j * S4 * MPP);
+    if (d > -160) deep = false;
+  }
+  if (deep) return null;
   for (let py = 0; py < TILE; py++){
-    const y = y0 + (py + 0.5) * MPP;
+    const y = y0 + (py + 0.5) * MPP, gj = Math.min(GN - 2, (py + 0.5) / S4 | 0), fy = (py + 0.5) / S4 - gj;
     for (let qx = 0; qx < TILE; qx++){
-      const x = x0 + (qx + 0.5) * MPP;
-      const c = terrainCol(depth(x, y), x, y, BAYER[(py & 3) * 4 + (qx & 3)]);
+      const x = x0 + (qx + 0.5) * MPP, gi = Math.min(GN - 2, (qx + 0.5) / S4 | 0), fx = (qx + 0.5) / S4 - gi, o = gj * GN + gi;
+      const d = lerp(lerp(grid[o], grid[o + 1], fx), lerp(grid[o + GN], grid[o + GN + 1], fx), fy);
+      if (d < -135) continue;
+      const c = terrainCol(d, x, y, BAYER[(py & 3) * 4 + (qx & 3)]);
       if (c){ px[py * TILE + qx] = c; any = true; }
     }
   }
@@ -908,13 +938,13 @@ function hullPoints(s){
 }
 function groundCheck(s){
   let pts = hullPoints(s);
-  if (!pts.some(([x, y]) => depthAt(x, y) > -1.5)) return;
+  if (!pts.some(([x, y]) => depthFast(x, y) > -1.5)) return;
   s.grounded = true;
   for (let k = 0; k < 60; k++){
     let worst = -1e9, wx = 0, wy = 0;
-    for (const [x, y] of pts){ const d = depthAt(x, y); if (d > worst){ worst = d; wx = x; wy = y; } }
+    for (const [x, y] of pts){ const d = depthFast(x, y); if (d > worst){ worst = d; wx = x; wy = y; } }
     if (worst <= -1.5) break;
-    const gx = depthAt(wx + 2, wy) - depthAt(wx - 2, wy), gy = depthAt(wx, wy + 2) - depthAt(wx, wy - 2);
+    const gx = depthFast(wx + 4, wy) - depthFast(wx - 4, wy), gy = depthFast(wx, wy + 4) - depthFast(wx, wy - 4);
     const gl = Math.hypot(gx, gy) || 1;
     s.x -= gx / gl; s.y -= gy / gl;
     pts = hullPoints(s);
@@ -928,7 +958,9 @@ function groundCheck(s){
 
 function stepShip(s, dt, now = T){
   const t = s.t;
-  const w = s.wind = windAt(s.x, s.y, now);
+  s.windT = (s.windT || 0) - dt;
+  if (s.windT <= 0 || s.ghost){ s.wind = windAt(s.x, s.y, now); s.windT = 0.25; }
+  const w = s.wind;
   const hands = clamp(s.crew / t.crew, 0.2, 1);
   const want = s.struck || s.sinking ? 0 : SAIL_AREA[s.set];
   s.sail += clamp(want - s.sail, -dt * 0.35 * hands, dt * 0.35 * hands);
@@ -994,7 +1026,7 @@ function stepShip(s, dt, now = T){
 const sailable = (s, h) => Math.abs(wrap(s.wind.dir - h)) > (s.t.noGo + 6) * DEG;
 function clearAhead(s, h){
   const fx = Math.sin(h), fy = -Math.cos(h);
-  for (const d of [s.t.L * 0.6 + 25, 80, 160]) if (depthAt(s.x + fx * d, s.y + fy * d) > -12) return false;
+  for (const d of [s.t.L * 0.6 + 25, 80, 160]) if (depthFast(s.x + fx * d, s.y + fy * d) > -12) return false;
   return true;
 }
 // sail toward a bearing: beat to windward on alternating tacks when it lies inside the no-go zone
@@ -1480,8 +1512,8 @@ const GUIDE = [
       <text x="4" y="128">FASTEST</text><text x="4" y="136">HERE</text>
     </svg>
     <ol><li>The <b>flag</b> on your mast and the <b>arrow</b> on the compass show the wind.</li>
-    <li>The <b>ring of dots</b> around your ship shows every direction you could sail: bright = fast, dim = slow, orange dashes = too close to the wind.</li>
-    <li>Point your bow at a bright part of the ring.</li></ol>`],
+    <li>The <b>hint</b> under your speed tells you how you are sailing, and which way to steer when you are too close to the wind.</li>
+    <li>Wind from the side is fastest. Head to wind, she stops.</li></ol>`],
   ['Sailing against the wind', () => `
     <p>You cannot sail straight into the wind. To get somewhere upwind you <b>zig-zag</b>. Sailors call it <b>beating to windward</b>, and each turn across the wind is a <b>tack</b>.</p>
     <svg viewBox="0 0 200 200" shape-rendering="crispEdges">${windSvg}
@@ -1490,7 +1522,7 @@ const GUIDE = [
       ${boatSvg(75, 169, -50)}${boatSvg(100, 127, 50)}${boatSvg(106, 86, -50)}
       <text x="18" y="146">TACK</text><text x="156" y="106">TACK</text><text x="24" y="66">TACK</text><text x="120" y="190">START</text>
     </svg>
-    <ol><li>Turn until the bow sits just outside the orange dashes. The hint says <b>close-hauled</b>.</li>
+    <ol><li>Turn toward the wind until the hint says <b>close-hauled</b>. Any closer and she stops.</li>
     <li>Sail on for a while. You are moving sideways as much as forward. That is fine.</li>
     <li>Now <b>tack</b>: steer firmly the other way, across the wind, until you are close-hauled on the other side.</li>
     <li>Repeat until you get there.</li></ol>
@@ -1514,8 +1546,7 @@ const GUIDE = [
     <li>Then <b>STORM</b> the port with your crew.</li>
     <li>Free every port and the sea is free.</li></ol>`],
   ['Settings', () => `
-    <p>Sound: <b>${['music and effects', 'effects only', 'off'][sfx.mode]}</b></p>
-    <p>Sailing aid ring: <b>${aidOn ? 'on' : 'off'}</b></p>`],
+    <p>Sound: <b>${['music and effects', 'effects only', 'off'][sfx.mode]}</b></p>`],
 ];
 function guide(i){
   const [title, body] = GUIDE[i];
@@ -1524,7 +1555,6 @@ function guide(i){
   if (i < GUIDE.length - 1) btns.push(['NEXT >', () => { sfx.tap(); guide(i + 1); }]);
   if (i === GUIDE.length - 1){
     btns.push(['SOUND', () => { sfx.cycle(); guide(i); }]);
-    btns.push(['AID RING', () => { aidOn = !aidOn; try { localStorage.setItem('libertalia-aid', aidOn ? '1' : '0'); } catch (e){} sfx.tap(); guide(i); }]);
   }
   btns.push(['CLOSE', () => { sfx.tap(); closePanel(); }, true]);
   panel(title, `<div class="guide">${body()}</div><div class="dots">${GUIDE.map((_, k) => k === i ? '#' : '.').join('')}</div>`, btns);
@@ -1615,9 +1645,13 @@ function update(dt){
       if (s.sinking >= 1) s.gone = true;
       continue;
     }
-    s.thinkT = (s.thinkT || 0) - dt;
-    if (s.thinkT <= 0){ s.thinkT = 0.1; think(s, 0.1); }
-    stepShip(s, dt);
+    s.acc = (s.acc || 0) + dt;
+    const far = dist(s, ship) > 2000;
+    if (far && s.acc < 0.25) continue;
+    s.thinkT = (s.thinkT || 0) - s.acc;
+    if (s.thinkT <= 0){ s.thinkT = far ? 0.5 : 0.1; think(s, Math.max(0.1, s.acc)); }
+    stepShip(s, s.acc);
+    s.acc = 0;
     if (!s.seen && !dead && dist(s, ship) < 1100){
       s.seen = true;
       toast(`Sail ho! A ${s.name} to the ${compassName(Math.atan2(s.x - ship.x, -(s.y - ship.y)))}.`);
@@ -1688,7 +1722,7 @@ function update(dt){
   // fight zoom: pull the camera back when ships are close
   const fight = !dead && (ai.some(s => !s.sinking && dist(s, ship) < 430) || empirePorts.some(P => P.fort.hp > 0 && dist(P.fort, ship) < 400));
   zoom += ((fight ? fightZoom() : 1) - zoom) * Math.min(1, dt * 1.2);
-  const zq = Math.round(zoom * 40) / 40;
+  const zq = Math.round(zoom * 20) / 20;
   if (zq !== zoomQ){ zoomQ = zq; layout(); }
 
   discT -= dt;
@@ -1712,7 +1746,7 @@ function update(dt){
 
   bakeChartRows(4);
   sfx.ambient(dt, ship.wind.spd, dead ? 0 : Math.abs(ship.v), !dead && ship.sail > 0.1 && ship.aw.awa < ship.t.noGo * 0.6 * DEG,
-    Math.abs(ship.turn), depthAt(ship.x, ship.y) > -350);
+    Math.abs(ship.turn), depthFast(ship.x, ship.y) > -350);
   updToast(dt);
   updHud();
 }
@@ -1755,11 +1789,19 @@ function setSail(s){
 const lo = el('lo');
 const ctx = lo.getContext('2d');
 const spr = document.createElement('canvas');
-const sctx = spr.getContext('2d', { willReadFrequently: true });
+const sctx = spr.getContext('2d');
 let LW = 320, LH = 240, PX = 3;
+// height of what is actually visible: mobile browsers can cover the bottom with toolbars
+const viewH = () => Math.round(window.visualViewport ? Math.min(innerHeight, visualViewport.height) : innerHeight);
+function fitViewport(){
+  document.documentElement.style.setProperty('--app-h', viewH() + 'px');
+}
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { fitViewport(); layout(); });
+addEventListener('orientationchange', () => setTimeout(() => { fitViewport(); layout(); }, 300));
 function layout(){
+  fitViewport();
   const dpr = window.devicePixelRatio || 1;
-  const Wd = innerWidth * dpr, Hd = innerHeight * dpr;
+  const Wd = innerWidth * dpr, Hd = viewH() * dpr;
   PX = Math.max(1, Math.round(Math.max(Wd, Hd) / 420));
   const z = mapOpen ? 1 : zoomQ, pz = PX * z;
   LW = Math.ceil(Wd / pz); LH = Math.ceil(Hd / pz);
@@ -1772,8 +1814,8 @@ addEventListener('resize', layout);
 // in a fight, zoom out until a ship at gun range fits across the short side of the screen
 function fightZoom(){
   const dpr = window.devicePixelRatio || 1;
-  const short = Math.min(innerWidth, innerHeight) * dpr;
-  return clamp(short * MPP / (2 * 135 * PX), 0.45, 0.7);
+  const short = Math.min(innerWidth, viewH()) * dpr;
+  return clamp(short * MPP / (2 * 135 * PX), 0.6, 0.75);
 }
 
 function hullPath(g, L, B){
@@ -1926,9 +1968,25 @@ let ox = 0, oy = 0; // lo pixel 0,0 in world pixel units
 
 // ships are drawn smooth into a small canvas, then thresholded, palette-quantised and outlined
 const SPS = 128;
-const shipCv = document.createElement('canvas');
-shipCv.width = shipCv.height = SPS;
-const shc = shipCv.getContext('2d', { willReadFrequently: true });
+// one scratch canvas per sprite size, so small ships cost little
+const spritePool = new Map();
+function spriteCanvas(n){
+  let e = spritePool.get(n);
+  if (!e){
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = n;
+    e = { cv, c: cv.getContext('2d', { willReadFrequently: true }) };
+    spritePool.set(n, e);
+  }
+  return e;
+}
+// the part of the sprite layer that has anything on it this frame, in lo pixels
+const bb = [0, 0, 0, 0];
+function touch(wx, wy, rm){
+  const x = wx / MPP - ox, y = wy / MPP - oy, r = rm / MPP + 2;
+  if (x + r < 0 || y + r < 0 || x - r > LW || y - r > LH) return;
+  bb[0] = Math.min(bb[0], x - r); bb[1] = Math.min(bb[1], y - r); bb[2] = Math.max(bb[2], x + r); bb[3] = Math.max(bb[3], y + r);
+}
 function onScreen(wx, wy, m = 60){
   const sx = wx / MPP - ox, sy = wy / MPP - oy;
   return sx > -m && sy > -m && sx < LW + m && sy < LH + m;
@@ -1950,57 +2008,118 @@ function crisp(c, W, H){
   }
   c.putImageData(img, 0, 0);
 }
-function sprite(g, wx, wy, h, fn){
-  const sx = wx / MPP - ox, sy = wy / MPP - oy;
-  if (!onScreen(wx, wy, SPS)) return;
-  const ix = Math.floor(sx), iy = Math.floor(sy);
-  shc.setTransform(1, 0, 0, 1, 0, 0);
-  shc.clearRect(0, 0, SPS, SPS);
-  shc.setTransform(1 / MPP, 0, 0, 1 / MPP, SPS / 2 + sx - ix, SPS / 2 + sy - iy);
-  shc.rotate(h);
-  fn(shc);
-  crisp(shc, SPS, SPS);
-  g.save();
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  g.drawImage(shipCv, ix - SPS / 2, iy - SPS / 2);
-  g.restore();
-}
 
-function drawWake(g, s){
-  g.lineCap = 'round';
+// ---- the sprite layer is composed in a plain pixel buffer: no canvas read-back per frame
+let FB = null, FW = 0, FH = 0, FX = 0, FY = 0; // buffer and its lo-pixel origin
+const bay = (x, y) => BAYER[((y + oy) & 3) * 4 + ((x + ox) & 3)];
+function plot(x, y, col, al){
+  x -= FX; y -= FY;
+  if (x < 0 || y < 0 || x >= FW || y >= FH) return;
+  if (al < 1 && al <= bay(x + FX, y + FY)) return;
+  FB[y * FW + x] = col;
+}
+// a dithered disc in world metres
+function disc(wx, wy, rm, col, al){
+  const cx = wx / MPP - ox, cy = wy / MPP - oy, r = Math.max(0.5, rm / MPP);
+  const x0 = Math.floor(cx - r), x1 = Math.ceil(cx + r), y0 = Math.floor(cy - r), y1 = Math.ceil(cy + r);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++){
+    const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
+    if (dx * dx + dy * dy <= r * r) plot(x, y, col, al);
+  }
+}
+function ring(wx, wy, rm, col, al){
+  const cx = wx / MPP - ox, cy = wy / MPP - oy, r = rm / MPP, n = Math.max(8, Math.ceil(r * 6));
+  for (let k = 0; k < n; k++) plot(Math.floor(cx + Math.cos(k / n * TAU) * r), Math.floor(cy + Math.sin(k / n * TAU) * r), col, al);
+}
+// a dithered thick segment (capsule), for the wake
+function capsule(ax, ay, bx, by, wm, col, al){
+  const x0 = ax / MPP - ox, y0 = ay / MPP - oy, x1 = bx / MPP - ox, y1 = by / MPP - oy, r = wm / MPP / 2;
+  const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1;
+  const minx = Math.floor(Math.min(x0, x1) - r), maxx = Math.ceil(Math.max(x0, x1) + r);
+  const miny = Math.floor(Math.min(y0, y1) - r), maxy = Math.ceil(Math.max(y0, y1) + r);
+  for (let y = miny; y <= maxy; y++) for (let x = minx; x <= maxx; x++){
+    const px = x + 0.5 - x0, py = y + 0.5 - y0, t = clamp((px * dx + py * dy) / L2, 0, 1);
+    const ex = px - dx * t, ey = py - dy * t;
+    if (ex * ex + ey * ey <= r * r) plot(x, y, col, al);
+  }
+}
+function drawWake(s){
   for (let i = 1; i < s.wake.length; i++){
     const a = s.wake[i - 1], b = s.wake[i];
     const age = T - b.t;
     const al = clamp(1 - age / 7, 0, 1) * clamp(b.v / 5, 0, 1) * 0.55;
     if (al <= 0.02) continue;
-    g.strokeStyle = `rgba(223,244,255,${al})`;
-    g.lineWidth = s.t.B * (0.5 + age * 0.45);
-    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+    capsule(a.x, a.y, b.x, b.y, s.t.B * (0.5 + age * 0.45), U.foam, al);
   }
 }
-function drawShip(g, s){
-  if (!onScreen(s.x, s.y, SPS)) return;
-  const L = s.t.L, sink = s.sinking;
-  const c = Math.cos(s.h), sn = Math.sin(s.h);
-  const lsx = 1.2 * c + 2 * sn, lsy = -1.2 * sn + 2 * c;
+// ship sprites, shadow included, cached by everything that changes how they look
+const spriteCache = new Map();
+function shipSprite(s){
+  const t = s.t, L = t.L, sink = s.sinking, liv = s.liv || LIVERY.free;
+  const awa = s.aw.awa / DEG, luff = s.sail > 0.02 && awa < Math.max(24, t.noGo - 8);
+  const h = Math.round(norm(s.h + sink * 0.4) / (2 * DEG)) * 2 * DEG;
+  const key = [t.id, Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 4), Math.round(s.sail * 10), s.set,
+    luff ? Math.floor(T * 6) % 6 : -1, Math.floor(T * 9 / TAU * 4) % 4, Math.round(wrap(s.aw.toward - s.h) / (15 * DEG)),
+    s.struck ? 1 : 0, ROLE_LIVERY[s.role] || s.role, Math.round(sink * 10)].join('|');
+  let e = spriteCache.get(key);
+  if (e){ spriteCache.delete(key); spriteCache.set(key, e); return e; }
+  const span = L + RIGS[t.rig].sprit * 2 + t.B * 2 + 10;
+  const n = Math.min(SPS, Math.ceil(span / MPP / 16) * 16 + 16);
+  const { c } = spriteCanvas(n);
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, n, n);
+  c.setTransform(1 / MPP, 0, 0, 1 / MPP, n / 2, n / 2);
+  c.rotate(h);
+  const cs = Math.cos(h), sn = Math.sin(h), lsx = 1.2 * cs + 2 * sn, lsy = -1.2 * sn + 2 * cs;
+  // shadows: hull close below, sails further off (the sun is high and to the south-east)
   if (sink < 0.8){
-    g.save(); g.translate(s.x, s.y); g.rotate(s.h);
-    g.globalAlpha = 1 - sink;
-    g.save(); g.translate(lsx, lsy); hullPath(g, L, s.t.B); g.fillStyle = SHADOW; g.fill(); g.restore();
-    if (!sink){ g.save(); g.translate(lsx * 2.6, lsy * 2.6); drawRig(g, s, true); g.restore(); }
-    g.restore();
-    g.globalAlpha = 1;
+    c.save(); c.translate(lsx, lsy); hullPath(c, L, t.B); c.fillStyle = SHADOW; c.fill(); c.restore();
+    if (!sink){ c.save(); c.translate(lsx * 2.6, lsy * 2.6); drawRig(c, s, true); c.restore(); }
   }
-  if (sink > 0.75) return;
-  sprite(g, s.x, s.y, s.h + sink * 0.4, c2 => {
-    if (sink) c2.scale(1 - sink * 0.3, 1 - sink * 0.45);
-    drawShipBody(c2, s);
-    drawRig(c2, s, false);
-    const liv = s.liv || LIVERY.free;
-    const top = RIGS[s.t.rig].masts[0].y * L;
-    if (!s.struck) drawFlag(c2, 0, top, s.aw.toward - s.h, 3 + L * 0.03, liv.flag[0], liv.flag[1]);
-    else drawFlag(c2, 0, top, s.aw.toward - s.h, 3 + L * 0.03, C.sail, null);
-  });
+  if (sink <= 0.75){
+    c.save();
+    if (sink) c.scale(1 - sink * 0.3, 1 - sink * 0.45);
+    drawShipBody(c, s);
+    drawRig(c, s, false);
+    const top = RIGS[t.rig].masts[0].y * L;
+    if (!s.struck) drawFlag(c, 0, top, s.aw.toward - s.h, 3 + L * 0.03, liv.flag[0], liv.flag[1]);
+    else drawFlag(c, 0, top, s.aw.toward - s.h, 3 + L * 0.03, C.sail, null);
+    c.restore();
+  }
+  // threshold, palette, outline; translucent dark pixels become a dithered shadow
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  const d = c.getImageData(0, 0, n, n).data, q = new Uint32Array(n * n), solid = new Uint8Array(n * n), sh = new Uint8Array(n * n);
+  for (let i = 0; i < q.length; i++){
+    const al = d[i * 4 + 3];
+    if (al >= 110){ solid[i] = 1; q[i] = quant((d[i * 4] >> 3) << 10 | (d[i * 4 + 1] >> 3) << 5 | (d[i * 4 + 2] >> 3)); }
+    else if (al > 25) sh[i] = Math.min(255, al * 2.2);
+  }
+  for (let y = 1; y < n - 1; y++) for (let x = 1; x < n - 1; x++){
+    const i = y * n + x;
+    if (!solid[i] && (solid[i - 1] || solid[i + 1] || solid[i - n] || solid[i + n])) q[i] = U.navy;
+  }
+  e = { n, q, sh };
+  spriteCache.set(key, e);
+  if (spriteCache.size > 400) spriteCache.delete(spriteCache.keys().next().value);
+  return e;
+}
+function drawShip(s){
+  if (!onScreen(s.x, s.y, SPS) || s.sinking >= 1) return;
+  const e = shipSprite(s), n = e.n;
+  const bx = Math.floor(s.x / MPP - ox) - n / 2 - FX, by = Math.floor(s.y / MPP - oy) - n / 2 - FY;
+  const fade = 1 - s.sinking;
+  for (let y = 0; y < n; y++){
+    const yy = by + y;
+    if (yy < 0 || yy >= FH) continue;
+    for (let x = 0; x < n; x++){
+      const xx = bx + x;
+      if (xx < 0 || xx >= FW) continue;
+      const i = y * n + x, v = e.q[i];
+      if (v){ FB[yy * FW + xx] = v; continue; }
+      const a = e.sh[i];
+      if (a && a / 255 * fade > bay(xx + FX, yy + FY)) FB[yy * FW + xx] = U.shadow;
+    }
+  }
 }
 
 function render(){
@@ -2022,7 +2141,7 @@ function render(){
     if (t) ctx.drawImage(t, tx * TILE - ox, ty * TILE - oy);
   }
   // prefetch a ring around the view, a couple of tiles per frame
-  let budget = 2;
+  let budget = 1;
   for (let ty = ty0 - 1; ty <= ty1 + 1 && budget; ty++) for (let tx = tx0 - 1; tx <= tx1 + 1 && budget; tx++){
     if (getTile(tx, ty, false) === undefined){ getTile(tx, ty, true); budget--; }
   }
@@ -2033,101 +2152,59 @@ function render(){
     }
   }
 
-  // sprites: drawn smooth, then quantised to palette with ordered dithering
-  const g = sctx;
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  g.clearRect(0, 0, LW, LH);
-  g.setTransform(1 / MPP, 0, 0, 1 / MPP, -ox, -oy);
-
-  drawWake(g, ship);
-  for (const s of ai) if (s.wake.length) drawWake(g, s);
-  for (const p of parts){
-    if (p.kind !== 'foam' && p.kind !== 'splash') continue;
-    const al = p.a * (p.life / p.max);
-    if (p.kind === 'foam'){ g.fillStyle = `rgba(223,244,255,${al})`; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
-    else { g.strokeStyle = `rgba(255,255,255,${al})`; g.lineWidth = 0.8; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.stroke(); }
+  // sprites: composed in a pixel buffer covering only where something is drawn
+  bb[0] = bb[1] = 1e9; bb[2] = bb[3] = -1e9;
+  for (const p of parts) touch(p.x, p.y, p.r + 1);
+  for (const b of balls) touch(b.x, b.y, 6);
+  for (const s of [ship, ...ai]){
+    touch(s.x, s.y, (s.t.L + s.t.B * 2) * 0.75 + 8);
+    for (const w of s.wake) touch(w.x, w.y, s.t.B * (0.5 + (T - w.t) * 0.45));
   }
-
-  // port flags
-  for (const P of ports){
-    const fx = P.fx * MPP, fy = P.fy * MPP;
-    if (!onScreen(fx, fy)) continue;
-    g.fillStyle = C.woodDk; g.fillRect(fx - 0.3, fy - 4.5, 0.6, 4.5);
-    drawFlag(g, fx, fy - 4.5, ship.wind.dir + Math.PI, 4, P.f === 'free' ? C.black : C.red, P.f === 'free' ? C.white : C.gold);
-  }
-
-  for (const s of ai) drawShip(g, s);
-  if (!dead || ship.sinking < 0.75){ ship.liv = LIVERY.free; drawShip(g, ship); }
-
-  // cannonballs with arcing height
-  for (const b of balls){
-    if (!onScreen(b.x, b.y, 10)) continue;
-    const t = 1 - b.life / b.max, h = Math.sin(Math.PI * t) * 6;
-    g.fillStyle = 'rgba(8,30,50,0.5)'; g.beginPath(); g.arc(b.x, b.y, 0.6, 0, TAU); g.fill();
-    g.fillStyle = C.black; g.beginPath(); g.arc(b.x - h * 0.15, b.y - h * 0.4, 0.7, 0, TAU); g.fill();
-  }
-  // smoke etc. on top
-  for (const p of parts){
-    const al = p.a * (p.life / p.max);
-    if (p.kind === 'smoke'){ g.fillStyle = `rgba(217,214,207,${al * 0.85})`; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
-    else if (p.kind === 'dust'){ g.fillStyle = `rgba(201,176,122,${al})`; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
-    else if (p.kind === 'splinter'){ g.fillStyle = C.wood; g.fillRect(p.x, p.y, 0.7, 0.7); }
-    else if (p.kind === 'flash'){ g.fillStyle = C.gold; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
-  }
-
-  // quantise sprite layer
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  const img = g.getImageData(0, 0, LW, LH), d = img.data, q = new Uint32Array(d.buffer);
-  for (let y = 0, i = 0; y < LH; y++){
-    const br = (((y + oy) & 3) * 4);
-    for (let x = 0; x < LW; x++, i++){
-      const a = d[i * 4 + 3];
-      if (!a) continue;
-      if (a < 250 && a / 255 <= BAYER[br + ((x + ox) & 3)]){ q[i] = 0; continue; }
-      q[i] = quant((d[i * 4] >> 3) << 10 | (d[i * 4 + 1] >> 3) << 5 | (d[i * 4 + 2] >> 3));
+  FX = Math.max(0, Math.floor(bb[0])); FY = Math.max(0, Math.floor(bb[1]));
+  FW = Math.min(LW, Math.ceil(bb[2])) - FX; FH = Math.min(LH, Math.ceil(bb[3])) - FY;
+  if (FW > 0 && FH > 0){
+    FB = new Uint32Array(FW * FH);
+    drawWake(ship);
+    for (const s of ai) if (s.wake.length) drawWake(s);
+    for (const p of parts){
+      const al = p.a * (p.life / p.max);
+      if (p.kind === 'foam') disc(p.x, p.y, p.r, U.foam, al);
+      else if (p.kind === 'splash') ring(p.x, p.y, p.r, U.white, al);
     }
+    for (const s of ai) drawShip(s);
+    if (!dead || ship.sinking < 0.75){ ship.liv = LIVERY.free; drawShip(ship); }
+    // cannonballs with arcing height
+    for (const b of balls){
+      const t = 1 - b.life / b.max, h = Math.sin(Math.PI * t) * 6;
+      disc(b.x, b.y, 0.6, U.shadow, 0.5);
+      disc(b.x - h * 0.15, b.y - h * 0.4, 0.7, U.black, 1);
+    }
+    for (const p of parts){
+      const al = p.a * (p.life / p.max);
+      if (p.kind === 'smoke') disc(p.x, p.y, p.r, U.smoke, al * 0.85);
+      else if (p.kind === 'dust') disc(p.x, p.y, p.r, U.sandDk, al);
+      else if (p.kind === 'splinter') plot(Math.floor(p.x / MPP - ox), Math.floor(p.y / MPP - oy), U.wood, 1);
+      else if (p.kind === 'flash') disc(p.x, p.y, p.r, U.gold, 1);
+    }
+    sctx.putImageData(new ImageData(new Uint8ClampedArray(FB.buffer), FW, FH), 0, 0);
+    ctx.drawImage(spr, 0, 0, FW, FH, FX, FY, FW, FH);
   }
-  g.putImageData(img, 0, 0);
-  ctx.drawImage(spr, 0, 0);
+  // port flags: a pole and a waving pixel flag
+  for (const P of ports){
+    const fx = P.fx - ox, fy = P.fy - oy;
+    if (fx < -10 || fy < -20 || fx > LW + 10 || fy > LH + 10) continue;
+    ctx.fillStyle = C.woodDk; ctx.fillRect(fx, fy - 9, 1, 9);
+    const dir = Math.sin(ship.wind.dir + Math.PI) >= 0 ? 1 : -1;
+    for (let k = 0; k < 7; k++){
+      const wy = Math.round(Math.sin(T * 8 - k * 0.9) * (k / 7));
+      ctx.fillStyle = P.f === 'free' ? C.black : C.red;
+      ctx.fillRect(fx + dir * (k + 1), fy - 9 + wy, 1, 4);
+    }
+    ctx.fillStyle = P.f === 'free' ? C.white : C.gold; ctx.fillRect(fx + dir * 4, fy - 8 + Math.round(Math.sin(T * 8 - 3) * 0.5), 1, 1);
+  }
 
-  drawAid();
   drawLabels();
   drawCompass();
-}
-
-// ring of dots around the ship: brighter = faster in that direction, orange dashes = too close to the wind
-let aidOn = true;
-try { aidOn = localStorage.getItem('libertalia-aid') !== '0'; } catch (e){}
-function drawAid(){
-  if (!aidOn || dead) return;
-  const g = ctx;
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  const cx = Math.round(ship.x / MPP - ox), cy = Math.round(ship.y / MPP - oy);
-  const R = Math.round(ship.t.L / MPP * 0.62 + 10);
-  const w = ship.wind, t = ship.t;
-  let maxP = 0;
-  for (let a = 0; a <= 180; a += 5) maxP = Math.max(maxP, polar(t, a));
-  for (let d = 0; d < 360; d += 4){
-    const a = d * DEG, f = polar(t, Math.abs(wrap(w.dir - a)) / DEG) / maxP;
-    const x = Math.round(cx + Math.sin(a) * R), y = Math.round(cy - Math.cos(a) * R);
-    if (f <= 0.01){
-      if ((d / 4) % 2 === 0){ g.fillStyle = '#ff9a3c'; g.fillRect(x, y, 2, 2); }
-      continue;
-    }
-    g.fillStyle = f > 0.85 ? '#ffffff' : f > 0.55 ? '#9fd3ff' : '#4f86b3';
-    const r = f > 0.85 ? 2 : 1;
-    g.fillRect(x, y, r, r);
-  }
-  // where the bow points
-  for (let k = 2; k < 7; k++){
-    g.fillStyle = k < 4 ? C.navy : C.gold;
-    g.fillRect(Math.round(cx + Math.sin(ship.h) * (R + k)) - 1, Math.round(cy - Math.cos(ship.h) * (R + k)) - 1, 2, 2);
-  }
-  // wind arrow on the windward side, pointing in
-  const wx = Math.sin(w.dir), wy = -Math.cos(w.dir);
-  pline(g, cx + wx * (R + 16), cy + wy * (R + 16), cx + wx * (R + 6), cy + wy * (R + 6), C.foam);
-  pline(g, cx + wx * (R + 6) - wy * 0, cy + wy * (R + 6), cx + wx * (R + 9) - wy * 3, cy + wy * (R + 9) + wx * 3, C.foam);
-  pline(g, cx + wx * (R + 6), cy + wy * (R + 6), cx + wx * (R + 9) + wy * 3, cy + wy * (R + 9) - wx * 3, C.foam);
 }
 
 // name and hull bar over nearby ships
@@ -2171,7 +2248,7 @@ function drawLabels(){
 }
 
 function drawWaves(){
-  const G = 22;
+  const G = 27;
   const w = ship.wind;
   const bx = -Math.sin(w.dir), by = Math.cos(w.dir); // blowing toward
   const nx = -by, ny = bx;
@@ -2188,7 +2265,7 @@ function drawWaves(){
         const curl = Math.abs(k) / len;
         ctx.fillRect(Math.round(px + nx * k - bx * curl * 1.5), Math.round(py + ny * k - by * curl * 1.5), 1, 1);
       }
-      if (h3 < 0.5){
+      if (h3 < 0.3){
         ctx.fillStyle = C.seaDk;
         for (let k = -len + 1; k < len; k++) ctx.fillRect(Math.round(px + nx * k + bx * 2), Math.round(py + ny * k + by * 2), 1, 1);
       }
@@ -2764,7 +2841,7 @@ const actBtn = el('actBtn');
 function act(){
   if (paused || dead) return;
   if (boardTarget) board(boardTarget);
-  else if (nearPort){ ship.v = 0; sfx.bell(); portMenu(nearPort); }
+  else if (nearPort){ if (nearPort.f === 'free') ship.v = 0; sfx.bell(); portMenu(nearPort); }
 }
 actBtn.addEventListener('click', act);
 
@@ -3043,7 +3120,6 @@ el('btnStart').addEventListener('click', () => {
   if (!hasSave){
     toast('Cast off from Libertalia.');
     toast('Let go of the helm to hold your course.');
-    toast('The ring around your ship shows where you can sail. Bright dots: fast. Orange dashes: too close to the wind.');
     toast('Watch the flag: it shows the wind.');
   }
 });
