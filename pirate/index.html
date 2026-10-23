@@ -31,7 +31,7 @@
       position:absolute; left:50%; top:env(safe-area-inset-top); transform:translateX(-50%);
       image-rendering:pixelated; image-rendering:crisp-edges; pointer-events:none !important;
     }
-    button{ font:inherit; color:inherit; cursor:pointer; }
+    button{ font:inherit; color:inherit; cursor:pointer; touch-action:manipulation; -webkit-touch-callout:none; }
     .px{
       background:#0c2236; border:3px solid #f1e8cf; border-radius:0;
       box-shadow:3px 3px 0 #000a; padding:6px 10px; text-transform:uppercase;
@@ -954,7 +954,10 @@ function reloadTime(s){
 }
 function fire(s, side){ // -1 larboard, +1 starboard
   const idx = side < 0 ? 0 : 1;
-  if (s.reload[idx] > 0 || s.sinking || s.crew <= 0) return;
+  if (s.reload[idx] > 0 || s.sinking || s.crew <= 0){
+    if (s === ship && s.crew <= 0) toast('No hands left to man the guns!');
+    return;
+  }
   s.reload[idx] = reloadTime(s);
   const t = s.t, spread = s === ship ? 5 : 9;
   const shot = s === ship ? shotType : 'round', S = SHOT[shot];
@@ -1385,6 +1388,7 @@ function hitShip(s, b){
   const k = rake ? 2 : 1;
   s.hull -= b.dmg * S.hull * k * rnd(0.7, 1.3);
   if (Math.random() < 0.55) s.crew = Math.max(0, s.crew - Math.round(irnd(1, 3) * S.crew * k));
+  if (s === ship && s.crew <= 0 && !dead){ lose('The last of your crew falls. The Empire takes your ship; friends in Libertalia buy you free.'); return; }
   if (Math.random() < 0.5) s.rigging = Math.max(0.2, s.rigging - S.rig * k);
   if (b.owner === ship && rake && T > rakeToastT){ rakeToastT = T + 4; toast('Raked her, bow to stern!'); }
   // a lucky shot brings down a mast
@@ -2049,7 +2053,10 @@ const meCtx = meCv.getContext('2d');
 let CSSP = 1, meE = null;
 
 // height of what is actually visible: mobile browsers can cover the bottom with toolbars
-const viewH = () => Math.round(window.visualViewport ? Math.min(innerHeight, visualViewport.height) : innerHeight);
+const viewH = () => {
+  const vv = window.visualViewport;
+  return Math.round(vv && vv.scale < 1.05 ? Math.min(innerHeight, vv.height) : innerHeight);
+};
 function fitViewport(){
   document.documentElement.style.setProperty('--app-h', viewH() + 'px');
 }
@@ -3146,6 +3153,15 @@ sailsEl.addEventListener('pointerdown', e => { sailsEl.setPointerCapture(e.point
 sailsEl.addEventListener('pointermove', e => { if (sailHeld) sailMove(e); });
 sailsEl.addEventListener('pointerup', () => { sailHeld = false; });
 sailsEl.addEventListener('pointercancel', () => { sailHeld = false; });
+// iOS ignores user-scalable=no: block double-tap and pinch zoom on the controls and the sea
+for (const id of ['fireL', 'fireR', 'helm', 'sails', 'shotBtn', 'lo']){
+  el(id).addEventListener('touchstart', e => { if (e.cancelable && !(id === 'lo' && mapOpen)) e.preventDefault(); }, { passive: false });
+}
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+// if the page did get zoomed (an old tap, the browser), say how to get back
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (visualViewport.scale > 1.05 && started) toast('The page is zoomed in: pinch out to see all the controls.'); });
 fireBtn[0].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, -1); });
 fireBtn[1].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, 1); });
 el('btnMap').addEventListener('click', () => { if (!paused) openMap(); });
@@ -3167,7 +3183,7 @@ function cycleShot(){
   sfx.tap();
   toast({ round: 'Round shot: smash her hull.', chain: 'Chain shot: cut her rigging, stop her running.', grape: 'Grape shot: sweep her decks, then board.' }[shotType]);
 }
-el('shotBtn').addEventListener('click', cycleShot);
+el('shotBtn').addEventListener('pointerdown', e => { e.preventDefault(); cycleShot(); });
 el('btnInfo').addEventListener('click', () => { if (!paused && !dead){ sfx.tap(); guide(0); } });
 const actBtn = el('actBtn');
 function act(){
