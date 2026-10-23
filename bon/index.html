@@ -140,9 +140,13 @@ function showState(){
 // ---------------------------------------------------------------- Drucker: WebUSB oder Web Serial
 let printer = null;
 
+// Der Drucker wird nur während des Drucks belegt, damit der Mac (POS80-Warteschlange, Bon-Post) ihn weiter nutzen kann
 async function openUsb(device){
-  await device.open();
-  if (device.configuration === null) await device.selectConfiguration(1);
+  const claim = async () => {
+    if (!device.opened) await device.open();
+    if (device.configuration === null) await device.selectConfiguration(1);
+  };
+  await claim();
   // Schnittstelle mit Bulk-OUT-Endpunkt suchen, Druckerklasse (7) bevorzugt
   let pick = null;
   for (const iface of device.configuration.interfaces) {
@@ -153,13 +157,20 @@ async function openUsb(device){
       if (!pick || (cand.cls === 7 && pick.cls !== 7)) pick = cand;
     }
   }
+  await device.close();
   if (!pick) throw new Error('Kein Druckausgang gefunden');
-  await device.claimInterface(pick.iface);
-  if (pick.alt) await device.selectAlternateInterface(pick.iface, pick.alt);
   return {
     name: device.productName || 'USB-Drucker',
     async write(data){
-      for (let i = 0; i < data.length; i += 4096) await device.transferOut(pick.ep, data.subarray(i, i + 4096));
+      await claim();
+      try {
+        await device.claimInterface(pick.iface);
+        if (pick.alt) await device.selectAlternateInterface(pick.iface, pick.alt);
+        for (let i = 0; i < data.length; i += 4096) await device.transferOut(pick.ep, data.subarray(i, i + 4096));
+        await device.releaseInterface(pick.iface).catch(() => {});
+      } finally {
+        await device.close().catch(() => {});
+      }
     },
     is: d => d === device,
   };
