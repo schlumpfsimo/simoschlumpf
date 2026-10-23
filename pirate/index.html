@@ -1,0 +1,2276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#0c2236" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Libertalia</title>
+  <meta name="description" content="Break the chains. Free the islands." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet" />
+  <style>
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{
+      margin:0; height:100%; overflow:hidden; background:#0c2236; color:#f1e8cf;
+      font-family:Silkscreen, ui-monospace, monospace; font-size:12px;
+      user-select:none; -webkit-user-select:none; touch-action:none; overscroll-behavior:none;
+    }
+    canvas#lo{
+      position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+      image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none;
+    }
+    button{ font:inherit; color:inherit; cursor:pointer; }
+    .px{
+      background:#0c2236; border:3px solid #f1e8cf; border-radius:0;
+      box-shadow:3px 3px 0 #000a; padding:6px 10px; text-transform:uppercase;
+    }
+    .px:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 #000a; }
+    .px:disabled{ opacity:.4; }
+    .hud{ position:fixed; inset:0; pointer-events:none; }
+    .hud > *{ pointer-events:auto; }
+    .hidden{ display:none !important; }
+
+    #info{
+      position:absolute; pointer-events:none; line-height:1.35; text-shadow:2px 2px 0 #000a;
+      left:calc(10px + env(safe-area-inset-left)); top:calc(8px + env(safe-area-inset-top));
+    }
+    #spd{ font-size:24px; line-height:1.1; }
+    #spd small{ font-size:12px; }
+    #info .dim{ opacity:.75; font-size:11px; }
+    #info .gold{ color:#e8b84a; font-size:11px; }
+    #top{
+      position:absolute; display:flex; gap:8px;
+      right:calc(10px + env(safe-area-inset-right)); top:calc(10px + env(safe-area-inset-top));
+    }
+    #toast{
+      position:absolute; left:50%; transform:translateX(-50%); pointer-events:none;
+      top:calc(126px + env(safe-area-inset-top)); max-width:90vw; text-align:center;
+      background:#0c2236e6; border:3px solid #e8b84a; padding:6px 10px; opacity:0; transition:opacity .25s;
+    }
+    #toast.on{ opacity:1; }
+
+    #left,#right{ position:absolute; bottom:calc(12px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
+    #left{ left:calc(12px + env(safe-area-inset-left)); flex-direction:column; align-items:flex-start; }
+    #right{ right:calc(12px + env(safe-area-inset-right)); flex-direction:column; align-items:flex-end; }
+
+    .fire{
+      position:relative; width:84px; height:64px; padding:0; background:#3b1a10; overflow:hidden;
+      display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.2; font-size:11px;
+    }
+    .fire::before{
+      content:""; position:absolute; left:0; bottom:0; width:100%; height:calc(var(--p,1) * 100%);
+      background:#8a2a1a;
+    }
+    .fire.ready{ border-color:#e8b84a; }
+    .fire span{ position:relative; }
+
+    #helmWrap{ display:flex; flex-direction:column; gap:4px; }
+    #helm{
+      position:relative; width:min(52vw,250px); height:52px; background:#0c2236cc;
+      border:3px solid #f1e8cf; box-shadow:3px 3px 0 #000a; touch-action:none;
+      background-image:linear-gradient(90deg,transparent calc(50% - 2px),#f1e8cf55 calc(50% - 2px),#f1e8cf55 calc(50% + 1px),transparent calc(50% + 1px));
+    }
+    #helmKnob{
+      position:absolute; top:5px; left:50%; width:36px; height:36px; margin-left:-18px;
+      background:#6b4423; border:3px solid #e8b84a; box-shadow:2px 2px 0 #000a;
+    }
+    #helmKnob::after{ content:""; position:absolute; left:12px; top:0; width:6px; height:30px; background:#3f2412; }
+    .labs{ display:flex; justify-content:space-between; font-size:10px; opacity:.8; text-shadow:1px 1px 0 #000; }
+
+    #sails{
+      position:relative; width:150px; height:176px; touch-action:none;
+      display:flex; flex-direction:column; justify-content:space-between;
+    }
+    #sails .stop{
+      height:36px; display:flex; align-items:center; justify-content:flex-end; padding-right:58px;
+      font-size:11px; text-shadow:1px 1px 0 #000; opacity:.75;
+    }
+    #sails .stop.on{ opacity:1; color:#e8b84a; }
+    #sailTrack{
+      position:absolute; right:14px; top:0; bottom:0; width:24px; background:#0c2236cc;
+      border:3px solid #f1e8cf; box-shadow:3px 3px 0 #000a;
+    }
+    #sailKnob{
+      position:absolute; right:4px; width:44px; height:28px; background:#f1e8cf; border:3px solid #6b4423;
+      box-shadow:2px 2px 0 #000a; transition:top .12s steps(3);
+    }
+
+    #actBtn{ position:absolute; left:50%; transform:translateX(-50%); top:calc(50% + 64px); border-color:#e8b84a; white-space:nowrap; }
+    #actBtn.board{ background:#7a2416; }
+
+    .panel{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#0007; padding:16px;
+    }
+    .card{
+      max-width:400px; width:100%; max-height:100%; overflow:auto; background:#e9d9ac; color:#3a2814; border:4px solid #3a2814;
+      box-shadow:6px 6px 0 #000a; padding:16px; line-height:1.5;
+    }
+    .card h1,.card h2{ margin:0 0 8px; font-weight:normal; }
+    .card h1{ font-size:28px; letter-spacing:1px; }
+    .card h2{ font-size:18px; }
+    .card p{ margin:8px 0; font-size:12px; }
+    .card .px{ background:#3a2814; color:#e9d9ac; border-color:#3a2814; margin-top:8px; margin-right:6px; }
+    .card .px.hot{ background:#7a2416; border-color:#7a2416; }
+    .card .help{ font-size:11px; opacity:.85; }
+    .card table{ width:100%; border-collapse:collapse; font-size:12px; margin:6px 0; }
+    .card td{ padding:2px 0; }
+    .card td:last-child{ text-align:right; }
+    .fight{ margin:10px 0; }
+    .fight .row{ display:flex; justify-content:space-between; font-size:11px; }
+    .fight .bar{ height:14px; background:#d6c08a; border:2px solid #3a2814; margin:2px 0 8px; }
+    .fight .bar i{ display:block; height:100%; background:#3a2814; transition:width .2s steps(4); }
+    .fight .bar.foe i{ background:#a8322b; }
+
+    #mapUi{ position:fixed; inset:0; pointer-events:none; }
+    #mapUi > *{ pointer-events:auto; }
+    #mapBtns{
+      position:absolute; display:flex; gap:8px;
+      right:calc(10px + env(safe-area-inset-right)); top:calc(10px + env(safe-area-inset-top));
+    }
+    #mapZoom{
+      position:absolute; display:flex; flex-direction:column; gap:8px;
+      right:calc(10px + env(safe-area-inset-right)); bottom:calc(14px + env(safe-area-inset-bottom));
+    }
+    #mapUi .px{ background:#3a2814; color:#e9d9ac; border-color:#e9d9ac; min-width:44px; }
+  </style>
+</head>
+<body>
+<canvas id="lo"></canvas>
+
+<div class="hud hidden" id="hud">
+  <div id="info">
+    <div id="spd">0.0 <small>KN</small></div>
+    <div id="pos">-</div>
+    <div class="dim" id="tack">-</div>
+    <div class="dim" id="wind">-</div>
+    <div class="dim" id="hull">-</div>
+    <div class="gold" id="purse">-</div>
+  </div>
+  <div id="top">
+    <button class="px" id="btnSnd" aria-label="Sound">SND</button>
+    <button class="px" id="btnMap">CHART</button>
+  </div>
+  <div id="toast"></div>
+  <button class="px hidden" id="actBtn">-</button>
+  <div id="left">
+    <button class="px fire" id="fireL"><span>FIRE<br>LARBOARD</span></button>
+    <div id="helmWrap">
+      <div id="helm"><div id="helmKnob"></div></div>
+      <div class="labs"><span>&lt; LARBOARD</span><span>STARBOARD &gt;</span></div>
+    </div>
+  </div>
+  <div id="right">
+    <button class="px fire" id="fireR"><span>FIRE<br>STARBOARD</span></button>
+    <div id="sails">
+      <div class="stop" data-s="3">FULL SAIL</div>
+      <div class="stop" data-s="2">FIGHTING SAIL</div>
+      <div class="stop" data-s="1">REEFED</div>
+      <div class="stop" data-s="0">FURLED</div>
+      <div id="sailTrack"></div>
+      <div id="sailKnob"></div>
+    </div>
+  </div>
+</div>
+
+<div id="mapUi" class="hidden">
+  <div id="mapBtns">
+    <button class="px" id="mapCentre">SHIP</button>
+    <button class="px" id="mapClose">CLOSE</button>
+  </div>
+  <div id="mapZoom">
+    <button class="px" id="mapIn">+</button>
+    <button class="px" id="mapOut">-</button>
+  </div>
+</div>
+
+<div class="panel" id="title">
+  <div class="card">
+    <h1>LIBERTALIA</h1>
+    <p>The Empire holds the islands in chains. One free harbour remains, hidden on Cayo Escondido.</p>
+    <p>Learn the wind. Take their ships. Free the people they carry.</p>
+    <p class="help">Helm: drag bottom left, let go to hold course.<br>
+      Sails: lever bottom right.<br>
+      You cannot sail closer than about 45 degrees to the wind.<br>
+      Come alongside a ship slowly to board her.<br>
+      Keys: A/D helm, W/S sails, Q/E fire, B board, M chart.</p>
+    <button class="px" id="btnStart">SET SAIL</button>
+    <button class="px hidden" id="btnNew">NEW VOYAGE</button>
+  </div>
+</div>
+
+<div class="panel hidden" id="panel">
+  <div class="card">
+    <h2 id="pTitle">-</h2>
+    <div id="pBody"></div>
+    <div id="pBtns"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------------------------------------------------------------- constants
+const TAU = Math.PI * 2, DEG = Math.PI / 180;
+const MPP = 0.6;              // metres per art pixel
+const KN = 0.5144 * 6;        // world metres per second per knot (time compressed)
+const WW = 24000, WH = 16000; // world size in metres
+const CELL = 250, GW = WW / CELL, GH = WH / CELL; // discovery and navigation grid
+const SIGHT = 1400;
+const TILE = 128;             // terrain tile size in art pixels
+const CPX = 40;               // chart: metres per chart pixel
+const CW = WW / CPX, CH = WH / CPX;
+const SAIL_NAMES = ['Furled', 'Reefed', 'Fighting sail', 'Full sail'];
+const SAIL_AREA = [0, 0.42, 0.7, 1];
+const RELOAD = 7, BALL_SPEED = 95, GUN_RANGE = 160;
+const SAVE_KEY = 'libertalia-v2';
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const sm = t => t * t * (3 - 2 * t);
+const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+const norm = a => { a %= TAU; return a < 0 ? a + TAU : a; };
+const rnd = (a, b) => a + Math.random() * (b - a);
+const irnd = (a, b) => Math.floor(rnd(a, b + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+function hash(x, y, s){
+  let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(s | 0, 1442695041)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vnoise(x, y, s){
+  const xi = Math.floor(x), yi = Math.floor(y), fx = sm(x - xi), fy = sm(y - yi);
+  return lerp(lerp(hash(xi, yi, s), hash(xi + 1, yi, s), fx),
+              lerp(hash(xi, yi + 1, s), hash(xi + 1, yi + 1, s), fx), fy) * 2 - 1;
+}
+// periodic 1D noise, period P lattice points
+function pnoise(u, P, s){
+  const i = Math.floor(u), f = sm(u - i);
+  const a = ((i % P) + P) % P, b = (a + 1) % P;
+  return lerp(hash(a, 0, s), hash(b, 0, s), f) * 2 - 1;
+}
+function rng(seed){
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
+const POINTS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const compassName = a => POINTS[Math.round(norm(a) / (TAU / 16)) % 16];
+
+// ---------------------------------------------------------------- palette
+const C = {
+  sea:'#1d5a8a', seaDk:'#174b75', seaLt:'#2f78a8', foam:'#dff4ff', white:'#ffffff',
+  sh1:'#23779c', sh2:'#3a9fb0', sh3:'#6fd0c2', surf:'#e6f6ec',
+  sand:'#ead7a0', sandDk:'#c9b07a', grass1:'#5a9c3c', grass2:'#4b8a33',
+  hill1:'#3c7a2e', hill2:'#2f6326', rock:'#7d7360',
+  treeDk:'#1f4a1c', tree:'#2f7a2a', treeLt:'#4fa53a',
+  woodDk:'#3f2412', wood:'#6b4423', deck:'#b88a52', deckLt:'#d2a86a',
+  sail:'#f1e8cf', sailSh:'#c9bc98', black:'#12100e', grey:'#6d6a66', smoke:'#d9d6cf',
+  red:'#b3302a', gold:'#e8b84a', roof:'#c0582f', roofDk:'#8a3a20', thatch:'#b8934a', thatchDk:'#8a6a30',
+  stone:'#9a958a', stoneDk:'#6f6a60', shadow:'#0e2f4d', navy:'#0c2236', iron:'#2a2a2e',
+  parch:'#e9d9ac', parchDk:'#d6c08a', ink:'#4a3420', cSea:'#b8cbb8', cShal:'#cfdcc0',
+  cLand:'#d9b878', cHill:'#b89356', cBlue:'#2c4f7a', cRed:'#a8322b', green:'#5fbf4a',
+};
+function rgb(hex){ const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+function u32(hex){ const [r, g, b] = rgb(hex); return (255 << 24 | b << 16 | g << 8 | r) >>> 0; }
+const U = {}; for (const k in C) U[k] = u32(C[k]);
+
+// colours that sprites get quantised to
+const SPR_PAL = ['sea','seaDk','seaLt','foam','white','sh2','sh3','sand','woodDk','wood','deck','deckLt',
+  'sail','sailSh','black','grey','smoke','red','gold','shadow','navy','iron','stone','roof','treeDk','tree']
+  .map(k => rgb(C[k]));
+const LUT = new Uint32Array(32768);
+function quant(key){
+  let c = LUT[key];
+  if (c) return c;
+  const r = (key >> 10) << 3 | 4, g = ((key >> 5) & 31) << 3 | 4, b = (key & 31) << 3 | 4;
+  let best = 0, bd = 1e9;
+  for (let i = 0; i < SPR_PAL.length; i++){
+    const p = SPR_PAL[i], dr = p[0] - r, dg = p[1] - g, db = p[2] - b;
+    const d = dr * dr * 0.3 + dg * dg * 0.59 + db * db * 0.11;
+    if (d < bd){ bd = d; best = i; }
+  }
+  const p = SPR_PAL[best];
+  return LUT[key] = (255 << 24 | p[2] << 16 | p[1] << 8 | p[0]) >>> 0;
+}
+
+// ---------------------------------------------------------------- bitmap font (3x5)
+const GLYPHS = {
+  A:'010101111101101', B:'110101110101110', C:'011100100100011', D:'110101101101110', E:'111100110100111',
+  F:'111100110100100', G:'011100101101011', H:'101101111101101', I:'111010010010111', J:'001001001101010',
+  K:'101101110101101', L:'100100100100111', M:'101111111101101', N:'110101101101101', O:'010101101101010',
+  P:'110101110100100', Q:'010101101110011', R:'110101110101101', S:'011100010001110', T:'111010010010010',
+  U:'101101101101111', V:'101101101101010', W:'101101111111101', X:'101101010101101', Y:'101101010010010',
+  Z:'111001010100111', 0:'111101101101111', 1:'010110010010111', 2:'110001010100111', 3:'110001010001110',
+  4:'101101111001001', 5:'111100110001110', 6:'011100111101111', 7:'111001010010010', 8:'111101111101111',
+  9:'111101111001110', '-':'000000111000000', '.':'000000000000010', "'":'010010000000000', ':':'000010000010000',
+  '/':'001001010100100', '!':'010010010000010', ' ':'000000000000000',
+};
+const plain = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+function textWidth(s, k = 1){ return plain(s).length * 4 * k - k; }
+function drawText(g, s, x, y, col, k = 1, sh = null){
+  s = plain(s);
+  x = Math.round(x); y = Math.round(y);
+  const pass = (ox, oy, c) => {
+    g.fillStyle = c;
+    for (let i = 0; i < s.length; i++){
+      const gl = GLYPHS[s[i]] || GLYPHS[' '];
+      for (let j = 0; j < 15; j++) if (gl[j] === '1') g.fillRect(x + ox + (i * 4 + j % 3) * k, y + oy + ((j / 3) | 0) * k, k, k);
+    }
+  };
+  if (sh) pass(k, k, sh);
+  pass(0, 0, col);
+}
+
+// ---------------------------------------------------------------- world
+const coastY = x => 14700 + 380 * Math.sin(x / 2300 + 1) + 240 * Math.sin(x / 1100 + 2.3) + 80 * Math.sin(x / 330 + 0.7) + 30 * Math.sin(x / 97);
+const COAST_MIN = 14700 - 380 - 240 - 80 - 30;
+
+// name, cx, cy, rx, ry, rotation (deg), port [name, faction, angle (deg, island frame)]
+const ISLE_DEFS = [
+  ['Isla Grande',    7200, 2700, 5200, 1050, -10, ['San Aurelio', 'empire', 95]],
+  ['Santa Vera',    14800, 4400, 2500, 1100,   6, ['Puerto Vera', 'empire', 80]],
+  ['Isla Mangle',    9200, 6500, 1500,  620,  -6, ['Port Merrow', 'empire', 95]],
+  ['La Tortue',     14200, 1900,  750,  260,   4, ['Cayon', 'empire', 250]],
+  ['Corvina',       19600, 5300, 1350,  480,   3, ['San Corvin', 'empire', 90]],
+  ['Cayo Escondido',16200, 9900,  520,  380,  20, ['Libertalia', 'free', 300]],
+  ['Isla Pelicano', 22100, 6600,  380,  300,   0],
+  ['Santa Brisa',   22700, 8300,  450,  600,  10, ['Brisa', 'empire', 180]],
+  ['Morne Noir',    22500,10300,  520,  700,  -8, ['Fort Noir', 'empire', 170]],
+  ['Isla Coral',    21900,12100,  360,  420,   0],
+  ['Las Hermanas',  20700,13300,  260,  200,  30],
+  ['Cayo Sal',      11800, 9300,  260,  180,  40],
+  ['Cayo Huesos',    5200, 9000,  320,  240, -20],
+  ['Isla Perdida',   3200, 6400,  700,  450,  15, ['Perdida', 'empire', 30]],
+  ['Los Roques',    12600,12000,  300,  220,  10],
+  ['Calavera',      17800,12400,  420,  340, -15],
+  ['Bahia Azul',     2400,11400,  800,  520,   0, ['Fort Azul', 'empire', 350]],
+  ['Isla Ballena',   6800,12300,  500,  300,  25],
+  ['Cayo Gato',     18500, 7600,  240,  200,   0],
+  ['Isla Verde',    13200, 7500,  380,  260, -30],
+];
+const MAIN_PORTS = [['Puerto Real', 8200, 'empire'], ['Costa Dorada', 15400, 'empire']];
+
+const isles = ISLE_DEFS.map(([name, cx, cy, rx, ry, rot], id) => {
+  const r = rng(9001 + id * 31);
+  const I = { id, name, cx, cy, rx, ry, rot: rot * DEG, seed: 500 + id * 7, disc: false };
+  I.c = Math.cos(I.rot); I.s = Math.sin(I.rot);
+  I.R = Math.sqrt(rx * ry);
+  I.harm = [[2, .15], [3, .1], [4, .06], [6, .04], [9, .025], [13, .015]].map(([k, a]) => [k, a * (.4 + r() * 1.2), r() * TAU]);
+  I.P1 = Math.max(5, Math.round(TAU * I.R / 240));
+  I.P2 = Math.max(9, Math.round(TAU * I.R / 75));
+  I.bound = Math.max(rx, ry) * 1.5 + 220;
+  return I;
+});
+function shape(I, th){
+  let d = 1;
+  for (const [k, a, p] of I.harm) d += a * Math.sin(k * th + p);
+  const u = th / TAU;
+  return d + (pnoise(u * I.P1, I.P1, I.seed) * 28 + pnoise(u * I.P2, I.P2, I.seed + 1) * 9) / I.R;
+}
+const rdir = (I, th) => Math.hypot(Math.cos(th) * I.rx, Math.sin(th) * I.ry);
+// signed distance-ish in metres, positive on land
+function isleDepth(I, x, y){
+  const dx = x - I.cx, dy = y - I.cy;
+  const lx = dx * I.c + dy * I.s, ly = -dx * I.s + dy * I.c;
+  const nx = lx / I.rx, ny = ly / I.ry;
+  const th = Math.atan2(ny, nx);
+  return (shape(I, th) - Math.hypot(nx, ny)) * rdir(I, th);
+}
+function islePoint(I, th, extra){
+  const s = shape(I, th) + extra / rdir(I, th);
+  const lx = Math.cos(th) * I.rx * s, ly = Math.sin(th) * I.ry * s;
+  return [I.cx + lx * I.c - ly * I.s, I.cy + lx * I.s + ly * I.c];
+}
+function near(I, x, y, m = 0){ return Math.abs(x - I.cx) < I.bound + m && Math.abs(y - I.cy) < I.bound + m; }
+function depthAt(x, y){
+  let d = y - coastY(x);
+  for (const I of isles) if (near(I, x, y)){ const e = isleDepth(I, x, y); if (e > d) d = e; }
+  return d;
+}
+const land = (x, y) => depthAt(x, y) > 0;
+
+// ports
+const ports = [];
+ISLE_DEFS.forEach((d, id) => {
+  if (!d[6]) return;
+  const I = isles[id], [name, f, ang] = d[6], a = ang * DEG;
+  const P = { name, f, isle: I };
+  [P.hx, P.hy] = islePoint(I, a, 80);
+  [P.px0, P.py0] = islePoint(I, a, -6);
+  [P.px1, P.py1] = islePoint(I, a, 40);
+  [P.tx, P.ty] = islePoint(I, a, -62);
+  I.port = P;
+  ports.push(P);
+});
+for (const [name, x, f] of MAIN_PORTS){
+  const c = coastY(x);
+  ports.push({ name, f, isle: null, hx: x, hy: c - 80, px0: x, py0: c + 6, px1: x, py1: c - 40, tx: x, ty: c + 62 });
+}
+// towns: houses snapped to the art pixel grid
+for (const P of ports){
+  const r = rng(Math.round(P.tx * 7 + P.ty));
+  P.houses = [];
+  const n = P.f === 'free' ? 14 : 22;
+  for (let k = 0; k < 400 && P.houses.length < n; k++){
+    const a = r() * TAU, d = Math.sqrt(r()) * 75;
+    const x = P.tx + Math.cos(a) * d, y = P.ty + Math.sin(a) * d;
+    if (depthAt(x, y) < 10) continue;
+    const w = 5 + (r() * 4 | 0), h = 4 + (r() * 3 | 0);
+    const gx = Math.round(x / MPP), gy = Math.round(y / MPP);
+    if (P.houses.some(o => gx < o.gx + o.w + 2 && gx + w + 2 > o.gx && gy < o.gy + o.h + 2 && gy + h + 2 > o.gy)) continue;
+    P.houses.push({ gx, gy, w, h, alt: r() < 0.3 });
+  }
+  // the fort or the flagpole sits next to the pier head
+  P.fx = Math.round(lerp(P.px0, P.tx, 0.5) / MPP); P.fy = Math.round(lerp(P.py0, P.ty, 0.5) / MPP);
+}
+let empirePorts = ports.filter(p => p.f === 'empire');
+const home = ports.find(p => p.f === 'free');
+const CAPITALS = ['San Aurelio', 'Puerto Vera', 'Puerto Real'];
+for (const P of empirePorts){
+  const big = CAPITALS.includes(P.name);
+  P.crew0 = P.crew = big ? 220 : 110;
+  P.freedFor = 0;
+  P.fort = { fort: true, port: P, x: P.fx * MPP, y: P.fy * MPP, max: big ? 260 : 160, guns: big ? 10 : 6, reload: 0 };
+  P.fort.hp = P.fort.max;
+}
+const refreshPorts = () => { empirePorts = ports.filter(p => p.f === 'empire'); };
+// freeing people bound for a port stirs unrest there; a restless garrison fields fewer soldiers
+const unrest = P => clamp(P.freedFor / P.crew0, 0, 1);
+const defenders = P => Math.round(P.crew * (1 - 0.6 * unrest(P)));
+function creditFreed(name, n){
+  const P = ports.find(q => q.name === name);
+  if (!P || P.f !== 'empire' || !n) return;
+  const u0 = unrest(P);
+  P.freedFor += n;
+  const u1 = unrest(P);
+  if (u0 < 1 && u1 >= 1) toast(`${P.name} seethes. The town will rise when you attack.`);
+  else if (u0 < 0.5 && u1 >= 0.5) toast(`Unrest spreads in ${P.name}. The garrison grows thin.`);
+}
+
+// wind: trades from ENE with slow drifting variation, gusts and island lee
+const WIND_BASE = 65 * DEG;
+function windAt(x, y, t, lee = true){
+  const n1 = vnoise(x / 7000 + t * 0.006, y / 7000 - t * 0.004, 11);
+  const n2 = vnoise(x / 2500 - t * 0.02, y / 2500, 12);
+  const g = vnoise(x / 600 + t * 0.25, y / 600 - t * 0.15, 13);
+  const dir = WIND_BASE + n1 * 0.45 + n2 * 0.12;
+  let spd = 13 + n1 * 3 + n2 * 4 + g * 2.2;
+  if (lee){
+    const sx = Math.sin(dir), sy = -Math.cos(dir);
+    if (land(x + sx * 120, y + sy * 120)) spd *= 0.5;
+    if (land(x + sx * 300, y + sy * 300)) spd *= 0.68;
+    if (land(x + sx * 650, y + sy * 650)) spd *= 0.85;
+  }
+  return { dir, spd: Math.max(1.5, spd) };
+}
+
+// ---------------------------------------------------------------- navigation grid and routes
+const nav = new Uint8Array(GW * GH);
+for (let j = 1; j < GH - 1; j++) for (let i = 1; i < GW - 1; i++){
+  const x = (i + 0.5) * CELL, y = (j + 0.5) * CELL;
+  let ok = depthAt(x, y) < -60;
+  if (ok) for (const [dx, dy] of [[-95, -95], [95, -95], [-95, 95], [95, 95]]) if (depthAt(x + dx, y + dy) > -15){ ok = false; break; }
+  nav[j * GW + i] = ok ? 1 : 0;
+}
+function freeCell(x, y){
+  const ci = Math.floor(x / CELL), cj = Math.floor(y / CELL);
+  for (let r = 0; r < 8; r++){
+    let best = -1, bd = 1e9;
+    for (let j = cj - r; j <= cj + r; j++) for (let i = ci - r; i <= ci + r; i++){
+      if (i < 0 || j < 0 || i >= GW || j >= GH || !nav[j * GW + i]) continue;
+      const d = Math.hypot((i + 0.5) * CELL - x, (j + 0.5) * CELL - y);
+      if (d < bd){ bd = d; best = j * GW + i; }
+    }
+    if (best >= 0) return best;
+  }
+  return -1;
+}
+function clearLine(ax, ay, bx, by){
+  const n = Math.ceil(Math.hypot(bx - ax, by - ay) / 40);
+  for (let k = 1; k < n; k++) if (depthAt(lerp(ax, bx, k / n), lerp(ay, by, k / n)) > -35) return false;
+  return true;
+}
+function astar(a, b){
+  const g = new Float32Array(GW * GH).fill(1e9), from = new Int32Array(GW * GH).fill(-1), closed = new Uint8Array(GW * GH);
+  const heap = [];
+  const push = (n, f) => { heap.push([f, n]); let i = heap.length - 1; while (i){ const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length){ heap[0] = last; let i = 0; for (;;){ const l = i * 2 + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top[1]; };
+  const bi = b % GW, bj = (b / GW) | 0;
+  const hfn = n => Math.hypot(n % GW - bi, ((n / GW) | 0) - bj);
+  g[a] = 0; push(a, hfn(a));
+  while (heap.length){
+    const n = pop();
+    if (n === b) break;
+    if (closed[n]) continue;
+    closed[n] = 1;
+    const ni = n % GW, nj = (n / GW) | 0;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++){
+      if (!di && !dj) continue;
+      const i = ni + di, j = nj + dj;
+      if (i < 0 || j < 0 || i >= GW || j >= GH) continue;
+      const m = j * GW + i;
+      if (!nav[m] || closed[m]) continue;
+      if (di && dj && (!nav[nj * GW + i] || !nav[j * GW + ni])) continue;
+      const ng = g[n] + (di && dj ? 1.414 : 1);
+      if (ng < g[m]){ g[m] = ng; from[m] = n; push(m, ng + hfn(m)); }
+    }
+  }
+  if (from[b] < 0 && a !== b) return null;
+  const out = [];
+  for (let n = b; n >= 0; n = from[n]) out.push(n);
+  return out.reverse().map(n => [(n % GW + 0.5) * CELL, (((n / GW) | 0) + 0.5) * CELL]);
+}
+const routeCache = new Map();
+function route(P, Q){
+  const key = P.name + '>' + Q.name;
+  if (routeCache.has(key)) return routeCache.get(key);
+  const a = freeCell(P.hx, P.hy), b = freeCell(Q.hx, Q.hy);
+  let pts = a >= 0 && b >= 0 ? astar(a, b) : null;
+  if (pts){
+    pts = [[P.hx, P.hy], ...pts, [Q.hx, Q.hy]];
+    // string pulling
+    const out = [pts[0]];
+    let i = 0;
+    while (i < pts.length - 1){
+      let j = pts.length - 1;
+      while (j > i + 1 && !clearLine(pts[i][0], pts[i][1], pts[j][0], pts[j][1])) j--;
+      out.push(pts[j]);
+      i = j;
+    }
+    pts = out;
+  }
+  routeCache.set(key, pts);
+  return pts;
+}
+
+// ---------------------------------------------------------------- terrain tiles
+const tiles = new Map();
+function terrainCol(d, x, y, b){
+  const j = b - 0.5;
+  const dd = d + j * 5;
+  if (dd < -125) return 0;
+  if (dd < -70) return U.sh1;
+  if (dd < -28) return U.sh2;
+  const dl = d + j * 1.6;
+  if (dl < -1.5) return U.sh3;
+  if (dl < 0.6) return U.surf;
+  if (dl < 7) return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.08 ? U.sandDk : U.sand;
+  const hv = d + vnoise(x / 170, y / 170, 5) * 55 + vnoise(x / 45, y / 45, 6) * 14 + j * 10;
+  if (hv > 520) return U.rock;
+  if (hv > 300) return U.hill2;
+  if (hv > 140) return U.hill1;
+  return vnoise(x / 11, y / 11, 7) + j * 0.7 > 0.25 ? U.grass2 : U.grass1;
+}
+const TREE = [' dmd ', 'dmlmd', 'mlllm', 'dmlmd', ' dmd '];
+const TREE2 = ['  d  ', ' dmd ', 'dmlmd', ' dmd ', '  d  '];
+function bakeTile(tx, ty){
+  const x0 = tx * TILE * MPP, y0 = ty * TILE * MPP, sz = TILE * MPP;
+  const cands = isles.filter(I => x0 + sz > I.cx - I.bound && x0 < I.cx + I.bound && y0 + sz > I.cy - I.bound && y0 < I.cy + I.bound);
+  const main = y0 + sz > COAST_MIN - 160;
+  if (!cands.length && !main) return null;
+  const depth = (x, y) => {
+    let d = main ? y - coastY(x) : -1e9;
+    for (const I of cands){ const e = isleDepth(I, x, y); if (e > d) d = e; }
+    return d;
+  };
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = TILE;
+  const g = cv.getContext('2d');
+  const img = g.createImageData(TILE, TILE);
+  const px = new Uint32Array(img.data.buffer);
+  let any = false;
+  for (let py = 0; py < TILE; py++){
+    const y = y0 + (py + 0.5) * MPP;
+    for (let qx = 0; qx < TILE; qx++){
+      const x = x0 + (qx + 0.5) * MPP;
+      const c = terrainCol(depth(x, y), x, y, BAYER[(py & 3) * 4 + (qx & 3)]);
+      if (c){ px[py * TILE + qx] = c; any = true; }
+    }
+  }
+  if (!any) return null;
+  g.putImageData(img, 0, 0);
+  // trees
+  const TC = 8, gx0 = tx * TILE, gy0 = ty * TILE;
+  for (let j = Math.floor((y0 - 6) / TC); j <= Math.floor((y0 + sz + 6) / TC); j++){
+    for (let i = Math.floor((x0 - 6) / TC); i <= Math.floor((x0 + sz + 6) / TC); i++){
+      const h = hash(i, j, 21);
+      if (h > 0.4) continue;
+      const x = (i + hash(i, j, 22)) * TC, y = (j + hash(i, j, 23)) * TC;
+      const d = depth(x, y);
+      if (d < 9) continue;
+      if (d + vnoise(x / 170, y / 170, 5) * 55 > 520) continue;
+      const sp = h < 0.12 ? TREE2 : TREE;
+      const bx = Math.round(x / MPP) - gx0 - 2, by = Math.round(y / MPP) - gy0 - 2;
+      g.fillStyle = C.treeDk;
+      g.fillRect(bx + 1, by + 3, 4, 3);
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++){
+        const ch = sp[r][c];
+        if (ch === ' ') continue;
+        g.fillStyle = ch === 'd' ? C.treeDk : ch === 'm' ? C.tree : C.treeLt;
+        g.fillRect(bx + c, by + r, 1, 1);
+      }
+    }
+  }
+  // towns and piers
+  for (const P of ports){
+    if (Math.abs(P.tx - x0 - sz / 2) > 260 || Math.abs(P.ty - y0 - sz / 2) > 260) continue;
+    const ax = P.px0 / MPP - gx0, ay = P.py0 / MPP - gy0, bx = P.px1 / MPP - gx0, by = P.py1 / MPP - gy0;
+    const n = Math.ceil(Math.hypot(bx - ax, by - ay));
+    for (let k = 0; k <= n; k++){
+      const x = Math.round(lerp(ax, bx, k / n)), y = Math.round(lerp(ay, by, k / n));
+      g.fillStyle = C.woodDk; g.fillRect(x - 2, y - 1, 5, 4);
+      g.fillStyle = k % 3 ? C.wood : C.deck; g.fillRect(x - 1, y - 1, 3, 3);
+    }
+    const free = P.f === 'free';
+    for (const hs of P.houses){
+      const x = hs.gx - gx0, y = hs.gy - gy0;
+      g.fillStyle = C.shadow; g.fillRect(x + 1, y + 1, hs.w, hs.h);
+      g.fillStyle = free ? (hs.alt ? C.wood : C.thatch) : (hs.alt ? C.sail : C.roof);
+      g.fillRect(x, y, hs.w, hs.h);
+      g.fillStyle = free ? C.thatchDk : (hs.alt ? C.sailSh : C.roofDk);
+      g.fillRect(x, y + (hs.h >> 1), hs.w, 1);
+      g.fillRect(x, y + hs.h - 1, hs.w, 1);
+    }
+    if (!free){
+      // imperial fort: stone square with bastions
+      const fx = P.fx - gx0 - 7, fy = P.fy - gy0 - 7;
+      g.fillStyle = C.shadow; g.fillRect(fx + 2, fy + 2, 15, 15);
+      g.fillStyle = C.stoneDk; g.fillRect(fx, fy, 15, 15);
+      g.fillStyle = C.stone; g.fillRect(fx + 1, fy + 1, 13, 13);
+      g.fillStyle = C.sand; g.fillRect(fx + 4, fy + 4, 7, 7);
+      g.fillStyle = C.stoneDk;
+      for (const [cx, cy] of [[-2, -2], [12, -2], [-2, 12], [12, 12]]) g.fillRect(fx + cx, fy + cy, 5, 5);
+      g.fillStyle = C.iron;
+      for (let k = 2; k < 13; k += 3){ g.fillRect(fx + k, fy - 1, 1, 1); g.fillRect(fx + k, fy + 15, 1, 1); }
+    }
+  }
+  return cv;
+}
+function getTile(tx, ty, sync){
+  const k = ty * 1000 + tx;
+  if (tiles.has(k)) return tiles.get(k);
+  if (!sync) return undefined;
+  const t = bakeTile(tx, ty);
+  tiles.set(k, t);
+  return t;
+}
+
+// ---------------------------------------------------------------- chart (map), baked lazily
+const chartIdx = new Uint8Array(CW * CH);
+let chartRow = 0;
+function bakeChartRows(n){
+  for (let k = 0; k < n && chartRow < CH; k++, chartRow++){
+    const y = (chartRow + 0.5) * CPX;
+    for (let x0 = 0; x0 < CW; x0++){
+      const x = (x0 + 0.5) * CPX;
+      const d = depthAt(x, y);
+      let c = 0;
+      if (d > 0) c = d + vnoise(x / 170, y / 170, 5) * 55 > 160 ? 3 : 2;
+      else if (d > -110) c = 1;
+      chartIdx[chartRow * CW + x0] = c;
+    }
+  }
+  return chartRow >= CH;
+}
+const CHART_COL = [U.cSea, U.cShal, U.cLand, U.cHill];
+const mapCv = document.createElement('canvas');
+mapCv.width = CW; mapCv.height = CH;
+function composeMap(){
+  bakeChartRows(CH);
+  const g = mapCv.getContext('2d');
+  const img = g.createImageData(CW, CH);
+  const px = new Uint32Array(img.data.buffer);
+  const fogAt = (gx, gy) => (gx < 0 || gy < 0 || gx >= GW || gy >= GH) ? 0 : fog[gy * GW + gx];
+  for (let y = 0; y < CH; y++){
+    const fy = (y + 0.5) * CPX / CELL - 0.5, gy = Math.floor(fy), ty = fy - gy;
+    for (let x = 0; x < CW; x++){
+      const fx = (x + 0.5) * CPX / CELL - 0.5, gx = Math.floor(fx), tx = fx - gx;
+      const f = lerp(lerp(fogAt(gx, gy), fogAt(gx + 1, gy), tx), lerp(fogAt(gx, gy + 1), fogAt(gx + 1, gy + 1), tx), ty);
+      const i = y * CW + x, b = BAYER[(y & 3) * 4 + (x & 3)];
+      if (f * 1.6 - 0.3 > b){
+        const c = chartIdx[i];
+        // ink coastline
+        if (c >= 2 && ((x > 0 && chartIdx[i - 1] < 2) || (x < CW - 1 && chartIdx[i + 1] < 2) ||
+            (y > 0 && chartIdx[i - CW] < 2) || (y < CH - 1 && chartIdx[i + CW] < 2))) px[i] = U.ink;
+        else if (c === 0 && (x + y * 3) % 7 === 0 && hash(x, y, 4) < 0.25) px[i] = U.cShal;
+        else px[i] = CHART_COL[c];
+      } else {
+        px[i] = hash(x, y, 5) < 0.04 ? U.parchDk : U.parch;
+      }
+    }
+  }
+  g.putImageData(img, 0, 0);
+}
+
+// ---------------------------------------------------------------- ship types
+const POLARS = {
+  fore:   [[0, 0], [38, 0], [45, .22], [55, .42], [70, .52], [95, .6], [115, .6], [140, .53], [165, .44], [180, .4]],
+  brig:   [[0, 0], [48, 0], [55, .28], [65, .42], [90, .53], [120, .58], [150, .55], [180, .5]],
+  square: [[0, 0], [56, 0], [63, .24], [75, .38], [90, .46], [120, .55], [150, .57], [180, .53]],
+};
+const RIGS = {
+  sloop: { masts: [{ y: -0.1, kind: 'gaff', boom: 0.6, gaff: 0.5 }], sprit: 6.5 },
+  brig:  { masts: [{ y: -0.2, kind: 'square', w: 1 }, { y: 0.1, kind: 'gaff', boom: 0.42, gaff: 0.36 }], sprit: 8 },
+  ship:  { masts: [{ y: -0.25, kind: 'square', w: 0.95 }, { y: 0, kind: 'square', w: 1.05 }, { y: 0.25, kind: 'gaff', boom: 0.26, gaff: 0.22 }], sprit: 10 },
+};
+const TYPES = {
+  sloop:   { name: 'Sloop',   L: 24, B: 7.2,  rig: 'sloop', polar: 'fore',   noGo: 42, cap: 9.5,  accel: 4,   turn: 26, guns: 4,  cal: 4, crew: 30,  hull: 120, hold: 40 },
+  brig:    { name: 'Brig',    L: 30, B: 8.6,  rig: 'brig',  polar: 'brig',   noGo: 50, cap: 9.2,  accel: 5,   turn: 21, guns: 6,  cal: 5, crew: 60,  hull: 170, hold: 90 },
+  fluyt:   { name: 'Fluyt',   L: 32, B: 9.4,  rig: 'ship',  polar: 'square', noGo: 60, cap: 7.6,  accel: 6.5, turn: 15, guns: 3,  cal: 4, crew: 24,  hull: 140, hold: 180 },
+  frigate: { name: 'Frigate', L: 42, B: 11,   rig: 'ship',  polar: 'square', noGo: 58, cap: 10,   accel: 6,   turn: 16, guns: 12, cal: 7, crew: 180, hull: 320, hold: 120 },
+  galleon: { name: 'Galleon', L: 46, B: 13.5, rig: 'ship',  polar: 'square', noGo: 64, cap: 7.4,  accel: 8,   turn: 12, guns: 10, cal: 6, crew: 140, hull: 360, hold: 320 },
+};
+for (const k in TYPES){
+  const t = TYPES[k];
+  t.id = k;
+  t.gunY = Array.from({ length: t.guns }, (_, i) => t.guns === 1 ? 0 : -0.28 + 0.56 * i / (t.guns - 1));
+}
+function polar(t, twa){
+  const P = POLARS[t.polar];
+  for (let i = 1; i < P.length; i++) if (twa <= P[i][0]){
+    const [a0, v0] = P[i - 1], [a1, v1] = P[i];
+    return v0 + (v1 - v0) * (twa - a0) / (a1 - a0);
+  }
+  return P[P.length - 1][1];
+}
+const LIVERY = {
+  free:     { hull: C.wood,   deck: C.deck,  stripe: null,   flag: [C.black, C.white] },
+  merchant: { hull: C.wood,   deck: C.deck,  stripe: null,   flag: [C.red, C.gold] },
+  slaver:   { hull: C.woodDk, deck: C.wood,  stripe: C.iron, flag: [C.red, C.gold] },
+  navy:     { hull: C.iron,   deck: C.deck,  stripe: C.gold, flag: [C.red, C.gold] },
+  treasure: { hull: C.woodDk, deck: C.deck,  stripe: C.red,  flag: [C.red, C.gold] },
+};
+const ROLE_NAME = {
+  trader: t => 'Imperial ' + t.name, slaver: t => 'Slaver ' + t.name, patrol: t => 'Navy ' + t.name,
+  escort: t => 'Navy ' + t.name, treasure: () => 'Treasure Galleon',
+};
+
+let seedN = 1;
+function makeShip(type, x, y, h, role){
+  const t = TYPES[type];
+  return {
+    t, x, y, h, v: 0, turn: 0, rudder: 0, set: 3, sail: 1, hull: t.hull, crew: t.crew, rigging: 1,
+    reload: [0, 0], aw: { rel: 0, awa: 0, toward: 0 }, wind: { dir: 0, spd: 10 }, role,
+    wake: [], wakeT: 0, seed: seedN++ * 1.7, sinking: 0, struck: false,
+  };
+}
+
+// ---------------------------------------------------------------- game state
+const ship = makeShip('sloop', home.hx, home.hy - 40, 0, 'player');
+ship.set = 1; ship.sail = 0.42; ship.crew = 24;
+const pl = { gold: 100, goods: 0, arms: 0, mercs: 0, people: 0, freed: 0, prizes: 0, liberated: 0, peopleFor: {} };
+const fog = new Uint8Array(GW * GH);
+let ai = [];
+let T = 0;
+let balls = [], parts = [], discT = 0, saveT = 0, shake = 0, spawnT = 0;
+let started = false, paused = false, dead = false;
+
+function load(){
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!s) return false;
+    const t = TYPES[s.type] || TYPES.sloop;
+    Object.assign(ship, { t, x: s.x, y: s.y, h: s.h, set: s.set, sail: SAIL_AREA[s.set], hull: Math.min(s.hull, t.hull), crew: s.crew, rigging: s.rigging || 1 });
+    Object.assign(pl, s.pl || {});
+    const f = atob(s.fog);
+    for (let i = 0; i < f.length && i < fog.length; i++) fog[i] = f.charCodeAt(i);
+    for (const id of s.disc || []) if (isles[id]) isles[id].disc = true;
+    (s.ports || []).forEach((q, i) => { const P = ports[i]; if (!q || !P || !P.fort) return; [P.f, P.crew, P.fort.hp, P.freedFor] = q; });
+    refreshPorts();
+    T = s.t || 0;
+    return true;
+  } catch (e){ return false; }
+}
+function save(){
+  if (dead) return;
+  try {
+    let f = '';
+    for (let i = 0; i < fog.length; i++) f += String.fromCharCode(fog[i]);
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      type: ship.t.id, x: ship.x, y: ship.y, h: ship.h, set: ship.set, hull: ship.hull, crew: ship.crew, rigging: ship.rigging,
+      pl, ports: ports.map(P => P.fort ? [P.f, P.crew, Math.round(P.fort.hp), P.freedFor] : null), fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T,
+    }));
+  } catch (e){}
+}
+
+// ---------------------------------------------------------------- toasts
+const toastEl = document.getElementById('toast');
+const toastQ = [];
+let toastT = 0;
+function toast(msg){ if (!toastQ.includes(msg) && toastEl.textContent !== msg) toastQ.push(msg); }
+function updToast(dt){
+  toastT -= dt;
+  if (toastT <= 0){
+    if (toastQ.length){ toastEl.textContent = toastQ.shift(); toastEl.classList.add('on'); toastT = 2.8; }
+    else toastEl.classList.remove('on');
+  }
+}
+
+// ---------------------------------------------------------------- discovery
+function discover(){
+  const cx = ship.x / CELL, cy = ship.y / CELL, r = SIGHT / CELL;
+  for (let j = Math.max(0, Math.floor(cy - r)); j <= Math.min(GH - 1, Math.ceil(cy + r)); j++)
+    for (let i = Math.max(0, Math.floor(cx - r)); i <= Math.min(GW - 1, Math.ceil(cx + r)); i++)
+      if (Math.hypot(i + 0.5 - cx, j + 0.5 - cy) < r) fog[j * GW + i] = 1;
+  for (const I of isles){
+    if (I.disc || !near(I, ship.x, ship.y, SIGHT)) continue;
+    if (isleDepth(I, ship.x, ship.y) > -SIGHT){
+      I.disc = true;
+      toast(I.port ? `Land ho! ${I.name}. ${I.port.f === 'free' ? 'Free port' : 'Imperial port'} of ${I.port.name}` : `Land ho! ${I.name}`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- particles
+function puff(kind, x, y, vx, vy, life, r, grow, a = 1){ parts.push({ kind, x, y, vx, vy, life, max: life, r, grow, a }); }
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const visible = s => Math.abs(s.x - ship.x) < 700 && Math.abs(s.y - ship.y) < 700;
+
+// ---------------------------------------------------------------- cannons
+const fireBtn = [document.getElementById('fireL'), document.getElementById('fireR')];
+function reloadTime(s){
+  const hands = clamp(s.crew / s.t.crew, 0.25, 1);
+  return RELOAD / Math.sqrt(hands) * (s === ship ? 1 : 1.3);
+}
+function fire(s, side){ // -1 larboard, +1 starboard
+  const idx = side < 0 ? 0 : 1;
+  if (s.reload[idx] > 0 || s.sinking || s.crew <= 0) return;
+  s.reload[idx] = reloadTime(s);
+  const t = s.t, spread = s === ship ? 5 : 9;
+  t.gunY.forEach((gy, k) => setTimeout(() => {
+    if (s.sinking) return;
+    const fx = Math.sin(s.h), fy = -Math.cos(s.h), rx = Math.cos(s.h), ry = Math.sin(s.h);
+    const mx = s.x + fx * gy * t.L + rx * side * (t.B / 2 + 0.6), my = s.y + fy * gy * t.L + ry * side * (t.B / 2 + 0.6);
+    const sp = (Math.random() - 0.5) * spread * DEG;
+    const dx = rx * side * Math.cos(sp) - fx * side * Math.sin(sp), dy = ry * side * Math.cos(sp) - fy * side * Math.sin(sp);
+    const life = GUN_RANGE / BALL_SPEED * (0.9 + Math.random() * 0.2);
+    balls.push({ owner: s, dmg: t.cal, x: mx, y: my, vx: dx * BALL_SPEED + fx * s.v * KN, vy: dy * BALL_SPEED + fy * s.v * KN, life, max: life });
+    const w = s.wind, bx = -Math.sin(w.dir) * w.spd * 0.25, by = Math.cos(w.dir) * w.spd * 0.25;
+    if (visible(s)){
+      for (let i = 0; i < 6; i++) puff('smoke', mx + dx * i * 1.4 + rnd(-1, 1), my + dy * i * 1.4 + rnd(-1, 1),
+        dx * (7 - i) + bx + rnd(-1, 1), dy * (7 - i) + by + rnd(-1, 1), rnd(2, 4), rnd(1, 2), rnd(1.6, 3), 0.75);
+      puff('flash', mx + dx * 1.5, my + dy * 1.5, 0, 0, 0.12, 1.6, 0, 1);
+    }
+    if (s === ship) shake = Math.min(1.5, shake + 0.5);
+    sfx.boom(clamp(1 - dist(s, ship) / 900, 0.08, 1));
+  }, k * (s === ship ? 110 : 140) + Math.random() * 40));
+}
+
+// ---------------------------------------------------------------- ship physics (player and AI alike)
+function hullPoints(s){
+  const fx = Math.sin(s.h), fy = -Math.cos(s.h), L = s.t.L;
+  return [[s.x + fx * L * .45, s.y + fy * L * .45], [s.x, s.y], [s.x - fx * L * .4, s.y - fy * L * .4]];
+}
+function groundCheck(s){
+  let pts = hullPoints(s);
+  if (!pts.some(([x, y]) => depthAt(x, y) > -1.5)) return;
+  for (let k = 0; k < 60; k++){
+    let worst = -1e9, wx = 0, wy = 0;
+    for (const [x, y] of pts){ const d = depthAt(x, y); if (d > worst){ worst = d; wx = x; wy = y; } }
+    if (worst <= -1.5) break;
+    const gx = depthAt(wx + 2, wy) - depthAt(wx - 2, wy), gy = depthAt(wx, wy + 2) - depthAt(wx, wy - 2);
+    const gl = Math.hypot(gx, gy) || 1;
+    s.x -= gx / gl; s.y -= gy / gl;
+    pts = hullPoints(s);
+  }
+  if (Math.abs(s.v) > 2.5){
+    s.hull = Math.max(5, s.hull - Math.abs(s.v) * 1.5);
+    if (s === ship){ toast('Aground! The timbers groan.'); sfx.crunch(); shake = 1.5; }
+  }
+  s.v *= 0.3;
+}
+
+function stepShip(s, dt){
+  const t = s.t;
+  const w = s.wind = windAt(s.x, s.y, T);
+  const hands = clamp(s.crew / t.crew, 0.2, 1);
+  const want = s.struck || s.sinking ? 0 : SAIL_AREA[s.set];
+  s.sail += clamp(want - s.sail, -dt * 0.35 * hands, dt * 0.35 * hands);
+
+  const rel = wrap(w.dir - s.h), twa = Math.abs(rel) / DEG;
+  let target = w.spd * polar(t, twa) * s.sail * s.rigging;
+  target = t.cap * Math.tanh(target / t.cap) * (0.6 + 0.4 * s.hull / t.hull);
+  const inIrons = twa < t.noGo;
+  if (inIrons) target = -0.5 * s.sail * (1 - twa / t.noGo);
+  if (s.sinking) target = 0;
+  const tau = target > s.v ? t.accel : (inIrons ? 9 : 6);
+  s.v += (target - s.v) * Math.min(1, dt / tau);
+
+  // turning needs water over the rudder
+  const flow = clamp(0.06 + Math.abs(s.v) / 4, 0, 1);
+  let rate = s.rudder * t.turn * DEG * flow * (1 - 0.18 * s.sail) * Math.sign(s.v || 1);
+  // a ship caught in irons falls off the wind
+  if (twa < t.noGo + 5 && Math.abs(s.v) < 1.5) rate += -Math.sign(rel || 1) * 7 * DEG * (1 - Math.abs(s.v) / 1.5) * Math.max(s.sail, 0.3);
+  s.turn += (rate - s.turn) * Math.min(1, dt / 0.5);
+  s.h = norm(s.h + s.turn * dt);
+
+  // leeway: sideways drift, strongest close-hauled
+  const fx = Math.sin(s.h), fy = -Math.cos(s.h), rx = Math.cos(s.h), ry = Math.sin(s.h);
+  const lee = w.spd * 0.035 * s.sail * (1 - clamp((twa - 40) / 110, 0, 1)) * (rel > 0 ? -1 : 1);
+  s.x += (fx * s.v + rx * lee) * KN * dt;
+  s.y += (fy * s.v + ry * lee) * KN * dt;
+
+  groundCheck(s);
+  const M = 250;
+  if (s.x < M || s.x > WW - M || s.y < M || s.y > WH - M){
+    s.x = clamp(s.x, M, WW - M); s.y = clamp(s.y, M, WH - M);
+    s.v *= 0.9;
+    if (s === ship) toast('Uncharted waters. Bring her about.');
+  }
+
+  // apparent wind (for sails and flags)
+  const awx = -Math.sin(w.dir) * w.spd - fx * s.v, awy = Math.cos(w.dir) * w.spd - fy * s.v;
+  s.aw.toward = Math.atan2(awx, -awy);
+  s.aw.rel = wrap(s.aw.toward + Math.PI - s.h);
+  s.aw.awa = Math.abs(s.aw.rel);
+
+  for (let i = 0; i < 2; i++) s.reload[i] = Math.max(0, s.reload[i] - dt);
+
+  // wake and bow foam, only where someone can see it
+  if (s === ship || visible(s)){
+    s.wakeT -= dt;
+    if (s.wakeT <= 0){
+      s.wakeT = 0.08;
+      s.wake.push({ x: s.x - fx * t.L * 0.48, y: s.y - fy * t.L * 0.48, t: T, v: Math.abs(s.v) });
+      if (s.wake.length > 90) s.wake.shift();
+    }
+    if (Math.abs(s.v) > 1.5){
+      const n = Math.abs(s.v) * dt * 2.2;
+      for (let sd = -1; sd <= 1; sd += 2) if (Math.random() < n){
+        const bx = s.x + fx * t.L * 0.32 + rx * sd * t.B * 0.42, by = s.y + fy * t.L * 0.32 + ry * sd * t.B * 0.42;
+        puff('foam', bx, by, rx * sd * s.v * 0.35, ry * sd * s.v * 0.35, 1.6 + Math.random(), 0.6, 0.9, 0.85);
+      }
+    }
+  } else if (s.wake.length) s.wake.length = 0;
+}
+
+// ---------------------------------------------------------------- AI
+const sailable = (s, h) => Math.abs(wrap(s.wind.dir - h)) > (s.t.noGo + 6) * DEG;
+function clearAhead(s, h){
+  const fx = Math.sin(h), fy = -Math.cos(h);
+  for (const d of [s.t.L * 0.6 + 25, 80, 160]) if (depthAt(s.x + fx * d, s.y + fy * d) > -12) return false;
+  return true;
+}
+// sail toward a bearing: beat to windward on alternating tacks when it lies inside the no-go zone
+function sailToward(s, b, dt){
+  const w = s.wind, close = (s.t.noGo + 8) * DEG;
+  if (sailable(s, b)) return b;
+  const h1 = w.dir + close, h2 = w.dir - close;
+  if (!s.tack) s.tack = Math.abs(wrap(h1 - s.h)) < Math.abs(wrap(h2 - s.h)) ? 1 : -1;
+  s.tackT = (s.tackT || 0) + dt;
+  const cur = s.tack > 0 ? h1 : h2, oth = s.tack > 0 ? h2 : h1;
+  const dc = Math.abs(wrap(cur - b)), dn = Math.abs(wrap(oth - b));
+  if ((dn + 0.35 < dc) || (s.tackT > 30 && dn <= dc + 0.1) || !clearAhead(s, cur)){ s.tack = -s.tack; s.tackT = 0; return oth; }
+  return cur;
+}
+function avoid(s, h){
+  if (clearAhead(s, h)) return h;
+  for (let k = 1; k <= 8; k++) for (const sg of [1, -1]){
+    const c = h + sg * k * 22 * DEG;
+    if (sailable(s, c) && clearAhead(s, c)) return c;
+  }
+  return h + Math.PI * 0.5;
+}
+function steer(s, h){
+  s.rudder = clamp(wrap(h - s.h) * 2.4 - s.turn * 1.5, -1, 1);
+}
+function hostile(s){ return s.role === 'patrol' || s.role === 'escort'; }
+
+function think(s, dt){
+  const p = ship, d = dead ? 1e9 : dist(s, p);
+  const toP = Math.atan2(p.x - s.x, -(p.y - s.y));
+  if (s.struck){ s.set = 0; s.rudder = 0; return; }
+  if (s.leader && s.leader.gone){
+    s.leader = null; s.role = 'patrol';
+    const P = empirePorts.reduce((a, b) => Math.hypot(a.hx - s.x, a.hy - s.y) < Math.hypot(b.hx - s.x, b.hy - s.y) ? a : b);
+    if (newRoute(s, P)){ s.wp = 0; s.path = [[s.x, s.y], ...s.path]; } else s.mode = 'attack';
+    if (s.mode !== 'attack') s.mode = 'route';
+  }
+
+  // mode changes
+  if (hostile(s)){
+    const guard = s.leader && !s.leader.gone ? dist(s.leader, p) : d;
+    if (s.mode !== 'attack' && (d < 900 || guard < 700)){ s.mode = 'attack'; if (!s.seenAttack){ s.seenAttack = true; toast(`The ${ROLE_NAME[s.role](s.t)} comes about to engage!`); } }
+    else if (s.mode === 'attack' && d > 1700 && guard > 1200) s.mode = s.leader ? 'follow' : 'route';
+  } else {
+    if (s.mode !== 'flee' && d < 480) s.mode = 'flee';
+    else if (s.mode === 'flee' && d > 1300) s.mode = 'route';
+    // merchants strike their colours when beaten
+    if (d < 320 && (s.hull < s.t.hull * 0.55 || s.crew < s.t.crew * 0.45)){
+      s.struck = true; s.set = 0; s.v *= 0.5;
+      toast(`The ${ROLE_NAME[s.role](s.t)} strikes her colours!`);
+      return;
+    }
+  }
+
+  let want = s.h;
+  if (s.mode === 'route' && s.path){
+    const wp = s.path[s.wp];
+    if (Math.hypot(wp[0] - s.x, wp[1] - s.y) < 230){
+      s.wp++;
+      if (s.wp >= s.path.length){ arrive(s); return; }
+    }
+    const q = s.path[Math.min(s.wp, s.path.length - 1)];
+    want = sailToward(s, Math.atan2(q[0] - s.x, -(q[1] - s.y)), dt);
+    s.set = 3;
+  } else if (s.mode === 'follow' && s.leader){
+    const L = s.leader, rx = Math.cos(L.h), ry = Math.sin(L.h), fx = Math.sin(L.h), fy = -Math.cos(L.h);
+    const tx = L.x + rx * s.slot[0] - fx * s.slot[1], ty = L.y + ry * s.slot[0] - fy * s.slot[1];
+    const off = Math.hypot(tx - s.x, ty - s.y);
+    want = off > 50 ? sailToward(s, Math.atan2(tx - s.x, -(ty - s.y)), dt) : L.h;
+    const ahead = (tx - s.x) * fx + (ty - s.y) * fy;
+    s.set = ahead > 60 ? 3 : ahead < -30 ? 1 : 2;
+  } else if (s.mode === 'flee'){
+    want = sailToward(s, toP + Math.PI, dt);
+    s.set = 3;
+  } else if (s.mode === 'attack'){
+    if (d > 240){
+      const lead = Math.atan2(p.x + Math.sin(p.h) * p.v * KN * 4 - s.x, -(p.y - Math.cos(p.h) * p.v * KN * 4 - s.y));
+      want = sailToward(s, lead, dt);
+      s.set = 3;
+    } else {
+      // bring a broadside to bear
+      const a = toP - Math.PI / 2, b = toP + Math.PI / 2;
+      want = Math.abs(wrap(a - s.h)) < Math.abs(wrap(b - s.h)) ? a : b;
+      if (!sailable(s, want)) want = want === a ? b : a;
+      if (!sailable(s, want)) want = sailToward(s, want, dt);
+      s.set = 2;
+    }
+  }
+  steer(s, avoid(s, want));
+
+  // gunnery: fire when the target lies in a broadside arc
+  if (!dead && d < GUN_RANGE * 1.05 && (hostile(s) || s.mode === 'flee')){
+    const rel = wrap(toP - s.h);
+    if (Math.abs(rel - Math.PI / 2) < 13 * DEG) fire(s, 1);
+    if (Math.abs(rel + Math.PI / 2) < 13 * DEG) fire(s, -1);
+  }
+}
+
+function arrive(s){
+  if (s.role === 'patrol'){ newRoute(s, s.dest); return; }
+  s.gone = true;
+}
+function newRoute(s, from){
+  if (!empirePorts.length) return false;
+  for (let k = 0; k < 6; k++){
+    const to = pick(empirePorts);
+    if (to === from) continue;
+    const r = route(from, to);
+    if (r && r.length > 1){ s.path = r; s.wp = 1; s.dest = to; s.mode = 'route'; return true; }
+  }
+  return false;
+}
+function cargoFor(role){
+  switch (role){
+    case 'trader':   return { gold: irnd(60, 180), goods: irnd(40, 120), arms: irnd(0, 10), people: 0 };
+    case 'slaver':   return { gold: irnd(120, 260), goods: irnd(5, 25), arms: irnd(5, 15), people: irnd(40, 110) };
+    case 'patrol':   return { gold: irnd(60, 140), goods: 0, arms: irnd(20, 40), people: 0 };
+    case 'escort':   return { gold: irnd(150, 300), goods: 0, arms: irnd(40, 80), people: 0 };
+    case 'treasure': return { gold: irnd(1500, 2600), goods: irnd(60, 120), arms: irnd(10, 30), people: 0 };
+  }
+  return { gold: 0, goods: 0, arms: 0, people: 0 };
+}
+const ROLE_TYPE = { trader: 'fluyt', slaver: 'brig', patrol: 'brig', treasure: 'galleon' };
+const ROLE_LIVERY = { trader: 'merchant', slaver: 'slaver', patrol: 'navy', escort: 'navy', treasure: 'treasure' };
+const QUOTA = { trader: 5, slaver: 3, patrol: 3, treasure: 1 };
+// when a port falls, the Empire sends a squadron after it
+function spawnHunters(P){
+  if (!empirePorts.length) return;
+  const from = pick(empirePorts), r = route(from, P);
+  if (!r) return;
+  for (const ty of ['frigate', 'brig']){
+    const s = makeShip(ty, from.hx + rnd(-80, 80), from.hy + rnd(-80, 80), 0, 'patrol');
+    s.path = r; s.wp = 1; s.dest = P; s.mode = 'route';
+    s.cargo = cargoFor('patrol'); s.liv = LIVERY.navy; s.name = ROLE_NAME.patrol(s.t);
+    ai.push(s);
+  }
+  toast(`Word reaches the Empire. A squadron sails from ${from.name}.`);
+}
+
+// spawn a ship (and escorts) somewhere on an imperial route, away from the player
+function spawn(role, anywhere){
+  for (let k = 0; k < 10; k++){
+    const from = pick(empirePorts);
+    const s = makeShip(ROLE_TYPE[role], from.hx, from.hy, 0, role);
+    if (role === 'patrol' && Math.random() < 0.3){ s.t = TYPES.frigate; s.hull = s.t.hull; s.crew = s.t.crew; }
+    if (!newRoute(s, from)) continue;
+    let wp = 1;
+    if (anywhere) wp = irnd(1, s.path.length - 1);
+    const a = s.path[wp - 1], b = s.path[wp], f = anywhere ? Math.random() : 0.05;
+    s.x = lerp(a[0], b[0], f); s.y = lerp(a[1], b[1], f); s.wp = wp;
+    s.h = Math.atan2(b[0] - a[0], -(b[1] - a[1]));
+    if (Math.hypot(s.x - ship.x, s.y - ship.y) < 1600) continue;
+    s.cargo = cargoFor(role);
+    if (role === 'slaver') s.cargo.bound = s.dest.name;
+    s.liv = LIVERY[ROLE_LIVERY[role]];
+    s.name = ROLE_NAME[role](s.t);
+    ai.push(s);
+    if (role === 'treasure'){
+      [['frigate', [-75, 70]], ['brig', [75, 70]]].forEach(([ty, slot]) => {
+        const e = makeShip(ty, s.x - Math.sin(s.h) * 70 + Math.cos(s.h) * slot[0], s.y + Math.cos(s.h) * 70 + Math.sin(s.h) * slot[0], s.h, 'escort');
+        e.leader = s; e.slot = slot; e.mode = 'follow'; e.cargo = cargoFor('escort'); e.liv = LIVERY.navy; e.name = ROLE_NAME.escort(e.t);
+        ai.push(e);
+      });
+    }
+    return true;
+  }
+  return false;
+}
+function populate(anywhere){
+  if (!empirePorts.length) return;
+  QUOTA.patrol = Math.min(7, 3 + pl.liberated);
+  for (const role in QUOTA){
+    const n = ai.filter(s => s.role === role && !s.gone).length;
+    for (let i = n; i < QUOTA[role]; i++){ spawn(role, anywhere); if (!anywhere) return; }
+  }
+}
+
+// ---------------------------------------------------------------- hits and sinking
+function hitShip(s, b){
+  s.hull -= b.dmg * rnd(0.7, 1.3);
+  if (Math.random() < 0.55) s.crew = Math.max(0, s.crew - irnd(1, 3));
+  if (Math.random() < 0.3) s.rigging = Math.max(0.35, s.rigging - 0.04);
+  if (visible(s)){
+    for (let i = 0; i < 10; i++) puff('splinter', b.x, b.y, rnd(-15, 15), rnd(-15, 15), rnd(0.6, 1.2), 0.6, 0, 1);
+    puff('smoke', b.x, b.y, 0, 0, 1.2, 1.5, 2, 0.7);
+  }
+  sfx.hit(clamp(1 - dist(s, ship) / 600, 0.1, 1));
+  if (s === ship){ shake = Math.min(2, shake + 0.8); }
+  if (s !== ship && b.owner === ship && s.mode !== 'attack' && hostile(s)) s.mode = 'attack';
+  if (s.hull <= 0 && !s.sinking){
+    s.sinking = 0.001;
+    if (s === ship) lose('Your ship goes down. Fishermen pull you from the water and bring you home to Libertalia.');
+    else {
+      const ppl = s.cargo && s.cargo.people;
+      toast(ppl ? `The ${s.name} goes down, and ${ppl} people in chains with her.` : `The ${s.name} goes down!`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- forts
+function fortStep(P, dt){
+  const F = P.fort, d = Math.hypot(ship.x - F.x, ship.y - F.y);
+  if (d > 1500 && F.hp < F.max){
+    // the garrison repairs the walls when nobody is shooting at them
+    const was = F.hp;
+    F.hp = Math.min(F.max, F.hp + dt * 0.5);
+    if (was <= 0 && F.hp > 0) F.hp = Math.max(F.hp, F.max * 0.3);
+  }
+  if (F.hp <= 0){
+    if (visible(F) && Math.random() < dt * 2) puff('smoke', F.x + rnd(-6, 6), F.y + rnd(-6, 6), rnd(-1, 1), rnd(-2, 0), 3, 2, 2, 0.5);
+    return;
+  }
+  F.reload -= dt;
+  if (dead || d > 230 || F.reload > 0) return;
+  F.reload = 8;
+  for (let k = 0; k < F.guns; k++) setTimeout(() => {
+    if (F.hp <= 0 || dead || P.f !== 'empire') return;
+    const gx = F.x + rnd(-7, 7), gy = F.y + rnd(-7, 7);
+    const dd = Math.hypot(ship.x - gx, ship.y - gy), tt = dd / BALL_SPEED;
+    const tx = ship.x + Math.sin(ship.h) * ship.v * KN * tt, ty = ship.y - Math.cos(ship.h) * ship.v * KN * tt;
+    const a = Math.atan2(tx - gx, -(ty - gy)) + rnd(-6, 6) * DEG;
+    const life = Math.min(Math.hypot(tx - gx, ty - gy) / BALL_SPEED + 0.25, 250 / BALL_SPEED);
+    balls.push({ owner: F, dmg: 6, x: gx, y: gy, vx: Math.sin(a) * BALL_SPEED, vy: -Math.cos(a) * BALL_SPEED, life, max: life });
+    if (visible(F)) for (let i = 0; i < 4; i++) puff('smoke', gx + Math.sin(a) * i * 2, gy - Math.cos(a) * i * 2, Math.sin(a) * 4, -Math.cos(a) * 4, rnd(2, 3.5), rnd(1, 2), 2.5, 0.75);
+    sfx.boom(clamp(1 - d / 900, 0.1, 0.9));
+  }, k * 160 + rnd(0, 80));
+}
+function hitFort(P, b){
+  const F = P.fort;
+  F.hp -= b.dmg * rnd(0.6, 1.1);
+  if (Math.random() < 0.35) P.crew = Math.max(10, P.crew - 1);
+  for (let i = 0; i < 8; i++) puff('dust', b.x, b.y, rnd(-6, 6), rnd(-6, 6), 1.2, 1, 2, 0.9);
+  sfx.hit(0.7);
+  if (F.hp <= 0){ F.hp = 0; toast(`The guns of ${P.name} fall silent! Make port to land your crew.`); }
+}
+
+// ---------------------------------------------------------------- boarding (auto-resolved)
+let boardTarget = null, nearPort = null;
+function canBoard(s){
+  if (s.sinking || s.gone) return false;
+  const d = dist(s, ship);
+  if (d > (s.t.L + ship.t.L) * 0.5 + 6) return false;
+  const vx = Math.sin(s.h) * s.v - Math.sin(ship.h) * ship.v, vy = -Math.cos(s.h) * s.v + Math.cos(ship.h) * ship.v;
+  return Math.hypot(vx, vy) < 3.5;
+}
+const pEl = id => document.getElementById(id);
+function panel(title, html, buttons){
+  pEl('pTitle').textContent = title;
+  pEl('pBody').innerHTML = html;
+  const box = pEl('pBtns');
+  box.innerHTML = '';
+  for (const [label, fn, hot] of buttons){
+    const b = document.createElement('button');
+    b.className = 'px' + (hot ? ' hot' : '');
+    b.textContent = label;
+    b.onclick = fn;
+    box.appendChild(b);
+  }
+  pEl('panel').classList.remove('hidden');
+  paused = true;
+}
+function closePanel(){ pEl('panel').classList.add('hidden'); paused = false; }
+
+// foe: anything with a crew count. allies: townsfolk who rise with you (they fight at a disadvantage)
+function melee(title, opener, lines, foe, defF, yieldAt, allies, onWin, onLose){
+  let al = allies;
+  const ours0 = ship.crew + pl.mercs + al, theirs0 = foe.crew;
+  const armsBonus = 1 + Math.min(0.6, pl.arms / Math.max(1, ship.crew + pl.mercs) * 0.6);
+  panel(title, `
+    <div class="fight">
+      <div class="row"><span>Your side</span><span id="fA">${ours0}</span></div>
+      <div class="bar"><i id="bA" style="width:100%"></i></div>
+      <div class="row"><span>Their side</span><span id="fB">${theirs0}</span></div>
+      <div class="bar foe"><i id="bB" style="width:100%"></i></div>
+      <p id="fLog">${opener}</p>
+    </div>`, []);
+  sfx.clash();
+  const tick = () => {
+    const atk = (ship.crew * armsBonus + pl.mercs * 2.5 + al * 0.8) * 0.1, def = foe.crew * defF * 0.06;
+    const kill = Math.max(1, Math.round(atk * rnd(0.5, 1.5)));
+    let loss = Math.round(def * rnd(0.5, 1.5));
+    foe.crew = Math.max(0, foe.crew - kill);
+    const total = Math.max(1, ship.crew + pl.mercs + al);
+    const fromAllies = Math.min(al, Math.round(loss * al / total));
+    al -= fromAllies; loss -= fromAllies;
+    const fromMercs = Math.min(pl.mercs, Math.round(loss * (pl.mercs / Math.max(1, ship.crew + pl.mercs)) * 0.7));
+    pl.mercs -= fromMercs; loss -= fromMercs;
+    ship.crew = Math.max(0, ship.crew - loss);
+    const ours = ship.crew + pl.mercs + al;
+    pEl('fA').textContent = ours; pEl('fB').textContent = foe.crew;
+    pEl('bA').style.width = (100 * ours / Math.max(1, ours0)) + '%';
+    pEl('bB').style.width = (100 * foe.crew / Math.max(1, theirs0)) + '%';
+    pEl('fLog').textContent = pick(lines);
+    sfx.clash();
+    if (foe.crew <= theirs0 * yieldAt || foe.crew <= 0) return setTimeout(onWin, 500);
+    if (ours <= ours0 * 0.3 || ship.crew <= 0) return setTimeout(onLose, 500);
+    setTimeout(tick, 260);
+  };
+  setTimeout(tick, 500);
+}
+function board(s){
+  if (!s || !canBoard(s)) return;
+  const defF = (s.struck ? 0.3 : 1) * (hostile(s) ? 1.3 : 1);
+  const yieldAt = s.struck ? 0.6 : 0.3; // a ship that has struck gives up sooner
+  melee(`Boarding the ${s.name}`, 'Grapples away! Over the rail!',
+    ['Pistols crack across the deck.', 'Cutlasses ring on the quarterdeck.', 'They fall back to the forecastle.',
+     'A volley from the rigging!', 'Hand to hand at the mainmast.', 'Smoke and steel everywhere.'],
+    s, defF, yieldAt, 0, () => won(s), () => repelled(s));
+}
+function storm(P){
+  const u = unrest(P);
+  const allies = u >= 1 ? Math.round(P.crew0 * 0.4) : u >= 0.5 ? Math.round(P.crew0 * 0.15) : 0;
+  const foe = { crew: defenders(P) }, f0 = foe.crew;
+  melee(`Storming ${P.name}`, allies ? `The boats hit the beach, and ${allies} townsfolk rise with you!` : 'The boats hit the beach!',
+    ['Musketry from the walls!', 'Through the market square!', 'They barricade the church.', 'The gate splinters.',
+     'Street by street.', 'The garrison falls back to the fort.'],
+    foe, 1.2, 0.25, allies, () => liberate(P), () => {
+      P.crew = Math.max(10, P.crew - (f0 - foe.crew));
+      if (ship.crew <= 0){ lose('Your landing party is cut down. You escape with the boats, alone.'); return; }
+      panel('Thrown back', `<p>The garrison drives you back to the boats. ${P.name} still has ${P.crew} soldiers.</p>`, [['TO THE BOATS', closePanel]]);
+    });
+}
+function liberate(P){
+  P.f = 'free'; P.crew = 0;
+  refreshPorts();
+  pl.liberated++;
+  sfx.cheer();
+  const left = empirePorts.length;
+  if (!left){
+    panel('The sea is free', `<p>The last imperial flag comes down over ${P.name}. There are no more chains for sale in these islands.</p>
+      <table><tr><td>People freed</td><td>${pl.freed}</td></tr><tr><td>Ports liberated</td><td>${pl.liberated}</td></tr><tr><td>Prizes taken</td><td>${pl.prizes}</td></tr></table>
+      <p>Libertalia remembers.</p>`, [['SAIL ON', closePanel]]);
+    return;
+  }
+  panel(`${P.name} is free!`, `<p>The chains in the market square are broken and the red flag comes down. ${P.name} is a free port now: your ship can rest, refit and recruit here.</p>
+    <p>${left} imperial ports remain.</p>`, [['RAISE THE BLACK FLAG', () => { closePanel(); spawnHunters(P); save(); }]]);
+}
+function repelled(s){
+  if (ship.crew <= 0){ lose('Your crew is overwhelmed and taken. Months later, friends in Libertalia buy you free.'); return; }
+  s.struck = false;
+  if (!hostile(s)) s.mode = 'flee';
+  const a = Math.atan2(ship.x - s.x, -(ship.y - s.y));
+  ship.x += Math.sin(a) * 25; ship.y -= Math.cos(a) * 25; ship.v = 0;
+  panel('Repelled!', '<p>They throw you back over the rail. Cut the grapples and lick your wounds.</p>', [['BACK TO THE HELM', closePanel]]);
+}
+function holdFree(){ return ship.t.hold - pl.goods - pl.people; }
+function won(s){
+  s.struck = true;
+  s.prize = true;
+  const c = s.cargo;
+  pl.gold += c.gold;
+  pl.arms += c.arms;
+  const g0 = c.gold, a0 = c.arms;
+  c.gold = 0; c.arms = 0;
+  pl.prizes++;
+  const summary = `<p>She is yours. ${g0} gold and ${a0} muskets come aboard.</p>`;
+  if (c.people > 0){
+    panel(`The ${s.name} is taken`, summary + `
+      <p>Below decks: <b>${c.people} people in chains</b>. And ${c.goods} barrels of cargo in the hold.</p>
+      <p>Strike off the chains. Bring them home to Libertalia, or leave them the ship and take the cargo.</p>`, [
+      [`TAKE THEM HOME (${c.people})`, () => {
+        pl.people += c.people;
+        if (c.bound) pl.peopleFor[c.bound] = (pl.peopleFor[c.bound] || 0) + c.people;
+        c.people = 0;
+        const over = Math.min(pl.goods, Math.max(0, -holdFree()));
+        pl.goods -= over;
+        prizeChoice(s, over ? `${over} barrels of your own cargo go over the side to make room.` : 'They come aboard, blinking in the sun.');
+      }, true],
+      ['PLUNDER THE HOLD', () => { const g = Math.min(c.goods, Math.max(0, holdFree())); pl.goods += g; c.goods -= g; prizeChoice(s, `${g} barrels taken. The freed people will sail her where they choose.`, true); }],
+    ]);
+  } else {
+    const g = Math.min(c.goods, Math.max(0, holdFree()));
+    pl.goods += g; c.goods -= g;
+    prizeChoice(s, summary + `<p>${g} barrels of cargo are swayed across${c.goods ? `, ${c.goods} left behind for lack of room` : ''}.</p>`);
+  }
+}
+function prizeChoice(s, html, peopleKeep){
+  const t = s.t;
+  const keepTxt = `<p>Keep her: you and your crew move to the ${t.name} (hull ${Math.round(s.hull)}/${t.hull}, needs ${t.crew} hands). Your ${ship.t.name} goes down.</p>`;
+  const btns = [
+    [`KEEP THE ${t.name.toUpperCase()}`, () => { takeShip(s); closePanel(); }],
+  ];
+  if (peopleKeep){
+    btns.push(['LET THEM SAIL FREE', () => {
+      s.gone = true; pl.freed += s.cargo.people; creditFreed(s.cargo.bound, s.cargo.people);
+      toast('They raise a black rag and sail for the open sea.'); closePanel();
+    }, true]);
+  } else {
+    btns.push(['SCUTTLE HER', () => { s.sinking = 0.001; s.cargo = null; closePanel(); toast(`The ${s.name} goes down.`); }, true]);
+  }
+  panel(`The ${s.name} is taken`, (html.startsWith('<') ? html : `<p>${html}</p>`) + keepTxt, btns);
+}
+function takeShip(s){
+  const old = makeShip(ship.t.id, ship.x, ship.y, ship.h, 'wreck');
+  old.liv = LIVERY.free; old.sinking = 0.001; old.gone = false; old.struck = true;
+  ai.push(old);
+  if (s.cargo && s.cargo.people){
+    pl.people += s.cargo.people;
+    if (s.cargo.bound) pl.peopleFor[s.cargo.bound] = (pl.peopleFor[s.cargo.bound] || 0) + s.cargo.people;
+    s.cargo.people = 0;
+  }
+  ship.t = s.t; ship.x = s.x; ship.y = s.y; ship.h = s.h; ship.v = s.v; ship.hull = s.hull; ship.rigging = s.rigging;
+  ship.wake = [];
+  s.gone = true;
+  pl.goods -= Math.min(pl.goods, Math.max(0, -holdFree()));
+  toast(`You take command of the ${ship.t.name}.`);
+  if (ship.crew < ship.t.crew * 0.5) toast(`She needs more hands. Hire sailors in Libertalia.`);
+}
+
+// ---------------------------------------------------------------- losing
+function lose(msg){
+  dead = true;
+  setTimeout(() => {
+    panel('Lost', `<p>${msg}</p><p>You keep half your gold. Your cargo, people aboard and mercenaries are gone.</p>`, [['START AGAIN', () => {
+      dead = false;
+      pl.gold = Math.floor(pl.gold / 2); pl.goods = 0; pl.people = 0; pl.mercs = 0; pl.peopleFor = {};
+      Object.assign(ship, makeShip('sloop', home.hx, home.hy - 40, 0, 'player'));
+      ship.crew = 20; ship.set = 1; ship.sail = 0.42;
+      setSail(1);
+      closePanel();
+      save();
+    }]]);
+  }, 1500);
+}
+
+// ---------------------------------------------------------------- ports
+function portMenu(P){
+  if (P.f !== 'free'){
+    const F = P.fort, u = unrest(P);
+    const rows = [
+      ['Garrison', P.crew], ['Unrest', `${Math.round(u * 100)}%`], ['Fit to fight', defenders(P)],
+      ['Fort', F.hp > 0 ? `${F.guns} guns, walls ${Math.round(100 * F.hp / F.max)}%` : 'silenced'],
+      ['Your force', `${ship.crew} crew + ${pl.mercs} mercenaries`],
+    ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+    const btns = [];
+    if (F.hp <= 0) btns.push([`LAND THE CREW`, () => storm(P), true]);
+    btns.push(['CAST OFF', closePanel]);
+    panel(P.name, `<p>An imperial port. Red flags on the fort, and in the market square, chains.</p><table>${rows}</table>
+      <p class="help">${F.hp > 0 ? 'Silence the fort with your broadsides, then land your crew. ' : 'The fort is silent. Land your crew before they repair the walls. '}
+      Every captive bound for ${P.name} that you set free stirs unrest and thins the garrison.${u >= 1 ? ' The town is ready to rise with you.' : ''}</p>`, btns);
+    return;
+  }
+  const t = ship.t;
+  const repairCost = Math.ceil((t.hull - ship.hull) * 1.2 + (1 - ship.rigging) * 150);
+  const sell = pl.goods * 12;
+  const hireN = Math.min(10, t.crew - ship.crew), hireCost = hireN * 8;
+  const mercMax = Math.floor((ship.crew + 10) / 2);
+  const mercN = Math.min(5, mercMax - pl.mercs), mercCost = mercN * 30;
+  const rows = [
+    ['Gold', pl.gold], ['Hull', `${Math.round(ship.hull)}/${t.hull}`], ['Crew', `${ship.crew}/${t.crew}`],
+    ['Mercenaries', pl.mercs], ['Muskets', pl.arms], ['Cargo', `${pl.goods} barrels`], ['People aboard', pl.people], ['Freed so far', pl.freed],
+  ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+  const btns = [];
+  if (pl.people > 0) btns.push([`BRING ${pl.people} ASHORE`, () => {
+    const join = Math.min(Math.round(pl.people * 0.3), Math.max(0, t.crew - ship.crew));
+    pl.freed += pl.people; ship.crew += join;
+    toast(`${pl.people} people walk free in ${P.name}.${join ? ` ${join} sign on as crew.` : ''}`);
+    for (const k in pl.peopleFor) creditFreed(k, pl.peopleFor[k]);
+    pl.people = 0; pl.peopleFor = {}; sfx.cheer(); portMenu(P);
+  }, true]);
+  if (pl.goods > 0) btns.push([`SELL CARGO +${sell}`, () => { pl.gold += sell; pl.goods = 0; sfx.coins(); portMenu(P); }]);
+  if (repairCost > 0) btns.push([`REPAIR -${Math.min(repairCost, pl.gold)}`, () => {
+    const pay = Math.min(repairCost, pl.gold), f = pay / repairCost;
+    pl.gold -= pay; ship.hull += (t.hull - ship.hull) * f; ship.rigging += (1 - ship.rigging) * f; portMenu(P);
+  }]);
+  if (hireN > 0 && pl.gold >= hireCost) btns.push([`HIRE ${hireN} SAILORS -${hireCost}`, () => { pl.gold -= hireCost; ship.crew += hireN; portMenu(P); }]);
+  if (mercN > 0 && pl.gold >= mercCost) btns.push([`HIRE ${mercN} MERCENARIES -${mercCost}`, () => { pl.gold -= mercCost; pl.mercs += mercN; portMenu(P); }]);
+  btns.push(['CAST OFF', () => { closePanel(); save(); }]);
+  panel(P.name, `<p>${P === home ? 'The free port. No chains are sold here.' : 'Liberated. The old fort flies the black flag now.'}</p><table>${rows}</table>`, btns);
+}
+
+// ---------------------------------------------------------------- simulation
+const keys = new Set();
+let helmHeld = false, helmTarget = 0;
+
+function pointOfSail(twa, v){
+  if (twa < ship.t.noGo) return Math.abs(v) < 1 ? 'In irons' : 'Head to wind';
+  if (twa < ship.t.noGo + 14) return 'Close-hauled';
+  if (twa < 78) return 'Close reach';
+  if (twa < 108) return 'Beam reach';
+  if (twa < 158) return 'Broad reach';
+  if (twa < 174) return 'Running';
+  return 'Dead run';
+}
+
+let zoom = 1, zoomQ = 1;
+function update(dt){
+  T += dt;
+
+  // helm: drag or keys, otherwise back to amidships (holding course)
+  const kh = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
+  const want = helmHeld ? helmTarget : kh;
+  ship.rudder += clamp(want - ship.rudder, -dt * (helmHeld ? 12 : 3), dt * (helmHeld ? 12 : 3));
+  if (!dead) stepShip(ship, dt);
+  else { ship.sinking = Math.min(1, ship.sinking + dt / 5); }
+
+  // AI ships
+  for (const s of ai){
+    if (s.gone) continue;
+    if (s.sinking){
+      s.sinking += dt / 6;
+      s.v *= 0.98;
+      if (visible(s) && Math.random() < dt * 8) puff('foam', s.x + rnd(-1, 1) * s.t.B, s.y + rnd(-1, 1) * s.t.L * 0.4, 0, 0, 1.5, 1, 1.5, 0.9);
+      if (s.sinking >= 1) s.gone = true;
+      continue;
+    }
+    s.thinkT = (s.thinkT || 0) - dt;
+    if (s.thinkT <= 0){ s.thinkT = 0.1; think(s, 0.1); }
+    stepShip(s, dt);
+    if (!s.seen && !dead && dist(s, ship) < 900){ s.seen = true; toast(`Sail ho! A ${s.name}.`); }
+    // ships far from the player that are only struck hulks drift off the books
+    if (s.struck && dist(s, ship) > 2500) s.gone = true;
+  }
+  // keep hulls from overlapping
+  const all = [ship, ...ai.filter(s => !s.gone && !s.sinking)];
+  for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++){
+    const a = all[i], b = all[j], d = dist(a, b), m = (a.t.B + b.t.B) * 0.5 + Math.min(a.t.L, b.t.L) * 0.25;
+    if (d < m && d > 0.01){
+      const push = (m - d) / 2, nx = (b.x - a.x) / d, ny = (b.y - a.y) / d;
+      a.x -= nx * push; a.y -= ny * push; b.x += nx * push; b.y += ny * push;
+      a.v *= 0.97; b.v *= 0.97;
+    }
+  }
+  ai = ai.filter(s => !s.gone);
+  for (const P of empirePorts) fortStep(P, dt);
+  spawnT -= dt;
+  if (spawnT <= 0){ spawnT = 20; populate(false); }
+
+  // fire buttons show reload
+  for (let i = 0; i < 2; i++){
+    fireBtn[i].style.setProperty('--p', 1 - ship.reload[i] / reloadTime(ship));
+    fireBtn[i].classList.toggle('ready', ship.reload[i] === 0);
+  }
+
+  // cannonballs
+  for (const b of balls){
+    b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+    if (b.owner === ship) for (const P of empirePorts){
+      const F = P.fort;
+      if (F.hp > 0 && Math.abs(b.x - F.x) < 14 && Math.abs(b.y - F.y) < 14){ b.life = -1; b.hit = true; hitFort(P, b); break; }
+    }
+    if (b.hit) continue;
+    for (const s of all){
+      if (s === b.owner || s.sinking || (s === ship && dead)) continue;
+      if (b.owner.fort && s !== ship) continue;
+      const dx = b.x - s.x, dy = b.y - s.y;
+      if (Math.abs(dx) > s.t.L || Math.abs(dy) > s.t.L) continue;
+      const lx = dx * Math.cos(s.h) + dy * Math.sin(s.h), ly = -dx * Math.sin(s.h) + dy * Math.cos(s.h);
+      if (Math.abs(lx) < s.t.B / 2 && Math.abs(ly) < s.t.L / 2){ b.life = -1; b.hit = true; hitShip(s, b); break; }
+    }
+    if (b.life <= 0 && !b.hit){
+      if (land(b.x, b.y)){ if (visible(b)) for (let i = 0; i < 6; i++) puff('dust', b.x, b.y, rnd(-4, 4), rnd(-4, 4), 1, 1, 2, 0.8); }
+      else if (visible(b)){ puff('splash', b.x, b.y, 0, 0, 1.1, 0.8, 4.5, 1); puff('foam', b.x, b.y, 0, 0, 1.4, 1.4, 1, 1); sfx.splash(dist(b, ship)); }
+    }
+  }
+  balls = balls.filter(b => b.life > 0);
+
+  // particles
+  for (const p of parts){
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    const k = Math.pow(p.kind === 'splinter' ? 0.05 : 0.4, dt);
+    p.vx *= k; p.vy *= k;
+    p.r += p.grow * dt; p.life -= dt;
+  }
+  parts = parts.filter(p => p.life > 0);
+  if (parts.length > 700) parts.splice(0, parts.length - 700);
+
+  shake = Math.max(0, shake - dt * 3);
+
+  // fight zoom: pull the camera back when ships are close
+  const fight = !dead && (ai.some(s => !s.sinking && dist(s, ship) < 430) || empirePorts.some(P => P.fort.hp > 0 && dist(P.fort, ship) < 400));
+  zoom += ((fight ? fightZoom() : 1) - zoom) * Math.min(1, dt * 1.2);
+  const zq = Math.round(zoom * 40) / 40;
+  if (zq !== zoomQ){ zoomQ = zq; layout(); }
+
+  discT -= dt;
+  if (discT <= 0){ discT = 0.4; discover(); }
+  saveT -= dt;
+  if (saveT <= 0){ saveT = 4; save(); }
+
+  // context action: board a ship alongside, or make port
+  boardTarget = dead ? null : ai.find(canBoard) || null;
+  let np = null;
+  for (const P of ports) if (Math.hypot(P.hx - ship.x, P.hy - ship.y) < 170) np = P;
+  nearPort = !dead && np && Math.abs(ship.v) < 3.5 ? np : null;
+  if (boardTarget){
+    actBtn.textContent = boardTarget.struck ? `BOARD HER` : `BOARD THE ${plain(boardTarget.t.name)}!`;
+    actBtn.className = 'px board';
+  } else if (nearPort){
+    const P = nearPort;
+    actBtn.textContent = P.f === 'free' ? `MAKE PORT: ${plain(P.name)}` : P.fort.hp > 0 ? `SCOUT ${plain(P.name)}` : `STORM ${plain(P.name)}!`;
+    actBtn.className = P.f !== 'free' && P.fort.hp <= 0 ? 'px board' : 'px';
+  } else actBtn.className = 'px hidden';
+
+  bakeChartRows(4);
+  sfx.ambient(ship.wind.spd, Math.abs(ship.v));
+  updToast(dt);
+  updHud();
+}
+
+// ---------------------------------------------------------------- HUD
+const el = id => document.getElementById(id);
+const hudEl = { spd: el('spd'), pos: el('pos'), tack: el('tack'), wind: el('wind'), hull: el('hull'), purse: el('purse'), knob: el('helmKnob'), sk: el('sailKnob') };
+let hudT = 0;
+function updHud(){
+  hudEl.knob.style.left = (50 + ship.rudder * 42) + '%';
+  if ((hudT += 1) % 6) return;
+  const rel = wrap(ship.wind.dir - ship.h), twa = Math.abs(rel) / DEG;
+  hudEl.spd.innerHTML = `${Math.max(0, ship.v).toFixed(1)} <small>KN</small>`;
+  hudEl.pos.textContent = pointOfSail(twa, ship.v);
+  hudEl.tack.textContent = twa > 174 ? 'Before the wind' : rel > 0 ? 'Starboard tack' : 'Larboard tack';
+  hudEl.wind.textContent = `Wind ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`;
+  hudEl.hull.textContent = `${ship.t.name} ${Math.round(100 * ship.hull / ship.t.hull)}%  ${SAIL_NAMES[ship.set]}`;
+  hudEl.purse.textContent = `Gold ${pl.gold}  Crew ${ship.crew}${pl.mercs ? '+' + pl.mercs : ''}  Hold ${pl.goods + pl.people}/${ship.t.hold}`;
+}
+function setSail(s){
+  s = clamp(s, 0, 3);
+  if (s !== ship.set && started){ sfx.creak(); }
+  ship.set = s;
+  document.querySelectorAll('#sails .stop').forEach(e => e.classList.toggle('on', +e.dataset.s === s));
+  hudEl.sk.style.top = ((3 - s) * 46.7 + 4) + 'px';
+}
+
+// ---------------------------------------------------------------- rendering
+const lo = el('lo');
+const ctx = lo.getContext('2d');
+const spr = document.createElement('canvas');
+const sctx = spr.getContext('2d', { willReadFrequently: true });
+let LW = 320, LH = 240, PX = 3;
+function layout(){
+  const dpr = window.devicePixelRatio || 1;
+  const Wd = innerWidth * dpr, Hd = innerHeight * dpr;
+  PX = Math.max(1, Math.round(Math.max(Wd, Hd) / 420));
+  const z = mapOpen ? 1 : zoomQ, pz = PX * z;
+  LW = Math.ceil(Wd / pz); LH = Math.ceil(Hd / pz);
+  lo.width = spr.width = LW; lo.height = spr.height = LH;
+  lo.style.width = (LW * pz / dpr) + 'px';
+  lo.style.height = (LH * pz / dpr) + 'px';
+  ctx.imageSmoothingEnabled = false;
+}
+addEventListener('resize', layout);
+// in a fight, zoom out until a ship at gun range fits across the short side of the screen
+function fightZoom(){
+  const dpr = window.devicePixelRatio || 1;
+  const short = Math.min(innerWidth, innerHeight) * dpr;
+  return clamp(short * MPP / (2 * 135 * PX), 0.45, 0.7);
+}
+
+function hullPath(g, L, B){
+  const hl = L / 2, hb = B / 2;
+  g.beginPath();
+  g.moveTo(0, -hl);
+  g.bezierCurveTo(hb * .55, -hl * .85, hb, -hl * .45, hb, -hl * .05);
+  g.lineTo(hb * .93, hl * .72);
+  g.quadraticCurveTo(hb * .88, hl, hb * .5, hl);
+  g.lineTo(-hb * .5, hl);
+  g.quadraticCurveTo(-hb * .88, hl, -hb * .93, hl * .72);
+  g.lineTo(-hb, -hl * .05);
+  g.bezierCurveTo(-hb, -hl * .45, -hb * .55, -hl * .85, 0, -hl);
+  g.closePath();
+}
+
+// sails, trimmed to the apparent wind by the crew
+const SHADOW = 'rgba(8,30,50,0.45)';
+function drawRig(g, s, shadow){
+  const t = s.t, L = t.L, B = t.B, f = s.sinking ? 0 : s.sail, rig = RIGS[t.rig];
+  const lee = s.aw.rel > 0 ? -1 : 1;
+  const awa = s.aw.awa / DEG;
+  const fill = shadow ? SHADOW : C.sail, spar = shadow ? SHADOW : C.woodDk;
+  // local direction the apparent wind blows toward
+  const wl = s.aw.toward - s.h, wvx = Math.sin(wl), wvy = -Math.cos(wl);
+  for (const m of rig.masts){
+    const my = m.y * L;
+    if (m.kind === 'gaff'){
+      const luff = awa < 24 && f > 0.02;
+      const flap = luff ? Math.sin(T * 18 + s.seed) * 0.8 : 0;
+      const ba = (f < 0.02 ? 2 : clamp((awa - 20) * 0.62, 3, 84)) * DEG + flap * 0.05;
+      const Lb = L * m.boom;
+      const bdx = lee * Math.sin(ba), bdy = Math.cos(ba);
+      const bx = bdx * Lb, by = my + bdy * Lb;
+      if (f < 0.02){
+        g.strokeStyle = spar; g.lineWidth = 0.8;
+        g.beginPath(); g.moveTo(0, my); g.lineTo(bx, by); g.stroke();
+        g.strokeStyle = shadow ? spar : C.sailSh; g.lineWidth = 1.2;
+        g.beginPath(); g.moveTo(bdx * 1.5, my + bdy * 1.5); g.lineTo(bx * 0.95, my + (by - my) * 0.95); g.stroke();
+        continue;
+      }
+      const ga = ba + (6 + 10 * f) * DEG, Lg = L * m.gaff;
+      const gx = lee * Math.sin(ga) * Lg, gy = my + Math.cos(ga) * Lg;
+      const px = lee * Math.cos(ba), py = -Math.sin(ba);
+      const belly = (1 + 1.8 * f) * (luff ? 0.25 : 1) * (Lb / 14) + flap;
+      g.fillStyle = fill;
+      g.beginPath();
+      g.moveTo(0, my);
+      g.quadraticCurveTo(bx / 2 + px * belly, (my + by) / 2 + py * belly, bx, by);
+      g.lineTo(gx, gy);
+      g.quadraticCurveTo(gx / 2 + px * belly * 1.3, (my + gy) / 2 + py * belly * 1.3, 0, my);
+      g.fill();
+      if (!shadow){
+        g.strokeStyle = C.sailSh; g.lineWidth = 0.45; g.stroke();
+        if (s.set === 1){
+          g.beginPath();
+          g.moveTo(bx * 0.2 + px * 0.6, my + (by - my) * 0.2 + py * 0.6); g.lineTo(bx * 0.8 + px * 0.6, my + (by - my) * 0.8 + py * 0.6);
+          g.stroke();
+        }
+      }
+      g.strokeStyle = spar; g.lineWidth = 0.7;
+      g.beginPath(); g.moveTo(0, my); g.lineTo(bx, by); g.stroke();
+    } else {
+      // square sail: yard braced round, the leeward yardarm aft; belly toward where the wind pushes
+      const luff = awa < t.noGo - 8 && f > 0.02;
+      const brace = clamp((175 - awa) / 125, 0, 1) * 58 * DEG;
+      const half = B * 0.85 * m.w;
+      const ux = lee * Math.cos(brace), uy = Math.sin(brace);
+      const ax = -ux * half, ay = my - uy * half, bx = ux * half, by = my + uy * half;
+      let nx = -uy, ny = ux;
+      if (nx * wvx + ny * wvy < 0){ nx = -nx; ny = -ny; }
+      const flap = luff ? Math.sin(T * 16 + s.seed) * 0.7 : 0;
+      if (f > 0.02){
+        for (const k of f > 0.5 ? [1, 0.7] : [1]){
+          const bel = ((0.8 + 3.2 * f) * (luff ? 0.25 : 1) + flap) * k;
+          const off = k < 1 ? 1.4 : 0;
+          const a2x = ax * k + nx * off, a2y = my + (ay - my) * k + ny * off, b2x = bx * k + nx * off, b2y = my + (by - my) * k + ny * off;
+          g.fillStyle = fill;
+          g.beginPath();
+          g.moveTo(a2x, a2y);
+          g.quadraticCurveTo((a2x + b2x) / 2 + nx * bel * 2, (a2y + b2y) / 2 + ny * bel * 2, b2x, b2y);
+          g.closePath();
+          g.fill();
+          if (!shadow){ g.strokeStyle = C.sailSh; g.lineWidth = 0.45; g.stroke(); }
+        }
+      }
+      g.strokeStyle = spar; g.lineWidth = 0.8;
+      g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+      if (f <= 0.02 && !shadow){
+        g.strokeStyle = C.sailSh; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(ax * 0.9 + nx * 0.6, ay * 0.9 + my * 0.1 + ny * 0.6); g.lineTo(bx * 0.9 + nx * 0.6, by * 0.9 + my * 0.1 + ny * 0.6); g.stroke();
+      }
+    }
+  }
+  // jib from bowsprit tip to the foremast
+  if (f > 0.05){
+    const m0 = rig.masts[0].y * L;
+    const tx = 0, ty = -L / 2 - rig.sprit;
+    const luff = awa < t.noGo - 10;
+    const jw = clamp((awa - 18) * 0.05, 0.3, 3.4) * (0.5 + 0.5 * f) * (B / 7);
+    const cx = lee * jw * 1.2, cy = m0 - L * 0.06;
+    const jb = (0.6 + 1.2 * f) * (luff ? 0.3 : 1);
+    g.fillStyle = fill;
+    g.beginPath();
+    g.moveTo(tx, ty);
+    g.quadraticCurveTo((tx + cx) / 2 + lee * jb, (ty + cy) / 2, cx, cy);
+    g.lineTo(0, m0 - 0.5);
+    g.closePath();
+    g.fill();
+    if (!shadow){ g.strokeStyle = C.sailSh; g.lineWidth = 0.45; g.stroke(); }
+  }
+}
+
+function drawShipBody(g, s){
+  const t = s.t, L = t.L, B = t.B, liv = s.liv || LIVERY.free, rig = RIGS[t.rig];
+  hullPath(g, L, B);
+  g.fillStyle = liv.hull; g.fill();
+  if (liv.stripe){ g.strokeStyle = liv.stripe; g.lineWidth = 0.6; g.save(); g.scale(0.93, 0.97); hullPath(g, L, B); g.stroke(); g.restore(); }
+  g.save(); g.scale(0.8, 0.92); hullPath(g, L, B); g.restore();
+  g.fillStyle = liv.deck; g.fill();
+  g.strokeStyle = C.deckLt; g.lineWidth = 0.35;
+  for (let x = -B * 0.25; x <= B * 0.26; x += B * 0.25){ g.beginPath(); g.moveTo(x, -L * 0.3); g.lineTo(x, L * 0.4); g.stroke(); }
+  // stern cabin, quarterdeck rail, hatch
+  g.fillStyle = C.woodDk; g.fillRect(-B * 0.3, L * 0.3, B * 0.6, L * 0.15);
+  g.fillStyle = liv === LIVERY.treasure ? C.red : C.wood; g.fillRect(-B * 0.24, L * 0.32, B * 0.48, L * 0.1);
+  if (liv === LIVERY.treasure){ g.fillStyle = C.gold; g.fillRect(-B * 0.24, L * 0.41, B * 0.48, 0.6); }
+  g.fillStyle = C.woodDk; g.fillRect(-1, L * 0.08, 2, 2);
+  // guns
+  g.fillStyle = C.iron;
+  for (const gy of t.gunY){ g.fillRect(B / 2 - 1.6, gy * L - 0.5, 1.8, 1); g.fillRect(-B / 2 - 0.2, gy * L - 0.5, 1.8, 1); }
+  // bowsprit and masts
+  g.strokeStyle = C.woodDk; g.lineWidth = 0.6; g.beginPath(); g.moveTo(0, -L / 2); g.lineTo(0, -L / 2 - rig.sprit); g.stroke();
+  g.fillStyle = C.woodDk;
+  for (const m of rig.masts){ g.beginPath(); g.arc(0, m.y * L, 0.6, 0, TAU); g.fill(); }
+}
+
+function drawFlag(g, x, y, ang, len, colA, colB){
+  // ang: direction the flag streams to (compass radians), in the current frame
+  const dx = Math.sin(ang), dy = -Math.cos(ang), nx = -dy, ny = dx;
+  g.fillStyle = colA;
+  g.beginPath();
+  const n = 5, w = len * 0.6;
+  for (let i = 0; i <= n; i++){ const t = i / n, o = Math.sin(T * 9 - i * 1.3) * 0.35 * t; g.lineTo(x + dx * len * t + nx * o, y + dy * len * t + ny * o); }
+  for (let i = n; i >= 0; i--){ const t = i / n, o = Math.sin(T * 9 - i * 1.3) * 0.35 * t; g.lineTo(x + dx * len * t + nx * (o + w), y + dy * len * t + ny * (o + w)); }
+  g.fill();
+  if (colB){ g.fillStyle = colB; g.fillRect(x + dx * len * 0.45 + nx * w * 0.35 - 0.5, y + dy * len * 0.45 + ny * w * 0.35 - 0.5, 1, 1); }
+}
+
+let ox = 0, oy = 0; // lo pixel 0,0 in world pixel units
+
+// ships are drawn smooth into a small canvas, then thresholded, palette-quantised and outlined
+const SPS = 128;
+const shipCv = document.createElement('canvas');
+shipCv.width = shipCv.height = SPS;
+const shc = shipCv.getContext('2d', { willReadFrequently: true });
+function onScreen(wx, wy, m = 60){
+  const sx = wx / MPP - ox, sy = wy / MPP - oy;
+  return sx > -m && sy > -m && sx < LW + m && sy < LH + m;
+}
+function sprite(g, wx, wy, h, fn){
+  const sx = wx / MPP - ox, sy = wy / MPP - oy;
+  if (!onScreen(wx, wy, SPS)) return;
+  const ix = Math.floor(sx), iy = Math.floor(sy);
+  shc.setTransform(1, 0, 0, 1, 0, 0);
+  shc.clearRect(0, 0, SPS, SPS);
+  shc.setTransform(1 / MPP, 0, 0, 1 / MPP, SPS / 2 + sx - ix, SPS / 2 + sy - iy);
+  shc.rotate(h);
+  fn(shc);
+  shc.setTransform(1, 0, 0, 1, 0, 0);
+  const img = shc.getImageData(0, 0, SPS, SPS), d = img.data, q = new Uint32Array(d.buffer);
+  const solid = new Uint8Array(SPS * SPS);
+  for (let i = 0; i < q.length; i++){
+    if (d[i * 4 + 3] < 110){ q[i] = 0; continue; }
+    solid[i] = 1;
+    q[i] = quant((d[i * 4] >> 3) << 10 | (d[i * 4 + 1] >> 3) << 5 | (d[i * 4 + 2] >> 3));
+  }
+  const OUT = U.navy;
+  for (let y = 1; y < SPS - 1; y++) for (let x = 1; x < SPS - 1; x++){
+    const i = y * SPS + x;
+    if (!solid[i] && (solid[i - 1] || solid[i + 1] || solid[i - SPS] || solid[i + SPS])) q[i] = OUT;
+  }
+  shc.putImageData(img, 0, 0);
+  g.save();
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.drawImage(shipCv, ix - SPS / 2, iy - SPS / 2);
+  g.restore();
+}
+
+function drawWake(g, s){
+  g.lineCap = 'round';
+  for (let i = 1; i < s.wake.length; i++){
+    const a = s.wake[i - 1], b = s.wake[i];
+    const age = T - b.t;
+    const al = clamp(1 - age / 7, 0, 1) * clamp(b.v / 5, 0, 1) * 0.55;
+    if (al <= 0.02) continue;
+    g.strokeStyle = `rgba(223,244,255,${al})`;
+    g.lineWidth = s.t.B * (0.5 + age * 0.45);
+    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+  }
+}
+function drawShip(g, s){
+  if (!onScreen(s.x, s.y, SPS)) return;
+  const L = s.t.L, sink = s.sinking;
+  const c = Math.cos(s.h), sn = Math.sin(s.h);
+  const lsx = 1.2 * c + 2 * sn, lsy = -1.2 * sn + 2 * c;
+  if (sink < 0.8){
+    g.save(); g.translate(s.x, s.y); g.rotate(s.h);
+    g.globalAlpha = 1 - sink;
+    g.save(); g.translate(lsx, lsy); hullPath(g, L, s.t.B); g.fillStyle = SHADOW; g.fill(); g.restore();
+    if (!sink){ g.save(); g.translate(lsx * 2.6, lsy * 2.6); drawRig(g, s, true); g.restore(); }
+    g.restore();
+    g.globalAlpha = 1;
+  }
+  if (sink > 0.75) return;
+  sprite(g, s.x, s.y, s.h + sink * 0.4, c2 => {
+    if (sink) c2.scale(1 - sink * 0.3, 1 - sink * 0.45);
+    drawShipBody(c2, s);
+    drawRig(c2, s, false);
+    const liv = s.liv || LIVERY.free;
+    const top = RIGS[s.t.rig].masts[0].y * L;
+    if (!s.struck) drawFlag(c2, 0, top, s.aw.toward - s.h, 3 + L * 0.03, liv.flag[0], liv.flag[1]);
+    else drawFlag(c2, 0, top, s.aw.toward - s.h, 3 + L * 0.03, C.sail, null);
+  });
+}
+
+function render(){
+  // camera: ship centred, world pixel snapped
+  const sx = (Math.random() - 0.5) * shake * 2, sy = (Math.random() - 0.5) * shake * 2;
+  ox = Math.round((ship.x + sx) / MPP) - (LW >> 1);
+  oy = Math.round((ship.y + sy) / MPP) - (LH >> 1);
+
+  // sea
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = C.sea;
+  ctx.fillRect(0, 0, LW, LH);
+  drawWaves();
+
+  // terrain tiles
+  const tx0 = Math.floor(ox / TILE), ty0 = Math.floor(oy / TILE), tx1 = Math.floor((ox + LW) / TILE), ty1 = Math.floor((oy + LH) / TILE);
+  for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++){
+    const t = getTile(tx, ty, true);
+    if (t) ctx.drawImage(t, tx * TILE - ox, ty * TILE - oy);
+  }
+  // prefetch a ring around the view, a couple of tiles per frame
+  let budget = 2;
+  for (let ty = ty0 - 1; ty <= ty1 + 1 && budget; ty++) for (let tx = tx0 - 1; tx <= tx1 + 1 && budget; tx++){
+    if (getTile(tx, ty, false) === undefined){ getTile(tx, ty, true); budget--; }
+  }
+  if (tiles.size > 500){
+    for (const k of tiles.keys()){
+      const tx = k % 1000, ty = Math.floor(k / 1000);
+      if (Math.abs(tx - tx0) > 8 || Math.abs(ty - ty0) > 8) tiles.delete(k);
+    }
+  }
+
+  // sprites: drawn smooth, then quantised to palette with ordered dithering
+  const g = sctx;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, LW, LH);
+  g.setTransform(1 / MPP, 0, 0, 1 / MPP, -ox, -oy);
+
+  drawWake(g, ship);
+  for (const s of ai) if (s.wake.length) drawWake(g, s);
+  for (const p of parts){
+    if (p.kind !== 'foam' && p.kind !== 'splash') continue;
+    const al = p.a * (p.life / p.max);
+    if (p.kind === 'foam'){ g.fillStyle = `rgba(223,244,255,${al})`; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
+    else { g.strokeStyle = `rgba(255,255,255,${al})`; g.lineWidth = 0.8; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.stroke(); }
+  }
+
+  // port flags
+  for (const P of ports){
+    const fx = P.fx * MPP, fy = P.fy * MPP;
+    if (!onScreen(fx, fy)) continue;
+    g.fillStyle = C.woodDk; g.fillRect(fx - 0.3, fy - 4.5, 0.6, 4.5);
+    drawFlag(g, fx, fy - 4.5, ship.wind.dir + Math.PI, 4, P.f === 'free' ? C.black : C.red, P.f === 'free' ? C.white : C.gold);
+  }
+
+  for (const s of ai) drawShip(g, s);
+  if (!dead || ship.sinking < 0.75){ ship.liv = LIVERY.free; drawShip(g, ship); }
+
+  // cannonballs with arcing height
+  for (const b of balls){
+    if (!onScreen(b.x, b.y, 10)) continue;
+    const t = 1 - b.life / b.max, h = Math.sin(Math.PI * t) * 6;
+    g.fillStyle = 'rgba(8,30,50,0.5)'; g.beginPath(); g.arc(b.x, b.y, 0.6, 0, TAU); g.fill();
+    g.fillStyle = C.black; g.beginPath(); g.arc(b.x - h * 0.15, b.y - h * 0.4, 0.7, 0, TAU); g.fill();
+  }
+  // smoke etc. on top
+  for (const p of parts){
+    const al = p.a * (p.life / p.max);
+    if (p.kind === 'smoke'){ g.fillStyle = `rgba(217,214,207,${al * 0.85})`; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
+    else if (p.kind === 'dust'){ g.fillStyle = `rgba(201,176,122,${al})`; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
+    else if (p.kind === 'splinter'){ g.fillStyle = C.wood; g.fillRect(p.x, p.y, 0.7, 0.7); }
+    else if (p.kind === 'flash'){ g.fillStyle = C.gold; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
+  }
+
+  // quantise sprite layer
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const img = g.getImageData(0, 0, LW, LH), d = img.data, q = new Uint32Array(d.buffer);
+  for (let y = 0, i = 0; y < LH; y++){
+    const br = (((y + oy) & 3) * 4);
+    for (let x = 0; x < LW; x++, i++){
+      const a = d[i * 4 + 3];
+      if (!a) continue;
+      if (a < 250 && a / 255 <= BAYER[br + ((x + ox) & 3)]){ q[i] = 0; continue; }
+      q[i] = quant((d[i * 4] >> 3) << 10 | (d[i * 4 + 1] >> 3) << 5 | (d[i * 4 + 2] >> 3));
+    }
+  }
+  g.putImageData(img, 0, 0);
+  ctx.drawImage(spr, 0, 0);
+
+  drawLabels();
+  drawCompass();
+}
+
+// name and hull bar over nearby ships
+function drawLabels(){
+  const g = ctx;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const marks = ai.filter(s => !s.sinking).map(s => [s, s.struck ? C.sail : hostile(s) ? '#ff8f7a' : C.gold])
+    .concat(empirePorts.filter(P => P.fort.hp > 0).map(P => [P.fort, '#ff8f7a']));
+  for (const [s, col] of marks){
+    if (dist(s, ship) > 650 || onScreen(s.x, s.y, -4)) continue;
+    const dx = s.x / MPP - ox - LW / 2, dy = s.y / MPP - oy - LH / 2;
+    const k = Math.min((LW / 2 - 6) / Math.abs(dx || 1e-6), (LH / 2 - 6) / Math.abs(dy || 1e-6));
+    const ex = LW / 2 + dx * k, ey = LH / 2 + dy * k, a = Math.atan2(dy, dx);
+    for (let i = 0; i < 5; i++){
+      const w = 4 - i;
+      pline(g, ex - Math.cos(a) * i - Math.sin(a) * w / 2 * 1.4, ey - Math.sin(a) * i + Math.cos(a) * w / 2 * 1.4,
+               ex - Math.cos(a) * i + Math.sin(a) * w / 2 * 1.4, ey - Math.sin(a) * i - Math.cos(a) * w / 2 * 1.4, col);
+    }
+  }
+  for (const P of empirePorts){
+    const F = P.fort;
+    if (dist(F, ship) > 420 || !onScreen(F.x, F.y, 0)) continue;
+    const sx = Math.round(F.x / MPP - ox), sy = Math.round(F.y / MPP - oy - 26);
+    const nm = F.hp > 0 ? `Fort ${P.name}` : 'Silenced';
+    drawText(g, nm, clamp(sx, textWidth(nm) / 2 + 2, LW - textWidth(nm) / 2 - 2) - textWidth(nm) / 2, sy, F.hp > 0 ? '#ff8f7a' : C.sail, 1, C.navy);
+    const w = 24, f = clamp(F.hp / F.max, 0, 1);
+    g.fillStyle = C.navy; g.fillRect(sx - w / 2 - 1, sy + 7, w + 2, 4);
+    g.fillStyle = f > 0.5 ? C.green : f > 0.25 ? C.gold : C.red; g.fillRect(sx - w / 2, sy + 8, Math.round(w * f), 2);
+  }
+  for (const s of ai){
+    if (s.sinking || dist(s, ship) > 420 || !onScreen(s.x, s.y, 0)) continue;
+    const sx0 = Math.round(s.x / MPP - ox), sy = Math.round(s.y / MPP - oy - s.t.L / MPP * 0.62 - 12);
+    const nm = s.struck ? 'Struck' : s.name;
+    const sx = clamp(sx0, textWidth(nm) / 2 + 2, LW - textWidth(nm) / 2 - 2);
+    const col = s.struck ? C.sail : hostile(s) ? '#ff8f7a' : C.gold;
+    drawText(g, nm, sx - textWidth(nm) / 2, sy, col, 1, C.navy);
+    const w = 20, f = clamp(s.hull / s.t.hull, 0, 1);
+    g.fillStyle = C.navy; g.fillRect(sx - w / 2 - 1, sy + 7, w + 2, 4);
+    g.fillStyle = f > 0.5 ? C.green : f > 0.25 ? C.gold : C.red; g.fillRect(sx - w / 2, sy + 8, Math.round(w * f), 2);
+  }
+}
+
+function drawWaves(){
+  const G = 22;
+  const w = ship.wind;
+  const bx = -Math.sin(w.dir), by = Math.cos(w.dir); // blowing toward
+  const nx = -by, ny = bx;
+  for (let j = Math.floor(oy / G) - 1; j <= Math.floor((oy + LH) / G) + 1; j++){
+    for (let i = Math.floor(ox / G) - 1; i <= Math.floor((ox + LW) / G) + 1; i++){
+      const h1 = hash(i, j, 7), h2 = hash(i, j, 8), h3 = hash(i, j, 9);
+      const per = 2.5 + h3 * 3;
+      const u = (T / per + h1) % 1;
+      if (u > 0.85) continue;
+      const px = i * G + h2 * G + bx * u * 14 - ox, py = j * G + h1 * G + by * u * 14 - oy;
+      const len = 2 + (h3 * 4 | 0);
+      ctx.fillStyle = (u > 0.3 && u < 0.5 && h2 < 0.35) ? C.foam : C.seaLt;
+      for (let k = -len; k <= len; k++){
+        const curl = Math.abs(k) / len;
+        ctx.fillRect(Math.round(px + nx * k - bx * curl * 1.5), Math.round(py + ny * k - by * curl * 1.5), 1, 1);
+      }
+      if (h3 < 0.5){
+        ctx.fillStyle = C.seaDk;
+        for (let k = -len + 1; k < len; k++) ctx.fillRect(Math.round(px + nx * k + bx * 2), Math.round(py + ny * k + by * 2), 1, 1);
+      }
+    }
+  }
+}
+
+function pline(g, x0, y0, x1, y1, col){
+  g.fillStyle = col;
+  const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) | 0;
+  for (let k = 0; k <= n; k++) g.fillRect(Math.round(lerp(x0, x1, k / (n || 1))), Math.round(lerp(y0, y1, k / (n || 1))), 1, 1);
+}
+function drawCompass(){
+  const g = ctx;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const r = 13, cx = LW >> 1, cy = 20;
+  g.fillStyle = 'rgba(12,34,54,0.8)';
+  for (let y = -r; y <= r; y++){ const w = Math.round(Math.sqrt(r * r - y * y)); g.fillRect(cx - w, cy + y, w * 2 + 1, 1); }
+  for (let a = 0; a < 16; a++){
+    const t = a * TAU / 16, rr = a % 4 ? r - 1 : r - 2;
+    g.fillStyle = a % 4 ? '#7d8a96' : C.sail;
+    g.fillRect(Math.round(cx + Math.sin(t) * rr), Math.round(cy - Math.cos(t) * rr), 1, 1);
+  }
+  drawText(g, 'N', cx - 1, cy - r - 7, C.sail, 1, C.navy);
+  pline(g, cx, cy, cx + Math.sin(ship.h) * (r - 3), cy - Math.cos(ship.h) * (r - 3), C.gold);
+  const w = ship.wind, wx = Math.sin(w.dir), wy = -Math.cos(w.dir);
+  pline(g, cx + wx * (r + 5), cy + wy * (r + 5), cx + wx * (r - 5), cy + wy * (r - 5), C.foam);
+  g.fillStyle = C.foam;
+  g.fillRect(Math.round(cx + wx * (r + 5)) - 1, Math.round(cy + wy * (r + 5)) - 1, 3, 3);
+}
+
+// ---------------------------------------------------------------- chart view
+let mapOpen = false;
+const mv = { x: 0, y: 0, k: 1 };
+function openMap(){
+  mapOpen = true;
+  layout();
+  composeMap();
+  mv.x = ship.x; mv.y = ship.y;
+  mv.k = Math.max(2, Math.round(Math.min(LW, LH) / 160));
+  el('hud').classList.add('hidden');
+  el('mapUi').classList.remove('hidden');
+  sfx.paper();
+}
+function closeMap(){
+  mapOpen = false;
+  layout();
+  el('hud').classList.remove('hidden');
+  el('mapUi').classList.add('hidden');
+}
+function renderMap(){
+  const g = ctx, k = mv.k;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = C.parchDk; g.fillRect(0, 0, LW, LH);
+  const s = k / CPX; // lo px per metre
+  mv.x = clamp(mv.x, 0, WW); mv.y = clamp(mv.y, 0, WH);
+  const X = wx => Math.round(LW / 2 + (wx - mv.x) * s), Y = wy => Math.round(LH / 2 + (wy - mv.y) * s);
+  g.drawImage(mapCv, X(0), Y(0), CW * k, CH * k);
+  g.fillStyle = C.ink;
+  g.fillRect(X(0) - 2, Y(0) - 2, CW * k + 4, 1); g.fillRect(X(0) - 2, Y(WH) + 1, CW * k + 4, 1);
+  g.fillRect(X(0) - 2, Y(0) - 2, 1, CH * k + 4); g.fillRect(X(WW) + 1, Y(0) - 2, 1, CH * k + 4);
+  // wind arrows over discovered water
+  const step = Math.max(CELL, Math.round(26 / s / CELL) * CELL);
+  for (let wy = step / 2; wy < WH; wy += step){
+    const sy = Y(wy); if (sy < -8 || sy > LH + 8) continue;
+    for (let wx = step / 2; wx < WW; wx += step){
+      const sx = X(wx); if (sx < -8 || sx > LW + 8) continue;
+      if (!fog[Math.floor(wy / CELL) * GW + Math.floor(wx / CELL)] || land(wx, wy)) continue;
+      const w = windAt(wx, wy, T);
+      const bx = -Math.sin(w.dir), by = Math.cos(w.dir), len = 4 + w.spd * 0.45;
+      pline(g, sx - bx * len / 2, sy - by * len / 2, sx + bx * len / 2, sy + by * len / 2, C.cBlue);
+      const hx = sx + bx * len / 2, hy = sy + by * len / 2;
+      pline(g, hx, hy, hx - bx * 2 - by * 1.5, hy - by * 2 + bx * 1.5, C.cBlue);
+      pline(g, hx, hy, hx - bx * 2 + by * 1.5, hy - by * 2 - bx * 1.5, C.cBlue);
+    }
+  }
+  // names and ports
+  for (const I of isles){
+    if (!I.disc) continue;
+    const P = I.port;
+    if (P){
+      const px = X(P.hx), py = Y(P.hy);
+      g.fillStyle = C.ink; g.fillRect(px - 2, py - 2, 5, 5);
+      g.fillStyle = P.f === 'free' ? C.black : C.cRed; g.fillRect(px - 1, py - 1, 3, 3);
+      drawText(g, P.name, px - textWidth(P.name) / 2, py + 4, P.f === 'free' ? C.black : C.cRed, 1, C.parch);
+    }
+    const nm = I.name, w = textWidth(nm);
+    drawText(g, nm, X(I.cx) - w / 2, Y(I.cy - Math.max(I.rx * Math.abs(I.s), I.ry) * 1.25) - 8, C.ink, 1, C.parch);
+  }
+  for (const P of ports){
+    if (P.isle || !fog[Math.floor(P.hy / CELL) * GW + Math.floor(P.hx / CELL)]) continue;
+    const px = X(P.hx), py = Y(P.hy);
+    g.fillStyle = C.cRed; g.fillRect(px - 1, py - 1, 3, 3);
+    drawText(g, P.name, px - textWidth(P.name) / 2, py - 8, C.cRed, 1, C.parch);
+  }
+  // own ship
+  const px = X(ship.x), py = Y(ship.y);
+  pline(g, px, py, px + Math.sin(ship.h) * 6, py - Math.cos(ship.h) * 6, C.cRed);
+  g.fillStyle = C.cRed; g.fillRect(px - 1, py - 1, 3, 3);
+  g.fillStyle = C.parch; g.fillRect(px, py, 1, 1);
+  // cartouche
+  const title = 'Chart of the Free Sea';
+  const tw = textWidth(title, 1);
+  g.fillStyle = C.parch; g.fillRect(4, 6, tw + 8, 11);
+  g.fillStyle = C.ink; g.fillRect(4, 6, tw + 8, 1); g.fillRect(4, 16, tw + 8, 1);
+  drawText(g, title, 8, 9, C.ink);
+  drawText(g, `Wind here: ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`, 6, LH - 18, C.ink, 1, C.parch);
+  drawText(g, `Freed: ${pl.freed}   Free ports: ${ports.length - empirePorts.length}/${ports.length}`, 6, LH - 10, C.ink, 1, C.parch);
+}
+
+// ---------------------------------------------------------------- input
+const helm = el('helm');
+helm.addEventListener('pointerdown', e => { helm.setPointerCapture(e.pointerId); helmHeld = true; helmMove(e); });
+helm.addEventListener('pointermove', e => { if (helmHeld) helmMove(e); });
+const helmUp = () => { helmHeld = false; };
+helm.addEventListener('pointerup', helmUp);
+helm.addEventListener('pointercancel', helmUp);
+function helmMove(e){
+  const r = helm.getBoundingClientRect();
+  helmTarget = clamp(((e.clientX - r.left) / r.width - 0.5) * 2.3, -1, 1);
+}
+const sailsEl = el('sails');
+let sailHeld = false;
+function sailMove(e){
+  const r = sailsEl.getBoundingClientRect();
+  setSail(3 - clamp(Math.floor((e.clientY - r.top) / (r.height / 4)), 0, 3));
+}
+sailsEl.addEventListener('pointerdown', e => { sailsEl.setPointerCapture(e.pointerId); sailHeld = true; sailMove(e); });
+sailsEl.addEventListener('pointermove', e => { if (sailHeld) sailMove(e); });
+sailsEl.addEventListener('pointerup', () => { sailHeld = false; });
+sailsEl.addEventListener('pointercancel', () => { sailHeld = false; });
+fireBtn[0].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, -1); });
+fireBtn[1].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, 1); });
+el('btnMap').addEventListener('click', openMap);
+el('mapClose').addEventListener('click', closeMap);
+el('mapCentre').addEventListener('click', () => { mv.x = ship.x; mv.y = ship.y; });
+el('mapIn').addEventListener('click', () => { mv.k = Math.min(6, mv.k + 1); });
+el('mapOut').addEventListener('click', () => { mv.k = Math.max(1, mv.k - 1); });
+el('btnSnd').addEventListener('click', () => { sfx.toggle(); el('btnSnd').style.opacity = sfx.muted ? 0.45 : 1; });
+const actBtn = el('actBtn');
+function act(){
+  if (paused || dead) return;
+  if (boardTarget) board(boardTarget);
+  else if (nearPort){ ship.v = 0; sfx.creak(); portMenu(nearPort); }
+}
+actBtn.addEventListener('click', act);
+
+// chart: drag to pan, pinch / wheel to zoom
+const mp = new Map();
+let pinch0 = 0, pinchK = 1;
+lo.addEventListener('pointerdown', e => {
+  if (!mapOpen) return;
+  lo.setPointerCapture(e.pointerId);
+  mp.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (mp.size === 2){ const [a, b] = [...mp.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); pinchK = mv.k; }
+});
+lo.addEventListener('pointermove', e => {
+  if (!mapOpen || !mp.has(e.pointerId)) return;
+  const p = mp.get(e.pointerId);
+  const dpr = window.devicePixelRatio || 1;
+  if (mp.size === 1){
+    mv.x -= (e.clientX - p.x) * dpr / PX / (mv.k / CPX);
+    mv.y -= (e.clientY - p.y) * dpr / PX / (mv.k / CPX);
+  }
+  p.x = e.clientX; p.y = e.clientY;
+  if (mp.size === 2){
+    const [a, b] = [...mp.values()];
+    mv.k = clamp(Math.round(pinchK * Math.hypot(a.x - b.x, a.y - b.y) / pinch0), 1, 6);
+  }
+});
+const mpUp = e => mp.delete(e.pointerId);
+lo.addEventListener('pointerup', mpUp);
+lo.addEventListener('pointercancel', mpUp);
+lo.addEventListener('wheel', e => { if (mapOpen){ mv.k = clamp(mv.k + (e.deltaY < 0 ? 1 : -1), 1, 6); e.preventDefault(); } }, { passive: false });
+
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (!started) return;
+  if (k === 'm' && !paused){ mapOpen ? closeMap() : openMap(); return; }
+  if (mapOpen || paused) return;
+  keys.add(k);
+  if (e.repeat) return;
+  if (k === 'w' || k === 'arrowup') setSail(ship.set + 1);
+  if (k === 's' || k === 'arrowdown') setSail(ship.set - 1);
+  if (k === 'q' && !dead) fire(ship, -1);
+  if (k === 'e' && !dead) fire(ship, 1);
+  if (k === 'b' || k === 'enter') act();
+});
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+
+// ---------------------------------------------------------------- audio
+const sfx = (() => {
+  let ac = null, master = null, noise = null, amb = null, ambW = null;
+  const S = { muted: false };
+  S.init = () => {
+    if (ac) return;
+    try {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      master = ac.createGain(); master.gain.value = 0.7; master.connect(ac.destination);
+      noise = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const mk = (type, f, q) => {
+        const src = ac.createBufferSource(); src.buffer = noise; src.loop = true;
+        const flt = ac.createBiquadFilter(); flt.type = type; flt.frequency.value = f; flt.Q.value = q;
+        const gn = ac.createGain(); gn.gain.value = 0;
+        src.connect(flt); flt.connect(gn); gn.connect(master); src.start();
+        return gn;
+      };
+      amb = mk('lowpass', 420, 0.5);
+      ambW = mk('bandpass', 1400, 0.8);
+    } catch (e){ ac = null; }
+  };
+  const burst = (dur, type, f, vol, decay) => {
+    if (!ac || S.muted) return;
+    const t = ac.currentTime;
+    const src = ac.createBufferSource(); src.buffer = noise;
+    const flt = ac.createBiquadFilter(); flt.type = type; flt.frequency.value = f;
+    const gn = ac.createGain(); gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.001, t + decay);
+    src.connect(flt); flt.connect(gn); gn.connect(master);
+    src.start(t, Math.random()); src.stop(t + dur);
+  };
+  const tone = (f0, f1, dur, vol, type = 'sine', delay = 0) => {
+    if (!ac || S.muted) return;
+    const t = ac.currentTime + delay;
+    const o = ac.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const gn = ac.createGain(); gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(gn); gn.connect(master); o.start(t); o.stop(t + dur);
+  };
+  S.boom = v => { burst(1.4, 'lowpass', 380, 0.9 * v, 1.3); tone(70, 35, 0.6, 0.7 * v); };
+  S.hit = (v = 1) => { burst(0.4, 'bandpass', 900, 0.6 * v, 0.35); tone(140, 60, 0.2, 0.3 * v, 'square'); };
+  S.splash = d => { const v = clamp(1 - d / 300, 0.1, 1) * 0.35; burst(0.6, 'highpass', 900, v, 0.5); };
+  S.crunch = () => { burst(0.8, 'lowpass', 600, 0.8, 0.7); tone(90, 40, 0.5, 0.4, 'sawtooth'); };
+  S.creak = () => { tone(180, 120, 0.35, 0.08, 'sawtooth'); };
+  S.paper = () => { burst(0.25, 'highpass', 2500, 0.15, 0.2); };
+  S.clash = () => { tone(rnd(1800, 2600), rnd(1200, 1600), 0.12, 0.08, 'square'); burst(0.2, 'highpass', 3000, 0.12, 0.15); };
+  S.coins = () => { for (let i = 0; i < 4; i++) tone(2200 + i * 300, 2000 + i * 300, 0.08, 0.06, 'square', i * 0.06); };
+  S.cheer = () => { burst(1.2, 'bandpass', 900, 0.25, 1.1); [523, 659, 784].forEach((f, i) => tone(f, f, 0.25, 0.06, 'square', i * 0.12)); };
+  S.ambient = (w, v) => {
+    if (!ac) return;
+    const t = ac.currentTime, m = S.muted ? 0 : 1;
+    amb.gain.setTargetAtTime(m * (0.05 + v * 0.025), t, 0.5);
+    ambW.gain.setTargetAtTime(m * (0.006 + w * 0.0018), t, 0.5);
+  };
+  S.toggle = () => { S.muted = !S.muted; };
+  return S;
+})();
+
+// ---------------------------------------------------------------- start
+layout();
+const hasSave = load();
+if (hasSave){ el('btnStart').textContent = 'CONTINUE'; el('btnNew').classList.remove('hidden'); }
+setSail(ship.set);
+discover();
+populate(true);
+el('btnStart').addEventListener('click', () => {
+  sfx.init();
+  el('title').classList.add('hidden');
+  el('hud').classList.remove('hidden');
+  started = true;
+  if (!hasSave){
+    toast('Cast off from Libertalia.');
+    toast('Let go of the helm to hold your course.');
+    toast('Watch the flag: it shows the wind.');
+  }
+});
+el('btnNew').addEventListener('click', () => {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e){}
+  location.reload();
+});
+addEventListener('visibilitychange', () => { if (document.hidden && started) save(); });
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (mapOpen) renderMap();
+  else {
+    if (started && !paused) update(dt);
+    else T += dt * 0.3;
+    render();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__game = { ship, pl, storm, liberate, unrest, defenders, creditFreed, ai: () => ai, isles, ports, fog, openMap, closeMap, setSail, fire, board, spawn, TYPES, makeShip, LIVERY, ROLE_NAME, cargoFor, route };
+})();
+</script>
+</body>
+</html>
