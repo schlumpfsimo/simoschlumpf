@@ -435,8 +435,29 @@ for (const P of ports){
   // the fort or the flagpole sits next to the pier head
   P.fx = Math.round(lerp(P.px0, P.tx, 0.5) / MPP); P.fy = Math.round(lerp(P.py0, P.ty, 0.5) / MPP);
 }
-const empirePorts = ports.filter(p => p.f === 'empire');
+let empirePorts = ports.filter(p => p.f === 'empire');
 const home = ports.find(p => p.f === 'free');
+const CAPITALS = ['San Aurelio', 'Puerto Vera', 'Puerto Real'];
+for (const P of empirePorts){
+  const big = CAPITALS.includes(P.name);
+  P.crew0 = P.crew = big ? 220 : 110;
+  P.freedFor = 0;
+  P.fort = { fort: true, port: P, x: P.fx * MPP, y: P.fy * MPP, max: big ? 260 : 160, guns: big ? 10 : 6, reload: 0 };
+  P.fort.hp = P.fort.max;
+}
+const refreshPorts = () => { empirePorts = ports.filter(p => p.f === 'empire'); };
+// freeing people bound for a port stirs unrest there; a restless garrison fields fewer soldiers
+const unrest = P => clamp(P.freedFor / P.crew0, 0, 1);
+const defenders = P => Math.round(P.crew * (1 - 0.6 * unrest(P)));
+function creditFreed(name, n){
+  const P = ports.find(q => q.name === name);
+  if (!P || P.f !== 'empire' || !n) return;
+  const u0 = unrest(P);
+  P.freedFor += n;
+  const u1 = unrest(P);
+  if (u0 < 1 && u1 >= 1) toast(`${P.name} seethes. The town will rise when you attack.`);
+  else if (u0 < 0.5 && u1 >= 0.5) toast(`Unrest spreads in ${P.name}. The garrison grows thin.`);
+}
 
 // wind: trades from ENE with slow drifting variation, gusts and island lee
 const WIND_BASE = 65 * DEG;
@@ -749,7 +770,7 @@ function makeShip(type, x, y, h, role){
 // ---------------------------------------------------------------- game state
 const ship = makeShip('sloop', home.hx, home.hy - 40, 0, 'player');
 ship.set = 1; ship.sail = 0.42; ship.crew = 24;
-const pl = { gold: 100, goods: 0, arms: 0, mercs: 0, people: 0, freed: 0, prizes: 0 };
+const pl = { gold: 100, goods: 0, arms: 0, mercs: 0, people: 0, freed: 0, prizes: 0, liberated: 0, peopleFor: {} };
 const fog = new Uint8Array(GW * GH);
 let ai = [];
 let T = 0;
@@ -766,6 +787,8 @@ function load(){
     const f = atob(s.fog);
     for (let i = 0; i < f.length && i < fog.length; i++) fog[i] = f.charCodeAt(i);
     for (const id of s.disc || []) if (isles[id]) isles[id].disc = true;
+    (s.ports || []).forEach((q, i) => { const P = ports[i]; if (!q || !P || !P.fort) return; [P.f, P.crew, P.fort.hp, P.freedFor] = q; });
+    refreshPorts();
     T = s.t || 0;
     return true;
   } catch (e){ return false; }
@@ -777,7 +800,7 @@ function save(){
     for (let i = 0; i < fog.length; i++) f += String.fromCharCode(fog[i]);
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       type: ship.t.id, x: ship.x, y: ship.y, h: ship.h, set: ship.set, hull: ship.hull, crew: ship.crew, rigging: ship.rigging,
-      pl, fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T,
+      pl, ports: ports.map(P => P.fort ? [P.f, P.crew, Math.round(P.fort.hp), P.freedFor] : null), fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T,
     }));
   } catch (e){}
 }
@@ -1041,6 +1064,7 @@ function arrive(s){
   s.gone = true;
 }
 function newRoute(s, from){
+  if (!empirePorts.length) return false;
   for (let k = 0; k < 6; k++){
     const to = pick(empirePorts);
     if (to === from) continue;
@@ -1062,6 +1086,19 @@ function cargoFor(role){
 const ROLE_TYPE = { trader: 'fluyt', slaver: 'brig', patrol: 'brig', treasure: 'galleon' };
 const ROLE_LIVERY = { trader: 'merchant', slaver: 'slaver', patrol: 'navy', escort: 'navy', treasure: 'treasure' };
 const QUOTA = { trader: 5, slaver: 3, patrol: 3, treasure: 1 };
+// when a port falls, the Empire sends a squadron after it
+function spawnHunters(P){
+  if (!empirePorts.length) return;
+  const from = pick(empirePorts), r = route(from, P);
+  if (!r) return;
+  for (const ty of ['frigate', 'brig']){
+    const s = makeShip(ty, from.hx + rnd(-80, 80), from.hy + rnd(-80, 80), 0, 'patrol');
+    s.path = r; s.wp = 1; s.dest = P; s.mode = 'route';
+    s.cargo = cargoFor('patrol'); s.liv = LIVERY.navy; s.name = ROLE_NAME.patrol(s.t);
+    ai.push(s);
+  }
+  toast(`Word reaches the Empire. A squadron sails from ${from.name}.`);
+}
 
 // spawn a ship (and escorts) somewhere on an imperial route, away from the player
 function spawn(role, anywhere){
@@ -1077,6 +1114,7 @@ function spawn(role, anywhere){
     s.h = Math.atan2(b[0] - a[0], -(b[1] - a[1]));
     if (Math.hypot(s.x - ship.x, s.y - ship.y) < 1600) continue;
     s.cargo = cargoFor(role);
+    if (role === 'slaver') s.cargo.bound = s.dest.name;
     s.liv = LIVERY[ROLE_LIVERY[role]];
     s.name = ROLE_NAME[role](s.t);
     ai.push(s);
@@ -1092,6 +1130,8 @@ function spawn(role, anywhere){
   return false;
 }
 function populate(anywhere){
+  if (!empirePorts.length) return;
+  QUOTA.patrol = Math.min(7, 3 + pl.liberated);
   for (const role in QUOTA){
     const n = ai.filter(s => s.role === role && !s.gone).length;
     for (let i = n; i < QUOTA[role]; i++){ spawn(role, anywhere); if (!anywhere) return; }
@@ -1118,6 +1158,43 @@ function hitShip(s, b){
       toast(ppl ? `The ${s.name} goes down, and ${ppl} people in chains with her.` : `The ${s.name} goes down!`);
     }
   }
+}
+
+// ---------------------------------------------------------------- forts
+function fortStep(P, dt){
+  const F = P.fort, d = Math.hypot(ship.x - F.x, ship.y - F.y);
+  if (d > 1500 && F.hp < F.max){
+    // the garrison repairs the walls when nobody is shooting at them
+    const was = F.hp;
+    F.hp = Math.min(F.max, F.hp + dt * 0.5);
+    if (was <= 0 && F.hp > 0) F.hp = Math.max(F.hp, F.max * 0.3);
+  }
+  if (F.hp <= 0){
+    if (visible(F) && Math.random() < dt * 2) puff('smoke', F.x + rnd(-6, 6), F.y + rnd(-6, 6), rnd(-1, 1), rnd(-2, 0), 3, 2, 2, 0.5);
+    return;
+  }
+  F.reload -= dt;
+  if (dead || d > 230 || F.reload > 0) return;
+  F.reload = 8;
+  for (let k = 0; k < F.guns; k++) setTimeout(() => {
+    if (F.hp <= 0 || dead || P.f !== 'empire') return;
+    const gx = F.x + rnd(-7, 7), gy = F.y + rnd(-7, 7);
+    const dd = Math.hypot(ship.x - gx, ship.y - gy), tt = dd / BALL_SPEED;
+    const tx = ship.x + Math.sin(ship.h) * ship.v * KN * tt, ty = ship.y - Math.cos(ship.h) * ship.v * KN * tt;
+    const a = Math.atan2(tx - gx, -(ty - gy)) + rnd(-6, 6) * DEG;
+    const life = Math.min(Math.hypot(tx - gx, ty - gy) / BALL_SPEED + 0.25, 250 / BALL_SPEED);
+    balls.push({ owner: F, dmg: 6, x: gx, y: gy, vx: Math.sin(a) * BALL_SPEED, vy: -Math.cos(a) * BALL_SPEED, life, max: life });
+    if (visible(F)) for (let i = 0; i < 4; i++) puff('smoke', gx + Math.sin(a) * i * 2, gy - Math.cos(a) * i * 2, Math.sin(a) * 4, -Math.cos(a) * 4, rnd(2, 3.5), rnd(1, 2), 2.5, 0.75);
+    sfx.boom(clamp(1 - d / 900, 0.1, 0.9));
+  }, k * 160 + rnd(0, 80));
+}
+function hitFort(P, b){
+  const F = P.fort;
+  F.hp -= b.dmg * rnd(0.6, 1.1);
+  if (Math.random() < 0.35) P.crew = Math.max(10, P.crew - 1);
+  for (let i = 0; i < 8; i++) puff('dust', b.x, b.y, rnd(-6, 6), rnd(-6, 6), 1.2, 1, 2, 0.9);
+  sfx.hit(0.7);
+  if (F.hp <= 0){ F.hp = 0; toast(`The guns of ${P.name} fall silent! Make port to land your crew.`); }
 }
 
 // ---------------------------------------------------------------- boarding (auto-resolved)
@@ -1147,42 +1224,79 @@ function panel(title, html, buttons){
 }
 function closePanel(){ pEl('panel').classList.add('hidden'); paused = false; }
 
-function board(s){
-  if (!s || !canBoard(s)) return;
-  const ours0 = ship.crew + pl.mercs, theirs0 = s.crew;
-  const armsBonus = 1 + Math.min(0.6, pl.arms / Math.max(1, ours0) * 0.6);
-  const defF = (s.struck ? 0.3 : 1) * (hostile(s) ? 1.3 : 1);
-  const yieldAt = s.struck ? 0.6 : 0.3; // a ship that has struck gives up sooner
-  panel(`Boarding the ${s.name}`, `
+// foe: anything with a crew count. allies: townsfolk who rise with you (they fight at a disadvantage)
+function melee(title, opener, lines, foe, defF, yieldAt, allies, onWin, onLose){
+  let al = allies;
+  const ours0 = ship.crew + pl.mercs + al, theirs0 = foe.crew;
+  const armsBonus = 1 + Math.min(0.6, pl.arms / Math.max(1, ship.crew + pl.mercs) * 0.6);
+  panel(title, `
     <div class="fight">
-      <div class="row"><span>Your crew</span><span id="fA">${ours0}</span></div>
+      <div class="row"><span>Your side</span><span id="fA">${ours0}</span></div>
       <div class="bar"><i id="bA" style="width:100%"></i></div>
-      <div class="row"><span>Their crew</span><span id="fB">${theirs0}</span></div>
+      <div class="row"><span>Their side</span><span id="fB">${theirs0}</span></div>
       <div class="bar foe"><i id="bB" style="width:100%"></i></div>
-      <p id="fLog">Grapples away! Over the rail!</p>
+      <p id="fLog">${opener}</p>
     </div>`, []);
   sfx.clash();
-  const lines = ['Pistols crack across the deck.', 'Cutlasses ring on the quarterdeck.', 'They fall back to the forecastle.',
-    'A volley from the rigging!', 'Hand to hand at the mainmast.', 'Smoke and steel everywhere.'];
   const tick = () => {
-    const atk = (ship.crew * armsBonus + pl.mercs * 2.5) * 0.1, def = s.crew * defF * 0.06;
+    const atk = (ship.crew * armsBonus + pl.mercs * 2.5 + al * 0.8) * 0.1, def = foe.crew * defF * 0.06;
     const kill = Math.max(1, Math.round(atk * rnd(0.5, 1.5)));
     let loss = Math.round(def * rnd(0.5, 1.5));
-    s.crew = Math.max(0, s.crew - kill);
+    foe.crew = Math.max(0, foe.crew - kill);
+    const total = Math.max(1, ship.crew + pl.mercs + al);
+    const fromAllies = Math.min(al, Math.round(loss * al / total));
+    al -= fromAllies; loss -= fromAllies;
     const fromMercs = Math.min(pl.mercs, Math.round(loss * (pl.mercs / Math.max(1, ship.crew + pl.mercs)) * 0.7));
     pl.mercs -= fromMercs; loss -= fromMercs;
     ship.crew = Math.max(0, ship.crew - loss);
-    const ours = ship.crew + pl.mercs;
-    pEl('fA').textContent = ours; pEl('fB').textContent = s.crew;
+    const ours = ship.crew + pl.mercs + al;
+    pEl('fA').textContent = ours; pEl('fB').textContent = foe.crew;
     pEl('bA').style.width = (100 * ours / Math.max(1, ours0)) + '%';
-    pEl('bB').style.width = (100 * s.crew / Math.max(1, theirs0)) + '%';
+    pEl('bB').style.width = (100 * foe.crew / Math.max(1, theirs0)) + '%';
     pEl('fLog').textContent = pick(lines);
     sfx.clash();
-    if (s.crew <= theirs0 * yieldAt || s.crew <= 0) return setTimeout(() => won(s), 500);
-    if (ours <= ours0 * 0.3 || ship.crew <= 0) return setTimeout(() => repelled(s), 500);
+    if (foe.crew <= theirs0 * yieldAt || foe.crew <= 0) return setTimeout(onWin, 500);
+    if (ours <= ours0 * 0.3 || ship.crew <= 0) return setTimeout(onLose, 500);
     setTimeout(tick, 260);
   };
   setTimeout(tick, 500);
+}
+function board(s){
+  if (!s || !canBoard(s)) return;
+  const defF = (s.struck ? 0.3 : 1) * (hostile(s) ? 1.3 : 1);
+  const yieldAt = s.struck ? 0.6 : 0.3; // a ship that has struck gives up sooner
+  melee(`Boarding the ${s.name}`, 'Grapples away! Over the rail!',
+    ['Pistols crack across the deck.', 'Cutlasses ring on the quarterdeck.', 'They fall back to the forecastle.',
+     'A volley from the rigging!', 'Hand to hand at the mainmast.', 'Smoke and steel everywhere.'],
+    s, defF, yieldAt, 0, () => won(s), () => repelled(s));
+}
+function storm(P){
+  const u = unrest(P);
+  const allies = u >= 1 ? Math.round(P.crew0 * 0.4) : u >= 0.5 ? Math.round(P.crew0 * 0.15) : 0;
+  const foe = { crew: defenders(P) }, f0 = foe.crew;
+  melee(`Storming ${P.name}`, allies ? `The boats hit the beach, and ${allies} townsfolk rise with you!` : 'The boats hit the beach!',
+    ['Musketry from the walls!', 'Through the market square!', 'They barricade the church.', 'The gate splinters.',
+     'Street by street.', 'The garrison falls back to the fort.'],
+    foe, 1.2, 0.25, allies, () => liberate(P), () => {
+      P.crew = Math.max(10, P.crew - (f0 - foe.crew));
+      if (ship.crew <= 0){ lose('Your landing party is cut down. You escape with the boats, alone.'); return; }
+      panel('Thrown back', `<p>The garrison drives you back to the boats. ${P.name} still has ${P.crew} soldiers.</p>`, [['TO THE BOATS', closePanel]]);
+    });
+}
+function liberate(P){
+  P.f = 'free'; P.crew = 0;
+  refreshPorts();
+  pl.liberated++;
+  sfx.cheer();
+  const left = empirePorts.length;
+  if (!left){
+    panel('The sea is free', `<p>The last imperial flag comes down over ${P.name}. There are no more chains for sale in these islands.</p>
+      <table><tr><td>People freed</td><td>${pl.freed}</td></tr><tr><td>Ports liberated</td><td>${pl.liberated}</td></tr><tr><td>Prizes taken</td><td>${pl.prizes}</td></tr></table>
+      <p>Libertalia remembers.</p>`, [['SAIL ON', closePanel]]);
+    return;
+  }
+  panel(`${P.name} is free!`, `<p>The chains in the market square are broken and the red flag comes down. ${P.name} is a free port now: your ship can rest, refit and recruit here.</p>
+    <p>${left} imperial ports remain.</p>`, [['RAISE THE BLACK FLAG', () => { closePanel(); spawnHunters(P); save(); }]]);
 }
 function repelled(s){
   if (ship.crew <= 0){ lose('Your crew is overwhelmed and taken. Months later, friends in Libertalia buy you free.'); return; }
@@ -1208,7 +1322,9 @@ function won(s){
       <p>Below decks: <b>${c.people} people in chains</b>. And ${c.goods} barrels of cargo in the hold.</p>
       <p>Strike off the chains. Bring them home to Libertalia, or leave them the ship and take the cargo.</p>`, [
       [`TAKE THEM HOME (${c.people})`, () => {
-        pl.people += c.people; c.people = 0;
+        pl.people += c.people;
+        if (c.bound) pl.peopleFor[c.bound] = (pl.peopleFor[c.bound] || 0) + c.people;
+        c.people = 0;
         const over = Math.min(pl.goods, Math.max(0, -holdFree()));
         pl.goods -= over;
         prizeChoice(s, over ? `${over} barrels of your own cargo go over the side to make room.` : 'They come aboard, blinking in the sun.');
@@ -1228,7 +1344,10 @@ function prizeChoice(s, html, peopleKeep){
     [`KEEP THE ${t.name.toUpperCase()}`, () => { takeShip(s); closePanel(); }],
   ];
   if (peopleKeep){
-    btns.push(['LET THEM SAIL FREE', () => { s.gone = true; pl.freedAdrift = (pl.freedAdrift || 0) + s.cargo.people; toast('They raise a black rag and sail for the open sea.'); closePanel(); }, true]);
+    btns.push(['LET THEM SAIL FREE', () => {
+      s.gone = true; pl.freed += s.cargo.people; creditFreed(s.cargo.bound, s.cargo.people);
+      toast('They raise a black rag and sail for the open sea.'); closePanel();
+    }, true]);
   } else {
     btns.push(['SCUTTLE HER', () => { s.sinking = 0.001; s.cargo = null; closePanel(); toast(`The ${s.name} goes down.`); }, true]);
   }
@@ -1238,7 +1357,11 @@ function takeShip(s){
   const old = makeShip(ship.t.id, ship.x, ship.y, ship.h, 'wreck');
   old.liv = LIVERY.free; old.sinking = 0.001; old.gone = false; old.struck = true;
   ai.push(old);
-  if (s.cargo && s.cargo.people){ pl.people += s.cargo.people; s.cargo.people = 0; }
+  if (s.cargo && s.cargo.people){
+    pl.people += s.cargo.people;
+    if (s.cargo.bound) pl.peopleFor[s.cargo.bound] = (pl.peopleFor[s.cargo.bound] || 0) + s.cargo.people;
+    s.cargo.people = 0;
+  }
   ship.t = s.t; ship.x = s.x; ship.y = s.y; ship.h = s.h; ship.v = s.v; ship.hull = s.hull; ship.rigging = s.rigging;
   ship.wake = [];
   s.gone = true;
@@ -1253,7 +1376,7 @@ function lose(msg){
   setTimeout(() => {
     panel('Lost', `<p>${msg}</p><p>You keep half your gold. Your cargo, people aboard and mercenaries are gone.</p>`, [['START AGAIN', () => {
       dead = false;
-      pl.gold = Math.floor(pl.gold / 2); pl.goods = 0; pl.people = 0; pl.mercs = 0;
+      pl.gold = Math.floor(pl.gold / 2); pl.goods = 0; pl.people = 0; pl.mercs = 0; pl.peopleFor = {};
       Object.assign(ship, makeShip('sloop', home.hx, home.hy - 40, 0, 'player'));
       ship.crew = 20; ship.set = 1; ship.sail = 0.42;
       setSail(1);
@@ -1266,7 +1389,18 @@ function lose(msg){
 // ---------------------------------------------------------------- ports
 function portMenu(P){
   if (P.f !== 'free'){
-    panel(P.name, '<p>An imperial port. Red flags on the fort, guns on the walls, and in the market square, chains.</p><p>Not yet.</p>', [['CAST OFF', closePanel]]);
+    const F = P.fort, u = unrest(P);
+    const rows = [
+      ['Garrison', P.crew], ['Unrest', `${Math.round(u * 100)}%`], ['Fit to fight', defenders(P)],
+      ['Fort', F.hp > 0 ? `${F.guns} guns, walls ${Math.round(100 * F.hp / F.max)}%` : 'silenced'],
+      ['Your force', `${ship.crew} crew + ${pl.mercs} mercenaries`],
+    ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+    const btns = [];
+    if (F.hp <= 0) btns.push([`LAND THE CREW`, () => storm(P), true]);
+    btns.push(['CAST OFF', closePanel]);
+    panel(P.name, `<p>An imperial port. Red flags on the fort, and in the market square, chains.</p><table>${rows}</table>
+      <p class="help">${F.hp > 0 ? 'Silence the fort with your broadsides, then land your crew. ' : 'The fort is silent. Land your crew before they repair the walls. '}
+      Every captive bound for ${P.name} that you set free stirs unrest and thins the garrison.${u >= 1 ? ' The town is ready to rise with you.' : ''}</p>`, btns);
     return;
   }
   const t = ship.t;
@@ -1283,8 +1417,9 @@ function portMenu(P){
   if (pl.people > 0) btns.push([`BRING ${pl.people} ASHORE`, () => {
     const join = Math.min(Math.round(pl.people * 0.3), Math.max(0, t.crew - ship.crew));
     pl.freed += pl.people; ship.crew += join;
-    toast(`${pl.people} people walk free in Libertalia.${join ? ` ${join} sign on as crew.` : ''}`);
-    pl.people = 0; sfx.cheer(); portMenu(P);
+    toast(`${pl.people} people walk free in ${P.name}.${join ? ` ${join} sign on as crew.` : ''}`);
+    for (const k in pl.peopleFor) creditFreed(k, pl.peopleFor[k]);
+    pl.people = 0; pl.peopleFor = {}; sfx.cheer(); portMenu(P);
   }, true]);
   if (pl.goods > 0) btns.push([`SELL CARGO +${sell}`, () => { pl.gold += sell; pl.goods = 0; sfx.coins(); portMenu(P); }]);
   if (repairCost > 0) btns.push([`REPAIR -${Math.min(repairCost, pl.gold)}`, () => {
@@ -1294,7 +1429,7 @@ function portMenu(P){
   if (hireN > 0 && pl.gold >= hireCost) btns.push([`HIRE ${hireN} SAILORS -${hireCost}`, () => { pl.gold -= hireCost; ship.crew += hireN; portMenu(P); }]);
   if (mercN > 0 && pl.gold >= mercCost) btns.push([`HIRE ${mercN} MERCENARIES -${mercCost}`, () => { pl.gold -= mercCost; pl.mercs += mercN; portMenu(P); }]);
   btns.push(['CAST OFF', () => { closePanel(); save(); }]);
-  panel(P.name, `<p>The free port. No chains are sold here.</p><table>${rows}</table>`, btns);
+  panel(P.name, `<p>${P === home ? 'The free port. No chains are sold here.' : 'Liberated. The old fort flies the black flag now.'}</p><table>${rows}</table>`, btns);
 }
 
 // ---------------------------------------------------------------- simulation
@@ -1350,6 +1485,7 @@ function update(dt){
     }
   }
   ai = ai.filter(s => !s.gone);
+  for (const P of empirePorts) fortStep(P, dt);
   spawnT -= dt;
   if (spawnT <= 0){ spawnT = 20; populate(false); }
 
@@ -1362,8 +1498,14 @@ function update(dt){
   // cannonballs
   for (const b of balls){
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+    if (b.owner === ship) for (const P of empirePorts){
+      const F = P.fort;
+      if (F.hp > 0 && Math.abs(b.x - F.x) < 14 && Math.abs(b.y - F.y) < 14){ b.life = -1; b.hit = true; hitFort(P, b); break; }
+    }
+    if (b.hit) continue;
     for (const s of all){
       if (s === b.owner || s.sinking || (s === ship && dead)) continue;
+      if (b.owner.fort && s !== ship) continue;
       const dx = b.x - s.x, dy = b.y - s.y;
       if (Math.abs(dx) > s.t.L || Math.abs(dy) > s.t.L) continue;
       const lx = dx * Math.cos(s.h) + dy * Math.sin(s.h), ly = -dx * Math.sin(s.h) + dy * Math.cos(s.h);
@@ -1389,7 +1531,7 @@ function update(dt){
   shake = Math.max(0, shake - dt * 3);
 
   // fight zoom: pull the camera back when ships are close
-  const fight = !dead && ai.some(s => !s.sinking && dist(s, ship) < 430);
+  const fight = !dead && (ai.some(s => !s.sinking && dist(s, ship) < 430) || empirePorts.some(P => P.fort.hp > 0 && dist(P.fort, ship) < 400));
   zoom += ((fight ? fightZoom() : 1) - zoom) * Math.min(1, dt * 1.2);
   const zq = Math.round(zoom * 40) / 40;
   if (zq !== zoomQ){ zoomQ = zq; layout(); }
@@ -1408,8 +1550,9 @@ function update(dt){
     actBtn.textContent = boardTarget.struck ? `BOARD HER` : `BOARD THE ${plain(boardTarget.t.name)}!`;
     actBtn.className = 'px board';
   } else if (nearPort){
-    actBtn.textContent = `MAKE PORT: ${plain(nearPort.name)}`;
-    actBtn.className = 'px';
+    const P = nearPort;
+    actBtn.textContent = P.f === 'free' ? `MAKE PORT: ${plain(P.name)}` : P.fort.hp > 0 ? `SCOUT ${plain(P.name)}` : `STORM ${plain(P.name)}!`;
+    actBtn.className = P.f !== 'free' && P.fort.hp <= 0 ? 'px board' : 'px';
   } else actBtn.className = 'px hidden';
 
   bakeChartRows(4);
@@ -1784,17 +1927,28 @@ function render(){
 function drawLabels(){
   const g = ctx;
   g.setTransform(1, 0, 0, 1, 0, 0);
-  for (const s of ai){
-    if (s.sinking || dist(s, ship) > 650 || onScreen(s.x, s.y, -4)) continue;
+  const marks = ai.filter(s => !s.sinking).map(s => [s, s.struck ? C.sail : hostile(s) ? '#ff8f7a' : C.gold])
+    .concat(empirePorts.filter(P => P.fort.hp > 0).map(P => [P.fort, '#ff8f7a']));
+  for (const [s, col] of marks){
+    if (dist(s, ship) > 650 || onScreen(s.x, s.y, -4)) continue;
     const dx = s.x / MPP - ox - LW / 2, dy = s.y / MPP - oy - LH / 2;
     const k = Math.min((LW / 2 - 6) / Math.abs(dx || 1e-6), (LH / 2 - 6) / Math.abs(dy || 1e-6));
     const ex = LW / 2 + dx * k, ey = LH / 2 + dy * k, a = Math.atan2(dy, dx);
-    const col = s.struck ? C.sail : hostile(s) ? '#ff8f7a' : C.gold;
     for (let i = 0; i < 5; i++){
       const w = 4 - i;
       pline(g, ex - Math.cos(a) * i - Math.sin(a) * w / 2 * 1.4, ey - Math.sin(a) * i + Math.cos(a) * w / 2 * 1.4,
                ex - Math.cos(a) * i + Math.sin(a) * w / 2 * 1.4, ey - Math.sin(a) * i - Math.cos(a) * w / 2 * 1.4, col);
     }
+  }
+  for (const P of empirePorts){
+    const F = P.fort;
+    if (dist(F, ship) > 420 || !onScreen(F.x, F.y, 0)) continue;
+    const sx = Math.round(F.x / MPP - ox), sy = Math.round(F.y / MPP - oy - 26);
+    const nm = F.hp > 0 ? `Fort ${P.name}` : 'Silenced';
+    drawText(g, nm, clamp(sx, textWidth(nm) / 2 + 2, LW - textWidth(nm) / 2 - 2) - textWidth(nm) / 2, sy, F.hp > 0 ? '#ff8f7a' : C.sail, 1, C.navy);
+    const w = 24, f = clamp(F.hp / F.max, 0, 1);
+    g.fillStyle = C.navy; g.fillRect(sx - w / 2 - 1, sy + 7, w + 2, 4);
+    g.fillStyle = f > 0.5 ? C.green : f > 0.25 ? C.gold : C.red; g.fillRect(sx - w / 2, sy + 8, Math.round(w * f), 2);
   }
   for (const s of ai){
     if (s.sinking || dist(s, ship) > 420 || !onScreen(s.x, s.y, 0)) continue;
@@ -1935,7 +2089,7 @@ function renderMap(){
   g.fillStyle = C.ink; g.fillRect(4, 6, tw + 8, 1); g.fillRect(4, 16, tw + 8, 1);
   drawText(g, title, 8, 9, C.ink);
   drawText(g, `Wind here: ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`, 6, LH - 18, C.ink, 1, C.parch);
-  drawText(g, `Freed: ${pl.freed}   Prizes: ${pl.prizes}`, 6, LH - 10, C.ink, 1, C.parch);
+  drawText(g, `Freed: ${pl.freed}   Free ports: ${ports.length - empirePorts.length}/${ports.length}`, 6, LH - 10, C.ink, 1, C.parch);
 }
 
 // ---------------------------------------------------------------- input
@@ -2115,7 +2269,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__game = { ship, pl, ai: () => ai, isles, ports, fog, openMap, closeMap, setSail, fire, board, spawn, TYPES, makeShip, LIVERY, ROLE_NAME, cargoFor, route };
+window.__game = { ship, pl, storm, liberate, unrest, defenders, creditFreed, ai: () => ai, isles, ports, fog, openMap, closeMap, setSail, fire, board, spawn, TYPES, makeShip, LIVERY, ROLE_NAME, cargoFor, route };
 })();
 </script>
 </body>
