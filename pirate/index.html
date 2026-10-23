@@ -834,7 +834,16 @@ function makeShip(type, x, y, h, role){
 // ---------------------------------------------------------------- game state
 const ship = makeShip('sloop', home.hx, home.hy - 40, 0, 'player');
 ship.set = 1; ship.sail = 0.42; ship.crew = 24;
-const pl = { gold: 100, goods: 0, arms: 0, mercs: 0, people: 0, freed: 0, prizes: 0, liberated: 0, peopleFor: {} };
+const pl = { gold: 100, goods: 0, arms: 0, mercs: 0, people: 0, freed: 0, prizes: 0, liberated: 0, peopleFor: {}, bounty: 0 };
+// Libertalia pays a bounty for every imperial ship sent to the bottom, claimed in any free port
+const BOUNTY = { sloop: 30, fluyt: 40, brig: 60, frigate: 140, galleon: 200 };
+function earnBounty(s){
+  if (!s || s === ship || s.role === 'wreck') return;
+  const v = Math.round((BOUNTY[s.t.id] || 40) * (hostile(s) ? 1.5 : 1) * (s.role === 'treasure' ? 1.5 : 1) / 5) * 5;
+  pl.bounty += v;
+  toast(`Bounty: ${v} gold, paid in any free port.`);
+  sfx.coins();
+}
 const fog = new Uint8Array(GW * GH);
 let ai = [];
 let T = 0;
@@ -1262,6 +1271,7 @@ function hitShip(s, b){
     else {
       const ppl = s.cargo && s.cargo.people;
       toast(ppl ? `The ${s.name} goes down, and ${ppl} people in chains with her.` : `The ${s.name} goes down!`);
+      if (b.owner === ship) earnBounty(s);
     }
   }
 }
@@ -1455,7 +1465,7 @@ function prizeChoice(s, html, peopleKeep){
       toast('They raise a black rag and sail for the open sea.'); closePanel();
     }, true]);
   } else {
-    btns.push(['SCUTTLE HER', () => { s.sinking = 0.001; s.cargo = null; closePanel(); toast(`The ${s.name} goes down.`); }, true]);
+    btns.push(['SCUTTLE HER', () => { s.sinking = 0.001; s.cargo = null; closePanel(); toast(`The ${s.name} goes down.`); earnBounty(s); }, true]);
   }
   panel(`The ${s.name} is taken`, (html.startsWith('<') ? html : `<p>${html}</p>`) + keepTxt, btns);
 }
@@ -1539,6 +1549,7 @@ const GUIDE = [
     <li>Damage a merchant badly and she <b>strikes her colours</b>: a white flag, and she stops.</li>
     <li>Come alongside, slower than 3.5 knots, and press <b>BOARD</b>. Mercenaries and muskets help a lot.</li>
     <li>Then plunder the hold, or take the captives home to a free port. Keep the ship, or scuttle her.</li>
+    <li>Every imperial ship you sink earns a <b>bounty</b>, navy ships the most. Claim it in any free port.</li>
     <li>Sinking a slaver drowns everyone chained below. Board her instead.</li></ol>`],
   ['Freeing the islands', () => `
     <ol><li>Every imperial port has a <b>fort</b> and a <b>garrison</b>. <b>SCOUT</b> it from the harbour to see them.</li>
@@ -1585,7 +1596,7 @@ function portMenu(P){
   const mercMax = Math.floor((ship.crew + 10) / 2);
   const mercN = Math.min(5, mercMax - pl.mercs), mercCost = mercN * 30;
   const rows = [
-    ['Gold', pl.gold], ['Hull', `${Math.round(ship.hull)}/${t.hull}`], ['Crew', `${ship.crew}/${t.crew}`],
+    ['Gold', pl.gold], ['Bounty owed', pl.bounty], ['Hull', `${Math.round(ship.hull)}/${t.hull}`], ['Crew', `${ship.crew}/${t.crew}`],
     ['Mercenaries', pl.mercs], ['Muskets', pl.arms], ['Cargo', `${pl.goods} barrels`], ['People aboard', pl.people], ['Freed so far', pl.freed],
   ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
   const btns = [];
@@ -1596,6 +1607,7 @@ function portMenu(P){
     for (const k in pl.peopleFor) creditFreed(k, pl.peopleFor[k]);
     pl.people = 0; pl.peopleFor = {}; sfx.cheer(); portMenu(P);
   }, true]);
+  if (pl.bounty > 0) btns.push([`CLAIM BOUNTY +${pl.bounty}`, () => { pl.gold += pl.bounty; pl.bounty = 0; sfx.coins(); portMenu(P); }, true]);
   if (pl.goods > 0) btns.push([`SELL CARGO +${sell}`, () => { pl.gold += sell; pl.goods = 0; sfx.coins(); portMenu(P); }]);
   if (repairCost > 0) btns.push([`REPAIR -${Math.min(repairCost, pl.gold)}`, () => {
     const pay = Math.min(repairCost, pl.gold), f = pay / repairCost;
@@ -1777,7 +1789,7 @@ function updHud(){
   hudEl.wind.textContent = `Wind ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`;
   hudEl.hull.textContent = `${ship.t.name} ${Math.round(100 * ship.hull / ship.t.hull)}%  ${SAIL_NAMES[ship.set]}`;
   hudEl.hint.textContent = sailHint(rel, twa);
-  hudEl.purse.textContent = `Gold ${pl.gold}  Crew ${ship.crew}${pl.mercs ? '+' + pl.mercs : ''}  Hold ${pl.goods + pl.people}/${ship.t.hold}`;
+  hudEl.purse.textContent = `Gold ${pl.gold}${pl.bounty ? ' (+' + pl.bounty + ' bounty)' : ''}  Crew ${ship.crew}${pl.mercs ? '+' + pl.mercs : ''}  Hold ${pl.goods + pl.people}/${ship.t.hold}`;
 }
 function setSail(s){
   s = clamp(s, 0, 3);
