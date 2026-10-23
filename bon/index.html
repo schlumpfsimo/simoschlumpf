@@ -91,6 +91,13 @@ details p{margin:8px 0}
       <button data-c="1" aria-pressed="true">ja</button>
       <button data-c="0" aria-pressed="false">nein</button>
     </div>
+    <label>Bildbefehl</label>
+    <div class="seg" id="mode">
+      <button data-m="col" aria-pressed="true">Spalten</button>
+      <button data-m="raster" aria-pressed="false">Raster</button>
+    </div>
+    <label>Test</label>
+    <div class="seg"><button id="testBtn" class="ghost">Testbon drucken</button></div>
   </section>
 
   <details>
@@ -98,6 +105,7 @@ details p{margin:8px 0}
     <p>Läuft in Chrome oder Edge am Computer und in Chrome auf Android (mit USB-OTG-Adapter). Safari und iPhone können nicht direkt auf USB-Geräte zugreifen.</p>
     <p>Der Drucker muss ESC/POS verstehen (Epson TM, Xprinter, Munbyn, Rongta …). Das Bild verlässt das Gerät nie: Es wird im Browser umgerechnet, direkt an den Drucker geschickt und danach verworfen.</p>
     <p>Windows: Wenn »Drucker verbinden« ihn nicht öffnen kann, hat der Windows-Druckertreiber ihn belegt. Dann mit <a href="https://zadig.akeo.ie/" target="_blank" rel="noopener">Zadig</a> den Treiber auf WinUSB umstellen, oder »Seriell« versuchen, falls der Drucker als COM-Port erscheint.</p>
+    <p>Zeichensalat statt Bild: Den anderen »Bildbefehl« wählen und den Testbon drucken. Er zeigt oben Text und darunter ein Schachbrett. Kommt der Text sauber und nur das Schachbrett falsch, liegt es am Bildbefehl.</p>
     <p>Linux: Eventuell muss das Kernel-Modul <code>usblp</code> entladen werden.</p>
   </details>
 </main>
@@ -110,7 +118,7 @@ const store = {
 };
 
 // ---------------------------------------------------------------- Einstellungen
-const opts = { width: +store.get('width', 576), bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', cut: store.get('cut', '1') === '1' };
+const opts = { width: +store.get('width', 576), bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', cut: store.get('cut', '1') === '1', mode: store.get('mode', 'col') };
 
 function seg(id, attr, current, apply){
   const box = $(id);
@@ -123,6 +131,7 @@ function seg(id, attr, current, apply){
 }
 seg('width', 'w', () => opts.width, v => { opts.width = +v; store.set('width', v); });
 seg('rotate', 'r', () => opts.rotate ? 1 : 0, v => { opts.rotate = v === '1'; store.set('rotate', v); });
+seg('mode', 'm', () => opts.mode, v => { opts.mode = v; store.set('mode', v); });
 seg('cut', 'c', () => opts.cut ? 1 : 0, v => { opts.cut = v === '1'; store.set('cut', v); });
 $('bright').value = opts.bright;
 $('bright').addEventListener('input', e => { opts.bright = +e.target.value; store.set('bright', e.target.value); });
@@ -137,6 +146,8 @@ function showState(){
 
 // ---------------------------------------------------------------- Drucker: WebUSB oder Web Serial
 let printer = null;
+// Kleine Häppchen mit Pause: Günstige Drucker verlieren sonst Daten, und der Rest kommt als Zeichensalat heraus
+const CHUNK = 512, pause = () => new Promise(r => setTimeout(r, 8));
 
 // Der Drucker wird nur während des Drucks belegt, damit der Mac (POS80-Warteschlange, Bon-Post) ihn weiter nutzen kann
 async function openUsb(device){
@@ -164,7 +175,7 @@ async function openUsb(device){
       try {
         await device.claimInterface(pick.iface);
         if (pick.alt) await device.selectAlternateInterface(pick.iface, pick.alt);
-        for (let i = 0; i < data.length; i += 4096) await device.transferOut(pick.ep, data.subarray(i, i + 4096));
+        for (let i = 0; i < data.length; i += CHUNK) { await device.transferOut(pick.ep, data.subarray(i, i + CHUNK)); await pause(); }
         await device.releaseInterface(pick.iface).catch(() => {});
       } finally {
         await device.close().catch(() => {});
@@ -180,7 +191,7 @@ async function openSerial(port){
   return {
     name: 'Serieller Drucker',
     async write(data){
-      for (let i = 0; i < data.length; i += 1024) await writer.write(data.subarray(i, i + 1024));
+      for (let i = 0; i < data.length; i += CHUNK) { await writer.write(data.subarray(i, i + CHUNK)); await pause(); }
     },
     is: p => p === port,
   };
@@ -271,19 +282,51 @@ async function rasterize(file){
   return { W, H, bits };
 }
 
-// ESC/POS: Init, Raster in Streifen (GS v 0), Vorschub, Schnitt
+// ESC/POS: Init, Bild, Vorschub, Schnitt.
+// »Spalten« (ESC * 33, 24 Punkte hoch) versteht fast jeder Drucker, »Raster« (GS v 0) ist schneller.
 function escpos({ W, H, bits }){
-  const bpr = W >> 3, band = 128, parts = [Uint8Array.of(0x1b, 0x40)];
-  for (let y = 0; y < H; y += band) {
-    const h = Math.min(band, H - y);
-    parts.push(Uint8Array.of(0x1d, 0x76, 0x30, 0, bpr & 255, bpr >> 8, h & 255, h >> 8));
-    parts.push(bits.subarray(y * bpr, (y + h) * bpr));
+  const bpr = W >> 3, parts = [Uint8Array.of(0x1b, 0x40)];
+  if (opts.mode === 'raster') {
+    for (let y = 0; y < H; y += 128) {
+      const h = Math.min(128, H - y);
+      parts.push(Uint8Array.of(0x1d, 0x76, 0x30, 0, bpr & 255, bpr >> 8, h & 255, h >> 8));
+      parts.push(bits.subarray(y * bpr, (y + h) * bpr));
+    }
+  } else {
+    parts.push(Uint8Array.of(0x1b, 0x33, 24));   // Zeilenabstand = Streifenhöhe, keine Lücken
+    const dot = (x, y) => y < H && (bits[y * bpr + (x >> 3)] & (0x80 >> (x & 7)));
+    for (let y = 0; y < H; y += 24) {
+      const line = new Uint8Array(5 + W * 3 + 1);
+      line.set([0x1b, 0x2a, 33, W & 255, W >> 8]);
+      for (let x = 0; x < W; x++)
+        for (let k = 0; k < 3; k++) {
+          let v = 0;
+          for (let b = 0; b < 8; b++) if (dot(x, y + k * 8 + b)) v |= 0x80 >> b;
+          line[5 + x * 3 + k] = v;
+        }
+      line[line.length - 1] = 0x0a;
+      parts.push(line);
+    }
+    parts.push(Uint8Array.of(0x1b, 0x32));   // Zeilenabstand zurück
   }
   parts.push(Uint8Array.of(0x1b, 0x64, 6));   // 6 Zeilen Vorschub, damit der Schnitt etwas unter dem Bild liegt
   if (opts.cut) parts.push(Uint8Array.of(0x1d, 0x56, 66, 0));
+  return join(parts);
+}
+
+function join(parts){
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
   return out;
+}
+
+// Testbon: Text, dann ein Schachbrett im gewählten Bildbefehl
+function testbon(){
+  const W = opts.width, H = 48, bpr = W >> 3, bits = new Uint8Array(bpr * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+    if (((x >> 3) + (y >> 3)) & 1) bits[y * bpr + (x >> 3)] |= 0x80 >> (x & 7);
+  const text = new TextEncoder().encode(`\x1b@BON TEST\nBildbefehl: ${opts.mode === 'raster' ? 'Raster' : 'Spalten'}\n\n`);
+  return join([text, escpos({ W, H, bits })]);
 }
 
 // ---------------------------------------------------------------- Ablauf: wählen -> drucken -> löschen
@@ -327,6 +370,14 @@ function setPreview(on){
 }
 
 $('file').addEventListener('change', e => add(e.target.files));
+$('testBtn').addEventListener('click', async () => {
+  if (!printer) return say('Zuerst Drucker verbinden.', 'err');
+  if (busy) return;
+  busy = true;
+  try { say('Drucke Testbon …'); await printer.write(testbon()); say('Testbon gedruckt.', 'ok'); }
+  catch (e) { say(usbError(e), 'err'); }
+  finally { busy = false; }
+});
 const drop = $('drop');
 ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
