@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · TEXT</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<style>
+/* Text-Bon über die Bon-Post, Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+main{padding-top:14px;padding-bottom:40px;display:flex;flex-direction:column;gap:6px}
+label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input,textarea{font:inherit;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%}
+input:focus,textarea:focus{outline:2px solid #000;outline-offset:-1px}
+textarea{min-height:42vh;resize:vertical;line-height:1.35}
+.hint{min-height:1.45em;margin:0;font-size:.78rem;color:var(--muted)}
+.hint.warn{color:#000}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="brand" href="../">BON<span>Text · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <label for="titel">Titel (optional)</label>
+  <input id="titel" autocomplete="off" enterkeyhint="next">
+  <label for="text">Text</label>
+  <textarea id="text" spellcheck="true"></textarea>
+  <p class="hint" id="hint">48 Zeichen pro Zeile</p>
+  <button id="drucken">Drucken</button>
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 48;
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+
+// Zeilen über 48 Zeichen nur melden, nicht abschneiden: Den Umbruch macht der Drucker
+function pruefen(){
+  const lang = $('text').value.split('\n').filter(z => [...z].length > BREITE).length;
+  $('hint').textContent = lang ? `${lang} Zeile${lang > 1 ? 'n' : ''} über ${BREITE} Zeichen, wird umbrochen` : `${BREITE} Zeichen pro Zeile`;
+  $('hint').className = 'hint' + (lang ? ' warn' : '');
+}
+$('text').addEventListener('input', () => { pruefen(); if ($('msg').classList.contains('err')) msg(''); });
+
+// Der Titel wird als Kopfzeile in den Text gesetzt, denn die Bon-Post druckt nur den Inhalt
+function inhalt(){
+  const titel = $('titel').value.trim(), text = $('text').value.replace(/\s+$/, '');
+  return (titel ? titel.toUpperCase() + '\n' + '-'.repeat(BREITE) + '\n' : '') + text + '\n';
+}
+
+$('drucken').addEventListener('click', async () => {
+  if (!$('text').value.trim() && !$('titel').value.trim()) { msg('Text fehlt.', 'err'); $('text').focus(); return; }
+  $('drucken').disabled = true;
+  msg('Sende …');
+  try {
+    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, format: 'text', quelle: 'website', titel: $('titel').value.trim(), inhalt: inhalt() }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+    $('titel').value = ''; $('text').value = ''; pruefen();
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+</script>
+</body>
+</html>
