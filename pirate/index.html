@@ -1916,11 +1916,6 @@ function update(dt){
   shake = Math.max(0, shake - dt * 3);
 
   // fight zoom: pull the camera back when ships are close
-  const R = fightOn ? 560 : 430;
-  fightOn = !dead && (ai.some(s => !s.sinking && dist(s, ship) < R) || empirePorts.some(P => P.fort.hp > 0 && dist(P.fort, ship) < R - 30));
-  // art pixels stay a whole number of screen pixels, so nothing shimmers while scrolling
-  const zq = fightOn ? Math.max(2, Math.round(PX * fightZoom())) / PX : 1;
-  if (zq !== zoomQ){ zoomQ = zq; layout(); }
 
   discT -= dt;
   if (discT <= 0){ discT = 0.4; discover(); }
@@ -2067,6 +2062,9 @@ function layout(){
   const dpr = window.devicePixelRatio || 1;
   const Wd = innerWidth * dpr, Hd = viewH() * dpr;
   PX = Math.max(1, Math.round(Math.max(Wd, Hd) / 420));
+  // the sea view is always zoomed out far enough to see a ship at gun range across the short side of the screen;
+  // art pixels stay a whole number of screen pixels, so nothing shimmers while scrolling
+  zoomQ = Math.max(2, Math.round(PX * fightZoom())) / PX;
   const z = mapOpen ? 1 : zoomQ, pz = PX * z;
   LW = Math.ceil(Wd / pz) + 2; LH = Math.ceil(Hd / pz) + 2;
   lo.width = spr.width = LW; lo.height = spr.height = LH;
