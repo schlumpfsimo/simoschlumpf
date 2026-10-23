@@ -281,7 +281,7 @@ function escpos({ W, H, bits }){
     parts.push(Uint8Array.of(0x1d, 0x76, 0x30, 0, bpr & 255, bpr >> 8, h & 255, h >> 8));
     parts.push(bits.subarray(y * bpr, (y + h) * bpr));
   }
-  parts.push(Uint8Array.of(0x1b, 0x64, 4));
+  parts.push(Uint8Array.of(0x1b, 0x64, 6));   // 6 Zeilen Vorschub, damit der Schnitt etwas unter dem Bild liegt
   if (opts.cut) parts.push(Uint8Array.of(0x1d, 0x56, 66, 0));
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
