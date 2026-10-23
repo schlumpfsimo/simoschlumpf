@@ -12,6 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
   <style>
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html,body{
@@ -62,7 +65,7 @@
     }
     #toast.on{ opacity:1; }
 
-    #left,#right{ position:absolute; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
+    #left,#right{ position:absolute; bottom:calc(16px + env(safe-area-inset-bottom) + var(--lift, 0px)); display:flex; gap:12px; }
     #left{ left:calc(12px + env(safe-area-inset-left)); flex-direction:column; align-items:flex-start; }
     #right{ right:calc(12px + env(safe-area-inset-right)); flex-direction:column; align-items:flex-end; }
 
@@ -244,7 +247,8 @@
       You cannot sail closer than about 45 degrees to the wind.<br>
       Come alongside a ship slowly to board her.<br>
       Keys: A/D helm, W/S sails, Q/E fire, B board, M chart.<br>
-      INFO (top right) explains sailing, fighting and freeing the islands.</p>
+      INFO (top right) explains sailing, fighting and freeing the islands.<br>
+      Controls cut off at the bottom? INFO, SETTINGS, CONTROLS UP. Or add the game to your home screen.</p>
     <button class="px" id="btnStart">SET SAIL</button>
     <button class="px hidden" id="btnNew">NEW VOYAGE</button>
   </div>
@@ -1704,8 +1708,27 @@ const GUIDE = [
     <li>Then <b>STORM</b> the port with your crew.</li>
     <li>Free every port and the sea is free.</li></ol>`],
   ['Settings', () => `
-    <p>Sound: <b>${['music and effects', 'effects only', 'off'][sfx.mode]}</b></p>`],
+    <p>Sound: <b>${['music and effects', 'effects only', 'off'][sfx.mode]}</b></p>
+    <p>Controls lifted: <b>${LIFTS[lift]} px</b>. Use this if a browser bar covers the helm or the sail lever.</p>
+    <p class="help">Best of all: open the browser menu and choose <b>Add to Home screen</b>. Libertalia then opens full screen, without any browser bars.</p>`],
 ];
+// lift the bottom controls clear of browser bars that overlay the page (DuckDuckGo, some Samsung setups)
+const LIFTS = [0, 40, 70, 100];
+let lift = 0;
+try { lift = +(localStorage.getItem('libertalia-lift') || 0) % LIFTS.length; } catch (e){}
+function setLift(k){
+  lift = k;
+  document.documentElement.style.setProperty('--lift', LIFTS[lift] + 'px');
+  try { localStorage.setItem('libertalia-lift', lift); } catch (e){}
+}
+setLift(lift);
+function toggleFull(){
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  } catch (e){}
+}
+document.addEventListener('fullscreenchange', () => setTimeout(layout, 100));
 function guide(i){
   const [title, body] = GUIDE[i];
   const btns = [];
@@ -1713,7 +1736,9 @@ function guide(i){
   if (i < GUIDE.length - 1) btns.push(['NEXT >', () => { sfx.tap(); guide(i + 1); }]);
   if (i === GUIDE.length - 1){
     btns.push(['SOUND', () => { sfx.cycle(); guide(i); }]);
-  }
+    btns.push(['CONTROLS UP', () => { setLift((lift + 1) % LIFTS.length); sfx.tap(); guide(i); }]);
+    if (document.fullscreenEnabled) btns.push([document.fullscreenElement ? 'LEAVE FULL SCREEN' : 'FULL SCREEN', () => { toggleFull(); setTimeout(() => guide(i), 300); }]);
+  } else btns.push(['SETTINGS', () => { sfx.tap(); guide(GUIDE.length - 1); }]);
   btns.push(['CLOSE', () => { sfx.tap(); closePanel(); }, true]);
   panel(title, `<div class="guide">${body()}</div><div class="dots">${GUIDE.map((_, k) => k === i ? '#' : '.').join('')}</div>`, btns);
 }
@@ -3473,6 +3498,8 @@ discover();
 populate(true);
 el('btnStart').addEventListener('click', () => {
   sfx.init();
+  // on phones, go full screen where the browser allows it: no address bar over the controls
+  if (matchMedia('(pointer: coarse)').matches && document.fullscreenEnabled && !document.fullscreenElement && !matchMedia('(display-mode: fullscreen)').matches) toggleFull();
   el('title').classList.add('hidden');
   el('hud').classList.remove('hidden');
   started = true;
