@@ -8,33 +8,56 @@
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
 <style>
-/* Startseite der Bon-Apps, Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+/* Startseite der Bon-Apps, Stil wie Turbo: weiss, schwarz, Monospace, keine Rundungen, keine Schatten */
 :root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; color-scheme:light }
 *{box-sizing:border-box}
 html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
-header.top{border-bottom:1px solid #000}
-.topbar,main{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.topbar{padding-top:8px;padding-bottom:8px}
-.brand{font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1400px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{font-weight:700;letter-spacing:.15em;white-space:nowrap;text-transform:uppercase}
 .brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
-main{padding-top:14px;padding-bottom:40px;display:flex;flex-direction:column;gap:10px}
-a.app{display:block;border:1px solid #000;padding:16px;color:#000;text-decoration:none}
-a.app:hover,a.app:focus-visible{background:#000;color:#fff;outline:none}
-a.app b{display:block;font-size:1rem;text-transform:uppercase;letter-spacing:.1em}
-.app.soon{color:var(--muted);border-style:dashed}
-.app{display:block;border:1px solid #000;padding:16px}
-.app b{display:block;font-size:1rem;text-transform:uppercase;letter-spacing:.1em}
-.app span{display:block;font-size:.8rem;margin-top:4px}
-a.app span{display:block;font-size:.8rem;margin-top:4px;opacity:.75}
+.count{margin-left:auto;font-size:.78rem;color:var(--muted)}
+main{padding-top:14px;padding-bottom:40px}
+h2{font-size:1rem;margin:0 0 10px;text-transform:uppercase;border-top:1px solid #000;padding-top:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+a.card{display:flex;flex-direction:column;gap:6px;min-height:150px;border:1px solid #000;padding:12px;color:#000;text-decoration:none;background:#fff}
+a.card:hover,a.card:focus-visible{outline:2px solid #000;outline-offset:0}
+a.card:active{background:#000;color:#fff}
+.card .nr{font-size:.7rem;letter-spacing:.04em;color:var(--muted)}
+.card .name{font-weight:700;font-size:1.1rem;text-transform:uppercase;letter-spacing:.1em}
+.card .desc{font-size:.84rem}
+.card .tags{margin-top:auto;display:flex;flex-wrap:wrap;gap:4px}
+.chip{padding:1px 6px;font-size:.7rem;border:1px solid #000;white-space:nowrap}
 </style>
 </head>
 <body>
 <header class="top">
-  <div class="topbar"><div class="brand">BON<span>Apps für den Bondrucker</span></div></div>
+  <div class="topbar">
+    <div class="brand">BON<span>Apps für den Bondrucker</span></div>
+    <span class="count" id="count"></span>
+  </div>
 </header>
 <main>
-  <a class="app" href="text/"><b>Text</b><span>Titel und Text eingeben, über die Bon-Post drucken. Geht auch vom Handy.</span></a>
-  <a class="app" href="bild/"><b>Bild</b><span>Bild wählen, es wird direkt per USB gedruckt und danach gelöscht. Nur in Chrome am Mac.</span></a>
+  <h2>Apps</h2>
+  <div class="grid" id="apps"></div>
 </main>
+<script>
+// Neue App: Ordner bon/<pfad>/ anlegen und hier eine Zeile ergänzen. Reihenfolge = Reihenfolge der Kacheln.
+const APPS = [
+  { pfad: 'text', name: 'Text', desc: 'Titel und Text eingeben und drucken.', tags: ['Bon-Post', 'Handy'] },
+  { pfad: 'bild', name: 'Bild', desc: 'Bild wählen: wird gedruckt und danach gelöscht.', tags: ['USB', 'Chrome am Mac'] },
+];
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+document.getElementById('apps').innerHTML = APPS.map((a, i) => `
+  <a class="card" href="${esc(a.pfad)}/">
+    <span class="nr">${String(i + 1).padStart(2, '0')}</span>
+    <span class="name">${esc(a.name)}</span>
+    <span class="desc">${esc(a.desc)}</span>
+    <span class="tags">${a.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</span>
+  </a>`).join('');
+document.getElementById('count').textContent = APPS.length + ' Apps';
+</script>
 </body>
 </html>
