@@ -12,6 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
   <style>
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html,body{
@@ -31,7 +34,7 @@
       position:absolute; left:50%; top:env(safe-area-inset-top); transform:translateX(-50%);
       image-rendering:pixelated; image-rendering:crisp-edges; pointer-events:none !important;
     }
-    button{ font:inherit; color:inherit; cursor:pointer; }
+    button{ font:inherit; color:inherit; cursor:pointer; touch-action:manipulation; -webkit-touch-callout:none; }
     .px{
       background:#0c2236; border:3px solid #f1e8cf; border-radius:0;
       box-shadow:3px 3px 0 #000a; padding:6px 10px; text-transform:uppercase;
@@ -62,13 +65,11 @@
     }
     #toast.on{ opacity:1; }
 
-    #left,#right{ position:absolute; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
+    #left,#right{ position:absolute; bottom:calc(16px + env(safe-area-inset-bottom) + var(--lift, 0px)); display:flex; gap:12px; }
     #left{ left:calc(12px + env(safe-area-inset-left)); flex-direction:column; align-items:flex-start; }
     #right{ right:calc(12px + env(safe-area-inset-right)); flex-direction:column; align-items:flex-end; }
 
     #fireRow{ display:flex; gap:10px; }
-    .shotb{ width:64px; height:42px; padding:0; font-size:9px; line-height:1.3; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-    .shotb b{ font-weight:normal; font-size:11px; color:#e8b84a; }
     .fire{
       position:relative; width:72px; height:46px; padding:0; background:#3b1a10; overflow:hidden;
       display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; font-size:10px;
@@ -177,7 +178,7 @@
 
 <div class="hud hidden" id="hud">
   <div id="info">
-    <div id="spd">0.0 <small>KN</small></div>
+    <div id="spd"><span id="spdN">0.0</span> <small>KN</small></div>
     <div id="pos">-</div>
     <div class="dim" id="tack">-</div>
     <div class="dim" id="wind">-</div>
@@ -203,7 +204,6 @@
     </div>
   </div>
   <div id="right">
-    <button class="px shotb" id="shotBtn"><span>SHOT</span><b id="shotName">ROUND</b></button>
     <div id="sails">
       <div class="stop" data-s="3">FULL SAIL</div>
       <div class="stop" data-s="2">FIGHTING SAIL</div>
@@ -244,7 +244,8 @@
       You cannot sail closer than about 45 degrees to the wind.<br>
       Come alongside a ship slowly to board her.<br>
       Keys: A/D helm, W/S sails, Q/E fire, B board, M chart.<br>
-      INFO (top right) explains sailing, fighting and freeing the islands.</p>
+      INFO (top right) explains sailing, fighting and freeing the islands.<br>
+      Controls cut off at the bottom? INFO, SETTINGS, CONTROLS UP. Or add the game to your home screen.</p>
     <button class="px" id="btnStart">SET SAIL</button>
     <button class="px hidden" id="btnNew">NEW VOYAGE</button>
   </div>
@@ -265,7 +266,7 @@
 // ---------------------------------------------------------------- constants
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
 const MPP = 0.6;              // metres per art pixel
-const KN = 0.5144 * 6;        // world metres per second per knot (time compressed)
+const KN = 0.5144 * 9;        // world metres per second per knot (time compressed)
 const WW = 16000, WH = 11000; // world size in metres
 const SX = 2 / 3, SY = 0.6875;  // the islands were laid out on a 24 x 16 km chart; the sea is now smaller
 const CELL = 250, GW = WW / CELL, GH = WH / CELL; // discovery and navigation grid
@@ -275,16 +276,8 @@ const CPX = 40;               // chart: metres per chart pixel
 const CW = WW / CPX, CH = WH / CPX;
 const SAIL_NAMES = ['Furled', 'Reefed', 'Fighting sail', 'Full sail'];
 const SAIL_AREA = [0, 0.42, 0.7, 1];
-const RELOAD = 4.5, BALL_SPEED = 95, GUN_RANGE = 160;
+const RELOAD = 4.5, BALL_SPEED = 120, GUN_RANGE = 200;
 const SAVE_KEY = 'libertalia-v3';
-// round shot smashes hulls, chain shot cuts rigging, grape shot sweeps the decks
-const SHOT = {
-  round: { name: 'Round', range: 1,    hull: 1,    crew: 1,   rig: 0.04 },
-  chain: { name: 'Chain', range: 0.75, hull: 0.25, crew: 0.5, rig: 0.09 },
-  grape: { name: 'Grape', range: 0.6,  hull: 0.2,  crew: 3,   rig: 0.01 },
-};
-const SHOTS = ['round', 'chain', 'grape'];
-let shotType = 'round';
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -547,20 +540,7 @@ function windAt(x, y, t, lee = true){
     if (land(x + sx * 300, y + sy * 300)) spd *= 0.68;
     if (land(x + sx * 650, y + sy * 650)) spd *= 0.85;
   }
-  const q = squalls.length ? squallAt(x, y) : 0;
-  if (q) return { dir: dir + q * 0.35 * Math.sin(t * 0.7 + x * 0.001), spd: Math.max(1.5, spd) * (1 + q * 0.9) + q * 4 * vnoise(t * 0.8, x * 0.003, 17), squall: q };
   return { dir, spd: Math.max(1.5, spd) };
-}
-
-// squalls: dark cells that drift downwind, with stronger, shifting wind and rain
-let squalls = [];
-function squallAt(x, y){
-  let k = 0;
-  for (const q of squalls){
-    const d = Math.hypot(x - q.x, y - q.y);
-    if (d < q.r) k = Math.max(k, Math.sqrt(1 - d / q.r) * q.f);
-  }
-  return k;
 }
 
 // ---------------------------------------------------------------- navigation grid and routes
@@ -618,6 +598,18 @@ function astar(a, b){
   const out = [];
   for (let n = b; n >= 0; n = from[n]) out.push(n);
   return out.reverse().map(n => [(n % GW + 0.5) * CELL, (((n / GW) | 0) + 0.5) * CELL]);
+}
+// string pulling: drop waypoints that can be skipped in a straight line over open water
+function pull(pts){
+  const out = [pts[0]];
+  let i = 0;
+  while (i < pts.length - 1){
+    let j = pts.length - 1;
+    while (j > i + 1 && !clearLine(pts[i][0], pts[i][1], pts[j][0], pts[j][1])) j--;
+    out.push(pts[j]);
+    i = j;
+  }
+  return out;
 }
 const routeCache = new Map();
 function route(P, Q){
@@ -834,6 +826,7 @@ for (const k in TYPES){
   const t = TYPES[k];
   t.id = k;
   t.gunY = Array.from({ length: t.guns }, (_, i) => t.guns === 1 ? 0 : -0.28 + 0.56 * i / (t.guns - 1));
+  t.turn *= 1.35; // brisker helm: the game is about manoeuvre, not waiting
 }
 function polar(t, twa){
   const P = POLARS[t.polar];
@@ -862,6 +855,7 @@ function makeShip(type, x, y, h, role){
     t, x, y, h, v: 0, turn: 0, rudder: 0, set: 3, sail: 1, hull: t.hull, crew: t.crew, rigging: 1,
     reload: [0, 0], aw: { rel: 0, awa: 0, toward: 0 }, wind: { dir: 0, spd: 10 }, role,
     wake: [], wakeT: 0, seed: seedN++ * 1.7, sinking: 0, struck: false,
+    laden: role === 'trader' || role === 'slaver' ? 0.85 : role === 'treasure' ? 0.8 : 1,
   };
 }
 
@@ -953,25 +947,22 @@ function reloadTime(s){
 }
 function fire(s, side){ // -1 larboard, +1 starboard
   const idx = side < 0 ? 0 : 1;
-  if (s.reload[idx] > 0 || s.sinking || s.crew <= 0) return;
+  if (s.reload[idx] > 0 || s.sinking || s.crew <= 0){
+    if (s === ship && s.crew <= 0) toast('No hands left to man the guns!');
+    return;
+  }
   s.reload[idx] = reloadTime(s);
   const t = s.t, spread = s === ship ? 5 : 9;
-  const shot = s === ship ? shotType : 'round', S = SHOT[shot];
   t.gunY.forEach((gy, k) => setTimeout(() => {
     if (s.sinking) return;
     const fx = Math.sin(s.h), fy = -Math.cos(s.h), rx = Math.cos(s.h), ry = Math.sin(s.h);
     const mx = s.x + fx * gy * t.L + rx * side * (t.B / 2 + 0.6), my = s.y + fy * gy * t.L + ry * side * (t.B / 2 + 0.6);
     const sp = (Math.random() - 0.5) * spread * DEG;
     const dx = rx * side * Math.cos(sp) - fx * side * Math.sin(sp), dy = ry * side * Math.cos(sp) - fy * side * Math.sin(sp);
-    const life = GUN_RANGE * S.range / BALL_SPEED * (0.9 + Math.random() * 0.2);
+    const life = GUN_RANGE / BALL_SPEED * (0.9 + Math.random() * 0.2);
     // the player's crew are better gunners than imperial conscripts
     const dmg = t.cal * (s === ship ? 2 : 1.4);
-    const pellets = shot === 'grape' ? 3 : 1;
-    for (let pI = 0; pI < pellets; pI++){
-      const ex = pellets > 1 ? rnd(-0.07, 0.07) : 0;
-      const vx = (dx - dy * ex) * BALL_SPEED + fx * s.v * KN, vy = (dy + dx * ex) * BALL_SPEED + fy * s.v * KN;
-      balls.push({ owner: s, dmg: dmg / pellets, shot, x: mx, y: my, vx, vy, life, max: life });
-    }
+    balls.push({ owner: s, dmg, x: mx, y: my, vx: dx * BALL_SPEED + fx * s.v * KN, vy: dy * BALL_SPEED + fy * s.v * KN, life, max: life });
     const w = s.wind, bx = -Math.sin(w.dir) * w.spd * 0.25, by = Math.cos(w.dir) * w.spd * 0.25;
     if (visible(s)){
       for (let i = 0; i < 6; i++) puff('smoke', mx + dx * i * 1.4 + rnd(-1, 1), my + dy * i * 1.4 + rnd(-1, 1),
@@ -989,8 +980,10 @@ function hullPoints(s){
   return [[s.x + fx * L * .45, s.y + fy * L * .45], [s.x, s.y], [s.x - fx * L * .4, s.y - fy * L * .4]];
 }
 function groundCheck(s){
+  // cheap test first: bow, middle and stern
+  const fx = Math.sin(s.h), fy = -Math.cos(s.h), L = s.t.L;
+  if (depthFast(s.x + fx * L * .45, s.y + fy * L * .45) <= -1.5 && depthFast(s.x, s.y) <= -1.5 && depthFast(s.x - fx * L * .4, s.y - fy * L * .4) <= -1.5) return;
   let pts = hullPoints(s);
-  if (!pts.some(([x, y]) => depthFast(x, y) > -1.5)) return;
   s.grounded = true;
   for (let k = 0; k < 60; k++){
     let worst = -1e9, wx = 0, wy = 0;
@@ -1018,7 +1011,7 @@ function stepShip(s, dt, now = T){
   s.sail += clamp(want - s.sail, -dt * 0.35 * hands, dt * 0.35 * hands);
 
   const rel = wrap(w.dir - s.h), twa = Math.abs(rel) / DEG;
-  let target = w.spd * polar(t, twa) * s.sail * s.rigging;
+  let target = w.spd * polar(t, twa) * s.sail * s.rigging * (s.laden || 1);
   target = t.cap * Math.tanh(target / t.cap) * (0.6 + 0.4 * s.hull / t.hull);
   const inIrons = twa < t.noGo;
   if (inIrons) target = -0.5 * s.sail * (1 - twa / t.noGo);
@@ -1074,6 +1067,63 @@ function stepShip(s, dt, now = T){
   } else if (s.wake.length) s.wake.length = 0;
 }
 
+// ---------------------------------------------------------------- collisions
+// hulls are capsules along their length; a collision exchanges momentum by weight, can swing the bow and stove in planks
+function hullSeg(s, o){
+  const fx = Math.sin(s.h), fy = -Math.cos(s.h), h = (s.t.L - s.t.B) * 0.5;
+  o[0] = s.x + fx * h; o[1] = s.y + fy * h; o[2] = s.x - fx * h; o[3] = s.y - fy * h;
+  return o;
+}
+const segA = [0, 0, 0, 0], segB = [0, 0, 0, 0], cp = [0, 0, 0, 0];
+// closest points between segments p1-q1 and p2-q2
+function segClosest(A, B, o){
+  const d1x = A[2] - A[0], d1y = A[3] - A[1], d2x = B[2] - B[0], d2y = B[3] - B[1], rx = A[0] - B[0], ry = A[1] - B[1];
+  const a = d1x * d1x + d1y * d1y, e = d2x * d2x + d2y * d2y, f = d2x * rx + d2y * ry;
+  const c = d1x * rx + d1y * ry, b = d1x * d2x + d1y * d2y, den = a * e - b * b;
+  let s1 = den > 1e-9 ? clamp((b * f - c * e) / den, 0, 1) : 0;
+  let t = (b * s1 + f) / e;
+  if (t < 0){ t = 0; s1 = clamp(-c / a, 0, 1); } else if (t > 1){ t = 1; s1 = clamp((b - c) / a, 0, 1); }
+  o[0] = A[0] + d1x * s1; o[1] = A[1] + d1y * s1; o[2] = B[0] + d2x * t; o[3] = B[1] + d2y * t;
+  return o;
+}
+const massOf = s => s.t.L * s.t.B * s.t.B;
+let bumpToastT = 0;
+function collide(a, b){
+  segClosest(hullSeg(a, segA), hullSeg(b, segB), cp);
+  let nx = cp[2] - cp[0], ny = cp[3] - cp[1], d = Math.hypot(nx, ny);
+  const R = (a.t.B + b.t.B) * 0.5;
+  if (d >= R) return;
+  if (d < 1e-3){ nx = b.x - a.x; ny = b.y - a.y; d = Math.hypot(nx, ny) || 1; }
+  nx /= d; ny /= d;
+  const ma = massOf(a), mb = massOf(b), ov = R - Math.min(d, R);
+  // separate the hulls, the lighter one moves more
+  a.x -= nx * ov * mb / (ma + mb); a.y -= ny * ov * mb / (ma + mb);
+  b.x += nx * ov * ma / (ma + mb); b.y += ny * ov * ma / (ma + mb);
+  const fax = Math.sin(a.h), fay = -Math.cos(a.h), fbx = Math.sin(b.h), fby = -Math.cos(b.h);
+  const vrel = (fbx * b.v - fax * a.v) * nx + (fby * b.v - fay * a.v) * ny; // knots, negative when closing
+  if (vrel >= -0.05) return;
+  const J = -1.2 * vrel / (1 / ma + 1 / mb);
+  // new velocities; the sideways part is soaked up by the water, so only the part along the keel remains
+  const vax = fax * a.v - nx * J / ma, vay = fay * a.v - ny * J / ma, vbx = fbx * b.v + nx * J / mb, vby = fby * b.v + ny * J / mb;
+  a.v = vax * fax + vay * fay; b.v = vbx * fbx + vby * fby;
+  // an off-centre blow swings the bow round
+  const ca = ((cp[0] - a.x) * (-ny) - (cp[1] - a.y) * (-nx)) * (J / ma), cb = ((cp[2] - b.x) * ny - (cp[3] - b.y) * nx) * (J / mb);
+  a.turn = clamp(a.turn + ca * 0.004 * 24 / a.t.L, -0.6, 0.6); b.turn = clamp(b.turn + cb * 0.004 * 24 / b.t.L, -0.6, 0.6);
+  // AI ships sheer off for a while instead of grinding against each other
+  for (const [s, o] of [[a, b], [b, a]]) if (s !== ship){ s.bumpT = 3; s.bumpAway = Math.atan2(s.x - o.x, -(s.y - o.y)); }
+  const impact = -vrel;
+  if (impact > 1.5){
+    const k = (impact - 1.5) * (impact - 1.5) * 1.1;
+    a.hull = Math.max(1, a.hull - k * mb / (ma + mb)); b.hull = Math.max(1, b.hull - k * ma / (ma + mb));
+    const x = (cp[0] + cp[2]) / 2, y = (cp[1] + cp[3]) / 2;
+    if (visible(a)) for (let i = 0; i < 6 + impact * 3; i++) puff('splinter', x, y, rnd(-12, 12), rnd(-12, 12), rnd(0.5, 1.2), 0.6, 0, 1);
+    if (a === ship || b === ship){
+      sfx.crunch(); shake = Math.min(2, shake + impact * 0.3);
+      if (T > bumpToastT){ bumpToastT = T + 4; toast(impact > 4 ? 'We rammed her! Timbers stove in on both ships.' : 'Hulls grind together.'); }
+    }
+  }
+}
+
 // ---------------------------------------------------------------- AI
 const sailable = (s, h) => Math.abs(wrap(s.wind.dir - h)) > (s.t.noGo + 6) * DEG;
 function clearAhead(s, h){
@@ -1110,6 +1160,14 @@ function think(s, dt){
   const p = ship, d = dead ? 1e9 : dist(s, p);
   const toP = Math.atan2(p.x - s.x, -(p.y - s.y));
   if (s.struck){ s.set = 0; s.rudder = 0; return; }
+  // after a collision, sheer off before doing anything else
+  if (s.bumpT > 0){
+    s.bumpT -= dt;
+    const away = sailable(s, s.bumpAway) ? s.bumpAway : sailToward(s, s.bumpAway, dt);
+    steer(s, avoid(s, away));
+    s.set = Math.max(s.set, 2);
+    return;
+  }
   if (s.leader && s.leader.gone){
     s.leader = null; s.role = 'patrol';
     const P = empirePorts.reduce((a, b) => Math.hypot(a.hx - s.x, a.hy - s.y) < Math.hypot(b.hx - s.x, b.hy - s.y) ? a : b);
@@ -1120,10 +1178,10 @@ function think(s, dt){
   // mode changes
   if (hostile(s)){
     const guard = s.leader && !s.leader.gone ? dist(s.leader, p) : d;
-    if (s.mode !== 'attack' && (d < 900 || guard < 700)){ s.mode = 'attack'; if (!s.seenAttack){ s.seenAttack = true; toast(`The ${ROLE_NAME[s.role](s.t)} comes about to engage!`); } }
+    if (s.mode !== 'attack' && (d < 1300 || guard < 800)){ s.mode = 'attack'; if (!s.seenAttack){ s.seenAttack = true; toast(`The ${ROLE_NAME[s.role](s.t)} comes about to engage!`); } }
     else if (s.mode === 'attack' && d > 1700 && guard > 1200) s.mode = s.leader ? 'follow' : 'route';
   } else {
-    if (s.mode !== 'flee' && d < 480) s.mode = 'flee';
+    if (s.mode !== 'flee' && d < 320) s.mode = 'flee';
     else if (s.mode === 'flee' && d > 1300) s.mode = 'route';
     // merchants strike their colours when beaten
     if (d < 320 && (s.hull < s.t.hull * 0.7 || s.crew < s.t.crew * 0.6 || s.rigging < 0.5)){
@@ -1167,6 +1225,7 @@ function think(s, dt){
       s.set = 2;
     }
   }
+  if (s.mode !== 'attack') want = giveWay(s, want);
   steer(s, avoid(s, want));
 
   // gunnery: fire when the target lies in a broadside arc
@@ -1177,6 +1236,17 @@ function think(s, dt){
   }
 }
 
+// rule of the road: with a ship close ahead, alter course to starboard so you pass port to port
+function giveWay(s, h){
+  for (const o of allShips){
+    if (o === s || o.sinking) continue;
+    const dx = o.x - s.x, dy = o.y - s.y, d = Math.hypot(dx, dy), lim = 90 + (s.t.L + o.t.L);
+    if (d > lim) continue;
+    const brg = Math.abs(wrap(Math.atan2(dx, -dy) - h));
+    if (brg < 60 * DEG) return h + (45 * DEG) * (1 - d / lim) + 15 * DEG;
+  }
+  return h;
+}
 function arrive(s){
   if (s.role === 'patrol'){ newRoute(s, s.dest); return; }
   s.gone = true;
@@ -1247,6 +1317,11 @@ function spawn(role, anywhere){
   }
   return false;
 }
+// a spot the player can sail to on a reach or a run, without beating to windward
+function reachable(x, y){
+  const brg = Math.atan2(x - ship.x, -(y - ship.y));
+  return Math.abs(wrap(ship.wind.dir - brg)) > 70 * DEG;
+}
 // put a ship on a route that passes near the player, a little way off
 function encounter(){
   const role = pick(['trader', 'trader', 'slaver', 'slaver', 'patrol']);
@@ -1263,21 +1338,46 @@ function encounter(){
       const d = Math.hypot(lerp(x0, x1, f) - ship.x, lerp(y0, y1, f) - ship.y);
       if (d < best){ best = d; bi = i; bf = f; }
     }
-    if (best > 1500) continue;
+    if (best > 900) continue;
     // walk back along the route about 1100 m from that point
-    let i = bi, x = lerp(r[i - 1][0], r[i][0], bf), y = lerp(r[i - 1][1], r[i][1], bf), left = 950;
+    let i = bi, x = lerp(r[i - 1][0], r[i][0], bf), y = lerp(r[i - 1][1], r[i][1], bf), left = 460;
     while (left > 0 && i >= 1){
       const [x0, y0] = r[i - 1], L = Math.hypot(x - x0, y - y0);
       if (L >= left){ x += (x0 - x) * left / L; y += (y0 - y) * left / L; left = 0; }
       else { x = x0; y = y0; left -= L; i--; }
     }
     i = Math.max(1, i);
-    if (Math.hypot(x - ship.x, y - ship.y) < 750) continue;
+    if (Math.hypot(x - ship.x, y - ship.y) < 350) continue;
+    if (!reachable(x, y)) continue;
     const s = makeShip(ROLE_TYPE[role], x, y, 0, role);
     s.path = r; s.wp = i; s.dest = b; s.mode = 'route';
     s.h = Math.atan2(r[i][0] - x, -(r[i][1] - y));
     s.cargo = cargoFor(role);
     if (role === 'slaver') s.cargo.bound = b.name;
+    s.liv = LIVERY[ROLE_LIVERY[role]];
+    s.name = ROLE_NAME[role](s.t);
+    ai.push(s);
+    return true;
+  }
+  // no imperial route passes close: a ship crossing somewhere ahead of you, bound for an imperial port
+  for (let k = 0; k < 12; k++){
+    // somewhere you can sail to without beating: across the wind or down it, and not behind you
+    const side = Math.random() < 0.5 ? -1 : 1, a = ship.wind.dir + side * rnd(75, 150) * DEG, d = rnd(380, 540);
+    if (Math.abs(wrap(a - ship.h)) > 110 * DEG) continue;
+    const x = ship.x + Math.sin(a) * d, y = ship.y - Math.cos(a) * d;
+    if (x < 400 || y < 400 || x > WW - 400 || y > WH - 400 || depthFast(x, y) > -60) continue;
+    const P = pick(empirePorts), c0 = freeCell(x, y), c1 = freeCell(P.hx, P.hy);
+    if (c0 < 0 || c1 < 0) continue;
+    const pts = astar(c0, c1);
+    if (!pts) continue;
+    const r = pull([[x, y], ...pts, [P.hx, P.hy]]);
+    if (r.length < 2) continue;
+    const hx = r[1][0] - x, hy = r[1][1] - y, hl = Math.hypot(hx, hy) || 1, px = ship.x - x, py = ship.y - y, pd = Math.hypot(px, py) || 1;
+    if (Math.abs((hx * px + hy * py) / hl / pd) > 0.75) continue; // crossing, not running straight at or away from you
+    const s = makeShip(ROLE_TYPE[role], x, y, Math.atan2(hx, -hy), role);
+    s.path = r; s.wp = 1; s.dest = P; s.mode = 'route'; s.v = 4;
+    s.cargo = cargoFor(role);
+    if (role === 'slaver') s.cargo.bound = P.name;
     s.liv = LIVERY[ROLE_LIVERY[role]];
     s.name = ROLE_NAME[role](s.t);
     ai.push(s);
@@ -1298,17 +1398,17 @@ function populate(anywhere){
 // ---------------------------------------------------------------- hits and sinking
 let rakeToastT = 0;
 function hitShip(s, b){
-  const S = SHOT[b.shot || 'round'];
   // a shot travelling along the target's length (through bow or stern) rakes her from end to end
   const bl = Math.hypot(b.vx, b.vy) || 1, along = Math.abs((b.vx * Math.sin(s.h) - b.vy * Math.cos(s.h)) / bl);
   const rake = along > 0.8;
   const k = rake ? 2 : 1;
-  s.hull -= b.dmg * S.hull * k * rnd(0.7, 1.3);
-  if (Math.random() < 0.55) s.crew = Math.max(0, s.crew - Math.round(irnd(1, 3) * S.crew * k));
-  if (Math.random() < 0.5) s.rigging = Math.max(0.2, s.rigging - S.rig * k);
+  s.hull -= b.dmg * k * rnd(0.7, 1.3);
+  if (Math.random() < 0.55) s.crew = Math.max(0, s.crew - Math.round(irnd(1, 3) * k));
+  if (s === ship && s.crew <= 0 && !dead){ lose('The last of your crew falls. The Empire takes your ship; friends in Libertalia buy you free.'); return; }
+  if (Math.random() < 0.5) s.rigging = Math.max(0.2, s.rigging - 0.04 * k);
   if (b.owner === ship && rake && T > rakeToastT){ rakeToastT = T + 4; toast('Raked her, bow to stern!'); }
   // a lucky shot brings down a mast
-  if (s !== ship && b.owner === ship && s.rigging > 0.35 && Math.random() < (b.shot === 'chain' ? 0.06 : 0.025) * k){
+  if (s !== ship && b.owner === ship && s.rigging > 0.35 && Math.random() < 0.03 * k){
     s.rigging = Math.max(0.2, s.rigging - 0.3);
     toast(`Her mast goes by the board! The ${s.name} is crippled.`);
   }
@@ -1603,13 +1703,11 @@ const GUIDE = [
     <li><b>Sails</b> (bottom right): full sail is fastest; fighting sail turns better in battle; reefed is gentle; furled stops her.</li>
     <li><b>Guns</b> fire out of the ship's sides. Turn so the enemy is beside you, then fire that side. The button fills up while the crew reloads.</li>
     <li><b>Rake</b> her: a broadside through her bow or stern runs the length of the ship and does double damage.</li>
-    <li><b>SHOT</b> switches ammunition: <b>round</b> smashes the hull, <b>chain</b> cuts rigging so she can't run, <b>grape</b> sweeps the decks before you board. Chain and grape fly shorter.</li>
-    <li><b>Squalls</b> darken the sea and bring hard gusts. Reef or fight sail in time, or the canvas splits.</li>
     <li>Fewer hands means slower reloading. Hire sailors in free ports.</li></ol>`],
   ['Taking ships', () => `
     <ol><li>Navy ships hunt you; merchants and slavers run.</li>
     <li>Damage a merchant badly and she <b>strikes her colours</b>: a white flag, and she stops.</li>
-    <li>Once she is slow (struck, crippled by chain shot, or hove to), come within about 30 m and press <b>BOARD</b>: the grapnels pull you together. Mercenaries and muskets help a lot.</li>
+    <li>Once she is slow (struck, dismasted, or hove to), come within about 30 m and press <b>BOARD</b>: the grapnels pull you together. Mercenaries and muskets help a lot.</li>
     <li>Then plunder the hold, or take the captives home to a free port. Keep the ship, or scuttle her.</li>
     <li>Every imperial ship you sink earns a <b>bounty</b>, navy ships the most. Claim it in any free port.</li>
     <li>Sinking a slaver drowns everyone chained below. Board her instead.</li></ol>`],
@@ -1620,8 +1718,27 @@ const GUIDE = [
     <li>Then <b>STORM</b> the port with your crew.</li>
     <li>Free every port and the sea is free.</li></ol>`],
   ['Settings', () => `
-    <p>Sound: <b>${['music and effects', 'effects only', 'off'][sfx.mode]}</b></p>`],
+    <p>Sound: <b>${['music and effects', 'effects only', 'off'][sfx.mode]}</b></p>
+    <p>Controls lifted: <b>${LIFTS[lift]} px</b>. Use this if a browser bar covers the helm or the sail lever.</p>
+    <p class="help">Best of all: open the browser menu and choose <b>Add to Home screen</b>. Libertalia then opens full screen, without any browser bars.</p>`],
 ];
+// lift the bottom controls clear of browser bars that overlay the page (DuckDuckGo, some Samsung setups)
+const LIFTS = [0, 40, 70, 100];
+let lift = 0;
+try { lift = +(localStorage.getItem('libertalia-lift') || 0) % LIFTS.length; } catch (e){}
+function setLift(k){
+  lift = k;
+  document.documentElement.style.setProperty('--lift', LIFTS[lift] + 'px');
+  try { localStorage.setItem('libertalia-lift', lift); } catch (e){}
+}
+setLift(lift);
+function toggleFull(){
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  } catch (e){}
+}
+document.addEventListener('fullscreenchange', () => setTimeout(layout, 100));
 function guide(i){
   const [title, body] = GUIDE[i];
   const btns = [];
@@ -1629,7 +1746,9 @@ function guide(i){
   if (i < GUIDE.length - 1) btns.push(['NEXT >', () => { sfx.tap(); guide(i + 1); }]);
   if (i === GUIDE.length - 1){
     btns.push(['SOUND', () => { sfx.cycle(); guide(i); }]);
-  }
+    btns.push(['CONTROLS UP', () => { setLift((lift + 1) % LIFTS.length); sfx.tap(); guide(i); }]);
+    if (document.fullscreenEnabled) btns.push([document.fullscreenElement ? 'LEAVE FULL SCREEN' : 'FULL SCREEN', () => { toggleFull(); setTimeout(() => guide(i), 300); }]);
+  } else btns.push(['SETTINGS', () => { sfx.tap(); guide(GUIDE.length - 1); }]);
   btns.push(['CLOSE', () => { sfx.tap(); closePanel(); }, true]);
   panel(title, `<div class="guide">${body()}</div><div class="dots">${GUIDE.map((_, k) => k === i ? '#' : '.').join('')}</div>`, btns);
 }
@@ -1682,33 +1801,6 @@ function portMenu(P){
 }
 
 // ---------------------------------------------------------------- weather
-let squallT = 40, squallWarn = 0, inSquall = false;
-function updSqualls(dt){
-  const w = ship.wind;
-  for (const q of squalls){
-    // drift downwind with the trades
-    q.x += -Math.sin(WIND_BASE) * 9 * dt; q.y += Math.cos(WIND_BASE) * 9 * dt;
-    q.life -= dt;
-    q.f = Math.min(1, q.f + dt / 20) * (q.life < 20 ? q.life / 20 : 1);
-  }
-  squalls = squalls.filter(q => q.life > 0);
-  squallT -= dt;
-  if (squallT <= 0 && squalls.length < 3){
-    // born upwind of the player, so you can see it coming
-    squallT = rnd(70, 140);
-    const a = WIND_BASE + rnd(-0.6, 0.6), d = rnd(1200, 2400);
-    squalls.push({ x: ship.x + Math.sin(a) * d, y: ship.y - Math.cos(a) * d, r: rnd(450, 800), f: 0.1, life: rnd(260, 400) });
-  }
-  const sq = w.squall || 0;
-  if (sq > 0.3 && !inSquall){ inSquall = true; toast('A squall! Reef the sails or lose your rigging.'); }
-  if (sq < 0.15) inSquall = false;
-  // full sail in a hard squall tears canvas and springs spars
-  if (!dead && sq > 0.35 && ship.set === 3 && ship.sail > 0.8 && w.spd > 20){
-    ship.rigging = Math.max(0.3, ship.rigging - dt * 0.012 * sq);
-    if (T > squallWarn){ squallWarn = T + 6; toast('The topsails are splitting! Reef!'); sfx.flap(); }
-  }
-}
-
 // ---------------------------------------------------------------- simulation
 const keys = new Set();
 let helmHeld = false, helmTarget = 0;
@@ -1723,7 +1815,10 @@ function pointOfSail(twa, v){
   return 'Dead run';
 }
 
-let zoom = 1, zoomQ = 1;
+let zoom = 1, zoomQ = 1, fightOn = false;
+const allShips = [];
+// drop items in place instead of building a new array every frame
+function compact(a, keep){ let j = 0; for (let i = 0; i < a.length; i++) if (keep(a[i])) a[j++] = a[i]; a.length = j; return a; }
 function update(dt){
   T += dt;
 
@@ -1763,23 +1858,20 @@ function update(dt){
     if (s.struck && dist(s, ship) > 2500) s.gone = true;
   }
   // keep hulls from overlapping
-  const all = [ship, ...ai.filter(s => !s.gone && !s.sinking)];
+  const all = allShips;
+  all.length = 0; all.push(ship);
+  for (const q of ai) if (!q.gone && !q.sinking) all.push(q);
   for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++){
-    const a = all[i], b = all[j], d = dist(a, b), m = (a.t.B + b.t.B) * 0.5 + Math.min(a.t.L, b.t.L) * 0.25;
-    if (d < m && d > 0.01){
-      const push = (m - d) / 2, nx = (b.x - a.x) / d, ny = (b.y - a.y) / d;
-      a.x -= nx * push; a.y -= ny * push; b.x += nx * push; b.y += ny * push;
-      a.v *= 0.97; b.v *= 0.97;
-    }
+    const a = all[i], b = all[j];
+    if (Math.abs(a.x - b.x) < (a.t.L + b.t.L) * 0.6 && Math.abs(a.y - b.y) < (a.t.L + b.t.L) * 0.6) collide(a, b);
   }
-  ai = ai.filter(s => !s.gone);
+  compact(ai, s => !s.gone);
   for (const P of empirePorts) fortStep(P, dt);
   spawnT -= dt;
   if (spawnT <= 0){ spawnT = 20; populate(false); }
-  updSqualls(dt);
-  if (!dead && empirePorts.length && !ai.some(s => !s.sinking && dist(s, ship) < 1500)){
+  if (!dead && empirePorts.length && !ai.some(s => !s.sinking && !s.struck && dist(s, ship) < 1100)){
     quietT += dt;
-    if (quietT > (firstMeet ? 20 : warp ? 110 : 40)){ quietT = 0; if (encounter()) firstMeet = false; }
+    if (quietT > (firstMeet ? 8 : warp ? 60 : 15)){ quietT = 0; if (encounter()) firstMeet = false; }
   } else quietT = 0;
 
   // fire buttons show reload
@@ -1809,7 +1901,7 @@ function update(dt){
       else if (visible(b)){ puff('splash', b.x, b.y, 0, 0, 1.1, 0.8, 4.5, 1); puff('foam', b.x, b.y, 0, 0, 1.4, 1.4, 1, 1); sfx.splash(dist(b, ship)); }
     }
   }
-  balls = balls.filter(b => b.life > 0);
+  compact(balls, b => b.life > 0);
 
   // particles
   for (const p of parts){
@@ -1818,15 +1910,16 @@ function update(dt){
     p.vx *= k; p.vy *= k;
     p.r += p.grow * dt; p.life -= dt;
   }
-  parts = parts.filter(p => p.life > 0);
+  compact(parts, p => p.life > 0);
   if (parts.length > 700) parts.splice(0, parts.length - 700);
 
   shake = Math.max(0, shake - dt * 3);
 
   // fight zoom: pull the camera back when ships are close
-  const fight = !dead && (ai.some(s => !s.sinking && dist(s, ship) < 430) || empirePorts.some(P => P.fort.hp > 0 && dist(P.fort, ship) < 400));
-  zoom += ((fight ? fightZoom() : 1) - zoom) * Math.min(1, dt * 1.2);
-  const zq = Math.round(zoom * 20) / 20;
+  const R = fightOn ? 560 : 430;
+  fightOn = !dead && (ai.some(s => !s.sinking && dist(s, ship) < R) || empirePorts.some(P => P.fort.hp > 0 && dist(P.fort, ship) < R - 30));
+  // art pixels stay a whole number of screen pixels, so nothing shimmers while scrolling
+  const zq = fightOn ? Math.max(2, Math.round(PX * fightZoom())) / PX : 1;
   if (zq !== zoomQ){ zoomQ = zq; layout(); }
 
   discT -= dt;
@@ -1850,18 +1943,17 @@ function update(dt){
 
   bakeChartRows(4);
   sfx.ambient(dt, ship.wind.spd, dead ? 0 : Math.abs(ship.v), !dead && ship.sail > 0.1 && ship.aw.awa < ship.t.noGo * 0.6 * DEG,
-    Math.abs(ship.turn), depthFast(ship.x, ship.y) > -350, ship.wind.squall || 0);
+    Math.abs(ship.turn), depthFast(ship.x, ship.y) > -350);
   updToast(dt);
   updHud();
 }
 
 // ---------------------------------------------------------------- HUD
 const el = id => document.getElementById(id);
-const hudEl = { spd: el('spd'), pos: el('pos'), tack: el('tack'), wind: el('wind'), hull: el('hull'), purse: el('purse'), hint: el('hint'), knob: el('helmKnob'), sk: el('sailKnob') };
+const hudEl = { spdN: el('spdN'), spd: el('spd'), pos: el('pos'), tack: el('tack'), wind: el('wind'), hull: el('hull'), purse: el('purse'), hint: el('hint'), knob: el('helmKnob'), sk: el('sailKnob') };
 // plain-language advice for people who don't sail
 function sailHint(rel, twa){
   const t = ship.t;
-  if ((ship.wind.squall || 0) > 0.3 && ship.set === 3) return 'Squall! Reef the sails.';
   if (ship.set === 0) return 'Sails furled: push the sail lever up.';
   if (twa < t.noGo) return `Too close to the wind! Steer ${rel > 0 ? 'LEFT' : 'RIGHT'}.`;
   if (twa < t.noGo + 14) return 'As near the wind as she goes. Upwind? Zig-zag (INFO).';
@@ -1875,14 +1967,15 @@ function updHud(){
   if (hudEl.knob._l !== kl){ hudEl.knob._l = kl; hudEl.knob.style.left = kl + '%'; }
   if ((hudT += 1) % 6) return;
   const rel = wrap(ship.wind.dir - ship.h), twa = Math.abs(rel) / DEG;
-  hudEl.spd.innerHTML = `${Math.max(0, ship.v).toFixed(1)} <small>KN</small>`;
-  hudEl.pos.textContent = pointOfSail(twa, ship.v);
-  hudEl.tack.textContent = twa > 174 ? 'Before the wind' : rel > 0 ? 'Starboard tack' : 'Larboard tack';
-  hudEl.wind.textContent = `Wind ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`;
-  hudEl.hull.textContent = `${ship.t.name} ${Math.round(100 * ship.hull / ship.t.hull)}%  ${SAIL_NAMES[ship.set]}`;
-  hudEl.hint.textContent = sailHint(rel, twa);
-  hudEl.purse.textContent = `Gold ${pl.gold}${pl.bounty ? ' (+' + pl.bounty + ' bounty)' : ''}  Crew ${ship.crew}${pl.mercs ? '+' + pl.mercs : ''}  Hold ${pl.goods + pl.people}/${ship.t.hold}`;
+  setText(hudEl.spdN, Math.max(0, ship.v).toFixed(1));
+  setText(hudEl.pos, pointOfSail(twa, ship.v));
+  setText(hudEl.tack, twa > 174 ? 'Before the wind' : rel > 0 ? 'Starboard tack' : 'Larboard tack');
+  setText(hudEl.wind, `Wind ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`);
+  setText(hudEl.hull, `${ship.t.name} ${Math.round(100 * ship.hull / ship.t.hull)}%  ${SAIL_NAMES[ship.set]}`);
+  setText(hudEl.hint, sailHint(rel, twa));
+  setText(hudEl.purse, `Gold ${pl.gold}${pl.bounty ? ' (+' + pl.bounty + ' bounty)' : ''}  Crew ${ship.crew}${pl.mercs ? '+' + pl.mercs : ''}  Hold ${pl.goods + pl.people}/${ship.t.hold}`);
 }
+function setText(e, v){ if (e._t !== v){ e._t = v; e.textContent = v; } }
 function setSail(s){
   s = clamp(s, 0, 3);
   if (s !== ship.set && started){ sfx.sail(s > ship.set); }
@@ -1960,7 +2053,10 @@ const meCtx = meCv.getContext('2d');
 let CSSP = 1, meE = null;
 
 // height of what is actually visible: mobile browsers can cover the bottom with toolbars
-const viewH = () => Math.round(window.visualViewport ? Math.min(innerHeight, visualViewport.height) : innerHeight);
+const viewH = () => {
+  const vv = window.visualViewport;
+  return Math.round(vv && vv.scale < 1.05 ? Math.min(innerHeight, vv.height) : innerHeight);
+};
 function fitViewport(){
   document.documentElement.style.setProperty('--app-h', viewH() + 'px');
 }
@@ -2339,11 +2435,7 @@ function render(){
     for (const b of balls){
       const t = 1 - b.life / b.max, h = Math.sin(Math.PI * t) * 6;
       disc(b.x, b.y, 0.6, U.shadow, 0.5);
-      if (b.shot === 'chain'){
-        const a = T * 20, cx = b.x - h * 0.15, cy = b.y - h * 0.4;
-        disc(cx + Math.cos(a) * 0.9, cy + Math.sin(a) * 0.9, 0.5, U.black, 1);
-        disc(cx - Math.cos(a) * 0.9, cy - Math.sin(a) * 0.9, 0.5, U.black, 1);
-      } else disc(b.x - h * 0.15, b.y - h * 0.4, b.shot === 'grape' ? 0.4 : 0.7, U.black, 1);
+      disc(b.x - h * 0.15, b.y - h * 0.4, 0.7, U.black, 1);
     }
     for (const p of parts){
       const al = p.a * (p.life / p.max);
@@ -2367,42 +2459,10 @@ function render(){
     PB.fillStyle = P.f === 'free' ? C.white : C.gold; PB.fillRect(fx + dir * 4, fy - 8 + Math.round(Math.sin(T * 8 - 3) * 0.5), 1, 1);
   }
 
-  drawWeather();
   drawLabels();
   drawCompass();
   PB.present();
 }
-function drawWeather(){
-  const buf = PB.buf;
-  for (const q of squalls){
-    const cx = q.x / MPP - ox, cy = q.y / MPP - oy, r = q.r / MPP;
-    if (cx + r < 0 || cy + r < 0 || cx - r > LW || cy - r > LH) continue;
-    const y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(LH, Math.ceil(cy + r));
-    for (let y = y0; y < y1; y++){
-      const dy = y - cy, w = Math.sqrt(Math.max(0, r * r - dy * dy));
-      const x0 = Math.max(0, Math.floor(cx - w)), x1 = Math.min(LW, Math.ceil(cx + w));
-      for (let x = x0, i = y * LW + x0; x < x1; x++, i++){
-        const k = Math.sqrt(1 - Math.hypot(x - cx, dy) / r) * q.f;
-        if (k * 0.5 > bay(x, y)){
-          const p = buf[i];
-          buf[i] = (255 << 24 | (((p >> 16) & 255) * 0.72) << 16 | (((p >> 8) & 255) * 0.75) << 8 | ((p & 255) * 0.78)) >>> 0;
-        }
-      }
-    }
-  }
-  // rain slants downwind across the screen
-  const sq = ship.wind.squall || 0;
-  if (sq > 0.05){
-    const n = Math.round(sq * LW * LH / 260), bx = -Math.sin(ship.wind.dir), by = Math.cos(ship.wind.dir);
-    PB.fillStyle = '#b8c8d4';
-    for (let k = 0; k < n; k++){
-      const x = (hash(k, 1, 77) * LW + T * 40 * bx * 3) % LW, y = (hash(k, 2, 77) * LH + T * 160) % LH;
-      const xx = (x + LW) % LW, yy = (y + LH) % LH;
-      for (let j = 0; j < 4; j++) PB.fillRect(xx + bx * j * 0.6, yy + j, 1, 1);
-    }
-  }
-}
-
 // name and hull bar over nearby ships
 function drawLabels(){
   const g = PB;
@@ -2680,14 +2740,6 @@ function renderMap(){
   }
   el('mapGo').classList.toggle('hidden', !pick_ || warp);
   el('mapStop').classList.toggle('hidden', !warp);
-  // squalls in sight: grey hatched cells
-  for (const q of squalls){
-    if (Math.hypot(q.x - ship.x, q.y - ship.y) > SIGHT * 2) continue;
-    const cx = X(q.x), cy = Y(q.y), r = Math.max(3, q.r * s);
-    g.fillStyle = '#7b8794';
-    for (let y = -r; y <= r; y += 2) for (let x = -r; x <= r; x += 2) if (x * x + y * y < r * r && ((x + y) / 2 | 0) % 2 === 0) g.fillRect(cx + x, cy + y, 1, 1);
-    if (q.r * s > 10) drawText(g, 'Squall', cx - 11, cy - 2, '#4a5560', 1, C.parch);
-  }
   // own ship: a bold blue arrow with a pulsing ring
   const px = X(ship.x), py = Y(ship.y);
   const ring = 7 + ((T * 4) % 1 < 0.5 ? 0 : 1);
@@ -3057,6 +3109,15 @@ sailsEl.addEventListener('pointerdown', e => { sailsEl.setPointerCapture(e.point
 sailsEl.addEventListener('pointermove', e => { if (sailHeld) sailMove(e); });
 sailsEl.addEventListener('pointerup', () => { sailHeld = false; });
 sailsEl.addEventListener('pointercancel', () => { sailHeld = false; });
+// iOS ignores user-scalable=no: block double-tap and pinch zoom on the controls and the sea
+for (const id of ['fireL', 'fireR', 'helm', 'sails', 'lo']){
+  el(id).addEventListener('touchstart', e => { if (e.cancelable && !(id === 'lo' && mapOpen)) e.preventDefault(); }, { passive: false });
+}
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+// if the page did get zoomed (an old tap, the browser), say how to get back
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (visualViewport.scale > 1.05 && started) toast('The page is zoomed in: pinch out to see all the controls.'); });
 fireBtn[0].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, -1); });
 fireBtn[1].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, 1); });
 el('btnMap').addEventListener('click', () => { if (!paused) openMap(); });
@@ -3068,13 +3129,6 @@ el('tabChart').addEventListener('click', () => { sfx.tap(); project(); setTab('c
 el('tabShip').addEventListener('click', () => { sfx.tap(); warp = false; setTab('ship'); });
 el('mapIn').addEventListener('click', () => { sfx.tap(); mv.k = Math.min(6, mv.k + 1); });
 el('mapOut').addEventListener('click', () => { sfx.tap(); mv.k = Math.max(1, mv.k - 1); });
-function cycleShot(){
-  shotType = SHOTS[(SHOTS.indexOf(shotType) + 1) % SHOTS.length];
-  el('shotName').textContent = SHOT[shotType].name.toUpperCase();
-  sfx.tap();
-  toast({ round: 'Round shot: smash her hull.', chain: 'Chain shot: cut her rigging, stop her running.', grape: 'Grape shot: sweep her decks, then board.' }[shotType]);
-}
-el('shotBtn').addEventListener('click', cycleShot);
 el('btnInfo').addEventListener('click', () => { if (!paused && !dead){ sfx.tap(); guide(0); } });
 const actBtn = el('actBtn');
 function act(){
@@ -3138,7 +3192,6 @@ addEventListener('keydown', e => {
   if (k === 'q' && !dead) fire(ship, -1);
   if (k === 'e' && !dead) fire(ship, 1);
   if (k === 'b' || k === 'enter') act();
-  if (k === 'r') cycleShot();
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 addEventListener('blur', () => keys.clear());
@@ -3147,7 +3200,7 @@ addEventListener('blur', () => keys.clear());
 // everything is synthesised: sea and wind beds, soft UI sounds, gunnery, gulls, and a faint shanty
 const sfx = (() => {
   let ac = null, master = null, fxBus = null, musicBus = null, noise = null;
-  let sea = null, seaF = null, hiss = null, wind = null, windF = null, rain = null;
+  let sea = null, seaF = null, hiss = null, wind = null, windF = null;
   const S = { mode: 0 }; // 0 everything, 1 effects only, 2 silent
   try { S.mode = +(localStorage.getItem('libertalia-snd') || 0) % 3; } catch (e){}
   const applyMode = () => {
@@ -3179,7 +3232,6 @@ const sfx = (() => {
       const d = noise.getChannelData(0);
       for (let i = 0, b = 0; i < d.length; i++){ b = b * 0.6 + (Math.random() * 2 - 1) * 0.4; d[i] = b * 1.6; }
       [sea, seaF] = loop('lowpass', 380, 0.4, fxBus);
-      [rain] = loop('highpass', 3200, 0.5, fxBus);
       [hiss] = loop('highpass', 2600, 0.3, fxBus);
       [wind, windF] = loop('bandpass', 700, 1.6, fxBus);
       applyMode();
@@ -3322,9 +3374,7 @@ const sfx = (() => {
 
   let swell = 0, nextCreak = 3, nextGull = 4, flapT = 0;
   let ambT = 0, ambDt = 0;
-  S.flap = () => { for (let i = 0; i < 4; i++) burst(0.08, 'bandpass', rnd(200, 400), 0.2, { delay: i * 0.09, q: 1.2 }); };
-  let nextThunder = 8;
-  S.ambient = (dt, w, v, luff, turn, nearLand, squall = 0) => {
+  S.ambient = (dt, w, v, luff, turn, nearLand) => {
     if (!ac) return;
     ambDt += dt;
     if ((ambT -= dt) > 0) return;
@@ -3341,8 +3391,6 @@ const sfx = (() => {
     if (nextCreak <= 0){ nextCreak = rnd(3, 8); creakNow(rnd(0.025, 0.05), rnd(80, 160)); }
     if (nearLand){ nextGull -= dt; if (nextGull <= 0){ nextGull = rnd(5, 14); gull(); } }
     if (luff){ flapT -= dt; if (flapT <= 0){ flapT = rnd(0.12, 0.25); burst(0.09, 'bandpass', rnd(250, 450), 0.12, { q: 1.2 }); } }
-    rain.gain.setTargetAtTime(squall * 0.05, t, 0.8);
-    if (squall > 0.4){ nextThunder -= dt; if (nextThunder <= 0){ nextThunder = rnd(10, 25); burst(3.5, 'lowpass', 160, 0.5 * squall, { attack: 0.3, f1: 60, delay: rnd(0, 1) }); } }
     music();
   };
   S.cycle = () => {
@@ -3363,6 +3411,8 @@ discover();
 populate(true);
 el('btnStart').addEventListener('click', () => {
   sfx.init();
+  // on phones, go full screen where the browser allows it: no address bar over the controls
+  if (matchMedia('(pointer: coarse)').matches && document.fullscreenEnabled && !document.fullscreenElement && !matchMedia('(display-mode: fullscreen)').matches) toggleFull();
   el('title').classList.add('hidden');
   el('hud').classList.remove('hidden');
   started = true;
@@ -3378,9 +3428,24 @@ el('btnNew').addEventListener('click', () => {
 });
 addEventListener('visibilitychange', () => { if (document.hidden && started) save(); });
 
-let last = performance.now(), timeScale = 1;
+let last = performance.now(), timeScale = 1, rafIv = 16.7, rafPrev = 0, skipNext = false;
+// performance graph: open the page with #debug in the address
+const dbg = { on: /debug/.test(location.hash), el: null, iv: [], work: [], t: 0 };
+if (dbg.on){
+  dbg.el = document.createElement('div');
+  dbg.el.style.cssText = 'position:fixed;left:6px;top:50%;z-index:9;background:#000c;color:#9fd3ff;font:11px monospace;padding:4px 6px;pointer-events:none;white-space:pre';
+  document.body.appendChild(dbg.el);
+}
 function frame(now){
+  requestAnimationFrame(frame);
+  const iv = rafPrev ? now - rafPrev : 16.7;
+  rafPrev = now;
+  rafIv = rafIv * 0.9 + Math.min(iv, 50) * 0.1;
+  // on 90-120 Hz screens draw every other refresh: an even 60 fps looks smoother than a ragged 120
+  if (rafIv < 12.5){ skipNext = !skipNext; if (skipNext) return; }
+  const t0 = performance.now();
   const dt = Math.min(0.05, (now - last) / 1000);
+  if (dbg.on) dbg.iv.push(now - last);
   last = now;
   if (mapOpen){
     if (warp && !paused) for (let n = 0; n < 40 && warp; n++) update(1 / 60);
@@ -3401,10 +3466,19 @@ function frame(now){
     else T += dt * 0.3;
     render();
   }
-  requestAnimationFrame(frame);
+  if (dbg.on){
+    dbg.work.push(performance.now() - t0);
+    if (now - dbg.t > 1000){
+      dbg.t = now;
+      const iv = dbg.iv.splice(0), wk = dbg.work.splice(0);
+      const avg = a => a.reduce((x, y) => x + y, 0) / (a.length || 1), mx = a => Math.max(0, ...a);
+      const jank = iv.filter(v => v > 1.6 * avg(iv)).length;
+      dbg.el.textContent = `screen ${Math.round(1000 / rafIv)} Hz${rafIv < 12.5 ? ' (drawing at half)' : ''}\nframes ${iv.length}/s  gap avg ${avg(iv).toFixed(1)} max ${mx(iv).toFixed(0)} ms\nlong gaps ${jank}\nwork avg ${avg(wk).toFixed(1)} max ${mx(wk).toFixed(1)} ms\npixels ${LW}x${LH} x${(CSSP * (window.devicePixelRatio || 1)).toFixed(2)}`;
+    }
+  }
 }
 requestAnimationFrame(frame);
-window.__game = { ox: () => ox, addSquall: (x, y) => squalls.push({ x, y, r: 600, f: 1, life: 300 }), get timeScale(){ return timeScale; }, proj: () => proj, mv, get warp(){ return warp; }, ship, pl, storm, liberate, unrest, defenders, creditFreed, ai: () => ai, isles, ports, fog, openMap, closeMap, setSail, fire, board, spawn, TYPES, makeShip, LIVERY, ROLE_NAME, cargoFor, route };
+window.__game = { ox: () => ox, get timeScale(){ return timeScale; }, proj: () => proj, mv, get warp(){ return warp; }, ship, pl, storm, liberate, unrest, defenders, creditFreed, ai: () => ai, isles, ports, fog, openMap, closeMap, setSail, fire, board, spawn, TYPES, makeShip, LIVERY, ROLE_NAME, cargoFor, route };
 })();
 </script>
 </body>
