@@ -2412,108 +2412,197 @@ function drawSideShip(c, s, wl){
   const Lp = Math.round(Math.min(70 + t.L * 2.1, SW * 0.62)), xc = SW / 2, bow = xc + Lp / 2, stern = xc - Lp / 2;
   const hh = 7 + t.B * 0.9, draft = 7 + t.B * 0.5, castle = t.rig === 'ship' ? 7 : t.rig === 'brig' ? 3 : 1;
   const deck = wl - hh;
-  const line = (x0, y0, x1, y1, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); };
+  const line = (x0, y0, x1, y1, col, w = 1) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); };
   const set = s.sinking ? 0 : s.set, luff = s.aw.awa < t.noGo * DEG * 0.8 && s.sail > 0.05;
   const flut = k => luff ? Math.sin(T * 17 + k) * 1.5 : 0;
-  // bowsprit
-  line(bow - 8, deck - 2, bow + rig.sprit * 2.4, deck - 14, C.woodDk, 2);
-  // masts and sails
+  const sprX = bow + rig.sprit * 2.4, sprY = deck - 14;
   const heights = rig.masts.map((m, i) => (m.kind === 'square' ? 0.72 : 0.6) * Lp * (t.rig === 'sloop' ? 1.25 : 1) * (i === 1 ? 1.08 : 1));
+  const mastX = rig.masts.map(m => xc - m.y * Lp);
+  const tops = heights.map(h => deck - h);
+  const deckAt = x => deck + 3 * (1 - Math.pow((x - xc) / (Lp / 2), 2)) - 3;
+
+  // standing rigging behind the sails: stays between mastheads and to the bowsprit, shrouds with ratlines
+  line(sprX, sprY, mastX[0], tops[0] + heights[0] * 0.12, C.woodDk);
+  for (let i = 1; i < mastX.length; i++) line(mastX[i - 1], tops[i - 1] + 2, mastX[i], deck - heights[i] * 0.55, C.woodDk);
+  line(mastX[mastX.length - 1], tops[mastX.length - 1] + 2, stern + 2, deck - castle, C.woodDk);
+  mastX.forEach((mx, i) => {
+    const sy = deck - heights[i] * 0.6;
+    for (const dx of [-7, -3, 2, 6]) line(mx + dx, deckAt(mx + dx) + 1, mx + dx * 0.15, sy, C.woodDk);
+    for (let y = deck - 4; y > sy + 2; y -= 3){
+      const f = (deck - y) / (deck - sy);
+      line(mx - 7 + 6 * f, y, mx + 6 - 5 * f, y, C.wood);
+    }
+  });
+  // bowsprit and jib-boom
+  line(bow - 8, deck - 2, sprX, sprY, C.woodDk, 2);
+  // masts, fighting tops, sails
   rig.masts.forEach((m, i) => {
-    const mx = xc - m.y * Lp, mh = heights[i], top = deck - mh;
-    line(mx, deck, mx, top, C.woodDk, 2);
+    const mx = mastX[i], mh = heights[i], top = tops[i];
+    line(mx, deck, mx, top, C.woodDk, 2.2);
+    line(mx + 0.8, deck, mx + 0.8, top + 4, C.wood, 0.8);
+    c.fillStyle = C.woodDk; c.fillRect(mx - 4, deck - mh * 0.6, 8, 2);
     if (m.kind === 'square'){
       const yards = [0.3, 0.58, 0.82].map(f => deck - mh * f);
       const widths = [1, 0.82, 0.62].map(f => f * Lp * 0.3 * m.w);
-      // which sails are set: full = all three, fighting sail = topsails only, reefed = small topsails
+      // full = all three, fighting sail = topsails only, reefed = small topsails
       const on = set === 3 ? [1, 1, 1] : set === 2 ? [0, 1, 1] : set === 1 ? [0, 0.6, 0] : [0, 0, 0];
       yards.forEach((y, k) => {
         const w = widths[k];
-        line(mx - w / 2, y, mx + w / 2, y, C.woodDk, 1.5);
-        if (!on[k] || s.sail < 0.05){ line(mx - w / 2 + 2, y + 1.5, mx + w / 2 - 2, y + 1.5, C.sailSh, 2.5); return; }
-        const foot = (k === 0 ? deck - 6 : yards[k - 1] - 2) * 1, hgt = (y - foot) * on[k];
+        line(mx - w / 2, y, mx + w / 2, y, C.woodDk, 1.6);
+        if (!on[k] || s.sail < 0.05){
+          line(mx - w / 2 + 2, y + 1.6, mx + w / 2 - 2, y + 1.6, C.sail, 2.4);
+          for (let x = mx - w / 2 + 4; x < mx + w / 2 - 3; x += 5) line(x, y + 0.5, x, y + 3, C.sailSh, 0.8);
+          return;
+        }
+        const foot = k === 0 ? deck - 6 : yards[k - 1] - 2, hgt = (y - foot) * on[k];
         const fy = y - hgt, bel = 3 * s.sail;
-        c.fillStyle = C.sail;
-        c.beginPath();
-        c.moveTo(mx - w / 2, y);
-        c.lineTo(mx + w / 2, y);
-        c.lineTo(mx + w / 2 * 1.05 + flut(k), fy);
-        c.quadraticCurveTo(mx, fy + bel * 2, mx - w / 2 * 1.05 + flut(k + 1), fy);
-        c.closePath();
-        c.fill();
-        c.strokeStyle = C.sailSh; c.lineWidth = 0.8; c.stroke();
-        line(mx, y, mx, fy + bel, C.sailSh, 0.8);
+        const shape = () => {
+          c.beginPath();
+          c.moveTo(mx - w / 2, y);
+          c.lineTo(mx + w / 2, y);
+          c.lineTo(mx + w / 2 * 1.05 + flut(k), fy);
+          c.quadraticCurveTo(mx, fy + bel * 2, mx - w / 2 * 1.05 + flut(k + 1), fy);
+          c.closePath();
+        };
+        shape(); c.fillStyle = C.sail; c.fill();
+        // shade the after third of the sail and stitch the cloths
+        c.save(); shape(); c.clip();
+        c.fillStyle = C.sailSh; c.fillRect(mx - w / 2 - 2, fy - 2, w * 0.3, hgt * -1 + 6);
+        c.fillRect(mx - w / 2 - 2, y - 2, w * 0.3, -hgt + 4);
+        for (let x = mx - w / 2 + 4; x < mx + w / 2; x += 4) line(x, y, x + flut(k) * 0.3, fy + bel * 2, C.sailSh, 0.6);
+        if (on[k] < 1){ for (let x = mx - w / 2 + 3; x < mx + w / 2; x += 3) line(x, fy + 2, x, fy + 3.5, C.woodDk, 0.8); }
+        c.restore();
+        c.strokeStyle = C.sailSh; c.lineWidth = 0.9; shape(); c.stroke();
+        // sheets from the clews down to the yard below
+        line(mx - w / 2 * 1.05, fy, mx - w / 2 * 1.05 - 2, k ? fy + 4 : deck - 1, C.woodDk, 0.7);
       });
     } else {
       // gaff sail aft of the mast; reefed lowers the gaff
       const boomY = deck - mh * 0.12, gaffY = deck - mh * (set === 1 ? 0.55 : 0.8);
       const bl = m.boom * Lp * 0.95, gl = m.gaff * Lp * 0.9;
-      if (set === 0 || s.sail < 0.05){ line(mx, boomY, mx - bl, boomY + 2, C.woodDk, 1.5); line(mx - 2, boomY - 1, mx - bl + 4, boomY + 1, C.sailSh, 3); }
-      else {
+      if (set === 0 || s.sail < 0.05){
+        line(mx, boomY, mx - bl, boomY + 2, C.woodDk, 1.6);
+        line(mx - 2, boomY - 1.2, mx - bl + 4, boomY + 0.8, C.sail, 3);
+        for (let x = mx - 6; x > mx - bl + 4; x -= 6) line(x, boomY - 2.5, x, boomY + 1.5, C.sailSh, 0.8);
+      } else {
         const gx = mx - gl * 0.95, gy = gaffY - gl * 0.35;
-        c.fillStyle = C.sail;
-        c.beginPath();
-        c.moveTo(mx, boomY); c.lineTo(mx - bl, boomY + 2);
-        c.quadraticCurveTo(mx - bl * 0.9 + flut(3), (boomY + gy) / 2, gx, gy);
-        c.lineTo(mx, gaffY);
-        c.closePath(); c.fill();
-        c.strokeStyle = C.sailSh; c.lineWidth = 0.8; c.stroke();
-        line(mx, boomY, mx - bl, boomY + 2, C.woodDk, 1.5);
-        line(mx, gaffY, gx, gy, C.woodDk, 1.5);
+        const shape = () => {
+          c.beginPath();
+          c.moveTo(mx, boomY); c.lineTo(mx - bl, boomY + 2);
+          c.quadraticCurveTo(mx - bl * 0.9 + flut(3), (boomY + gy) / 2, gx, gy);
+          c.lineTo(mx, gaffY);
+          c.closePath();
+        };
+        shape(); c.fillStyle = C.sail; c.fill();
+        c.save(); shape(); c.clip();
+        c.fillStyle = C.sailSh; c.fillRect(mx - bl - 4, gy - 4, bl * 0.28, boomY - gy + 8);
+        for (let x = mx - 4; x > mx - bl; x -= 4) line(x, boomY + 2, x + 2, gaffY - (mx - x) * 0.35, C.sailSh, 0.6);
+        if (set === 1) for (let x = mx - 3; x > mx - bl; x -= 3) line(x, boomY - 3, x, boomY - 1, C.woodDk, 0.8);
+        c.restore();
+        c.strokeStyle = C.sailSh; c.lineWidth = 0.9; shape(); c.stroke();
+        line(mx, boomY, mx - bl, boomY + 2, C.woodDk, 1.6);
+        line(mx, gaffY, gx, gy, C.woodDk, 1.6);
+        line(gx, gy, mx, top + 3, C.woodDk, 0.7);
       }
     }
+    // pennant at every masthead but the flag's
+    c.fillStyle = liv.flag[0];
+    const pd = Math.cos(s.aw.rel) > 0 ? -1 : 1;
+    for (let k = 0; k < 6; k++) c.fillRect(mx + pd * k * 1.6, top - 1 + Math.sin(T * 8 - k) * 0.6, 1.8, Math.max(0.8, 1.6 - k * 0.2));
   });
-  // jib: bowsprit to foremast
+  // jibs: bowsprit to foremast
   if (s.sail > 0.05 && set > 0){
-    const fm = xc - rig.masts[0].y * Lp, ftop = deck - heights[0] * 0.85;
-    c.fillStyle = C.sail;
+    const fm = mastX[0], ftop = deck - heights[0] * 0.85;
+    const jib = (x0, y0, k) => {
+      const shape = () => {
+        c.beginPath();
+        c.moveTo(x0, y0);
+        c.lineTo(fm + 2, ftop + k * 8);
+        c.quadraticCurveTo(fm + 8 + flut(5 + k), deck - 12 - k * 3, bow - 4 - k * 6, deck - 3 - k * 2);
+        c.closePath();
+      };
+      shape(); c.fillStyle = C.sail; c.fill();
+      c.strokeStyle = C.sailSh; c.lineWidth = 0.9; c.stroke();
+    };
+    if (t.rig !== 'sloop' && set === 3) jib(sprX, sprY, 0);
+    jib(t.rig === 'sloop' ? sprX : bow + rig.sprit * 1.2, t.rig === 'sloop' ? sprY : deck - 9, t.rig === 'sloop' ? 0 : 1);
+  }
+  // ensign at the tallest masthead, streaming with the apparent wind
+  const ti = heights.indexOf(Math.max(...heights)), fx = mastX[ti], fy = tops[ti] - 2;
+  const dir = Math.cos(s.aw.rel) > 0 ? -1 : 1;
+  const flag = (col, y0, h) => {
+    c.fillStyle = col;
     c.beginPath();
-    c.moveTo(bow + rig.sprit * 2.2, deck - 13);
-    c.lineTo(fm + 2, ftop);
-    c.quadraticCurveTo(fm + 6 + flut(5), deck - 12, bow - 4, deck - 3);
-    c.closePath(); c.fill();
-    c.strokeStyle = C.sailSh; c.lineWidth = 0.8; c.stroke();
-  }
-  // flag at the top of the tallest mast streams with the apparent wind
-  const ti = heights.indexOf(Math.max(...heights)), fx = xc - rig.masts[ti].y * Lp, fy = deck - heights[ti];
-  const dir = Math.cos(s.aw.rel) > 0 ? -1 : 1; // wind from ahead streams it aft (left)
-  c.fillStyle = s.struck ? C.sail : liv.flag[0];
-  c.beginPath();
-  for (let i = 0; i <= 5; i++) c.lineTo(fx + dir * i * 2.4, fy + Math.sin(T * 9 - i) * 0.8 * i / 5);
-  for (let i = 5; i >= 0; i--) c.lineTo(fx + dir * i * 2.4, fy + 7 + Math.sin(T * 9 - i) * 0.8 * i / 5);
-  c.fill();
+    for (let i = 0; i <= 6; i++) c.lineTo(fx + dir * i * 2.2, y0 + Math.sin(T * 9 - i) * 0.9 * i / 6);
+    for (let i = 6; i >= 0; i--) c.lineTo(fx + dir * i * 2.2, y0 + h + Math.sin(T * 9 - i) * 0.9 * i / 6);
+    c.fill();
+  };
+  flag(s.struck ? C.sail : liv.flag[0], fy, 8);
+  if (!s.struck && liv === LIVERY.free){ c.fillStyle = C.white; c.fillRect(fx + dir * 6 - 1, fy + 3, 3, 2); c.fillRect(fx + dir * 9 - 1, fy + 3, 2, 2); }
+  if (!s.struck && liv !== LIVERY.free){ c.fillStyle = liv.flag[1]; c.fillRect(fx + dir * 5 - 1, fy + 3, 3, 3); }
+
   // hull
-  c.beginPath();
-  c.moveTo(stern - 3, deck - castle);
-  c.lineTo(stern + Lp * 0.22, deck - castle);
-  c.lineTo(stern + Lp * 0.25, deck);
-  c.quadraticCurveTo(xc, deck + 3, bow - 8, deck - 3);
-  c.lineTo(bow, deck - 5);
-  c.quadraticCurveTo(bow + 2, wl + 2, bow - 16, wl + draft);
-  c.lineTo(stern + 10, wl + draft);
-  c.lineTo(stern, wl - hh * 0.2);
-  c.closePath();
-  c.fillStyle = liv.hull; c.fill();
-  // rail, wale, gunports, stern windows
-  line(stern - 2, deck - castle + 1, stern + Lp * 0.22, deck - castle + 1, C.deckLt, 1);
-  c.strokeStyle = liv.stripe || C.woodDk; c.lineWidth = 2;
+  const hull = () => {
+    c.beginPath();
+    c.moveTo(stern - 3, deck - castle);
+    c.lineTo(stern + Lp * 0.22, deck - castle);
+    c.lineTo(stern + Lp * 0.25, deck);
+    c.quadraticCurveTo(xc, deck + 3, bow - 8, deck - 3);
+    c.lineTo(bow, deck - 5);
+    c.quadraticCurveTo(bow + 2, wl + 2, bow - 16, wl + draft);
+    c.lineTo(stern + 10, wl + draft);
+    c.lineTo(stern, wl - hh * 0.2);
+    c.closePath();
+  };
+  hull(); c.fillStyle = liv.hull; c.fill();
+  c.save(); hull(); c.clip();
+  // planking: alternating strakes, a pale band at the top, tarred bottom below the waterline
+  for (let y = deck - castle; y < wl + draft; y += 2.6) line(stern - 4, y, bow + 4, y + (y - deck) * 0.02, C.woodDk, 0.7);
+  c.fillStyle = C.deck; c.fillRect(stern - 4, deck - castle - 1, Lp + 8, 2.2);
+  c.fillStyle = C.black; c.fillRect(stern - 4, wl - 1, Lp + 8, draft + 4);
+  if (liv.stripe){ c.fillStyle = liv.stripe; c.fillRect(stern - 4, wl - hh * 0.62, Lp + 8, 1.6); }
+  c.restore();
+  // main wale
+  c.strokeStyle = C.black; c.lineWidth = 2;
   c.beginPath(); c.moveTo(stern + 2, wl - hh * 0.35); c.quadraticCurveTo(xc, wl - hh * 0.25, bow - 10, wl - hh * 0.45); c.stroke();
-  c.fillStyle = C.black;
+  // gunports with red lids raised
   for (let i = 0; i < t.guns; i++){
-    const gx = stern + Lp * 0.2 + (Lp * 0.6) * (t.guns > 1 ? i / (t.guns - 1) : 0.5);
-    c.fillRect(gx - 1.5, deck + 2 + Math.abs(gx - xc) / Lp * -3, 3, 3);
+    const gx = stern + Lp * 0.2 + (Lp * 0.6) * (t.guns > 1 ? i / (t.guns - 1) : 0.5), gy = deckAt(gx) + 2;
+    c.fillStyle = C.red; c.fillRect(gx - 2, gy - 2.2, 4, 1.4);
+    c.fillStyle = C.black; c.fillRect(gx - 1.5, gy, 3, 3);
+    c.fillStyle = C.iron; c.fillRect(gx + 1, gy + 1, 2, 1);
   }
-  if (t.rig === 'ship'){ c.fillStyle = C.gold; c.fillRect(stern + 1, deck - castle + 3, 4, 2); }
-  // battle damage
+  // stern: gallery windows, gold trim, lantern, rudder
+  if (t.rig !== 'sloop'){
+    c.fillStyle = C.gold;
+    c.fillRect(stern - 2, deck - castle + 1, 1.5, castle + hh * 0.4);
+    for (let k = 0; k < 3; k++) c.fillRect(stern + 2 + k * 4, deck - castle + 3, 2.4, 2.4);
+    c.fillStyle = C.woodDk; c.fillRect(stern + 1, deck - castle + 6, 12, 1);
+  }
+  line(stern - 4, deck - castle, stern - 4, deck - castle - 6, C.iron, 1);
+  c.fillStyle = C.gold; c.fillRect(stern - 5.5, deck - castle - 9, 3, 3.5);
+  line(stern, wl - hh * 0.2, stern + 6, wl + draft, C.woodDk, 2.4);
+  // figurehead, cathead and anchor
+  c.fillStyle = C.gold; c.fillRect(bow - 1, deck - 6, 3, 3); c.fillRect(bow + 1, deck - 5, 2, 2);
+  c.fillStyle = C.iron;
+  c.fillRect(bow - 13, deck + 2, 1.5, 6);
+  c.fillRect(bow - 15.5, deck + 7, 6.5, 1.5);
+  c.fillRect(bow - 16, deck + 5.5, 1.5, 2); c.fillRect(bow - 10, deck + 5.5, 1.5, 2);
+  // battle damage: shot holes and splintered planks
   const dmg = 1 - s.hull / t.hull;
-  c.fillStyle = C.black;
-  for (let i = 0; i < Math.round(dmg * 10); i++) c.fillRect(stern + Lp * (0.15 + hash(i, 1, 9) * 0.7), deck + 1 + hash(i, 2, 9) * hh * 0.6, 2, 2);
-  // crew on deck
-  const n = Math.min(16, Math.round(s.crew / 4));
+  for (let i = 0; i < Math.round(dmg * 12); i++){
+    const x = stern + Lp * (0.15 + hash(i, 1, 9) * 0.7), y = deck + 1 + hash(i, 2, 9) * hh * 0.6;
+    c.fillStyle = C.deckLt; c.fillRect(x - 1, y - 1, 4, 4);
+    c.fillStyle = C.black; c.fillRect(x, y, 2, 2);
+  }
+  // crew on deck, some aloft
+  const n = Math.min(18, Math.round(s.crew / 4));
   for (let i = 0; i < n; i++){
-    const x = stern + Lp * (0.15 + 0.72 * hash(i, 3, 5)), y = deck - 3 + Math.sin(T * 3 + i) * 0.3;
-    c.fillStyle = C.navy; c.fillRect(x, y, 1.6, 3);
-    c.fillStyle = hash(i, 4, 5) < 0.5 ? C.sail : C.red; c.fillRect(x, y - 1.5, 1.6, 1.6);
+    let x = stern + Lp * (0.12 + 0.76 * hash(i, 3, 5)), y = deckAt(x) - 3.5;
+    if (i % 6 === 5 && set > 0){ const mi = i % mastX.length; x = mastX[mi] + (hash(i, 6, 5) - 0.5) * 8; y = deck - heights[mi] * 0.6 - 3.5; }
+    const bob = Math.sin(T * 3 + i) * 0.3;
+    c.fillStyle = C.navy; c.fillRect(x, y + bob, 1.8, 3.4);
+    c.fillStyle = hash(i, 4, 5) < 0.5 ? C.sail : C.red; c.fillRect(x - 0.2, y - 1.8 + bob, 2.2, 1.8);
   }
   return { bow, stern, Lp };
 }
@@ -2532,6 +2621,13 @@ function renderSide(){
       for (let y = y0; y < y0 + 4; y++) for (let x = (y & 1); x < LW; x += 2) if (BAYER[(y & 3) * 4 + (x & 3)] < (y - y0 + 1) / 5) g.fillRect(x, y, 1, 1);
     }
   }
+  // the sun, with a dithered glow
+  const sunX = Math.round(LW * 0.78), sunY = Math.round(hz * 0.3);
+  for (let y = -16; y <= 16; y++) for (let x = -16; x <= 16; x++){
+    const d = Math.hypot(x, y);
+    if (d < 6){ g.fillStyle = '#fff6d8'; g.fillRect(sunX + x, sunY + y, 1, 1); }
+    else if (d < 16 && BAYER[((y + 16) & 3) * 4 + ((x + 16) & 3)] < (16 - d) / 14){ g.fillStyle = '#e9f2e6'; g.fillRect(sunX + x, sunY + y, 1, 1); }
+  }
   // clouds drift with the wind
   for (let k = 0; k < 5; k++){
     const w = 18 + hash(k, 1, 31) * 30, x = ((hash(k, 2, 31) * (LW + 80) + T * (2 + hash(k, 3, 31) * 3)) % (LW + 80)) - 40, y = 8 + hash(k, 4, 31) * hz * 0.5;
@@ -2540,8 +2636,34 @@ function renderSide(){
     g.fillRect(Math.round(x + w * 0.2), Math.round(y - 3), Math.round(w * 0.5), 3);
     g.fillStyle = '#d3e6ee'; g.fillRect(Math.round(x + 2), Math.round(y + 4), Math.round(w - 4), 1);
   }
+  // land on the horizon when an island is near
+  let nearI = null, nd = 1e9;
+  for (const I of isles){ const d = -isleDepth(I, ship.x, ship.y); if (d < nd){ nd = d; nearI = I; } }
+  const coastD = ship.y > COAST_MIN - 3000 ? coastY(ship.x) - ship.y : 1e9;
+  const landD = Math.min(nd, coastD);
+  if (landD < 3500){
+    const k = 1 - landD / 3500, w = Math.round(LW * (0.3 + 0.5 * k)), x0 = Math.round(LW * 0.08 + hash(nearI ? nearI.id : 99, 1, 7) * (LW - w - LW * 0.16)), h = 3 + 14 * k;
+    for (let x = 0; x < w; x++){
+      const u = x / w, y = Math.round(h * Math.sin(Math.PI * u) * (0.75 + 0.25 * Math.sin(u * 13 + 1)) + vnoise(x / 6, 1, 3) * 1.5);
+      g.fillStyle = k > 0.5 ? '#3f7a5a' : '#6f9fa8'; g.fillRect(x0 + x, hz - y, 1, y);
+      if (k > 0.5 && hash(x, 2, 7) < 0.15){ g.fillStyle = '#2f6326'; g.fillRect(x0 + x, hz - y - 1, 1, 2); }
+    }
+  }
+  // gulls wheel overhead near land
+  if (landD < 1500){
+    for (let k = 0; k < 3; k++){
+      const gx = ((hash(k, 5, 7) * LW + T * (6 + k * 3)) % (LW + 20)) - 10, gy = hz * (0.25 + 0.15 * k) + Math.sin(T * 0.7 + k * 2) * 6;
+      const flap = Math.sin(T * 6 + k * 1.7) > 0 ? 1 : 0;
+      g.fillStyle = C.navy;
+      g.fillRect(Math.round(gx), Math.round(gy), 1, 1);
+      g.fillRect(Math.round(gx) - 1, Math.round(gy) - flap, 1, 1); g.fillRect(Math.round(gx) + 1, Math.round(gy) - flap, 1, 1);
+      g.fillRect(Math.round(gx) - 2, Math.round(gy) - 1 + flap, 1, 1); g.fillRect(Math.round(gx) + 2, Math.round(gy) - 1 + flap, 1, 1);
+    }
+  }
   // sea: rows of waves scroll past with the ship's speed, faster nearer the viewer
   g.fillStyle = C.sea; g.fillRect(0, hz, LW, LH - hz);
+  // glitter under the sun
+  for (let y = hz + 1; y < hz + 30; y++) for (let x = sunX - 14; x < sunX + 14; x += 2) if (hash(x, y + Math.floor(T * 5), 9) < 0.12){ g.fillStyle = C.foam; g.fillRect(x, y, 2, 1); }
   g.fillStyle = C.seaLt; g.fillRect(0, hz, LW, 1);
   const spd = Math.max(0, ship.v);
   for (let r = 0; r < 26; r++){
@@ -2569,6 +2691,15 @@ function renderSide(){
   g.drawImage(sideCv, sx, sy);
   // the sea in front of the hull: hide what is under water, foam along the waterline and at the bow
   g.fillStyle = C.sea; g.fillRect(0, wly + 2, LW, LH - wly - 2);
+  // a broken, dithered reflection of hull and sails
+  for (let y = 0; y < 40; y++){
+    const yy = wly + 3 + y, wob = Math.round(Math.sin(T * 2 + y * 0.7) * 2);
+    for (let x = sx + geo.stern + 4; x < sx + geo.bow - 6; x++){
+      if (BAYER[(yy & 3) * 4 + (x & 3)] > 0.55 - y / 90) continue;
+      g.fillStyle = y < 10 ? C.seaDk : (x + y) % 5 ? C.seaDk : C.seaLt;
+      g.fillRect(x + wob, yy, 1, 1);
+    }
+  }
   g.fillStyle = C.seaLt;
   for (let x = 0; x < LW; x++) if (hash(x + Math.floor(T * 6), 7, 3) < 0.3) g.fillRect(x, wly + 2, 1, 1);
   if (spd > 0.5){
