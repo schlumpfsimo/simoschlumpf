@@ -159,6 +159,7 @@ function showState(){
 let printer = null;
 // Grosse Stücke ohne Pausen: Kommen die Daten langsamer als der Drucker druckt, hält er an und es gibt weisse Linien
 const CHUNK = 16384;
+const PUFFER = 128;   // Nullbytes vor jedem Druck, der Drucker ignoriert sie
 
 // Der Drucker wird nur während des Drucks belegt, damit der Mac (POS80-Warteschlange, Bon-Post) ihn weiter nutzen kann
 async function openUsb(device){
@@ -185,7 +186,12 @@ async function openUsb(device){
       await claim();
       try {
         await device.claimInterface(pick.iface);
-        if (pick.alt) await device.selectAlternateInterface(pick.iface, pick.alt);
+        // Hat vorher der Mac gedruckt (Bon-Post über die POS80-Warteschlange), zählen Mac und Drucker die USB-Pakete
+        // anders weiter als Chrome. Der Drucker verwirft dann das erste Paket mit dem Bildbefehl → Zeichensalat.
+        // Schnittstelle neu wählen und Endpunkt zurücksetzen bringt beide Seiten wieder in Takt.
+        await device.selectAlternateInterface(pick.iface, pick.alt).catch(() => {});
+        await device.clearHalt('out', pick.ep).catch(() => {});
+        data = join([new Uint8Array(PUFFER), data]);   // geht trotzdem ein Paket verloren, ist es nur Füllung
         // Der Reihe nach senden und jede Antwort prüfen: Geht ein Stück verloren, verrutscht der Rest und wird zu Zeichensalat
         let i = 0, stalls = 0;
         while (i < data.length) {
