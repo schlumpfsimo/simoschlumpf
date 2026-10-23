@@ -540,20 +540,7 @@ function windAt(x, y, t, lee = true){
     if (land(x + sx * 300, y + sy * 300)) spd *= 0.68;
     if (land(x + sx * 650, y + sy * 650)) spd *= 0.85;
   }
-  const q = squalls.length ? squallAt(x, y) : 0;
-  if (q) return { dir: dir + q * 0.35 * Math.sin(t * 0.7 + x * 0.001), spd: Math.max(1.5, spd) * (1 + q * 0.9) + q * 4 * vnoise(t * 0.8, x * 0.003, 17), squall: q };
   return { dir, spd: Math.max(1.5, spd) };
-}
-
-// squalls: dark cells that drift downwind, with stronger, shifting wind and rain
-let squalls = [];
-function squallAt(x, y){
-  let k = 0;
-  for (const q of squalls){
-    const d = Math.hypot(x - q.x, y - q.y);
-    if (d < q.r) k = Math.max(k, Math.sqrt(1 - d / q.r) * q.f);
-  }
-  return k;
 }
 
 // ---------------------------------------------------------------- navigation grid and routes
@@ -1716,7 +1703,6 @@ const GUIDE = [
     <li><b>Sails</b> (bottom right): full sail is fastest; fighting sail turns better in battle; reefed is gentle; furled stops her.</li>
     <li><b>Guns</b> fire out of the ship's sides. Turn so the enemy is beside you, then fire that side. The button fills up while the crew reloads.</li>
     <li><b>Rake</b> her: a broadside through her bow or stern runs the length of the ship and does double damage.</li>
-    <li><b>Squalls</b> darken the sea and bring hard gusts. Reef or fight sail in time, or the canvas splits.</li>
     <li>Fewer hands means slower reloading. Hire sailors in free ports.</li></ol>`],
   ['Taking ships', () => `
     <ol><li>Navy ships hunt you; merchants and slavers run.</li>
@@ -1815,33 +1801,6 @@ function portMenu(P){
 }
 
 // ---------------------------------------------------------------- weather
-let squallT = 40, squallWarn = 0, inSquall = false;
-function updSqualls(dt){
-  const w = ship.wind;
-  for (const q of squalls){
-    // drift downwind with the trades
-    q.x += -Math.sin(WIND_BASE) * 9 * dt; q.y += Math.cos(WIND_BASE) * 9 * dt;
-    q.life -= dt;
-    q.f = Math.min(1, q.f + dt / 20) * (q.life < 20 ? q.life / 20 : 1);
-  }
-  squalls = squalls.filter(q => q.life > 0);
-  squallT -= dt;
-  if (squallT <= 0 && squalls.length < 3){
-    // born upwind of the player, so you can see it coming
-    squallT = rnd(70, 140);
-    const a = WIND_BASE + rnd(-0.6, 0.6), d = rnd(1200, 2400);
-    squalls.push({ x: ship.x + Math.sin(a) * d, y: ship.y - Math.cos(a) * d, r: rnd(450, 800), f: 0.1, life: rnd(260, 400) });
-  }
-  const sq = w.squall || 0;
-  if (sq > 0.3 && !inSquall){ inSquall = true; toast('A squall! Reef the sails or lose your rigging.'); }
-  if (sq < 0.15) inSquall = false;
-  // full sail in a hard squall tears canvas and springs spars
-  if (!dead && sq > 0.35 && ship.set === 3 && ship.sail > 0.8 && w.spd > 20){
-    ship.rigging = Math.max(0.3, ship.rigging - dt * 0.012 * sq);
-    if (T > squallWarn){ squallWarn = T + 6; toast('The topsails are splitting! Reef!'); sfx.flap(); }
-  }
-}
-
 // ---------------------------------------------------------------- simulation
 const keys = new Set();
 let helmHeld = false, helmTarget = 0;
@@ -1910,7 +1869,6 @@ function update(dt){
   for (const P of empirePorts) fortStep(P, dt);
   spawnT -= dt;
   if (spawnT <= 0){ spawnT = 20; populate(false); }
-  updSqualls(dt);
   if (!dead && empirePorts.length && !ai.some(s => !s.sinking && !s.struck && dist(s, ship) < 1100)){
     quietT += dt;
     if (quietT > (firstMeet ? 8 : warp ? 60 : 15)){ quietT = 0; if (encounter()) firstMeet = false; }
@@ -1985,7 +1943,7 @@ function update(dt){
 
   bakeChartRows(4);
   sfx.ambient(dt, ship.wind.spd, dead ? 0 : Math.abs(ship.v), !dead && ship.sail > 0.1 && ship.aw.awa < ship.t.noGo * 0.6 * DEG,
-    Math.abs(ship.turn), depthFast(ship.x, ship.y) > -350, ship.wind.squall || 0);
+    Math.abs(ship.turn), depthFast(ship.x, ship.y) > -350);
   updToast(dt);
   updHud();
 }
@@ -1996,7 +1954,6 @@ const hudEl = { spdN: el('spdN'), spd: el('spd'), pos: el('pos'), tack: el('tack
 // plain-language advice for people who don't sail
 function sailHint(rel, twa){
   const t = ship.t;
-  if ((ship.wind.squall || 0) > 0.3 && ship.set === 3) return 'Squall! Reef the sails.';
   if (ship.set === 0) return 'Sails furled: push the sail lever up.';
   if (twa < t.noGo) return `Too close to the wind! Steer ${rel > 0 ? 'LEFT' : 'RIGHT'}.`;
   if (twa < t.noGo + 14) return 'As near the wind as she goes. Upwind? Zig-zag (INFO).';
@@ -2502,42 +2459,10 @@ function render(){
     PB.fillStyle = P.f === 'free' ? C.white : C.gold; PB.fillRect(fx + dir * 4, fy - 8 + Math.round(Math.sin(T * 8 - 3) * 0.5), 1, 1);
   }
 
-  drawWeather();
   drawLabels();
   drawCompass();
   PB.present();
 }
-function drawWeather(){
-  const buf = PB.buf;
-  for (const q of squalls){
-    const cx = q.x / MPP - ox, cy = q.y / MPP - oy, r = q.r / MPP;
-    if (cx + r < 0 || cy + r < 0 || cx - r > LW || cy - r > LH) continue;
-    const y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(LH, Math.ceil(cy + r));
-    for (let y = y0; y < y1; y++){
-      const dy = y - cy, w = Math.sqrt(Math.max(0, r * r - dy * dy));
-      const x0 = Math.max(0, Math.floor(cx - w)), x1 = Math.min(LW, Math.ceil(cx + w));
-      for (let x = x0, i = y * LW + x0; x < x1; x++, i++){
-        const k = Math.sqrt(1 - Math.hypot(x - cx, dy) / r) * q.f;
-        if (k * 0.5 > bay(x, y)){
-          const p = buf[i];
-          buf[i] = (255 << 24 | (((p >> 16) & 255) * 0.72) << 16 | (((p >> 8) & 255) * 0.75) << 8 | ((p & 255) * 0.78)) >>> 0;
-        }
-      }
-    }
-  }
-  // rain slants downwind across the screen
-  const sq = ship.wind.squall || 0;
-  if (sq > 0.05){
-    const n = Math.round(sq * LW * LH / 260), bx = -Math.sin(ship.wind.dir), by = Math.cos(ship.wind.dir);
-    PB.fillStyle = '#b8c8d4';
-    for (let k = 0; k < n; k++){
-      const x = (hash(k, 1, 77) * LW + T * 40 * bx * 3) % LW, y = (hash(k, 2, 77) * LH + T * 160) % LH;
-      const xx = (x + LW) % LW, yy = (y + LH) % LH;
-      for (let j = 0; j < 4; j++) PB.fillRect(xx + bx * j * 0.6, yy + j, 1, 1);
-    }
-  }
-}
-
 // name and hull bar over nearby ships
 function drawLabels(){
   const g = PB;
@@ -2815,14 +2740,6 @@ function renderMap(){
   }
   el('mapGo').classList.toggle('hidden', !pick_ || warp);
   el('mapStop').classList.toggle('hidden', !warp);
-  // squalls in sight: grey hatched cells
-  for (const q of squalls){
-    if (Math.hypot(q.x - ship.x, q.y - ship.y) > SIGHT * 2) continue;
-    const cx = X(q.x), cy = Y(q.y), r = Math.max(3, q.r * s);
-    g.fillStyle = '#7b8794';
-    for (let y = -r; y <= r; y += 2) for (let x = -r; x <= r; x += 2) if (x * x + y * y < r * r && ((x + y) / 2 | 0) % 2 === 0) g.fillRect(cx + x, cy + y, 1, 1);
-    if (q.r * s > 10) drawText(g, 'Squall', cx - 11, cy - 2, '#4a5560', 1, C.parch);
-  }
   // own ship: a bold blue arrow with a pulsing ring
   const px = X(ship.x), py = Y(ship.y);
   const ring = 7 + ((T * 4) % 1 < 0.5 ? 0 : 1);
@@ -3283,7 +3200,7 @@ addEventListener('blur', () => keys.clear());
 // everything is synthesised: sea and wind beds, soft UI sounds, gunnery, gulls, and a faint shanty
 const sfx = (() => {
   let ac = null, master = null, fxBus = null, musicBus = null, noise = null;
-  let sea = null, seaF = null, hiss = null, wind = null, windF = null, rain = null;
+  let sea = null, seaF = null, hiss = null, wind = null, windF = null;
   const S = { mode: 0 }; // 0 everything, 1 effects only, 2 silent
   try { S.mode = +(localStorage.getItem('libertalia-snd') || 0) % 3; } catch (e){}
   const applyMode = () => {
@@ -3315,7 +3232,6 @@ const sfx = (() => {
       const d = noise.getChannelData(0);
       for (let i = 0, b = 0; i < d.length; i++){ b = b * 0.6 + (Math.random() * 2 - 1) * 0.4; d[i] = b * 1.6; }
       [sea, seaF] = loop('lowpass', 380, 0.4, fxBus);
-      [rain] = loop('highpass', 3200, 0.5, fxBus);
       [hiss] = loop('highpass', 2600, 0.3, fxBus);
       [wind, windF] = loop('bandpass', 700, 1.6, fxBus);
       applyMode();
@@ -3458,9 +3374,7 @@ const sfx = (() => {
 
   let swell = 0, nextCreak = 3, nextGull = 4, flapT = 0;
   let ambT = 0, ambDt = 0;
-  S.flap = () => { for (let i = 0; i < 4; i++) burst(0.08, 'bandpass', rnd(200, 400), 0.2, { delay: i * 0.09, q: 1.2 }); };
-  let nextThunder = 8;
-  S.ambient = (dt, w, v, luff, turn, nearLand, squall = 0) => {
+  S.ambient = (dt, w, v, luff, turn, nearLand) => {
     if (!ac) return;
     ambDt += dt;
     if ((ambT -= dt) > 0) return;
@@ -3477,8 +3391,6 @@ const sfx = (() => {
     if (nextCreak <= 0){ nextCreak = rnd(3, 8); creakNow(rnd(0.025, 0.05), rnd(80, 160)); }
     if (nearLand){ nextGull -= dt; if (nextGull <= 0){ nextGull = rnd(5, 14); gull(); } }
     if (luff){ flapT -= dt; if (flapT <= 0){ flapT = rnd(0.12, 0.25); burst(0.09, 'bandpass', rnd(250, 450), 0.12, { q: 1.2 }); } }
-    rain.gain.setTargetAtTime(squall * 0.05, t, 0.8);
-    if (squall > 0.4){ nextThunder -= dt; if (nextThunder <= 0){ nextThunder = rnd(10, 25); burst(3.5, 'lowpass', 160, 0.5 * squall, { attack: 0.3, f1: 60, delay: rnd(0, 1) }); } }
     music();
   };
   S.cycle = () => {
@@ -3566,7 +3478,7 @@ function frame(now){
   }
 }
 requestAnimationFrame(frame);
-window.__game = { ox: () => ox, addSquall: (x, y) => squalls.push({ x, y, r: 600, f: 1, life: 300 }), get timeScale(){ return timeScale; }, proj: () => proj, mv, get warp(){ return warp; }, ship, pl, storm, liberate, unrest, defenders, creditFreed, ai: () => ai, isles, ports, fog, openMap, closeMap, setSail, fire, board, spawn, TYPES, makeShip, LIVERY, ROLE_NAME, cargoFor, route };
+window.__game = { ox: () => ox, get timeScale(){ return timeScale; }, proj: () => proj, mv, get warp(){ return warp; }, ship, pl, storm, liberate, unrest, defenders, creditFreed, ai: () => ai, isles, ports, fog, openMap, closeMap, setSail, fire, board, spawn, TYPES, makeShip, LIVERY, ROLE_NAME, cargoFor, route };
 })();
 </script>
 </body>
