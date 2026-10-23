@@ -150,8 +150,8 @@ function showState(){
 
 // ---------------------------------------------------------------- Drucker: WebUSB oder Web Serial
 let printer = null;
-// Kleine Häppchen mit Pause: Günstige Drucker verlieren sonst Daten, und der Rest kommt als Zeichensalat heraus
-const CHUNK = 512, pause = () => new Promise(r => setTimeout(r, 8));
+// Ohne Pausen senden: Kommen die Daten langsamer als der Drucker druckt, hält er an und es gibt weisse Linien
+const CHUNK = 16384;
 
 // Der Drucker wird nur während des Drucks belegt, damit der Mac (POS80-Warteschlange, Bon-Post) ihn weiter nutzen kann
 async function openUsb(device){
@@ -179,7 +179,10 @@ async function openUsb(device){
       try {
         await device.claimInterface(pick.iface);
         if (pick.alt) await device.selectAlternateInterface(pick.iface, pick.alt);
-        for (let i = 0; i < data.length; i += CHUNK) { await device.transferOut(pick.ep, data.subarray(i, i + CHUNK)); await pause(); }
+        // alle Übertragungen auf einmal einreihen, damit der Datenstrom nie abreisst
+        const sends = [];
+        for (let i = 0; i < data.length; i += CHUNK) sends.push(device.transferOut(pick.ep, data.subarray(i, i + CHUNK)));
+        await Promise.all(sends);
         await device.releaseInterface(pick.iface).catch(() => {});
       } finally {
         await device.close().catch(() => {});
@@ -195,7 +198,7 @@ async function openSerial(port){
   return {
     name: 'Serieller Drucker',
     async write(data){
-      for (let i = 0; i < data.length; i += CHUNK) { await writer.write(data.subarray(i, i + CHUNK)); await pause(); }
+      await writer.write(data);
     },
     is: p => p === port,
   };
@@ -291,8 +294,9 @@ async function rasterize(file){
 function escpos({ W, H, bits }){
   const bpr = W >> 3, parts = [Uint8Array.of(0x1b, 0x40)];
   if (opts.mode === 'raster') {
-    for (let y = 0; y < H; y += 128) {
-      const h = Math.min(128, H - y);
+    // grosse Streifen: jeder neue Befehl kann den Drucker kurz anhalten
+    for (let y = 0; y < H; y += 960) {
+      const h = Math.min(960, H - y);
       parts.push(Uint8Array.of(0x1d, 0x76, 0x30, 0, bpr & 255, bpr >> 8, h & 255, h >> 8));
       parts.push(bits.subarray(y * bpr, (y + h) * bpr));
     }
