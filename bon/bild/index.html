@@ -157,7 +157,7 @@ function showState(){
 
 // ---------------------------------------------------------------- Drucker: WebUSB oder Web Serial
 let printer = null;
-// Ohne Pausen senden: Kommen die Daten langsamer als der Drucker druckt, hält er an und es gibt weisse Linien
+// Grosse Stücke ohne Pausen: Kommen die Daten langsamer als der Drucker druckt, hält er an und es gibt weisse Linien
 const CHUNK = 16384;
 
 // Der Drucker wird nur während des Drucks belegt, damit der Mac (POS80-Warteschlange, Bon-Post) ihn weiter nutzen kann
@@ -186,10 +186,20 @@ async function openUsb(device){
       try {
         await device.claimInterface(pick.iface);
         if (pick.alt) await device.selectAlternateInterface(pick.iface, pick.alt);
-        // alle Übertragungen auf einmal einreihen, damit der Datenstrom nie abreisst
-        const sends = [];
-        for (let i = 0; i < data.length; i += CHUNK) sends.push(device.transferOut(pick.ep, data.subarray(i, i + CHUNK)));
-        await Promise.all(sends);
+        // Der Reihe nach senden und jede Antwort prüfen: Geht ein Stück verloren, verrutscht der Rest und wird zu Zeichensalat
+        let i = 0, stalls = 0;
+        while (i < data.length) {
+          let r;
+          try { r = await device.transferOut(pick.ep, data.subarray(i, i + CHUNK)); }
+          catch (e) { throw abbruch(i, e.message); }
+          if (r.status === 'stall') {
+            if (++stalls > 3) throw abbruch(i, 'Drucker blockiert');
+            await device.clearHalt('out', pick.ep);   // Stück wurde nicht angenommen: nochmals senden
+            continue;
+          }
+          if (r.status !== 'ok') throw abbruch(i, 'USB-Status ' + r.status);
+          i += r.bytesWritten;
+        }
         await device.releaseInterface(pick.iface).catch(() => {});
       } finally {
         await device.close().catch(() => {});
@@ -229,7 +239,15 @@ async function connect(kind){
   }
 }
 
+// Bricht ein Druck mittendrin ab, wartet der Drucker noch auf Bilddaten und liest den nächsten Druck falsch
+function abbruch(gesendet, grund){
+  const e = new Error(grund);
+  e.mitten = gesendet > 0;
+  return e;
+}
+
 function usbError(e){
+  if (e.mitten) return `Druck abgebrochen (${e.message}). Bitte Drucker aus- und einschalten, sonst kommt beim nächsten Druck Zeichensalat.`;
   if (e.name === 'SecurityError' || /access|claim|Unable/i.test(e.message))
     return 'Drucker konnte nicht geöffnet werden: Er ist wohl von einem Systemtreiber belegt (siehe Hilfe).';
   return 'Fehler: ' + e.message;
