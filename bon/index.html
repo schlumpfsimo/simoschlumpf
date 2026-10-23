@@ -93,8 +93,8 @@ details p{margin:8px 0}
     </div>
     <label>Bildbefehl</label>
     <div class="seg" id="mode">
-      <button data-m="col" aria-pressed="true">Spalten</button>
-      <button data-m="raster" aria-pressed="false">Raster</button>
+      <button data-m="raster" aria-pressed="true">Raster</button>
+      <button data-m="col" aria-pressed="false">Spalten</button>
     </div>
     <label>Test</label>
     <div class="seg"><button id="testBtn" class="ghost">Testbon drucken</button></div>
@@ -118,7 +118,7 @@ const store = {
 };
 
 // ---------------------------------------------------------------- Einstellungen
-const opts = { width: +store.get('width', 576), bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', cut: store.get('cut', '1') === '1', mode: store.get('mode', 'col') };
+const opts = { width: +store.get('width', 576), bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', cut: store.get('cut', '1') === '1', mode: store.get('mode', 'raster') };
 
 function seg(id, attr, current, apply){
   const box = $(id);
@@ -283,7 +283,7 @@ async function rasterize(file){
 }
 
 // ESC/POS: Init, Bild, Vorschub, Schnitt.
-// »Spalten« (ESC * 33, 24 Punkte hoch) versteht fast jeder Drucker, »Raster« (GS v 0) ist schneller.
+// »Raster« (GS v 0) ist der Standard; »Spalten« (ESC * 33, 24 Punkte hoch) als Ausweg für Drucker ohne GS v 0.
 function escpos({ W, H, bits }){
   const bpr = W >> 3, parts = [Uint8Array.of(0x1b, 0x40)];
   if (opts.mode === 'raster') {
