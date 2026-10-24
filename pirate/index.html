@@ -53,6 +53,9 @@
     #spd small{ font-size:12px; }
     #info .dim{ opacity:.75; font-size:11px; }
     #info .gold{ color:#e8b84a; font-size:11px; }
+    .hprow{ display:flex; align-items:center; gap:6px; margin:3px 0 2px; font-size:11px; }
+    #hpBar{ width:110px; height:10px; border:2px solid #f1e8cf; background:#0c2236; box-shadow:2px 2px 0 #000a; }
+    #hpBar i{ display:block; height:100%; width:100%; background:#9fd3ff; }
     #hint{ color:#9fd3ff; font-size:11px; max-width:min(60vw,300px); margin-top:4px; }
     #top{
       position:absolute; display:flex; gap:8px;
@@ -179,6 +182,7 @@
 <div class="hud hidden" id="hud">
   <div id="info">
     <div id="spd"><span id="spdN">0.0</span> <small>KN</small></div>
+    <div class="hprow"><span>HULL</span><div id="hpBar"><i id="hpFill"></i></div></div>
     <div id="pos">-</div>
     <div class="dim" id="tack">-</div>
     <div class="dim" id="wind">-</div>
@@ -194,16 +198,16 @@
   <div id="toast"></div>
   <button class="px hidden" id="actBtn">-</button>
   <div id="left">
-    <div id="fireRow">
-      <button class="px fire" id="fireL"><span>FIRE<br>LARBOARD</span></button>
-      <button class="px fire" id="fireR"><span>FIRE<br>STARBOARD</span></button>
-    </div>
     <div id="helmWrap">
       <div id="helm"><div id="helmKnob"></div></div>
       <div class="labs"><span>&lt; LARBOARD</span><span>STARBOARD &gt;</span></div>
     </div>
   </div>
   <div id="right">
+    <div id="fireRow">
+      <button class="px fire" id="fireL"><span>FIRE<br>LARBOARD</span></button>
+      <button class="px fire" id="fireR"><span>FIRE<br>STARBOARD</span></button>
+    </div>
     <div id="sails">
       <div class="stop" data-s="3">FULL SAIL</div>
       <div class="stop" data-s="2">FIGHTING SAIL</div>
@@ -828,6 +832,20 @@ for (const k in TYPES){
   t.gunY = Array.from({ length: t.guns }, (_, i) => t.guns === 1 ? 0 : -0.28 + 0.56 * i / (t.guns - 1));
   t.turn *= 1.35; // brisker helm: the game is about manoeuvre, not waiting
 }
+// shipwright upgrades: faster canvas, more guns a side, a reinforced hull. They belong to the ship.
+const UPG = {
+  sails: { name: 'Better sails', max: 3, cost: [150, 300, 500], what: 'More and better canvas: faster on every point of sail.' },
+  guns:  { name: 'More guns',    max: 2, cost: [200, 400],      what: 'One more gun on each side.' },
+  hull:  { name: 'Reinforced hull', max: 2, cost: [180, 360],   what: 'Extra planking and knees: a fifth more hull.' },
+};
+const upOf = (s, k) => (s.up && s.up[k]) || 0;
+const maxHull = s => s.t.hull * (1 + 0.2 * upOf(s, 'hull'));
+const gunsOf = s => s.t.guns + upOf(s, 'guns');
+function gunYOf(s){
+  const n = gunsOf(s);
+  if (s._gn !== n){ s._gn = n; s._gy = Array.from({ length: n }, (_, i) => n === 1 ? 0 : -0.3 + 0.6 * i / (n - 1)); }
+  return s._gy;
+}
 function polar(t, twa){
   const P = POLARS[t.polar];
   for (let i = 1; i < P.length; i++) if (twa <= P[i][0]){
@@ -856,6 +874,7 @@ function makeShip(type, x, y, h, role){
     reload: [0, 0], aw: { rel: 0, awa: 0, toward: 0 }, wind: { dir: 0, spd: 10 }, role,
     wake: [], wakeT: 0, seed: seedN++ * 1.7, sinking: 0, struck: false,
     laden: role === 'trader' || role === 'slaver' ? 0.85 : role === 'treasure' ? 0.8 : 1,
+    up: { sails: 0, guns: 0, hull: 0 },
   };
 }
 
@@ -883,7 +902,8 @@ function load(){
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!s) return false;
     const t = TYPES[s.type] || TYPES.sloop;
-    Object.assign(ship, { t, x: s.x, y: s.y, h: s.h, set: s.set, sail: SAIL_AREA[s.set], hull: Math.min(s.hull, t.hull), crew: s.crew, rigging: s.rigging || 1 });
+    Object.assign(ship, { t, x: s.x, y: s.y, h: s.h, set: s.set, sail: SAIL_AREA[s.set], crew: s.crew, rigging: s.rigging || 1, up: Object.assign({ sails: 0, guns: 0, hull: 0 }, s.up) });
+    ship.hull = Math.min(s.hull, maxHull(ship));
     Object.assign(pl, s.pl || {});
     const f = atob(s.fog);
     for (let i = 0; i < f.length && i < fog.length; i++) fog[i] = f.charCodeAt(i);
@@ -900,7 +920,7 @@ function save(){
     let f = '';
     for (let i = 0; i < fog.length; i++) f += String.fromCharCode(fog[i]);
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      type: ship.t.id, x: ship.x, y: ship.y, h: ship.h, set: ship.set, hull: ship.hull, crew: ship.crew, rigging: ship.rigging,
+      type: ship.t.id, x: ship.x, y: ship.y, h: ship.h, set: ship.set, hull: ship.hull, crew: ship.crew, rigging: ship.rigging, up: ship.up,
       pl, ports: ports.map(P => P.fort ? [P.f, P.crew, Math.round(P.fort.hp), P.freedFor] : null), fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T,
     }));
   } catch (e){}
@@ -953,8 +973,9 @@ function fire(s, side){ // -1 larboard, +1 starboard
   }
   s.reload[idx] = reloadTime(s);
   const t = s.t, spread = s === ship ? 5 : 9;
-  t.gunY.forEach((gy, k) => setTimeout(() => {
-    if (s.sinking) return;
+  gunYOf(s).forEach((gy, k) => setTimeout(() => {
+    // a ship that has struck her colours does not fire the guns she had already run out
+    if (s.sinking || s.struck) return;
     const fx = Math.sin(s.h), fy = -Math.cos(s.h), rx = Math.cos(s.h), ry = Math.sin(s.h);
     const mx = s.x + fx * gy * t.L + rx * side * (t.B / 2 + 0.6), my = s.y + fy * gy * t.L + ry * side * (t.B / 2 + 0.6);
     const sp = (Math.random() - 0.5) * spread * DEG;
@@ -1011,8 +1032,9 @@ function stepShip(s, dt, now = T){
   s.sail += clamp(want - s.sail, -dt * 0.35 * hands, dt * 0.35 * hands);
 
   const rel = wrap(w.dir - s.h), twa = Math.abs(rel) / DEG;
-  let target = w.spd * polar(t, twa) * s.sail * s.rigging * (s.laden || 1);
-  target = t.cap * Math.tanh(target / t.cap) * (0.6 + 0.4 * s.hull / t.hull);
+  const fast = 1 + 0.07 * upOf(s, 'sails');
+  let target = w.spd * polar(t, twa) * s.sail * s.rigging * (s.laden || 1) * fast;
+  target = t.cap * fast * Math.tanh(target / (t.cap * fast)) * (0.6 + 0.4 * s.hull / maxHull(s));
   const inIrons = twa < t.noGo;
   if (inIrons) target = -0.5 * s.sail * (1 - twa / t.noGo);
   if (s.sinking) target = 0;
@@ -1180,6 +1202,11 @@ function think(s, dt){
     const guard = s.leader && !s.leader.gone ? dist(s.leader, p) : d;
     if (s.mode !== 'attack' && (d < 1300 || guard < 800)){ s.mode = 'attack'; if (!s.seenAttack){ s.seenAttack = true; toast(`The ${ROLE_NAME[s.role](s.t)} comes about to engage!`); } }
     else if (s.mode === 'attack' && d > 1700 && guard > 1200) s.mode = s.leader ? 'follow' : 'route';
+    if (d < 400 && (s.hull < maxHull(s) * 0.35 || s.crew < s.t.crew * 0.35 || s.rigging < 0.3)){
+      s.struck = true; s.set = 0; s.v *= 0.5;
+      toast(`The ${ROLE_NAME[s.role](s.t)} strikes her colours!`);
+      return;
+    }
   } else {
     if (s.mode !== 'flee' && d < 320) s.mode = 'flee';
     else if (s.mode === 'flee' && d > 1300) s.mode = 'route';
@@ -1614,7 +1641,7 @@ function won(s){
 }
 function prizeChoice(s, html, peopleKeep){
   const t = s.t;
-  const keepTxt = `<p>Keep her: you and your crew move to the ${t.name} (hull ${Math.round(s.hull)}/${t.hull}, needs ${t.crew} hands). Your ${ship.t.name} goes down.</p>`;
+  const keepTxt = `<p>Keep her: you and your crew move to the ${t.name} (hull ${Math.round(s.hull)}/${t.hull}, needs ${t.crew} hands). Your ${ship.t.name} goes down${(upOf(ship, 'sails') + upOf(ship, 'guns') + upOf(ship, 'hull')) ? ', and her upgrades with her' : ''}.</p>`;
   const btns = [
     [`KEEP THE ${t.name.toUpperCase()}`, () => { takeShip(s); closePanel(); }],
   ];
@@ -1638,6 +1665,7 @@ function takeShip(s){
     s.cargo.people = 0;
   }
   ship.t = s.t; ship.x = s.x; ship.y = s.y; ship.h = s.h; ship.v = s.v; ship.hull = s.hull; ship.rigging = s.rigging;
+  ship.up = { sails: 0, guns: 0, hull: 0 };
   ship.wake = [];
   s.gone = true;
   pl.goods -= Math.min(pl.goods, Math.max(0, -holdFree()));
@@ -1698,7 +1726,7 @@ const GUIDE = [
     <li>Repeat until you get there.</li></ol>
     <p class="help">Keep your speed up when you tack, with full sail and a firm helm. Too slow and she stops head to wind: <b>in irons</b>. If that happens, wait a moment: she will drift off the wind by herself.</p>`],
   ['Helm, sails and guns', () => `
-    <ol><li><b>Helm</b> (bottom left): drag left or right to turn. Let go and she holds her course.</li>
+    <ol><li><b>Helm</b> (bottom left): drag left or right to turn. Let go and she holds her course. The fire buttons sit on the right, above the sail lever, so you can steer and fire at once.</li>
     <li><b>Larboard</b> is the ship's left side, <b>starboard</b> her right. Sailors use these words because left and right change when you face the stern.</li>
     <li><b>Sails</b> (bottom right): full sail is fastest; fighting sail turns better in battle; reefed is gentle; furled stops her.</li>
     <li><b>Guns</b> fire out of the ship's sides. Turn so the enemy is beside you, then fire that side. The button fills up while the crew reloads.</li>
@@ -1709,6 +1737,8 @@ const GUIDE = [
     <li>Damage a merchant badly and she <b>strikes her colours</b>: a white flag, and she stops.</li>
     <li>Once she is slow (struck, dismasted, or hove to), come within about 30 m and press <b>BOARD</b>: the grapnels pull you together. Mercenaries and muskets help a lot.</li>
     <li>Then plunder the hold, or take the captives home to a free port. Keep the ship, or scuttle her.</li>
+    <li>A ship that strikes her colours stops firing. Navy ships strike too when beaten badly enough.</li>
+    <li><b>Shipwrights</b> in free ports sell better sails, more guns and a reinforced hull. Upgrades belong to the ship: take a bigger ship to grow further, and start upgrading her.</li>
     <li>Every imperial ship you sink earns a <b>bounty</b>, navy ships the most. Claim it in any free port.</li>
     <li>Sinking a slaver drowns everyone chained below. Board her instead.</li></ol>`],
   ['Freeing the islands', () => `
@@ -1771,13 +1801,14 @@ function portMenu(P){
     return;
   }
   const t = ship.t;
-  const repairCost = Math.ceil((t.hull - ship.hull) * 1.2 + (1 - ship.rigging) * 150);
+  const repairCost = Math.ceil((maxHull(ship) - ship.hull) * 1.2 + (1 - ship.rigging) * 150);
   const sell = pl.goods * 12;
   const hireN = Math.min(10, t.crew - ship.crew), hireCost = hireN * 8;
   const mercMax = Math.floor((ship.crew + 10) / 2);
   const mercN = Math.min(5, mercMax - pl.mercs), mercCost = mercN * 30;
   const rows = [
-    ['Gold', pl.gold], ['Bounty owed', pl.bounty], ['Hull', `${Math.round(ship.hull)}/${t.hull}`], ['Crew', `${ship.crew}/${t.crew}`],
+    ['Gold', pl.gold], ['Bounty owed', pl.bounty], ['Hull', `${Math.round(ship.hull)}/${Math.round(maxHull(ship))}`],
+    ['Shipwright', `sails ${upOf(ship, 'sails')}/3, guns +${upOf(ship, 'guns')}/2, hull ${upOf(ship, 'hull')}/2`], ['Crew', `${ship.crew}/${t.crew}`],
     ['Mercenaries', pl.mercs], ['Muskets', pl.arms], ['Cargo', `${pl.goods} barrels`], ['People aboard', pl.people], ['Freed so far', pl.freed],
   ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
   const btns = [];
@@ -1789,10 +1820,22 @@ function portMenu(P){
     pl.people = 0; pl.peopleFor = {}; sfx.cheer(); portMenu(P);
   }, true]);
   if (pl.bounty > 0) btns.push([`CLAIM BOUNTY +${pl.bounty}`, () => { pl.gold += pl.bounty; pl.bounty = 0; sfx.coins(); portMenu(P); }, true]);
+  for (const k in UPG){
+    const lvl = upOf(ship, k), U = UPG[k];
+    if (lvl >= U.max || pl.gold < U.cost[lvl]) continue;
+    btns.push([`${U.name.toUpperCase()} -${U.cost[lvl]}`, () => {
+      const before = maxHull(ship);
+      pl.gold -= U.cost[lvl];
+      ship.up = Object.assign({ sails: 0, guns: 0, hull: 0 }, ship.up, { [k]: lvl + 1 });
+      if (k === 'hull') ship.hull += maxHull(ship) - before;
+      sfx.coins(); toast(`${U.name}: ${U.what}`);
+      portMenu(P);
+    }]);
+  }
   if (pl.goods > 0) btns.push([`SELL CARGO +${sell}`, () => { pl.gold += sell; pl.goods = 0; sfx.coins(); portMenu(P); }]);
   if (repairCost > 0) btns.push([`REPAIR -${Math.min(repairCost, pl.gold)}`, () => {
     const pay = Math.min(repairCost, pl.gold), f = pay / repairCost;
-    pl.gold -= pay; ship.hull += (t.hull - ship.hull) * f; ship.rigging += (1 - ship.rigging) * f; portMenu(P);
+    pl.gold -= pay; ship.hull += (maxHull(ship) - ship.hull) * f; ship.rigging += (1 - ship.rigging) * f; portMenu(P);
   }]);
   if (hireN > 0 && pl.gold >= hireCost) btns.push([`HIRE ${hireN} SAILORS -${hireCost}`, () => { pl.gold -= hireCost; ship.crew += hireN; portMenu(P); }]);
   if (mercN > 0 && pl.gold >= mercCost) btns.push([`HIRE ${mercN} MERCENARIES -${mercCost}`, () => { pl.gold -= mercCost; pl.mercs += mercN; portMenu(P); }]);
@@ -1945,7 +1988,7 @@ function update(dt){
 
 // ---------------------------------------------------------------- HUD
 const el = id => document.getElementById(id);
-const hudEl = { spdN: el('spdN'), spd: el('spd'), pos: el('pos'), tack: el('tack'), wind: el('wind'), hull: el('hull'), purse: el('purse'), hint: el('hint'), knob: el('helmKnob'), sk: el('sailKnob') };
+const hudEl = { hp: el('hpFill'), spdN: el('spdN'), spd: el('spd'), pos: el('pos'), tack: el('tack'), wind: el('wind'), hull: el('hull'), purse: el('purse'), hint: el('hint'), knob: el('helmKnob'), sk: el('sailKnob') };
 // plain-language advice for people who don't sail
 function sailHint(rel, twa){
   const t = ship.t;
@@ -1963,12 +2006,21 @@ function updHud(){
   if ((hudT += 1) % 6) return;
   const rel = wrap(ship.wind.dir - ship.h), twa = Math.abs(rel) / DEG;
   setText(hudEl.spdN, Math.max(0, ship.v).toFixed(1));
+  setHull();
   setText(hudEl.pos, pointOfSail(twa, ship.v));
   setText(hudEl.tack, twa > 174 ? 'Before the wind' : rel > 0 ? 'Starboard tack' : 'Larboard tack');
   setText(hudEl.wind, `Wind ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`);
-  setText(hudEl.hull, `${ship.t.name} ${Math.round(100 * ship.hull / ship.t.hull)}%  ${SAIL_NAMES[ship.set]}`);
+  setText(hudEl.hull, `${ship.t.name}  ${SAIL_NAMES[ship.set]}`);
   setText(hudEl.hint, sailHint(rel, twa));
   setText(hudEl.purse, `Gold ${pl.gold}${pl.bounty ? ' (+' + pl.bounty + ' bounty)' : ''}  Crew ${ship.crew}${pl.mercs ? '+' + pl.mercs : ''}  Hold ${pl.goods + pl.people}/${ship.t.hold}`);
+}
+function setHull(){
+  const f = clamp(ship.hull / maxHull(ship), 0, 1), w = Math.round(f * 100) + '%';
+  if (hudEl.hp._w !== w){
+    hudEl.hp._w = w;
+    hudEl.hp.style.width = w;
+    hudEl.hp.style.background = f > 0.5 ? '#9fd3ff' : f > 0.25 ? '#e8b84a' : '#b3302a';
+  }
 }
 function setText(e, v){ if (e._t !== v){ e._t = v; e.textContent = v; } }
 function setSail(s){
@@ -2211,7 +2263,7 @@ function drawShipBody(g, s){
   g.fillStyle = C.woodDk; g.fillRect(-1, L * 0.08, 2, 2);
   // guns
   g.fillStyle = C.iron;
-  for (const gy of t.gunY){ g.fillRect(B / 2 - 1.6, gy * L - 0.5, 1.8, 1); g.fillRect(-B / 2 - 0.2, gy * L - 0.5, 1.8, 1); }
+  for (const gy of gunYOf(s)){ g.fillRect(B / 2 - 1.6, gy * L - 0.5, 1.8, 1); g.fillRect(-B / 2 - 0.2, gy * L - 0.5, 1.8, 1); }
   // bowsprit and masts
   g.strokeStyle = C.woodDk; g.lineWidth = 0.6; g.beginPath(); g.moveTo(0, -L / 2); g.lineTo(0, -L / 2 - rig.sprit); g.stroke();
   g.fillStyle = C.woodDk;
@@ -2324,7 +2376,7 @@ function shipSprite(s){
   const t = s.t, L = t.L, sink = s.sinking, liv = s.liv || LIVERY.free;
   const awa = s.aw.awa / DEG, luff = s.sail > 0.02 && awa < Math.max(24, t.noGo - 8);
   const h = Math.round(norm(s.h + sink * 0.4) / (2 * DEG)) * 2 * DEG;
-  const key = [t.id, Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 4), Math.round(s.sail * 10), s.set,
+  const key = [t.id, gunsOf(s), Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 4), Math.round(s.sail * 10), s.set,
     luff ? Math.floor(T * 6) % 6 : -1, Math.floor(T * 9 / TAU * 4) % 4, Math.round(wrap(s.aw.toward - s.h) / (15 * DEG)),
     s.struck ? 1 : 0, ROLE_LIVERY[s.role] || s.role, Math.round(sink * 10)].join('|');
   let e = spriteCache.get(key);
@@ -2495,7 +2547,7 @@ function drawLabels(){
     const sx = clamp(sx0, textWidth(nm) / 2 + 2, LW - textWidth(nm) / 2 - 2);
     const col = s.struck ? C.sail : hostile(s) ? '#ff6fd8' : C.gold;
     drawText(g, nm, sx - textWidth(nm) / 2, sy, col, 1, C.navy);
-    const w = 20, f = clamp(s.hull / s.t.hull, 0, 1);
+    const w = 20, f = clamp(s.hull / maxHull(s), 0, 1);
     g.fillStyle = C.navy; g.fillRect(sx - w / 2 - 1, sy + 7, w + 2, 4);
     g.fillStyle = f > 0.5 ? '#9fd3ff' : f > 0.25 ? C.gold : C.red; g.fillRect(sx - w / 2, sy + 8, Math.round(w * f), 2);
   }
@@ -2923,8 +2975,9 @@ function drawSideShip(c, s, wl){
   c.strokeStyle = C.black; c.lineWidth = 2;
   c.beginPath(); c.moveTo(stern + 2, wl - hh * 0.35); c.quadraticCurveTo(xc, wl - hh * 0.25, bow - 10, wl - hh * 0.45); c.stroke();
   // gunports with red lids raised
-  for (let i = 0; i < t.guns; i++){
-    const gx = stern + Lp * 0.2 + (Lp * 0.6) * (t.guns > 1 ? i / (t.guns - 1) : 0.5), gy = deckAt(gx) + 2;
+  const ng = gunsOf(s);
+  for (let i = 0; i < ng; i++){
+    const gx = stern + Lp * 0.2 + (Lp * 0.6) * (ng > 1 ? i / (ng - 1) : 0.5), gy = deckAt(gx) + 2;
     c.fillStyle = C.red; c.fillRect(gx - 2, gy - 2.2, 4, 1.4);
     c.fillStyle = C.black; c.fillRect(gx - 1.5, gy, 3, 3);
     c.fillStyle = C.iron; c.fillRect(gx + 1, gy + 1, 2, 1);
@@ -2946,7 +2999,7 @@ function drawSideShip(c, s, wl){
   c.fillRect(bow - 15.5, deck + 7, 6.5, 1.5);
   c.fillRect(bow - 16, deck + 5.5, 1.5, 2); c.fillRect(bow - 10, deck + 5.5, 1.5, 2);
   // battle damage: shot holes and splintered planks
-  const dmg = 1 - s.hull / t.hull;
+  const dmg = 1 - s.hull / maxHull(s);
   for (let i = 0; i < Math.round(dmg * 12); i++){
     const x = stern + Lp * (0.15 + hash(i, 1, 9) * 0.7), y = deck + 1 + hash(i, 2, 9) * hh * 0.6;
     c.fillStyle = C.deckLt; c.fillRect(x - 1, y - 1, 4, 4);
@@ -3071,8 +3124,8 @@ function renderSide(){
   // status
   const t = ship.t, rel = wrap(ship.wind.dir - ship.h), twa = Math.abs(rel) / DEG;
   const rows = [
-    [`${t.name}`, `${t.guns * 2} guns`],
-    ['Hull', `${Math.round(100 * ship.hull / t.hull)}%`], ['Rigging', `${Math.round(100 * ship.rigging)}%`],
+    [`${t.name}`, `${gunsOf(ship) * 2} guns`],
+    ['Hull', `${Math.round(100 * ship.hull / maxHull(ship))}%`], ['Rigging', `${Math.round(100 * ship.rigging)}%`],
     ['Crew', `${ship.crew}/${t.crew}${pl.mercs ? ' +' + pl.mercs : ''}`], ['Hold', `${pl.goods + pl.people}/${t.hold}`],
     ['Speed', `${Math.max(0, ship.v).toFixed(1)} kn`], ['Sails', SAIL_NAMES[ship.set]], ['Point', pointOfSail(twa, ship.v)],
   ];
