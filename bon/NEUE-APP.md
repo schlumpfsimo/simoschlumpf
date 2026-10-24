@@ -20,6 +20,20 @@ Startprompt für einen neuen Chat:
     `format: 'text'` (das druckt nur die eingebaute Drucker-Schrift).
   - bon/bild/: Bild umrechnen und rastern → 1-Bit-PNG → Bon-Post, HTML-Bon.
   - bon/namen/: druckt direkt per USB, über Stunden im Takt.
+  - bon/glueckskeks/, bon/menu/, bon/kniffel/, bon/vokabeln/: mehrere Bons auf einmal. Jeder Bon
+    ist eine eigene Einreichung, nacheinander mit `await` (Titel «… 2/5»), so schneidet das Messer
+    jeden einzeln ab. Bricht es ab, sagen, wie viele gesendet sind, und nur den Rest anbieten.
+  - bon/kniffel/, bon/schiffe/: Raster und Tabellen zum Ausfüllen. Mit `fillRect` auf ganzen
+    Punkten zeichnen, Linien 2 Punkte, Rahmen 4 Punkte, Kästchen zum Schreiben mindestens 6–7 mm.
+  - bon/vokabeln/: Text auf dem Kopf (translate + rotate(π) auf der Leinwand) und Falzkarten.
+  - bon/postkarte/: Foto, Briefmarke, Poststempel. bon/spaziergang/: selbst gezeichnete Karte.
+- Schriften (alle OFL) relativ einbinden statt kopieren: IBM Plex Sans (bon/text/), IBM Plex Serif
+  inkl. kursiv und Playfair Display Black (bon/depeche/), Playfair Display Italic (bon/menu/),
+  Caveat als Handschrift und Dancing Script als Schreibschrift (bon/postkarte/). Neue Schriften
+  von Fontsource über jsDelivr, Lizenz prüfen. Vor dem Messen `document.fonts.load(...)`.
+  Plex hat keine Pfeile (→ ↔), kein ≠ ✂ ▲ und kein schmales geschütztes Leerzeichen.
+- Gesperrte Schrift auf der Leinwand Zeichen für Zeichen setzen: `ctx.letterSpacing` kann nicht
+  jedes Safari.
 - Stil wie /euroturbo: weiss, schwarz, Monospace, eckig, keine Schatten, keine Rundungen.
   Kopf, Knöpfe und Farben aus bon/text/ übernehmen.
 - Jede App hat oben links einen Knopf «← Zurück» zur Startseite (`href="../"`) und
@@ -57,7 +71,11 @@ Startprompt für einen neuen Chat:
   - Gestaltung deshalb: schwarz auf weiss, Masse in mm/pt, Inhalt 68 mm breit mit 2 mm Rand,
     keine Grautöne.
   - Fotos und Verläufe: selbst rastern wie in bon/bild/ und als 1-Bit-PNG mit 576 px Breite
-    einbetten. Mit fester Höhe in mm, denn der Mac misst den Bon, bevor Bilder geladen sind.
+    einbetten, mit fester Höhe, denn der Mac misst den Bon, bevor Bilder geladen sind.
+  - Punktgenau kommt das PNG nur so an: Höhe H in Punkten auf ein Vielfaches von 36 aufrunden
+    (`Math.ceil(h / 36) * 36`, unten weiss auffüllen) und in CSS-Pixeln einbetten:
+    `width:272px;height:<H*17/36>px`. Mit `width:72mm` (= 272,13 px) oder krummen Höhen verdoppelt
+    Chrome irgendwo eine Punktzeile. Bei bon/text/ und bon/bild/ ist das noch nicht umgestellt.
 - Der Bon kommt innerhalb einer Minute, wenn der Mac wach ist. Ein gedruckter Bon bleibt
   14 Tage im Drive-Ordner «Bon-Post/gedruckt».
 
@@ -80,8 +98,25 @@ Startprompt für einen neuen Chat:
 - Vorlage für eine Zeitung aus vielen Quellen mit Spalten, Rubriken und Wetter-Piktogrammen: bon/depeche/.
 - Wetter: Open-Meteo `api.open-meteo.com/v1/forecast` (Basel 47.5596, 7.5886, `timezone=Europe/Zurich`).
   Zeiten kommen als Ortszeit ohne Zone («2026-10-24T08:05»), also nicht mit `new Date` umrechnen.
-- Rhein: BAFU-Messwerte über `api.existenz.ch/apiv1/hydro/latest?locations=2091` (Rheinfelden,
-  Temperatur und Abfluss). data.bs.ch war aus der Cloud-Testumgebung nicht erreichbar.
+- Open-Meteo hat auch `uv_index`, `uv_index_max`, `apparent_temperature`, `wind_gusts_10m`. Eine Antwort
+  rechnet nur mit der heutigen Zeitverschiebung: Liegt die Zeitumstellung im Zeitraum, sind die Zeiten
+  danach eine Stunde falsch. Sonnenzeiten darum selbst rechnen (sonnenzeit() in bon/depeche/).
+- Rhein (Vorlage bon/rhy/): BAFU über `api.existenz.ch/apiv1/hydro/latest?locations=…&parameters=temperature,flow,height`
+  (CORS offen). 2613 Weil, Palmrainbrücke: Wassertemperatur. 2289 Basel, Rheinhalle: Abfluss und
+  Wasserstand `height` in m ü. M., keine Temperatur. 2091 Rheinfelden: Temperatur und Abfluss als Ersatz.
+  Verlauf: `…/hydro/daterange?locations=2613&parameters=temperature&startdate=…&enddate=<morgen>`,
+  Zeitstempel in Unix-Sekunden. Rheinschwimmen laut basel.com ab 18 °C und unter 246,5 m ü. M.
+- Abfuhrtermine Basel-Stadt: data.bs.ch Datensatz 100096
+  (`data.bs.ch/api/explore/v2.1/catalog/datasets/100096/records?select=termin,art&where=zone%3D%22D%22%20and%20termin%3E%3D%22JJJJ-MM-TT%22&order_by=termin&limit=100`).
+  CORS erlaubt. Zonen A–H, Daten jeweils nur bis Ende Jahr. `geo_shape` ist ein GeoJSON-Polygon; ältere
+  Jahre haben andere Zonengrenzen, für die Form den neusten Eintrag nehmen. Aus der Cloud-Testumgebung
+  geht es mit curl nie, mit Chromium manchmal; vom Handy und von GitHub aus geht es.
+- OpenStreetMap (Vorlage bon/spaziergang/): Overpass mit `fetch` POST an `overpass-api.de/api/interpreter`,
+  Body `data=<Abfrage>`, `application/x-www-form-urlencoded` (kein Preflight). Ersatz `overpass.kumi.systems`,
+  `overpass.private.coffee`. Gehsteige und Fussgängerstreifen weglassen. Nominatim nur auf Knopfdruck und
+  ohne `no-referrer`. Karten selbst zeichnen statt Kacheln drucken, «© OpenStreetMap-Mitwirkende» auf den Bon.
+  Aus der Cloud-Testumgebung nicht erreichbar: im Test die Antwort abfangen und nachbauen.
+- Piktogramme aus bon/depeche/: nach `wolke()` die Füllfarbe wieder auf Schwarz setzen.
 - Fahrplan: `transport.opendata.ch/v1/stationboard?station=…`.
 - Wikipedia Deutsch, alles in einem Abruf: `de.wikipedia.org/api/rest_v1/feed/featured/JJJJ/MM/TT`
   (Artikel des Tages, «Was geschah am», «Schon gewusst?», Bild des Tages).
@@ -103,6 +138,9 @@ Startprompt für einen neuen Chat:
 - Lokal ausprobieren ohne Druck:
   `npm i --no-save playwright-core && TROCKEN=1 CHROME=<pfad zu chrome> node .github/scripts/bon-depeche.mjs`
 - Wikipedia drosselt Abrufe ohne Absender (Fehler 429). Darum `Api-User-Agent` mitschicken.
+- plan.gs speichert nur aktiv, zeit, tage, halt und teile (a–z und Komma). Weitere Einstellungen als
+  Kürzel in teile mitgeben, z. B. die Abfuhrzone als «zoned». Ein gespeicherter Zeitplan kennt neue
+  Teile erst, wenn man ihn in der App neu speichert.
 
 ## Mac-Seite (zur Info)
 - ~/bonpost/bonpost.sh holt die Bons ab. Text geht roh an `lp -d POS80 -o raw`. HTML wird mit
@@ -128,8 +166,12 @@ Startprompt für einen neuen Chat:
   Bon höchstens werden darf.
 - Testen mit Playwright:
   - Bon-Post und Drucker abfangen und nachbauen, damit nichts gedruckt wird.
-  - Bei HTML-Bons: das Rendering der Bon-Post mit Chromium nachstellen (272 px,
-    `--force-device-scale-factor=2.117647`, Schwelle 170) und das Ergebnis anschauen.
+  - Bei HTML-Bons: das Rendering der Bon-Post mit Chromium nachstellen (272 px, Schwelle 170) und
+    das Ergebnis anschauen. In Playwright den Faktor mit `deviceScaleFactor: 2.117647` im Context
+    setzen, `--force-device-scale-factor` allein wirkt dort nicht. Mit dem PNG vergleichen, Ziel
+    0 abweichende Punkte.
+  - Keinen festen Port für den Testserver (andere Chats testen gleichzeitig), oder die Dateien mit
+    `ctx.route` direkt ausliefern. Nie `pkill -f` mit einem Muster, das die eigene Shell trifft.
   - Screenshots in 390 px und 1100 px Breite prüfen.
 - Einen echten Test-Bon nur nach Rückfrage einreichen.
 - Vor jedem Push origin/main holen und meinen Branch darauf bringen. Andere Chats ändern

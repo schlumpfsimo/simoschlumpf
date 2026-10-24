@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · MENÜ</title>
+<meta name="description" content="Menükarte für ein Abendessen zuhause, auf Wunsch eine Karte pro Gast, über die Bon-Post.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="playfair-700-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../depeche/serif-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../depeche/serif-500-italic.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Titel: Playfair Display Italic; Gerichte: IBM Plex Serif; Gänge: IBM Plex Sans (alle SIL Open Font License) */
+@font-face{font-family:"Playfair";src:url(playfair-700-italic.woff2) format("woff2");font-weight:700;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Playfair";src:url(playfair-700-italic-ext.woff2) format("woff2");font-weight:700;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic-ext.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Menü-Bon über die Bon-Post, Stil wie Turbo und bon/text: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "vorschau" "knoepfe";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input,textarea{font-family:var(--mono);font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%;min-width:0;-webkit-appearance:none;appearance:none}
+input[type=date]{min-height:40px}
+input:focus,textarea:focus{outline:2px solid #000;outline-offset:-1px}
+textarea{resize:vertical;line-height:1.4}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.8rem}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.ghost{background:#fff;color:#000;padding:10px;font-size:.75rem;letter-spacing:.04em}
+button.ghost:hover{background:#000;color:#fff}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Gänge: je ein Kasten mit Name, Gericht, Beschreibung, Wein */
+.gaenge{display:flex;flex-direction:column;gap:10px}
+.gang{border:1px solid #000;padding:8px;display:flex;flex-direction:column;gap:6px}
+.gang .kopf{display:flex;gap:6px;align-items:stretch}
+.gang .kopf input{font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.gang .kopf button{flex:none;width:42px;margin:0;padding:0;background:#fff;color:#000;font-size:1rem;letter-spacing:0}
+.gang .kopf button:hover{background:#000;color:#fff}
+.gang .kopf button:disabled:hover{background:#fff;color:#000}
+.gang textarea{min-height:58px}
+/* Vorschau: der Bon genau so, wie er aus dem Drucker kommt (schon schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted);text-align:center}
+.blaettern{display:flex;align-items:center;gap:8px;width:min(100%,340px)}
+.blaettern button{flex:none;width:48px;margin:0;padding:8px 0;background:#fff;color:#000;letter-spacing:0}
+.blaettern button:hover{background:#000;color:#fff}
+.blaettern span{flex:1;text-align:center;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 72px);overflow:auto}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Menü · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <label for="titel">Anlass</label>
+    <input id="titel" autocomplete="off" enterkeyhint="next" placeholder="Abendessen bei Simo">
+    <label for="datum">Datum (optional)</label>
+    <input id="datum" type="date">
+    <span class="label">Gänge</span>
+    <div class="gaenge" id="gaenge"></div>
+    <button type="button" class="ghost" id="neuerGang">+ Gang hinzufügen</button>
+    <datalist id="gangnamen">
+      <option value="Apéro"><option value="Amuse-Bouche"><option value="Vorspeise"><option value="Suppe"><option value="Zwischengang">
+      <option value="Hauptgang"><option value="Käse"><option value="Dessert"><option value="Kaffee"><option value="Digestif">
+    </datalist>
+    <label for="schluss">Schlusszeile (optional)</label>
+    <input id="schluss" autocomplete="off" placeholder="En Guete!">
+  </div>
+  <div class="knoepfe">
+    <span class="label" id="modusLabel">Karten</span>
+    <div class="seg" id="modus" role="group" aria-labelledby="modusLabel">
+      <button type="button" data-m="eine">Eine Karte</button><button type="button" data-m="gaeste">Für jeden Gast</button>
+    </div>
+    <div id="einGast">
+      <label for="gast">Gast (optional, steht oben wie auf einer Tischkarte)</label>
+      <input id="gast" autocomplete="off" placeholder="Anna">
+    </div>
+    <div id="vieleGaeste" hidden>
+      <label for="gaeste">Gäste, ein Name pro Zeile</label>
+      <textarea id="gaeste" rows="5" autocomplete="off" placeholder="Anna&#10;Beat&#10;Chiara"></textarea>
+      <p class="hint">Jeder Gast bekommt einen eigenen Bon. Sie gehen nacheinander an die Bon-Post, das Messer schneidet jede Karte einzeln ab.</p>
+    </div>
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="blaettern" id="blaettern" hidden>
+      <button type="button" id="zurueck" aria-label="Vorherige Karte">‹</button><span id="welche"></span><button type="button" id="vor" aria-label="Nächste Karte">›</button>
+    </div>
+    <div class="papier"><canvas id="bon" hidden></canvas><p class="leer" id="leer">Hier erscheint die Menükarte.</p></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const MITTE = BREITE / 2;
+const INNEN = 456;               // Satzbreite innerhalb des Rahmens
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_H = 28000;             // grössere Leinwände schafft Safari am iPhone nicht
+
+const F = {
+  titel: px => `italic 700 ${px}px "Playfair", Georgia, serif`,
+  serif: px => `500 ${px}px "PSerif", Georgia, serif`,
+  kursiv: px => `italic 500 ${px}px "PSerif", Georgia, serif`,
+  sans: px => `700 ${px}px "Plex", system-ui, sans-serif`,
+};
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+
+// ---------------------------------------------------------------- Eingaben merken
+const heute = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const STANDARD = () => ({
+  titel: '', datum: heute(), schluss: '', modus: 'eine', gast: '', gaeste: '',
+  gaenge: ['Apéro', 'Vorspeise', 'Hauptgang', 'Dessert'].map(name => ({ name, gericht: '', beschr: '', wein: '' })),
+});
+let s = STANDARD();
+try { const alt = JSON.parse(localStorage.getItem('bon.menu')); if (alt && Array.isArray(alt.gaenge)) s = { ...s, ...alt }; } catch {}
+const merken = () => { try { localStorage.setItem('bon.menu', JSON.stringify(s)); } catch {} };
+
+// ---------------------------------------------------------------- Formular
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function gaengeZeigen(){
+  $('gaenge').innerHTML = s.gaenge.map((g, i) => `
+    <div class="gang" data-i="${i}">
+      <div class="kopf">
+        <input data-f="name" value="${esc(g.name)}" list="gangnamen" aria-label="Name des Gangs" placeholder="Gang" autocomplete="off">
+        <button type="button" data-a="hoch" aria-label="Nach oben" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button type="button" data-a="runter" aria-label="Nach unten" ${i === s.gaenge.length - 1 ? 'disabled' : ''}>↓</button>
+        <button type="button" data-a="weg" aria-label="Gang entfernen">✕</button>
+      </div>
+      <input data-f="gericht" value="${esc(g.gericht)}" aria-label="Gericht" placeholder="Gericht" autocomplete="off">
+      <textarea data-f="beschr" aria-label="Beschreibung" placeholder="Beschreibung (optional)">${esc(g.beschr)}</textarea>
+      <input data-f="wein" value="${esc(g.wein)}" aria-label="Wein" placeholder="Wein dazu (optional)" autocomplete="off">
+    </div>`).join('');
+}
+$('gaenge').addEventListener('input', e => {
+  const f = e.target.dataset.f, box = e.target.closest('.gang'); if (!f || !box) return;
+  s.gaenge[+box.dataset.i][f] = e.target.value; geaendert();
+});
+$('gaenge').addEventListener('click', e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  const i = +b.closest('.gang').dataset.i, a = b.dataset.a, l = s.gaenge;
+  if (a === 'weg') l.splice(i, 1);
+  else { const j = a === 'hoch' ? i - 1 : i + 1; [l[i], l[j]] = [l[j], l[i]]; }
+  gaengeZeigen(); geaendert();
+});
+$('neuerGang').addEventListener('click', () => {
+  s.gaenge.push({ name: '', gericht: '', beschr: '', wein: '' }); gaengeZeigen(); geaendert();
+  $('gaenge').lastElementChild.querySelector('input').focus();
+});
+for (const id of ['titel', 'datum', 'schluss', 'gast', 'gaeste']) {
+  $(id).value = s[id];
+  $(id).addEventListener('input', () => { s[id] = $(id).value; geaendert(); });
+}
+function modusZeigen(){
+  $('modus').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === s.modus)));
+  $('einGast').hidden = s.modus !== 'eine'; $('vieleGaeste').hidden = s.modus !== 'gaeste';
+}
+$('modus').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; s.modus = b.dataset.m; modusZeigen(); geaendert(); });
+
+// Wer bekommt eine Karte? '' = Karte ohne Namen
+const gaesteListe = () => s.modus === 'gaeste'
+  ? s.gaeste.split(/[\n,;]+/).map(n => n.trim()).filter(Boolean)
+  : [s.gast.trim()];
+
+let zeige = 0;          // welche Karte die Vorschau zeigt
+let offen = null;       // nach einem Fehler: Gäste, die noch keinen Bon haben
+function geaendert(){
+  merken(); offen = null;
+  if ($('msg').classList.contains('err')) msg('');
+  spaeter();
+}
+$('zurueck').addEventListener('click', () => { zeige--; spaeter(0); });
+$('vor').addEventListener('click', () => { zeige++; spaeter(0); });
+
+// ---------------------------------------------------------------- Setzen: Menükarte -> Zeichenbefehle
+function umbrechen(g, text, f, breite){
+  g.font = f;
+  const zeilen = [];
+  for (const absatz of String(text).split('\n')) {
+    let z = '';
+    for (let w of absatz.split(/\s+/).filter(Boolean)) {
+      const probe = z ? z + ' ' + w : w;
+      if (g.measureText(probe).width <= breite) { z = probe; continue; }
+      if (z) zeilen.push(z);
+      while (g.measureText(w).width > breite) {   // Wort länger als die Zeile
+        let n = w.length; while (n > 1 && g.measureText(w.slice(0, n)).width > breite) n--;
+        zeilen.push(w.slice(0, n)); w = w.slice(n);
+      }
+      z = w;
+    }
+    if (z) zeilen.push(z);
+  }
+  return zeilen.map(t => ({ t, w: g.measureText(t).width }));
+}
+
+// Gesperrte Grossbuchstaben (Zeichen einzeln, weil nicht jeder Browser letterSpacing auf der Leinwand kann)
+function gesperrt(g, t, f, sp){
+  g.font = f; const zeichen = [...t];
+  const w = zeichen.reduce((a, c) => a + g.measureText(c).width, 0) + sp * (zeichen.length - 1);
+  return { w, zeichnen: (g, x, y) => { g.font = f; for (const c of zeichen) { g.fillText(c, x, y); x += g.measureText(c).width + sp; } } };
+}
+
+// Zierrat, alles in reinem Schwarz
+function raute(g, x, y, r){ g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath(); g.fill(); }
+function keil(g, x1, x2, y, dick){ g.beginPath(); g.moveTo(x1, y - dick / 2); g.lineTo(x2, y); g.lineTo(x1, y + dick / 2); g.closePath(); g.fill(); }
+function punkt(g, x, y, r){ g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fill(); }
+function zierGross(g, y, halb = 190){
+  raute(g, MITTE, y, 10);
+  for (const s of [-1, 1]) {
+    raute(g, MITTE + s * 22, y, 4.5);
+    keil(g, MITTE + s * 33, MITTE + s * (halb - 40), y, 7);
+    g.fillRect(Math.min(MITTE + s * 33, MITTE + s * halb), y - 1, halb - 33, 2);
+    punkt(g, MITTE + s * (halb + 9), y, 3);
+  }
+}
+function zierKlein(g, y){
+  raute(g, MITTE, y, 6);
+  for (const s of [-1, 1]) keil(g, MITTE + s * 14, MITTE + s * 62, y, 3);
+}
+function glas(g, x, y){   // Weinglas, x/y = links und Grundlinie
+  g.beginPath(); g.moveTo(x, y - 20); g.lineTo(x + 14, y - 20); g.bezierCurveTo(x + 14, y - 11, x + 11, y - 8, x + 7, y - 8); g.bezierCurveTo(x + 3, y - 8, x, y - 11, x, y - 20); g.fill();
+  g.fillRect(x + 6, y - 9, 2, 8); g.fillRect(x + 2, y - 2, 10, 2);
+}
+function rahmen(g, H){
+  g.lineWidth = 4; g.strokeRect(6, 6, BREITE - 12, H - 12);
+  const a = 18, b = BREITE - 18, c = H - 18, r = 14;
+  g.lineWidth = 2; g.beginPath();
+  g.moveTo(a + r, a); g.lineTo(b - r, a); g.arc(b, a, r, Math.PI, Math.PI / 2, true);
+  g.lineTo(b, c - r); g.arc(b, c, r, 1.5 * Math.PI, Math.PI, true);
+  g.lineTo(a + r, c); g.arc(a, c, r, 0, 1.5 * Math.PI, true);
+  g.lineTo(a, a + r); g.arc(a, a, r, Math.PI / 2, 0, true);
+  g.stroke();
+  for (const [x, y] of [[a, a], [b, a], [a, c], [b, c]]) raute(g, x, y, 5);
+}
+
+function datumText(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); if (!m) return '';
+  return new Date(+m[1], m[2] - 1, +m[3]).toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function setzen(g, gast){
+  const ops = []; let y = 46;
+  const mittig = (zeilen, f, zh, grund) => { for (const z of zeilen) { const yy = y + grund; ops.push(g => { g.font = f; g.fillText(z.t, MITTE - z.w / 2, yy); }); y += zh; } };
+  const sperr = (t, px, sp) => {
+    let x = gesperrt(g, t, F.sans(px), sp);
+    if (x.w > INNEN) x = gesperrt(g, t, F.sans(px - 2), 1);
+    const yy = y + Math.round(px * 1.05), x0 = MITTE - x.w / 2; ops.push(g => x.zeichnen(g, x0, yy)); y += Math.round(px * 1.6);
+  };
+  const zier = (art, luft) => { y += luft; const yy = y; ops.push(g => art(g, yy)); y += luft; };
+
+  if (gast) {
+    sperr('FÜR', 15, 5);
+    mittig(umbrechen(g, gast, F.titel(44), INNEN), F.titel(44), 54, 42);
+    zier(zierKlein, 22);
+  } else y += 6;
+  if (s.titel.trim()) mittig(umbrechen(g, s.titel.trim(), F.titel(46), INNEN), F.titel(46), 58, 46);
+  const d = datumText(s.datum);
+  if (d) { y += 8; sperr(d.toUpperCase(), 16, 4); }
+  zier(zierGross, 26);
+  y += 4;
+
+  const gaenge = s.gaenge.filter(x => x.gericht.trim() || x.beschr.trim());
+  gaenge.forEach((x, i) => {
+    if (i) zier(zierKlein, 24);
+    if (x.name.trim()) sperr(x.name.trim().toUpperCase(), 17, 5);
+    if (x.gericht.trim()) mittig(umbrechen(g, x.gericht.trim(), F.serif(30), INNEN), F.serif(30), 38, 30);
+    if (x.beschr.trim()) { y += 2; mittig(umbrechen(g, x.beschr.trim(), F.kursiv(23), INNEN), F.kursiv(23), 31, 24); }
+    if (x.wein.trim()) {
+      y += 8;
+      const zeilen = umbrechen(g, x.wein.trim(), F.kursiv(22), INNEN - 26);
+      zeilen.forEach((z, k) => {
+        const mitGlas = k === 0, w = z.w + (mitGlas ? 24 : 0), x0 = MITTE - w / 2, yy = y + 23;
+        ops.push(g => { if (mitGlas) glas(g, x0, yy); g.font = F.kursiv(22); g.fillText(z.t, x0 + (mitGlas ? 24 : 0), yy); });
+        y += 30;
+      });
+    }
+  });
+  if (!gaenge.length) y += 10;
+  zier(zierGross, 28);
+  if (s.schluss.trim()) { y += 2; mittig(umbrechen(g, s.schluss.trim(), F.kursiv(26), INNEN), F.kursiv(26), 34, 26); }
+  const H = Math.ceil((y + 40) / 36) * 36;   // Vielfaches von 36: auf dem Mac ganze CSS-Pixel und ganze Druckpunkte
+  return { H, ops: [g => rahmen(g, H), ...ops] };
+}
+
+// ---------------------------------------------------------------- Zeichnen und rastern
+const hatInhalt = () => s.titel.trim() || s.gaenge.some(x => x.gericht.trim() || x.beschr.trim());
+
+async function karte(gast, c){
+  const alles = [s.titel, s.schluss, gast, datumText(s.datum), ...s.gaenge.flatMap(x => [x.name, x.gericht, x.beschr, x.wein])].join(' ');
+  await Promise.all(Object.values(F).map(f => document.fonts.load(f(20), alles + 'FÜR').catch(() => {})));
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const { ops, H } = setzen(g, gast);
+  if (H > MAX_H) throw new Error(`zu lang, etwa ${(H / 80).toFixed(0)} cm`);
+  c.width = BREITE; c.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.fillStyle = g.strokeStyle = '#000'; g.textBaseline = 'alphabetic';
+  for (const o of ops) { g.save(); o(g); g.restore(); }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  return { W: BREITE, H, bits, c };
+}
+
+const leinwand = $('bon');
+async function zeichnen(){
+  const liste = gaesteListe(), n = liste.length;
+  zeige = n ? ((zeige % n) + n) % n : 0;
+  $('blaettern').hidden = n < 2;
+  $('welche').textContent = n > 1 ? `Karte ${zeige + 1} von ${n} · ${liste[zeige]}` : '';
+  $('drucken').textContent = offen ? `Restliche ${offen.length} drucken` : n > 1 ? `${n} Karten drucken` : 'Drucken';
+  if (!hatInhalt()) { leinwand.hidden = true; $('leer').hidden = false; $('mass').textContent = ''; return; }
+  try {
+    const r = await karte(liste[zeige] ?? '', leinwand);
+    leinwand.hidden = false; $('leer').hidden = true;
+    $('mass').textContent = `Karte etwa ${(r.H / 80 + 2).toFixed(0)} cm lang` + (n > 1 ? `, ${n} Karten` : '');   // + etwa 2 cm Rand oben wegen dem Messer
+  } catch (e) { leinwand.hidden = true; $('leer').hidden = false; $('mass').textContent = 'Zu lang: ' + e.message; }
+}
+
+// Beim Tippen nicht jede Taste neu zeichnen, sondern kurz warten
+let warte = null, laeuft = Promise.resolve();
+function spaeter(ms = 150){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, ms); }
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  // Feste Höhe, denn der Mac misst den Bon, bevor das Bild geladen ist. In CSS-Pixeln statt mm:
+  // 272 px × Faktor 2,117647 = genau 576 Punkte. 72 mm wären 272,13 px, dann verdoppelt Chrome einzelne Zeilen.
+  // Die Höhe ist ein Vielfaches von 36 Punkten, also eine ganze Zahl CSS-Pixel (36 Punkte = 17 px).
+  const h = raster.H * 272 / raster.W;
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${h}px;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits, c }){
+  if (!('CompressionStream' in window)) return c.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden: jede Karte ein eigener Bon, nacheinander
+$('drucken').addEventListener('click', async () => {
+  if (!hatInhalt()) { msg('Anlass oder Gericht fehlt.', 'err'); $('titel').focus(); return; }
+  const liste = offen || gaesteListe();
+  if (!liste.length) { msg('Gästenamen fehlen.', 'err'); $('gaeste').focus(); return; }
+  $('drucken').disabled = true;
+  clearTimeout(warte); await laeuft;
+  const c = document.createElement('canvas');
+  let fertig = 0;
+  try {
+    for (const gast of liste) {
+      msg(liste.length > 1 ? `Sende Karte ${fertig + 1} von ${liste.length} …` : 'Sende …');
+      const inhalt = await bonHtml(await karte(gast, c));
+      // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+      const r = await fetch(BONPOST, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ key: KEY, inhalt, titel: 'Menü' + (gast ? ' · ' + gast : ''), quelle: 'website-menu' }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+      fertig++;
+    }
+    offen = null;
+    msg(fertig > 1 ? `${fertig} Karten gesendet. Sie kommen innert ein, zwei Minuten.` : 'Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    offen = liste.slice(fertig);
+    msg((fertig ? `${fertig} gesendet, dann ` : '') + 'Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+    spaeter(0);
+  }
+});
+
+gaengeZeigen(); modusZeigen(); zeichnen();
+</script>
+</body>
+</html>

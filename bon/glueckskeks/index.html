@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · GLÜCKSKEKS</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../depeche/serif-500-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans und Plex Serif kursiv (SIL Open Font License), dieselben Dateien wie bei Text und Dépêche */
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic-ext.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Glückskeks-Bon über die Bon-Post, Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+/* Am Handy: Einstellungen, gleich darunter der grosse Knopf, dann die Zettel */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"einst" "knoepfe" "vorschau";column-gap:32px}
+.einst,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.einst{grid-area:einst} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;min-width:0;margin:0;padding:10px 2px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.02em;font-size:.8rem;text-transform:none}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+.anzahl{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;border:1px solid #000}
+.anzahl button{margin:0;padding:10px 0;font-size:1.2rem;letter-spacing:0;background:#fff;color:#000;border:0}
+.anzahl button:first-child{border-right:1px solid #000} .anzahl button:last-child{border-left:1px solid #000}
+.anzahl button:hover:not(:disabled){background:#000;color:#fff}
+.anzahl output{display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button.zweit{background:#fff;color:#000;padding:10px}
+button.zweit:hover{background:#000;color:#fff}
+button:disabled{opacity:.4;cursor:default}
+#drucken{padding:18px 14px;font-size:1rem}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Vorschau: jeder Zettel genau so, wie er aus dem Drucker kommt (schon schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.stapel{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"einst vorschau" "knoepfe vorschau";align-items:start}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Glückskeks · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="einst">
+    <span class="label" id="sorteLabel">Sorte</span>
+    <div class="seg" id="sorte" role="group" aria-labelledby="sorteLabel">
+      <button type="button" data-v="alle">Alle</button><button type="button" data-v="w">Weise</button><button type="button" data-v="h">Warm</button><button type="button" data-v="x">Witzig</button><button type="button" data-v="b">Basel</button>
+    </div>
+    <span class="label" id="extraLabel">Auf dem Zettel</span>
+    <div class="seg" id="extra" role="group" aria-labelledby="extraLabel">
+      <button type="button" data-v="alles">+ Zahlen + Wort</button><button type="button" data-v="zahlen">+ Zahlen</button><button type="button" data-v="nur">Nur Spruch</button>
+    </div>
+    <span class="label" id="anzahlLabel">Wie viele Kekse</span>
+    <div class="anzahl" role="group" aria-labelledby="anzahlLabel">
+      <button type="button" id="weniger" aria-label="Ein Keks weniger">−</button><output id="anzahl" aria-live="polite">1</output><button type="button" id="mehr" aria-label="Ein Keks mehr">+</button>
+    </div>
+    <p class="hint">Mehrere Kekse, zum Beispiel für Gäste: Jeder kommt als eigener Zettel, das Messer schneidet sie einzeln ab.</p>
+  </div>
+  <div class="knoepfe">
+    <button id="drucken">Keks drucken</button>
+    <button type="button" class="zweit" id="neu">Anderer Spruch</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="stapel" id="stapel"><div class="papier"><p class="leer">Der Keks wird gebacken …</p></div></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_KEKSE = 12;
+const F = {
+  serif: px => `italic 500 ${px}px "PSerif", Georgia, serif`,
+  sans: (px, w = 500) => `${w} ${px}px "Plex", system-ui, sans-serif`,
+};
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.' + k, v); } catch {} }
+};
+
+// ---------------------------------------------------------------- Sprüche
+// w = weise, h = warm, x = witzig, b = Basel und Schweiz. Alles selbst geschrieben.
+const SPRUECHE = {
+  w: [
+    'Wer langsam geht, sieht mehr Hauseingänge.',
+    'Die beste Antwort fällt dir oft erst auf der Treppe ein. Schreib sie trotzdem auf.',
+    'Nicht jede Tür, die klemmt, ist verschlossen.',
+    'Du musst nicht alles verstehen, um es gern zu haben.',
+    'Ein Umweg ist ein Weg mit mehr Aussicht.',
+    'Ein guter Plan passt auf die Rückseite eines Kassenzettels.',
+    'Fragen kostet nichts. Nicht fragen kostet manchmal einen ganzen Nachmittag.',
+    'Wer nie etwas fallen lässt, trägt zu wenig.',
+    'Die Stille nach einer guten Frage ist kein Loch, sondern Platz.',
+    'Manches wird erst fertig, wenn du es loslässt.',
+    'Der Fluss hat keinen Plan und kommt trotzdem an.',
+    'Auch ein kleiner Schritt verändert die Aussicht.',
+    'Wer zuhört, erfährt auch das, was nicht gesagt wird.',
+    'Ordnung ist schön. Ein bisschen Unordnung ist lebendig.',
+    'Heute ist ein guter Tag, um etwas zum ersten Mal zu tun.',
+    'Wer zweifelt, denkt noch. Das ist ein gutes Zeichen.',
+    'Gute Ideen kommen selten am Schreibtisch. Aber dort wollen sie aufgeschrieben werden.',
+    'Die Geduld von heute ist der Vorsprung von morgen.',
+    'Was schwer ist, wird leichter, wenn man es zu zweit trägt.',
+    'Ein Nein zur rechten Zeit ist ein Ja zu dir selbst.',
+    'Wer die Karte zu lange studiert, verpasst den Zug.',
+    'Du bist weiter, als du von innen aussiehst.',
+    'Das Unerledigte läuft nicht davon. Du darfst eine Pause machen.',
+    'Jeder Anfang ist ein bisschen ungeschickt. Das gehört dazu.',
+    'Ein Fehler ist eine Abkürzung zum Wissen, nur holpriger.',
+    'Mit leeren Händen kann man am besten etwas Neues fassen.',
+    'Ein Brief von Hand kommt zweimal an: im Briefkasten und im Herzen.',
+    'Das Schöne an morgen: Es hat noch niemand angebraucht.',
+    'Neugier ist ein Muskel. Heute wird trainiert.',
+    'Dein Bauchgefühl hat heute Sprechstunde. Geh hin.',
+    'Was du aufschiebst, wird nicht kleiner, nur schwerer.',
+    'Ein offenes Fenster ist auch eine Einladung.',
+    'Wer gut vergessen kann, hat Platz für Neues.',
+    'Wenn du nicht weiterweisst, geh einmal um den Block.',
+    'Die Abkürzung ist nur kürzer, wenn man sie kennt.',
+    'Freundlichkeit ist die einzige Währung, die beim Ausgeben mehr wird.',
+    'Jede Landkarte war einmal ein leeres Blatt.',
+    'Wer pflanzt, glaubt an morgen.',
+    'Lass heute etwas unperfekt. Die Welt hält das aus.',
+    'Wer immer recht haben will, hat selten Gesellschaft.',
+    'Eine Frage, die du dir oft stellst, verdient eine Antwort auf Papier.',
+    'Nicht alles, was laut ist, ist wichtig. Nicht alles, was wichtig ist, ist laut.',
+    'Heute reicht es, den nächsten Schritt zu kennen.',
+  ],
+  h: [
+    'Jemand denkt gerade an dich und lächelt.',
+    'Du rettest heute jemandem den Tag, ohne es zu merken.',
+    'Der Anruf, den du schon lange machen wolltest, wird sich lohnen.',
+    'Für jemanden bist du das beste Kapitel.',
+    'Bald sitzt du an einem Tisch mit Menschen, die dich gern haben.',
+    'Heute schmeckt der Kaffee ein wenig besser als sonst.',
+    'Ein freundliches Wort von dir wandert weiter, als du siehst.',
+    'Du darfst stolz sein auf das, was du still geschafft hast.',
+    'Eine schöne Post ist unterwegs zu dir. Vielleicht nicht heute, aber bald.',
+    'Du bist genau richtig in diesem Moment.',
+    'Wer dich kennt, ist froh darüber.',
+    'Ein altes Lachen kommt bald zurück.',
+    'Dein Mut ist grösser als deine Angst. Er ist nur leiser.',
+    'Bald hörst du zufällig ein Lied, das dich glücklich macht.',
+    'Ein Mensch, den du lange nicht gesehen hast, freut sich auf dich.',
+    'Teile heute etwas Süsses. Es kommt doppelt zurück.',
+    'Zuhause ist da, wo jemand deine Lieblingstasse kennt.',
+    'Du hast mehr Freunde, als dir an grauen Tagen einfällt.',
+    'Heute gelingt dir etwas, das gestern noch schwer war.',
+    'Gönn dir die gute Schokolade. Du weisst, welche.',
+    'Ein Spaziergang schenkt dir heute eine gute Idee.',
+    'Du bringst heute jemanden zum Lachen.',
+    'Was du gibst, bleibt nicht unbemerkt.',
+    'Deine Freundlichkeit ist ansteckend. Bitte weiter verbreiten.',
+    'Glück ist kein Ort, aber manchmal sitzt es neben dir am Tisch.',
+    'Bald findest du etwas wieder, das du vermisst hast.',
+    'Heute Abend bist du zufriedener, als du jetzt glaubst.',
+    'Eine Einladung ist unterwegs. Sag ja.',
+    'Jemand hebt dir das letzte Stück Kuchen auf.',
+    'Du bist das Glück, das ein anderer gerade in seinem Keks sucht.',
+    'Für jemanden bist du der Grund, heute früher nach Hause zu gehen.',
+    'Was du gerade anfängst, wird schön.',
+    'Bald wirst du unerwartet gelobt. Nimm es einfach an.',
+    'Heute darfst du dir selbst ein Kompliment machen. Laut.',
+    'Die Menschen an diesem Tisch sind ein Glück. Schau dich um.',
+  ],
+  x: [
+    'Dieser Keks hat keinen Plan. Du schon?',
+    'Dieser Keks war eigentlich für jemand anderen bestimmt. Jetzt ist es zu spät.',
+    'Du findest heute einen Kugelschreiber. Er schreibt nicht.',
+    'Deine Socken passen heute zusammen. Geniesse es.',
+    'In naher Zukunft: Toast. Er fällt mit der Butter nach oben.',
+    'Du wählst heute an der Kasse die schnellste Schlange.',
+    'Das Universum hat deine Nachricht gelesen. Antwort folgt.',
+    'Achtung: Dieser Spruch wurde von einem sehr kleinen Drucker verfasst.',
+    'Deine Glückszahlen stehen unten. Deine Pechzahlen bleiben geheim.',
+    'Du findest heute eine Plastikdose mit dem passenden Deckel.',
+    'Bald ziehst du eine Jacke an und findest Geld in der Tasche.',
+    'Ein Kühlschrank in deiner Nähe denkt an dich.',
+    'Du hast eine grosse Zukunft. Ab etwa Donnerstag.',
+    'Heute ist ein guter Tag, um eine Zimmerpflanze mit Namen anzusprechen.',
+    'Die Waschmaschine gibt heute alle Socken zurück.',
+    'Die Antwort ist ja. Die Frage kennst du selbst.',
+    'Ein Tag ohne Kekse ist möglich, aber sinnlos.',
+    'Dein nächster Einkaufszettel wird vollständig sein. Ein Wunder.',
+    'Du sagst heute etwas Kluges und erinnerst dich sogar daran.',
+    'Bald begegnet dir ein Hund, der dich für sehr wichtig hält.',
+    'Eine Taube hat Pläne mit dir. Bleib wachsam.',
+    'Du tippst heute ein Passwort beim ersten Versuch richtig.',
+    'Ein grosses Abenteuer erwartet dich. Es beginnt mit Abwaschen.',
+    'Bitte diesen Zettel nicht essen. Der Drucker hat sich Mühe gegeben.',
+    'Wenn du das liest, funktioniert der Drucker.',
+    'Heute findest du den Anfang der Klebebandrolle sofort.',
+    'Ein Löffel ist ein kleiner Teller mit Griff. Denk darüber nach.',
+    'Glück ist, wenn das Ladekabel bis zum Bett reicht.',
+    'Deine Zimmerpflanze verzeiht dir. Dieses eine Mal.',
+    'Die Zukunft ist ungewiss. Der Keks aber ist knusprig.',
+    'Du suchst bald etwas, das du gerade in der Hand hältst.',
+    'Keine Sorge: Auch Glückskekse wissen nicht alles.',
+    'Ein Pinguin beneidet dich gerade. Warum, bleibt sein Geheimnis.',
+    'Lies diesen Satz noch einmal, aber mit französischem Akzent.',
+    'Heute nicht. Morgen vielleicht. Übermorgen ganz sicher.',
+    'Wer Kekse bricht, bekommt Krümel. So ist das Leben.',
+    'Du wirst heute mindestens einmal gähnen. Das steht fest.',
+    'Gerüchte besagen, dass du ein ausgezeichnetes Spiegelei brätst.',
+    'In deiner Zukunft sehe ich … Moment, der Keks ist zerbrochen.',
+    'Diese Botschaft zerstört sich nicht selbst. Bitte ins Altpapier.',
+    'Der Lift wartet heute auf dich.',
+    'Bald kommt eine Mail, die du wirklich lesen willst. Eine.',
+    'Kuchen zum Frühstück ist kein Fehler, sondern eine Entscheidung.',
+    'Glück im Spiel, Glück in der Liebe und ein freier Parkplatz.',
+    'Du vergisst heute deinen Schirm. Es regnet nicht. Gut gemacht.',
+    'Ein Stuhl in deiner Nähe ist frei. Er hat auf dich gewartet.',
+    'Der Spruch auf diesem Zettel gilt nur, wenn du ihn laut vorliest.',
+    'Wer diesen Keks gegessen hat, muss den nächsten Kaffee machen.',
+    'Deine nächste gute Idee kommt unter der Dusche. Halte Papier bereit.',
+    'Das Glück klopft an. Bitte nicht so tun, als wäre niemand zu Hause.',
+  ],
+  b: [
+    'Wer im Rhein schwimmt, lässt sich treiben und kommt trotzdem an.',
+    'Bald findest du am Rheinbord einen freien Platz in der Abendsonne.',
+    'Das Tram nach Hause fährt genau dann ab, wenn du ankommst. Diesmal mit dir.',
+    'Auch der Basilisk war einmal klein.',
+    'Die Fähre kennt keine Eile. Lern von ihr.',
+    'Wer um vier Uhr morgens wach ist, ist verliebt oder am Morgestraich.',
+    'Ein Läckerli am Tag hält schlechte Laune fern.',
+    'Ein Schoggiweggli wird dich heute glücklich machen.',
+    'Die Bank ist geschlossen. Das Bänkli am Rhein ist offen.',
+    'Dein Glück ist pünktlicher als der Zug. Fast.',
+    'Was du heute in den Rhein wirfst, ist morgen in Rotterdam. Wirf nur Sorgen.',
+    'Heute ist ein guter Tag für ein Cüpli ohne Anlass.',
+    'Wer drei Länder an einem Tag besucht, wohnt wahrscheinlich in Basel.',
+    'Auf dem Münsterhügel weht heute ein guter Wind für dich.',
+    'Pack deine Sorgen in den Schwimmsack und lass sie flussabwärts treiben.',
+    'Ein Velo ohne Glocke ist wie Basel ohne Fasnacht: möglich, aber leiser.',
+    'Heute schaust du vom Kleinbasel aufs Grossbasel und findest es schön. Oder umgekehrt.',
+    'Ein Raclette löst kein Problem. Aber es hilft beim Nachdenken.',
+    'Ein Fondue teilt man. Das Glück auch.',
+    'Dein Leben braucht nicht mehr Tempo, sondern ein Znüni.',
+    'Auch eine Schweizer Uhr geht manchmal nach. Sei gnädig mit dir.',
+    'Bald kommt der Tag, an dem der Rhein warm genug ist.',
+    'Die Fasnacht kommt bestimmt. Und mit ihr Räppli im Mantel bis im August.',
+    'Dreimal Glück: im Rhein, im Tram und in der Bäckerei.',
+    '«Merci vielmal» ist halb Deutsch, halb Französisch und ganz herzlich.',
+    'Ein Grüezi kostet nichts. Ein Merci auch nicht.',
+    'Sei wie ein Sackmesser: klein, praktisch und immer dabei.',
+    'Wer an der Fasnacht keinen Plan hat, folgt einfach den Piccolos.',
+    'Heute zeigt dir Basel eine Gasse, die du noch nie gesehen hast.',
+    'Der Rhein nimmt alles mit. Auch das, was du loslassen willst.',
+    'Am Ende jedes Bergwegs wartet eine Hütte mit Kuchen.',
+    'Glück ist ein Fensterplatz im Zug am Walensee.',
+    'Die Wolken über dem Jura ziehen weiter. Deine auch.',
+    'Kein Röstigraben ist so tief, dass ein gutes Essen ihn nicht überbrückt.',
+    'Der Rhein ist in Basel der beste Ratgeber: Er fliesst einfach.',
+    'Pack heute einen Schirm ein. Basel hat Pläne mit dir.',
+    'Ein Kaffee draussen in der Sonne ist auch eine Ferienwoche, nur kürzer.',
+    'Das Glück wohnt im Kleinbasel. Am Sonntag besucht es das Grossbasel.',
+    'Wer am Rhein sitzt und nichts tut, tut genau das Richtige.',
+    'Ein Zvieri zur rechten Zeit verhindert drei schlechte Entscheidungen.',
+    'Die Herbstmesse dreht sich. Dein Glück auch.',
+    'Mit genug Käse ist jeder Nebel auszuhalten.',
+  ],
+};
+const ALLE = Object.entries(SPRUECHE).flatMap(([k, l]) => l.map(t => ({ k, t })));
+
+// «Französisch für den Keks»: ein Wort, das nach Glück, Basel oder Zvieri schmeckt
+const WOERTER = [
+  ['le bonheur', 'das Glück'], ['la flânerie', 'das Umherschlendern'], ['le goûter', 'das Zvieri'],
+  ['la tartine', 'das Butterbrot'], ['l’éclaircie', 'die Aufhellung'], ['le clin d’œil', 'das Augenzwinkern'],
+  ['le parapluie', 'der Regenschirm'], ['la marmotte', 'das Murmeltier'], ['le papillon', 'der Schmetterling'],
+  ['la gourmandise', 'die Naschlust'], ['le coup de cœur', 'die Liebe auf den ersten Blick'], ['la grasse matinée', 'das Ausschlafen'],
+  ['le rêve', 'der Traum'], ['la lueur', 'der Schimmer'], ['la douceur', 'die Sanftheit'], ['la sieste', 'das Nickerchen'],
+  ['le fou rire', 'der Lachanfall'], ['la boussole', 'der Kompass'], ['l’étoile filante', 'die Sternschnuppe'],
+  ['la luciole', 'das Glühwürmchen'], ['le chuchotement', 'das Flüstern'], ['le grenier', 'der Estrich'],
+  ['la fête', 'das Fest'], ['le pique-nique', 'das Picknick'], ['le soupir', 'der Seufzer'], ['l’escargot', 'die Schnecke'],
+  ['le tournesol', 'die Sonnenblume'], ['la confiture', 'die Konfitüre'], ['la rive', 'das Ufer'], ['le pont', 'die Brücke'],
+  ['la péniche', 'das Rheinschiff'], ['la trottinette', 'das Trottinett'], ['le nuage', 'die Wolke'],
+  ['l’arc-en-ciel', 'der Regenbogen'], ['la promenade', 'der Spaziergang'], ['la bise', 'das Küsschen (und der kalte Wind)'],
+  ['le flocon', 'die Schneeflocke'], ['chouette !', 'super!'], ['volontiers', 'gern'], ['la rencontre', 'die Begegnung'],
+  ['le hasard', 'der Zufall'], ['la veilleuse', 'das Nachtlicht'], ['le hérisson', 'der Igel'], ['la cerise', 'die Kirsche'],
+  ['la gaufre', 'die Waffel'], ['le phare', 'der Leuchtturm'], ['l’amitié', 'die Freundschaft'], ['le souvenir', 'die Erinnerung'],
+  ['la cabane', 'die Hütte'], ['le feu de camp', 'das Lagerfeuer'], ['la rêverie', 'die Träumerei'], ['doucement', 'sachte'],
+  ['les retrouvailles', 'das Wiedersehen'], ['le câlin', 'die Umarmung'], ['la miette', 'der Krümel'], ['le biscuit', 'der Keks'],
+  ['la chance', 'das Glück (beim Würfeln)'], ['le soleil', 'die Sonne'], ['la baignade', 'das Baden im Fluss'],
+  ['le marché', 'der Markt'], ['la vitrine', 'das Schaufenster'], ['le tram', 'das Tram'], ['la fanfare', 'die Blaskapelle'],
+];
+
+// ---------------------------------------------------------------- Auswahl, ohne Wiederholung
+const ZUFALL = n => crypto.getRandomValues(new Uint32Array(1))[0] % n;
+const kennung = t => { let h = 2166136261; for (const c of t) h = Math.imul(h ^ c.codePointAt(0), 16777619); return (h >>> 0).toString(36); };
+const GEDAECHTNIS = 120;   // so viele zuletzt gezeigte Sprüche merkt sich die Seite
+let zuletzt = (() => { try { const a = JSON.parse(store.get('keks.zuletzt', '[]')); return Array.isArray(a) ? a : []; } catch { return []; } })();
+
+let sorte = ['alle', 'w', 'h', 'x', 'b'].includes(store.get('keks.sorte', 'alle')) ? store.get('keks.sorte', 'alle') : 'alle';
+let extra = ['alles', 'zahlen', 'nur'].includes(store.get('keks.extra', 'alles')) ? store.get('keks.extra', 'alles') : 'alles';
+let anzahl = Math.min(MAX_KEKSE, Math.max(1, parseInt(store.get('keks.anzahl', '1'), 10) || 1));
+
+// Nimmt Sprüche, die zuletzt nicht vorkamen. Ist die Sorte erschöpft, zählt nur noch die jüngere Vergangenheit.
+function spruecheZiehen(n){
+  const pool = sorte === 'alle' ? ALLE : ALLE.filter(s => s.k === sorte);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const schon = new Set(out.map(s => kennung(s.t)));
+    let k = zuletzt.length, wahl = [];
+    for (;;) {
+      const sperre = new Set(zuletzt.slice(zuletzt.length - k));
+      wahl = pool.filter(s => !schon.has(kennung(s.t)) && !sperre.has(kennung(s.t)));
+      if (wahl.length || k === 0) break;
+      k = k > 1 ? k >> 1 : 0;
+    }
+    if (!wahl.length) wahl = pool;   // mehr Kekse als Sprüche in der Sorte
+    out.push(wahl[ZUFALL(wahl.length)]);
+  }
+  zuletzt = [...zuletzt.filter(h => !out.some(s => kennung(s.t) === h)), ...out.map(s => kennung(s.t))].slice(-GEDAECHTNIS);
+  store.set('keks.zuletzt', JSON.stringify(zuletzt));
+  return out;
+}
+
+// Sechs Glückszahlen aus 1 bis 42, wie beim Schweizer Lotto
+function glueckszahlen(){
+  const z = new Set();
+  while (z.size < 6) z.add(1 + ZUFALL(42));
+  return [...z].sort((a, b) => a - b);
+}
+
+function kekseBacken(){
+  const sprueche = spruecheZiehen(anzahl);
+  const woerter = [];
+  return sprueche.map(s => {
+    let w;
+    do w = WOERTER[ZUFALL(WOERTER.length)]; while (woerter.includes(w) && woerter.length < WOERTER.length);
+    woerter.push(w);
+    return { spruch: s.t, zahlen: glueckszahlen(), wort: w };
+  });
+}
+
+// ---------------------------------------------------------------- Setzen
+// Zeilen gleichmässig verteilen: so schmal wie möglich, ohne eine Zeile mehr zu brauchen
+function umbrechen(g, text, f, breite){
+  g.font = f;
+  const woerter = text.split(/\s+/).filter(Boolean);
+  const brich = b => {
+    const zeilen = []; let z = '';
+    for (const w of woerter) {
+      const probe = z ? z + ' ' + w : w;
+      if (z && g.measureText(probe).width > b) { zeilen.push(z); z = w; } else z = probe;
+    }
+    if (z) zeilen.push(z);
+    return zeilen;
+  };
+  let zeilen = brich(breite);
+  if (zeilen.length > 1) {
+    const n = zeilen.length;
+    let lo = breite * 0.4, hi = breite;
+    while (hi - lo > 4) { const m = (lo + hi) / 2; if (brich(m).length > n) lo = m; else hi = m; }
+    zeilen = brich(hi);
+  }
+  return zeilen.map(t => ({ t, w: g.measureText(t).width }));
+}
+
+// Kleine Grossbuchstaben mit Sperrung, von Hand gesetzt (letterSpacing kann nicht jeder Browser auf der Leinwand)
+function gesperrt(g, text, f, sp){
+  g.font = f;
+  const zeichen = [...text], ws = zeichen.map(c => g.measureText(c).width);
+  return { zeichen, ws, w: ws.reduce((a, b) => a + b, 0) + sp * (zeichen.length - 1), sp, f };
+}
+
+function setzen(g, keks){
+  const ops = [], mitte = BREITE / 2;
+  let y = 6;
+  // Kopf: Linie, Keks, Linie
+  const ks = 84;
+  ops.push({ art: 'keks', cx: mitte, cy: y + ks * 0.42, s: ks });
+  for (const seite of [-1, 1]) {
+    const innen = mitte + seite * (ks * 0.5 + 30), aussen = mitte + seite * 200;
+    ops.push({ art: 'rect', x: Math.min(innen, aussen), y: Math.round(y + ks * 0.42) - 1, w: Math.abs(aussen - innen), h: 2 });
+    ops.push({ art: 'raute', x: aussen + seite * 9, y: Math.round(y + ks * 0.42), r: 5 });
+  }
+  y += ks * 0.82 + 22;
+  // Spruch, kursiv und zentriert
+  const fs = F.serif(36), zh = 46;
+  for (const z of umbrechen(g, keks.spruch, fs, INNEN - 16)) {
+    ops.push({ art: 'text', t: z.t, x: mitte - z.w / 2, y: y + 34, f: fs });
+    y += zh;
+  }
+  y += 6;
+  if (extra === 'nur') return { ops, H: Math.ceil(y + 8) };
+  // Trenner: drei kleine Rauten
+  y += 14;
+  for (const dx of [-22, 0, 22]) ops.push({ art: 'raute', x: mitte + dx, y, r: dx ? 3.5 : 5 });
+  y += 20;
+  const etikett = text => {
+    const e = gesperrt(g, text, F.sans(15, 700), 4);
+    ops.push({ art: 'gesperrt', ...e, x: mitte - e.w / 2, y: y + 14 });
+    y += 24;
+  };
+  etikett('GLÜCKSZAHLEN');
+  const zell = 70, fz = F.sans(32, 700);
+  g.font = fz;
+  keks.zahlen.forEach((n, i) => {
+    const t = String(n), w = g.measureText(t).width;
+    ops.push({ art: 'text', t, x: mitte + (i - 2.5) * zell - w / 2, y: y + 32, f: fz });
+  });
+  y += 44;
+  if (extra === 'alles') {
+    y += 14;
+    etikett('FRANZÖSISCH FÜR DEN KEKS');
+    const fw = F.serif(28), fd = F.sans(22, 500);
+    g.font = fw; const ww = g.measureText(keks.wort[0]).width;
+    const strich = '  –  ';
+    g.font = fd; const sw = g.measureText(strich).width, dw = g.measureText(keks.wort[1]).width;
+    if (ww + sw + dw <= INNEN) {
+      let x = mitte - (ww + sw + dw) / 2;
+      ops.push({ art: 'text', t: keks.wort[0], x, y: y + 28, f: fw }); x += ww;
+      ops.push({ art: 'text', t: strich + keks.wort[1], x, y: y + 28, f: fd });
+      y += 38;
+    } else {
+      ops.push({ art: 'text', t: keks.wort[0], x: mitte - ww / 2, y: y + 28, f: fw }); y += 36;
+      ops.push({ art: 'text', t: keks.wort[1], x: mitte - dw / 2, y: y + 24, f: fd }); y += 32;
+    }
+  }
+  return { ops, H: Math.ceil(y + 8) };
+}
+
+// ---------------------------------------------------------------- Zeichnen
+// Der Glückskeks von der Seite: gefaltete Halbmondform mit Kniff in der Mitte und Zettel, der herausschaut
+function keksZeichnen(g, cx, cy, s){
+  const r = s / 2;
+  g.save();
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  // Aussenform als schwarze Fläche: runder Rücken, unten zwei Flügel mit dem Kniff dazwischen
+  const ny = cy + r * 0.12;   // Kniff
+  g.beginPath();
+  g.moveTo(cx - r, cy + r * 0.38);
+  g.bezierCurveTo(cx - r * 1.05, cy - r * 0.9, cx + r * 1.05, cy - r * 0.9, cx + r, cy + r * 0.38);
+  g.bezierCurveTo(cx + r * 0.92, cy + r * 0.78, cx + r * 0.3, cy + r * 0.8, cx, ny);
+  g.bezierCurveTo(cx - r * 0.3, cy + r * 0.8, cx - r * 0.92, cy + r * 0.78, cx - r, cy + r * 0.38);
+  g.closePath();
+  g.fillStyle = '#000'; g.fill();
+  // Falz: weisser Bogen vom Kniff hinauf zum Rücken
+  g.strokeStyle = '#fff'; g.lineWidth = Math.max(3, r * 0.09);
+  g.beginPath(); g.moveTo(cx, ny); g.bezierCurveTo(cx - r * 0.18, cy - r * 0.15, cx - r * 0.05, cy - r * 0.42, cx + r * 0.12, cy - r * 0.5); g.stroke();
+  // Der Zettel schaut aus dem Kniff heraus, schräg nach rechts unten
+  g.translate(cx + r * 0.02, ny + r * 0.06); g.rotate(0.32);
+  g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 3;
+  g.beginPath(); g.rect(0, -r * 0.14, r * 1.25, r * 0.28); g.fill(); g.stroke();
+  g.fillStyle = '#000';
+  for (const dx of [0.42, 0.62, 0.82, 1.02]) g.fillRect(r * dx, -1.5, r * 0.12, 3);
+  g.restore();
+}
+
+function raute(g, x, y, r){
+  g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath(); g.fill();
+}
+
+async function schriftenLaden(text){
+  await Promise.all([F.serif(20), F.sans(20, 500), F.sans(20, 700)].map(f => document.fonts.load(f, text).catch(() => {})));
+}
+
+// Einen Keks setzen, zeichnen und mit der festen Schwelle wie der Mac rastern: Die Vorschau ist der Druck
+function zettel(keks){
+  const c = document.createElement('canvas');
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const { ops, H } = setzen(g, keks);
+  c.width = BREITE; c.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+  for (const o of ops) {
+    if (o.art === 'rect') g.fillRect(Math.round(o.x), Math.round(o.y), Math.round(o.w), o.h);
+    else if (o.art === 'raute') raute(g, o.x, o.y, o.r);
+    else if (o.art === 'keks') keksZeichnen(g, o.cx, o.cy, o.s);
+    else if (o.art === 'text') { g.font = o.f; g.fillText(o.t, o.x, o.y); }
+    else if (o.art === 'gesperrt') { g.font = o.f; let x = o.x; o.zeichen.forEach((z, i) => { g.fillText(z, x, o.y); x += o.ws[i] + o.sp; }); }
+    g.fillStyle = '#000';
+  }
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  return { canvas: c, raster: { W: BREITE, H, bits } };
+}
+
+let kekse = [];   // [{ spruch, zahlen, wort, canvas, raster }] genau das, was die Vorschau zeigt
+
+async function zeigen(){
+  await schriftenLaden(kekse.map(k => k.spruch + ' ' + k.wort.join(' ')).join(' ') + ' GLÜCKSZAHLEN FRANZÖSISCH FÜR DEN KEKS 0123456789–');
+  for (const k of kekse) Object.assign(k, zettel(k));
+  const stapel = $('stapel');
+  stapel.replaceChildren(...kekse.map((k, i) => {
+    const p = document.createElement('div'); p.className = 'papier';
+    k.canvas.setAttribute('aria-label', `Zettel ${i + 1}: ${k.spruch}`); k.canvas.setAttribute('role', 'img');
+    p.append(k.canvas); return p;
+  }));
+  const cm = kekse.map(k => k.raster.H / 80 + 2);   // + etwa 2 cm Rand oben wegen dem Messer
+  $('mass').textContent = kekse.length === 1 ? `Zettel etwa ${cm[0].toFixed(0)} cm lang`
+    : `${kekse.length} Zettel, je etwa ${[...new Set([Math.min(...cm), Math.max(...cm)].map(x => x.toFixed(0)))].join('–')} cm`;
+  $('drucken').textContent = kekse.length === 1 ? 'Keks drucken' : `${kekse.length} Kekse drucken`;
+  $('neu').textContent = kekse.length === 1 ? 'Anderer Spruch' : 'Andere Sprüche';
+}
+
+let laeuft = Promise.resolve();
+const neuBacken = () => (laeuft = laeuft.then(() => { kekse = kekseBacken(); return zeigen(); }));
+// Nur das Kleingedruckte ändert sich, die Sprüche bleiben
+const neuSetzen = () => (laeuft = laeuft.then(zeigen));
+
+// ---------------------------------------------------------------- Einstellungen
+function segment(id, wert, setze){
+  const el = $(id);
+  const mark = () => el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === wert())));
+  el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.v === wert()) return; setze(b.dataset.v); mark(); });
+  mark();
+}
+segment('sorte', () => sorte, v => { sorte = v; store.set('keks.sorte', v); msg(''); neuBacken(); });
+segment('extra', () => extra, v => { extra = v; store.set('keks.extra', v); neuSetzen(); });
+
+function anzahlSetzen(n){
+  n = Math.min(MAX_KEKSE, Math.max(1, n));
+  if (n === anzahl && kekse.length === n) return;
+  anzahl = n; store.set('keks.anzahl', String(n));
+  $('anzahl').textContent = n; $('weniger').disabled = n <= 1; $('mehr').disabled = n >= MAX_KEKSE;
+  laeuft = laeuft.then(() => {
+    // Vorhandene Kekse behalten, nur ergänzen oder wegnehmen
+    if (kekse.length > n) kekse = kekse.slice(0, n);
+    else if (kekse.length < n) {
+      const alt = anzahl; anzahl = n - kekse.length;
+      const dazu = kekseBacken(); anzahl = alt;
+      kekse = [...kekse, ...dazu];
+    }
+    return zeigen();
+  });
+}
+$('weniger').addEventListener('click', () => anzahlSetzen(anzahl - 1));
+$('mehr').addEventListener('click', () => anzahlSetzen(anzahl + 1));
+$('anzahl').textContent = anzahl; $('weniger').disabled = anzahl <= 1; $('mehr').disabled = anzahl >= MAX_KEKSE;
+$('neu').addEventListener('click', () => { msg(''); neuBacken(); });
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster, canvas){
+  const mm = (raster.H * 72 / raster.W).toFixed(3);   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster, canvas)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }, canvas){
+  if (!('CompressionStream' in window)) return canvas.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
+// text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+async function bonpost(daten){
+  const r = await fetch(BONPOST, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ key: KEY, ...daten }) });
+  return r.json();
+}
+
+// Jeder Keks ist ein eigener Bon: Die Bon-Post druckt sie nacheinander, das Messer schneidet jeden ab
+$('drucken').addEventListener('click', async () => {
+  ['drucken', 'neu', 'weniger', 'mehr'].forEach(id => $(id).disabled = true);
+  let gesendet = 0;
+  try {
+    await laeuft;   // sicher genau das drucken, was die Vorschau zeigt
+    if (!kekse.length) throw new Error('kein Keks da');
+    const n = kekse.length;
+    for (const k of kekse) {
+      msg(n === 1 ? 'Sende …' : `Sende ${gesendet + 1} von ${n} …`);
+      const d = await bonpost({ inhalt: await bonHtml(k.raster, k.canvas), titel: n === 1 ? 'Glückskeks' : `Glückskeks ${gesendet + 1}/${n}`, quelle: 'website-glueckskeks' });
+      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+      gesendet++;
+    }
+    msg(n === 1 ? 'Gesendet. Der Keks kommt innert einer Minute.' : `Gesendet: ${n} Kekse. Sie kommen innert ein, zwei Minuten.`, 'ok');
+    await neuBacken();   // der nächste Druck bringt neue Sprüche
+  } catch (e) {
+    msg((gesendet ? `${gesendet} gesendet, dann ` : '') + 'Fehler: ' + e.message, 'err');
+    if (gesendet) { kekse = kekse.slice(gesendet); await neuSetzen(); }   // nur die fehlenden nochmals anbieten
+  } finally {
+    ['drucken', 'neu'].forEach(id => $(id).disabled = false);
+    $('weniger').disabled = anzahl <= 1; $('mehr').disabled = anzahl >= MAX_KEKSE;
+  }
+});
+
+neuBacken();
+</script>
+</body>
+</html>

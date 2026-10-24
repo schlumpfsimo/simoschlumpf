@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · VOKABELN</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans aus bon/text/ (SIL Open Font License). Die Grunddatei enthält alle französischen
+   Zeichen (é è ê ë à â ç œ î ï ô ù û ü ÿ « » ’), die -ext-Datei nur Seltenes wie Ÿ. */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Stil wie bon/text/: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase;min-width:0}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "knoepfe" "vorschau";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.8rem;min-width:0}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+/* Themen: mehrere wählbar */
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.chips button{margin:0;padding:10px 8px;background:#fff;color:#000;text-transform:none;letter-spacing:0;font-size:.8rem;text-align:left;display:flex;justify-content:space-between;gap:6px}
+.chips button .n{color:var(--muted);flex:none}
+.chips button[aria-pressed="true"]{background:#000;color:#fff}
+.chips button[aria-pressed="true"] .n{color:#bbb}
+.zeile{display:flex;gap:6px;align-items:stretch}
+.zeile button{margin:0}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button.hell{background:#fff;color:#000;padding:10px;font-size:.78rem;letter-spacing:.05em}
+button.hell:hover{background:#000;color:#fff}
+button:disabled{opacity:.4;cursor:default}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+.stand{margin:6px 0 0;font-size:.8rem}
+.falten{border:1px solid #000;padding:8px 10px;font-size:.78rem;margin-top:8px}
+.falten b{text-transform:uppercase;letter-spacing:.04em}
+.falten p{margin:4px 0 0}
+/* Vorschau: genau der Druck (schon schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.boens{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted);text-align:center}
+[hidden]{display:none!important}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Vokabeln · Französisch über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <span class="label" id="modusLabel">Art</span>
+    <div class="seg" id="modus" role="group" aria-labelledby="modusLabel">
+      <button type="button" data-v="karten">Karten</button><button type="button" data-v="liste">Liste</button>
+    </div>
+    <span class="label" id="richtungLabel">Richtung</span>
+    <div class="seg" id="richtung" role="group" aria-labelledby="richtungLabel">
+      <button type="button" data-v="defr">Deutsch → Französisch</button><button type="button" data-v="frde">Französisch → Deutsch</button>
+    </div>
+    <span class="label" id="anzahlLabel">Anzahl</span>
+    <div class="seg" id="anzahl" role="group" aria-labelledby="anzahlLabel"></div>
+    <div id="schnittFeld">
+      <span class="label" id="schnittLabel">Karten trennen</span>
+      <div class="seg" id="schnitt" role="group" aria-labelledby="schnittLabel">
+        <button type="button" data-v="messer">Messer: je ein Bon</button><button type="button" data-v="schere">Schere: ein Streifen</button>
+      </div>
+    </div>
+    <span class="label" id="beispielLabel">Beispielsätze</span>
+    <div class="seg" id="beispiel" role="group" aria-labelledby="beispielLabel">
+      <button type="button" data-v="1">Mit</button><button type="button" data-v="0">Ohne</button>
+    </div>
+    <div id="linienFeld">
+      <span class="label" id="linienLabel">Platz zum Hinschreiben</span>
+      <div class="seg" id="linien" role="group" aria-labelledby="linienLabel">
+        <button type="button" data-v="1">Mit Linie</button><button type="button" data-v="0">Ohne</button>
+      </div>
+    </div>
+    <span class="label" id="niveauLabel">Niveau (mehrere möglich)</span>
+    <div class="seg" id="niveau" role="group" aria-labelledby="niveauLabel">
+      <button type="button" data-v="B1">A2 / B1</button><button type="button" data-v="B2">B2</button><button type="button" data-v="C1">C1</button>
+    </div>
+    <span class="label" id="themenLabel">Themen (mehrere möglich)</span>
+    <div class="chips" id="themen" role="group" aria-labelledby="themenLabel"></div>
+    <div class="zeile"><button type="button" class="hell" id="alleThemen">Alle Themen</button><button type="button" class="hell" id="keinThema">Keines</button></div>
+  </div>
+  <div class="knoepfe">
+    <p class="stand" id="stand"></p>
+    <div class="zeile"><button type="button" class="hell" id="andere">Andere Wörter</button><button type="button" class="hell" id="vergessen">Gesehene vergessen</button></div>
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <div class="falten" id="falten"></div>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="boens" id="boens"><div class="papier"><p class="leer">Hier erscheint der Bon.</p></div></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script src="woerter.js"></script>
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_H = 28000;             // grössere Leinwände schafft Safari am iPhone nicht
+const HALB = 288;                // Kartenhälfte mindestens 36 mm: gefaltet 72 × 36 mm
+const SCHRIFT = '"Plex", system-ui, sans-serif';
+const ANZAHL = { karten: [4, 6, 8, 12], liste: [5, 10, 15, 20] };
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.vokabeln.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.vokabeln.' + k, v); } catch {} }
+};
+const liesJson = (k, d) => { try { const v = JSON.parse(store.get(k, '')); return v ?? d; } catch { return d; } };
+
+// ---------------------------------------------------------------- Einstellungen
+const E = {
+  modus: ['karten', 'liste'].includes(store.get('modus')) ? store.get('modus') : 'karten',
+  richtung: store.get('richtung') === 'frde' ? 'frde' : 'defr',
+  schnitt: store.get('schnitt') === 'schere' ? 'schere' : 'messer',
+  beispiel: store.get('beispiel', '1') !== '0',
+  linien: store.get('linien', '1') !== '0',
+  niveau: liesJson('niveau', ['B2', 'C1']).filter(n => ['B1', 'B2', 'C1'].includes(n)),
+  themen: liesJson('themen', Object.keys(THEMEN)).filter(t => THEMEN[t]),
+  anzahl: { karten: +store.get('anzahl.karten', 6), liste: +store.get('anzahl.liste', 10) },
+};
+if (!ANZAHL.karten.includes(E.anzahl.karten)) E.anzahl.karten = 6;
+if (!ANZAHL.liste.includes(E.anzahl.liste)) E.anzahl.liste = 10;
+const speichern = () => {
+  store.set('modus', E.modus); store.set('richtung', E.richtung); store.set('schnitt', E.schnitt);
+  store.set('beispiel', E.beispiel ? '1' : '0'); store.set('linien', E.linien ? '1' : '0');
+  store.set('niveau', JSON.stringify(E.niveau)); store.set('themen', JSON.stringify(E.themen));
+  store.set('anzahl.karten', E.anzahl.karten); store.set('anzahl.liste', E.anzahl.liste);
+};
+
+// ---------------------------------------------------------------- Wörter auswählen
+// Gesehen = schon einmal gedruckt. So kommen zuerst alle anderen Wörter dran.
+let gesehen = new Set(liesJson('gesehen', []));
+const merken = () => store.set('gesehen', JSON.stringify([...gesehen]));
+const eintrag = a => ({ fr: a[0], g: a[1], de: a[2], bsp: a[3], thema: a[4], niveau: a[5] });
+const ALLE = WOERTER.map(eintrag);
+const pool = () => ALLE.filter(w => E.themen.includes(w.thema) && E.niveau.includes(w.niveau));
+
+function mischen(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+let auswahl = [], neueRunde = false;
+function waehlen(){
+  const p = pool(), n = E.anzahl[E.modus];
+  let neu = mischen(p.filter(w => !gesehen.has(w.fr)));
+  // Alle Wörter dieser Auswahl schon gedruckt: neue Runde, diese Wörter gelten wieder als neu
+  neueRunde = !neu.length && p.length > 0;
+  if (neueRunde) { p.forEach(w => gesehen.delete(w.fr)); merken(); neu = mischen(p); }
+  // Reicht es nicht ganz, mit schon gesehenen auffüllen
+  auswahl = neu.slice(0, n);
+  if (auswahl.length < n) auswahl = auswahl.concat(mischen(p.filter(w => gesehen.has(w.fr))).slice(0, n - auswahl.length));
+}
+
+function standZeigen(){
+  const p = pool(), neu = p.filter(w => !gesehen.has(w.fr)).length;
+  if (!p.length) { $('stand').textContent = 'Keine Wörter: mindestens ein Niveau und ein Thema wählen.'; return; }
+  $('stand').textContent = `${p.length} Wörter in dieser Auswahl, davon ${neu} noch nie gedruckt.` +
+    (neueRunde ? ' Alle waren schon einmal dran, jetzt beginnt eine neue Runde.' : '');
+}
+
+// ---------------------------------------------------------------- Text vorbereiten
+// Typografisches Apostroph und französische Leerzeichen vor ? ! ; : (geschützt, damit sie nicht allein umbrechen)
+const fein = t => t.replace(/'/g, '’').replace(/ ([?!;:»])/g, ' $1').replace(/« /g, '« ');
+const GENUS = { m: 'm.', f: 'f.', mf: 'm./f.', 'm pl': 'm. pl.', 'f pl': 'f. pl.' };
+// Genus nur dazuschreiben, wenn der Artikel es nicht verrät (l', les)
+const genus = w => w.g && /^(l'|les )/.test(w.fr) ? GENUS[w.g] : '';
+
+// ---------------------------------------------------------------- Setzen
+const font = (px, fett) => `${fett ? 700 : 500} ${px}px ${SCHRIFT}`;
+const mess = document.createElement('canvas').getContext('2d');
+
+// Wörter auf die Breite verteilen; zu lange Wörter werden zeichenweise getrennt
+function umbrechen(teileListe, px, breite){
+  const woerter = [];
+  for (const p of teileListe) for (const w of p.t.split(/( +)/)) if (w) woerter.push({ t: w, fett: p.fett, leer: /^ +$/.test(w) });
+  const zeilen = []; let zeile = [], x = 0;
+  const fertig = () => { while (zeile.length && zeile[zeile.length - 1].leer) x -= zeile.pop().w; zeilen.push({ stuecke: zeile, w: x }); zeile = []; x = 0; };
+  for (const w of woerter) {
+    mess.font = font(px, w.fett);
+    if (w.leer) { if (zeile.length) { const b = mess.measureText(w.t).width; zeile.push({ ...w, w: b }); x += b; } continue; }
+    let b = mess.measureText(w.t).width;
+    if (x + b > breite && zeile.length) fertig();
+    let t = w.t;
+    while (b > breite) {
+      let n = t.length;
+      while (n > 1 && mess.measureText(t.slice(0, n)).width > breite - x) n--;
+      zeile.push({ t: t.slice(0, n), fett: w.fett, w: mess.measureText(t.slice(0, n)).width }); fertig();
+      t = t.slice(n); b = mess.measureText(t).width;
+    }
+    if (t) { zeile.push({ t, fett: w.fett, w: b }); x += b; }
+  }
+  if (zeile.length) fertig();
+  return zeilen;
+}
+
+// Ein Abschnitt sammelt Zeichenbefehle in eigenen Koordinaten (0 … h). Beim Zusammensetzen
+// kann er um 180° gedreht werden: Die Lösung steht dann auf dem Kopf.
+class Abschnitt {
+  constructor(){ this.ops = []; this.h = 0; }
+  luecke(n){ this.h += n; return this; }
+  // Text umbrechen und setzen. mitte: zentriert; x0/breite: eigener Einzug
+  text(teile, px, { mitte = false, x0 = RAND, breite = INNEN, zh = Math.round(px * 1.3) } = {}){
+    for (const z of umbrechen(teile, px, breite)) {
+      let x = mitte ? x0 + (breite - z.w) / 2 : x0;
+      for (const s of z.stuecke) { this.ops.push({ t: s.t, x, y: this.h + Math.round(zh * 0.78), f: font(px, s.fett) }); x += s.w; }
+      this.h += zh;
+    }
+    return this;
+  }
+  rect(x, y, w, h){ this.ops.push({ rect: [x, y, w, h] }); return this; }
+  // gestrichelt (Falz) oder durchgezogen (Schnitt), mit kleiner Beschriftung in der Mitte
+  trennlinie(art, wort){
+    const y = this.h + 14, px = 18;
+    mess.font = font(px, false);
+    const tw = Math.ceil(mess.measureText(wort).width), mitteL = (BREITE - tw) / 2 - 10, mitteR = (BREITE + tw) / 2 + 10;
+    if (art === 'falz') {
+      for (let x = 0; x < BREITE; x += 24) {   // 14 Punkte Strich, 10 Lücke
+        const a = x, b = Math.min(x + 14, BREITE);
+        if (b <= mitteL || a >= mitteR) this.rect(a, y - 1, b - a, 3);
+        else {   // angeschnittene Striche neben der Beschriftung nur, wenn sie nicht wie ein Punkt aussehen
+          if (mitteL - a >= 8) this.rect(a, y - 1, mitteL - a, 3);
+          if (b - mitteR >= 8) this.rect(mitteR, y - 1, b - mitteR, 3);
+        }
+      }
+    } else { this.rect(0, y - 1, mitteL, 2); this.rect(mitteR, y - 1, BREITE - mitteR, 2); }
+    this.ops.push({ t: wort, x: (BREITE - tw) / 2, y: y + 6, f: font(px, false) });
+    this.h += 28;
+    return this;
+  }
+  zeichnen(g, y0, gedreht){
+    g.save();
+    if (gedreht) { g.translate(BREITE, y0 + this.h); g.rotate(Math.PI); } else g.translate(0, y0);
+    for (const o of this.ops) { if (o.rect) g.fillRect(...o.rect); else { g.font = o.f; g.fillText(o.t, o.x, o.y); } }
+    g.restore();
+  }
+}
+
+// Die grösste Schrift, bei der das Wort in höchstens drei Zeilen passt
+function passend(teile, groessen, maxZeilen = 3){
+  for (const px of groessen) if (umbrechen(teile, px, INNEN - 16).length <= maxZeilen) return px;
+  return groessen[groessen.length - 1];
+}
+
+const deSeite = w => [{ t: fein(w.de), fett: true }];
+const frSeite = w => { const gn = genus(w); return [{ t: fein(w.fr), fett: true }, ...(gn ? [{ t: ' (' + gn + ')', fett: false }] : [])]; };
+
+// Inhalt einer Kartenseite: das Wort gross, beim Französischen der Beispielsatz darunter
+function kartenSeite(w, sprache){
+  const a = new Abschnitt();
+  const teile = sprache === 'fr' ? frSeite(w) : deSeite(w);
+  const px = passend(teile, [46, 40, 34, 30]);
+  a.text(teile, px, { mitte: true, x0: RAND + 8, breite: INNEN - 16 });
+  if (sprache === 'fr' && E.beispiel && w.bsp) {
+    a.luecke(10);
+    a.text([{ t: fein(w.bsp), fett: false }], 24, { mitte: true, x0: RAND + 8, breite: INNEN - 16, zh: 31 });
+  }
+  return a;
+}
+
+// Eine Karte: vorne die Frage, Falz, hinten (auf dem Kopf) die Antwort. Beide Hälften gleich hoch.
+function karte(w, i, n){
+  const vorn = kartenSeite(w, E.richtung === 'defr' ? 'de' : 'fr');
+  const hinten = kartenSeite(w, E.richtung === 'defr' ? 'fr' : 'de');
+  const kopf = 40;   // Zeile mit Thema und Nummer
+  const h = Math.max(HALB, kopf + vorn.h + 40, hinten.h + 56);
+  const oben = new Abschnitt();
+  oben.text([{ t: fein(THEMEN[w.thema]) + ' · ' + (w.niveau === 'B1' ? 'A2/B1' : w.niveau), fett: false }], 20, { zh: 26 });
+  mess.font = font(20, false);
+  const nr = `${i + 1}/${n}`;
+  oben.ops.push({ t: nr, x: BREITE - RAND - mess.measureText(nr).width, y: Math.round(26 * 0.78), f: font(20, false) });
+  // Wort in der Mitte der Hälfte (unterhalb der Kopfzeile)
+  const yv = Math.round(kopf + (h - kopf - vorn.h) / 2);
+  for (const o of vorn.ops) oben.ops.push(o.rect ? { rect: [o.rect[0], o.rect[1] + yv, o.rect[2], o.rect[3]] } : { ...o, y: o.y + yv });
+  oben.h = h;
+  const unten = new Abschnitt();
+  const yh = Math.round((h - hinten.h) / 2);
+  for (const o of hinten.ops) unten.ops.push(o.rect ? { rect: [o.rect[0], o.rect[1] + yh, o.rect[2], o.rect[3]] } : { ...o, y: o.y + yh });
+  unten.h = h;
+  return { oben, unten };
+}
+
+function falzAbschnitt(wort){ const a = new Abschnitt(); a.trennlinie('falz', wort); return a; }
+function schnittAbschnitt(){ const a = new Abschnitt(); a.trennlinie('schnitt', 'schneiden'); return a; }
+
+// Liste: oben die Fragen, unten auf dem Kopf die Lösungen
+function liste(woerter){
+  const kopf = new Abschnitt();
+  kopf.text([{ t: 'VOKABELN', fett: true }], 44, { mitte: true, zh: 52 });
+  const richtung = E.richtung === 'defr' ? 'Deutsch – Französisch' : 'Französisch – Deutsch';
+  const niv = E.niveau.slice().sort().map(n => n === 'B1' ? 'A2/B1' : n).join(', ');
+  kopf.text([{ t: richtung + ' · ' + niv, fett: false }], 22, { mitte: true, zh: 30 });
+  kopf.text([{ t: new Date().toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), fett: false }], 22, { mitte: true, zh: 30 });
+  kopf.luecke(10).rect(RAND, kopf.h, INNEN, 4).luecke(4 + 18);
+
+  const nrB = 44;
+  const eintrag = (a, nr, teile, px, satz) => {
+    const y = a.h;
+    a.ops.push({ t: String(nr), x: RAND, y: y + Math.round(Math.round(px * 1.3) * 0.78), f: font(px, true) });
+    a.text(teile, px, { x0: RAND + nrB, breite: INNEN - nrB });
+    if (satz) a.text([{ t: fein(satz), fett: false }], 22, { x0: RAND + nrB, breite: INNEN - nrB, zh: 28 });
+  };
+  const fragen = new Abschnitt();
+  woerter.forEach((w, i) => {
+    if (E.richtung === 'defr') eintrag(fragen, i + 1, deSeite(w), 28);
+    else eintrag(fragen, i + 1, frSeite(w), 28, E.beispiel && w.bsp);
+    if (E.linien) { fragen.luecke(30); for (let x = RAND + nrB; x < BREITE - RAND; x += 8) fragen.rect(x, fragen.h, 3, 2); fragen.luecke(16); }
+    else fragen.luecke(12);
+  });
+  fragen.luecke(8);
+
+  const loesung = new Abschnitt();
+  loesung.luecke(14);
+  loesung.text([{ t: 'LÖSUNGEN', fett: true }], 30, { mitte: true, zh: 40 });
+  loesung.luecke(8);
+  woerter.forEach((w, i) => {
+    if (E.richtung === 'defr') eintrag(loesung, i + 1, frSeite(w), 26, E.beispiel && w.bsp);
+    else eintrag(loesung, i + 1, deSeite(w), 26);
+    loesung.luecke(12);
+  });
+  loesung.luecke(10);
+  return [[kopf, false], [fragen, false], [falzAbschnitt('falten · Lösungen: Bon drehen'), false], [loesung, true]];
+}
+
+// ---------------------------------------------------------------- Bons bauen und rastern
+// Ergebnis: Liste von Bons, jeder { W, H, bits, canvas }
+function bons(){
+  if (!auswahl.length) return [];
+  const n = auswahl.length;
+  if (E.modus === 'liste') return [rastern(liste(auswahl))];
+  const teile = auswahl.map((w, i) => karte(w, i, n));
+  const mitKarte = k => [[k.oben, false], [falzAbschnitt('falten'), false], [k.unten, true]];
+  if (E.schnitt === 'messer') return teile.map(k => rastern(mitKarte(k)));
+  // Streifen: Schnittlinie vor, zwischen und nach den Karten
+  const alle = [[schnittAbschnitt(), false]];
+  for (const k of teile) alle.push(...mitKarte(k), [schnittAbschnitt(), false]);
+  return [rastern(alle)];
+}
+
+function rastern(abschnitte){
+  // Höhe auf ein Vielfaches von 36 Punkten: Dann ist sie auch in CSS-Pixeln ganzzahlig (576/272 = 36/17)
+  // und Chrome auf dem Mac staucht das Bild nicht um eine Punktzeile
+  const H = Math.ceil(abschnitte.reduce((s, [a]) => s + a.h, 0) / 36) * 36;
+  if (H > MAX_H) throw new Error(`zu lang: etwa ${(H / 80).toFixed(0)} cm`);
+  const c = document.createElement('canvas');
+  c.width = BREITE; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+  let y = 0;
+  for (const [a, gedreht] of abschnitte) { a.zeichnen(g, y, gedreht); y += a.h; }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  return { W: BREITE, H, bits, canvas: c };
+}
+
+let fertig = [];   // die gezeigten (und zu druckenden) Bons
+async function zeichnen(){
+  standZeigen();
+  if (!auswahl.length) { fertig = []; $('boens').innerHTML = '<div class="papier"><p class="leer">Keine Wörter für diese Auswahl.</p></div>'; $('mass').textContent = ''; return; }
+  // Schrift zuerst laden, sonst misst die Leinwand mit einer Ersatzschrift
+  const alles = auswahl.map(w => w.fr + w.de + w.bsp + THEMEN[w.thema]).join('') + 'VOKABELNLÖSUNGEN0123456789’«»';
+  await Promise.all([document.fonts.load(font(20, false), alles), document.fonts.load(font(20, true), alles)]);
+  try { fertig = bons(); }
+  catch (e) { fertig = []; $('boens').innerHTML = `<div class="papier"><p class="leer">${e.message}</p></div>`; return; }
+  $('boens').replaceChildren(...fertig.map(b => { const p = document.createElement('div'); p.className = 'papier'; p.append(b.canvas); return p; }));
+  const cm = b => (b.H / 80 + 2).toFixed(0);   // + etwa 2 cm Rand oben wegen dem Messer
+  $('mass').textContent = fertig.length > 1 ? `${fertig.length} Bons, je etwa ${cm(fertig[0])} cm lang` : `Bon etwa ${cm(fertig[0])} cm lang`;
+}
+
+let laeuft = Promise.resolve();
+const neuZeichnen = () => (laeuft = laeuft.then(zeichnen, zeichnen));
+
+// ---------------------------------------------------------------- Bedienung
+function faltenText(){
+  $('falten').innerHTML = E.modus === 'liste'
+    ? '<b>So benutzen</b><p>Oben die Wörter, unter der gestrichelten Linie die Lösungen auf dem Kopf. Zum Üben den unteren Teil nach hinten umfalten. Zum Kontrollieren den Bon einfach umdrehen (180° drehen): Dann stehen die Lösungen oben und richtig herum, 1 bis ' + auswahl.length + '.</p>'
+    : '<b>So falten</b><p>Jede Karte an der gestrichelten Linie falten, den unteren Teil nach hinten, die Schrift bleibt aussen. Vorne steht das Wort. Zum Nachschauen die Karte seitlich umdrehen wie eine Buchseite: Dann steht die Lösung richtig herum.</p><p>Warum auf dem Kopf? Beim Falten nach hinten kippt die untere Hälfte. Was auf dem Kopf gedruckt ist, steht nach dem Umdrehen aufrecht. Und auch ungefaltet liest man die Lösung nicht aus Versehen mit.</p>' +
+      (E.schnitt === 'messer' ? '<p>Jede Karte kommt als eigener Bon, das Messer schneidet sie ab. Kostet pro Karte etwa 3 cm leeres Papier extra.</p>' : '<p>Alles auf einem Streifen: an den durchgezogenen Linien mit der Schere schneiden. Spart Papier.</p>');
+}
+
+function segment(id, wert, setzen){
+  const el = $(id);
+  const mark = () => el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(wert()))));
+  el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; setzen(b.dataset.v); mark(); });
+  mark();
+  return mark;
+}
+
+function anzahlKnoepfe(){
+  $('anzahl').innerHTML = ANZAHL[E.modus].map(n => `<button type="button" data-v="${n}">${n}</button>`).join('');
+  $('anzahl').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === E.anzahl[E.modus])));
+}
+$('anzahl').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  E.anzahl[E.modus] = +b.dataset.v; speichern(); anzahlKnoepfe(); waehlen(); neuZeichnen();
+});
+
+function sichtbar(){
+  $('schnittFeld').hidden = E.modus !== 'karten';
+  $('linienFeld').hidden = E.modus !== 'liste';
+  faltenText();
+}
+
+segment('modus', () => E.modus, v => { E.modus = v; speichern(); anzahlKnoepfe(); waehlen(); sichtbar(); neuZeichnen(); });
+segment('richtung', () => E.richtung, v => { E.richtung = v; speichern(); neuZeichnen(); });
+segment('schnitt', () => E.schnitt, v => { E.schnitt = v; speichern(); faltenText(); neuZeichnen(); });
+segment('beispiel', () => E.beispiel ? '1' : '0', v => { E.beispiel = v === '1'; speichern(); neuZeichnen(); });
+segment('linien', () => E.linien ? '1' : '0', v => { E.linien = v === '1'; speichern(); neuZeichnen(); });
+
+// Niveau: mehrere an/aus
+function niveauMarkieren(){ $('niveau').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(E.niveau.includes(b.dataset.v)))); }
+$('niveau').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const v = b.dataset.v;
+  E.niveau = E.niveau.includes(v) ? E.niveau.filter(x => x !== v) : [...E.niveau, v];
+  speichern(); niveauMarkieren(); themenKnoepfe(); waehlen(); neuZeichnen();
+});
+
+// Themen: mit Anzahl Wörter im gewählten Niveau
+function themenKnoepfe(){
+  $('themen').innerHTML = Object.entries(THEMEN).map(([k, name]) => {
+    const n = ALLE.filter(w => w.thema === k && E.niveau.includes(w.niveau)).length;
+    return `<button type="button" data-v="${k}" aria-pressed="${E.themen.includes(k)}"><span>${name}</span><span class="n">${n}</span></button>`;
+  }).join('');
+}
+$('themen').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const v = b.dataset.v;
+  E.themen = E.themen.includes(v) ? E.themen.filter(x => x !== v) : [...E.themen, v];
+  speichern(); themenKnoepfe(); waehlen(); neuZeichnen();
+});
+$('alleThemen').addEventListener('click', () => { E.themen = Object.keys(THEMEN); speichern(); themenKnoepfe(); waehlen(); neuZeichnen(); });
+$('keinThema').addEventListener('click', () => { E.themen = []; speichern(); themenKnoepfe(); waehlen(); neuZeichnen(); });
+
+$('andere').addEventListener('click', () => { waehlen(); neuZeichnen(); msg(''); });
+$('vergessen').addEventListener('click', () => {
+  if (!confirm('Alle gesehenen Wörter vergessen? Danach kann wieder jedes Wort kommen.')) return;
+  gesehen = new Set(); merken(); waehlen(); neuZeichnen(); msg('Vergessen. Alle Wörter sind wieder neu.', 'ok');
+});
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+// Masse in CSS-Pixeln statt mm: 72 mm wären 272,13 px, das Bild würde minimal gestreckt und
+// bei langen Bons eine Punktzeile doppelt gedruckt. 272 px × 2,117647 = genau 576 Punkte.
+// Feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist.
+async function bonHtml(raster){
+  const f = raster.W / 272, h = (raster.H / f).toFixed(3);
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${h}px;image-rendering:pixelated">`;
+}
+
+async function pngDataUrl({ W, H, bits, canvas }){
+  if (!('CompressionStream' in window)) return canvas.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
+async function einreichen(raster, titel){
+  // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+  const r = await fetch(BONPOST, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key: KEY, inhalt: await bonHtml(raster), titel, quelle: 'website' }),
+  });
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+}
+
+$('drucken').addEventListener('click', async () => {
+  if (!auswahl.length) { msg('Keine Wörter: Niveau und Thema wählen.', 'err'); return; }
+  $('drucken').disabled = true;
+  const woerter = auswahl.slice();
+  let gesendet = 0;
+  try {
+    await neuZeichnen();
+    if (!fertig.length) throw new Error('nichts zu drucken');
+    const bonsJetzt = fertig.slice();
+    for (let i = 0; i < bonsJetzt.length; i++) {
+      msg(bonsJetzt.length > 1 ? `Sende ${i + 1} von ${bonsJetzt.length} …` : 'Sende …');
+      await einreichen(bonsJetzt[i], bonsJetzt.length > 1 ? `Vokabel ${i + 1}/${bonsJetzt.length}` : 'Vokabeln');
+      gesendet++;
+    }
+    woerter.forEach(w => gesehen.add(w.fr)); merken();
+    msg(bonsJetzt.length > 1 ? `${bonsJetzt.length} Bons gesendet. Sie kommen innert einer Minute.` : 'Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+    waehlen(); await neuZeichnen();   // gleich die nächsten Wörter zeigen
+  } catch (e) {
+    // Bei «je ein Bon» entspricht jeder gesendete Bon einem Wort
+    if (gesendet && E.modus === 'karten' && E.schnitt === 'messer') { woerter.slice(0, gesendet).forEach(w => gesehen.add(w.fr)); merken(); }
+    msg('Fehler: ' + e.message + (gesendet ? ` (${gesendet} schon gesendet)` : ''), 'err');
+    standZeigen();
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+niveauMarkieren(); themenKnoepfe(); anzahlKnoepfe(); sichtbar();
+waehlen(); neuZeichnen().then(faltenText);
+</script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · RHYSCHWUMM</title>
+<meta name="description" content="Rheinschwimmen in Basel auf 72 mm: Wassertemperatur, Strömung, Wetter, Sonne und Tipps.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans (SIL Open Font License), aus bon/text/ */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+/* Am Handy: zuerst Drucken, dann der Bon, dann die Quellen */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"knoepfe" "vorschau" "einst";column-gap:32px}
+.knoepfe,.einst{display:flex;flex-direction:column;gap:6px;min-width:0}
+.knoepfe{grid-area:knoepfe} .einst{grid-area:einst} .vorschau{grid-area:vorschau}
+.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;color:#fff}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+.quellen{margin:0;padding:0;list-style:none;font-size:.78rem;border-top:1px solid #000}
+.quellen li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #ddd}
+.quellen .ok{color:var(--ok)} .quellen .err{color:var(--err)} .quellen .warte{color:var(--muted)}
+/* Vorschau: der Bon genau so, wie er aus dem Drucker kommt */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,360px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto 1fr;grid-template-areas:"knoepfe vorschau" "einst vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Rhyschwumm · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="knoepfe">
+    <button id="drucken" disabled>Drucken</button>
+    <button class="ghost" id="neu">Neu laden</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="papier"><canvas id="bon" hidden></canvas><p class="leer" id="leer">Der Bon wird gesetzt …</p></div>
+    <p class="mass" id="mass"></p>
+  </div>
+  <div class="einst">
+    <span class="label">Quellen</span>
+    <ul class="quellen" id="quellen"></ul>
+    <p class="hint">Wassertemperatur, Abfluss und Pegel misst das BAFU (Weil, Palmrainbrücke und Basel, Rheinhalle), Wetter von Open-Meteo. Die Einschätzung ist eine Faustregel ohne Gewähr. Ob du schwimmst, entscheidest du selbst.</p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_H = 28000;
+const TZ = 'Europe/Zurich';
+const ORT = { lat: 47.5596, lon: 7.5886 };   // Basel
+
+// BAFU-Stationen über api.existenz.ch (getestet Oktober 2026):
+//   2613 Rhein – Weil, Palmrainbrücke: Temperatur (kurz unterhalb von Basel, darum zuerst)
+//   2289 Rhein – Basel, Rheinhalle: Abfluss und Pegel (m ü. M.), KEINE Temperatur
+//   2091 Rhein – Rheinfelden: Temperatur und Abfluss, als Ersatz
+const ST = { temp: '2613', basel: '2289', ersatz: '2091' };
+const STNAME = { 2613: 'Weil, Palmrainbrücke', 2289: 'Basel, Rheinhalle', 2091: 'Rheinfelden' };
+
+// Schwellen fürs Schwimmen.
+// Quelle: Basel Tourismus, basel.com/de/rheinschwimmen (abgerufen Oktober 2026): Rheinschwimmen
+//   empfohlen ab 18 °C Wassertemperatur und bei einem Wasserstand unter 246,5 m ü. M. (Pegel unter 6,5 m).
+//   Der Wasserstand ist der Wert «height» der Station 2289 Basel, Rheinhalle.
+// Kanton Basel-Stadt (Medienmitteilung JSD 2017): Schwimmhilfen verboten, Badeverbot vor der Schleuse
+//   Birsfelden und in den Hafengebieten, nicht in der Fahrrinne schwimmen (rote Bojen).
+// Die Stufen für den Abfluss sind eine EIGENE Faustregel, keine amtliche Grenze: Mittel in Basel etwa
+//   1050 m³/s (BAFU-Stationsblatt 2289). Darum auf dem Bon vorsichtig formuliert.
+const PEGEL_MAX = 246.5;          // m ü. M., basel.com
+const WARM_GENUG = 18;            // °C, basel.com
+const MITTEL_Q = 1050;            // m³/s, langjähriges Mittel Basel
+const Q_STUFEN = [700, 1300, 1800];   // gemütlich | zügig | sehr zügig | zu viel Wasser (eigene Faustregel)
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+
+// ---------------------------------------------------------------- Datum und Zahlen
+const teileVon = (d, o) => Object.fromEntries(new Intl.DateTimeFormat('de-CH', { timeZone: TZ, ...o }).formatToParts(d).map(p => [p.type, p.value]));
+const isoTag = d => d.toLocaleDateString('sv-SE', { timeZone: TZ });
+const uhr = d => { const p = teileVon(new Date(d), { hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }); return `${+p.hour}.${p.minute}`; };
+const uhrLokal = s => `${+s.slice(11, 13)}.${s.slice(14, 16)}`;   // Open-Meteo liefert Ortszeit ohne Zone: «2026-10-24T08:05»
+const minLokal = s => Date.parse(s + ':00Z') / 6e4;               // nur für Differenzen zwischen zwei Ortszeiten
+const komma = (x, n = 1) => x.toFixed(n).replace('.', ',');
+const tausend = x => String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, '’');
+const minus = s => s.replace('-', '−');
+
+// ---------------------------------------------------------------- Daten holen
+const holen = async (url, o = {}) => {
+  const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout?.(15000), ...o });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+};
+const HYDRO = 'https://api.existenz.ch/apiv1/hydro/';
+
+const QUELLEN = {
+  rhein: ['Rhein jetzt (BAFU)', async () => {
+    const d = await holen(HYDRO + 'latest?' + new URLSearchParams({ locations: Object.values(ST).join(','), parameters: 'temperature,flow,height', app: 'bon-rhy' }));
+    const w = (loc, par) => d.payload.find(x => x.loc === loc && x.par === par);
+    const t = w(ST.temp, 'temperature') || w(ST.ersatz, 'temperature');
+    const q = w(ST.basel, 'flow') || w(ST.ersatz, 'flow');
+    const h = w(ST.basel, 'height');
+    if (!t && !q) throw new Error('keine Messung');
+    return { t, q, h };
+  }],
+  verlauf: ['Wasser 7 Tage (BAFU)', async () => {
+    // daterange liefert höchstens etwa einen Monat zurück; Ende = morgen, sonst fehlt der heutige Tag
+    const loc = async l => (await holen(HYDRO + 'daterange?' + new URLSearchParams({
+      locations: l, parameters: 'temperature', app: 'bon-rhy',
+      startdate: isoTag(new Date(Date.now() - 7 * 864e5)), enddate: isoTag(new Date(Date.now() + 864e5)),
+    }))).payload.filter(x => x.par === 'temperature' && typeof x.val === 'number');
+    let p = await loc(ST.temp), l = ST.temp;
+    if (p.length < 20) { p = await loc(ST.ersatz); l = ST.ersatz; }
+    if (p.length < 20) throw new Error('keine Messreihe');
+    return { loc: l, punkte: p.map(x => ({ z: x.timestamp * 1000, v: x.val })).sort((a, b) => a.z - b.z) };
+  }],
+  wetter: ['Wetter (Open-Meteo)', () => holen('https://api.open-meteo.com/v1/forecast?' + new URLSearchParams({
+    latitude: ORT.lat, longitude: ORT.lon, timezone: TZ, forecast_days: 2,
+    current: 'temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_gusts_10m,wind_direction_10m,uv_index',
+    hourly: 'temperature_2m,weather_code,precipitation_probability,is_day,uv_index',
+    daily: 'sunrise,sunset,uv_index_max,temperature_2m_max',
+  }))],
+};
+const daten = {}, status = {};
+let geholt = 0;
+
+function quellenZeigen(){
+  $('quellen').innerHTML = Object.entries(QUELLEN).map(([k, [name]]) => {
+    const s = status[k] || 'warte';
+    const t = s === 'ok' ? 'da' : s === 'warte' ? 'lädt …' : 'nicht erreichbar';
+    return `<li><span>${name}</span><span class="${s}">${t}</span></li>`;
+  }).join('');
+}
+
+async function laden(){
+  Object.keys(QUELLEN).forEach(k => status[k] = 'warte'); quellenZeigen();
+  await Promise.all(Object.keys(QUELLEN).map(async k => {
+    try { daten[k] = await QUELLEN[k][1](); status[k] = 'ok'; }
+    catch (e) { daten[k] = null; status[k] = 'err'; console.warn(k, e); }
+    quellenZeigen();
+  }));
+  geholt = Date.now();
+}
+
+// ---------------------------------------------------------------- Einschätzen
+const WMO = {
+  0: ['Sonnig', 'sonne'], 1: ['Meist sonnig', 'sonne'], 2: ['Teils bewölkt', 'teils'], 3: ['Bedeckt', 'wolke'],
+  45: ['Nebel', 'nebel'], 48: ['Raureif-Nebel', 'nebel'],
+  51: ['Leichter Niesel', 'niesel'], 53: ['Nieselregen', 'niesel'], 55: ['Starker Niesel', 'niesel'], 56: ['Gefrierender Niesel', 'niesel'], 57: ['Gefrierender Niesel', 'niesel'],
+  61: ['Leichter Regen', 'regen'], 63: ['Regen', 'regen'], 65: ['Starker Regen', 'regen'], 66: ['Gefrierender Regen', 'regen'], 67: ['Gefrierender Regen', 'regen'],
+  71: ['Leichter Schneefall', 'schnee'], 73: ['Schneefall', 'schnee'], 75: ['Starker Schneefall', 'schnee'], 77: ['Schneegriesel', 'schnee'],
+  80: ['Regenschauer', 'regen'], 81: ['Regenschauer', 'regen'], 82: ['Heftige Schauer', 'regen'], 85: ['Schneeschauer', 'schnee'], 86: ['Schneeschauer', 'schnee'],
+  95: ['Gewitter', 'gewitter'], 96: ['Gewitter mit Hagel', 'gewitter'], 99: ['Gewitter mit Hagel', 'gewitter'],
+};
+const wmo = c => WMO[c] || ['', 'wolke'];
+const RICHTUNG = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
+const uvWort = u => u < 3 ? 'niedrig' : u < 6 ? 'mässig' : u < 8 ? 'hoch' : u < 11 ? 'sehr hoch' : 'extrem';
+
+function kaelte(t){
+  if (t == null) return null;
+  if (t < 10) return { stufe: 4, wort: 'Eiskalt' };
+  if (t < 16) return { stufe: 3, wort: 'Kalt' };
+  if (t < WARM_GENUG) return { stufe: 2, wort: 'Kühl' };
+  if (t < 21) return { stufe: 1, wort: 'Frisch' };
+  return { stufe: 0, wort: 'Angenehm' };
+}
+
+function stroemung(q, h){
+  if (h != null && h >= PEGEL_MAX) return { stufe: 3, wort: 'zu viel Wasser' };
+  if (q == null) return null;
+  const s = Q_STUFEN.findIndex(g => q < g);
+  return [{ stufe: 0, wort: 'gemütlich' }, { stufe: 1, wort: 'zügig' }, { stufe: 2, wort: 'sehr zügig' }][s] || { stufe: 3, wort: 'zu viel Wasser' };
+}
+
+// Alles, was der Bon braucht, an einem Ort
+function lage(){
+  const r = daten.rhein, w = daten.wetter;
+  const t = r?.t?.val ?? null, q = r?.q?.val ?? null, h = r?.h?.val ?? null;
+  const k = kaelte(t), s = stroemung(q, h);
+  let gewitter = false, dunkel = false, hellMin = null;
+  if (w) {
+    const jetztH = w.current.time.slice(0, 13) + ':00';
+    const i0 = Math.max(0, w.hourly.time.indexOf(jetztH));
+    gewitter = w.hourly.weather_code.slice(i0, i0 + 4).some(c => c >= 95) || w.current.weather_code >= 95;
+    const jetzt = minLokal(w.current.time), auf = minLokal(w.daily.sunrise[0]), unter = minLokal(w.daily.sunset[0]);
+    dunkel = jetzt < auf || jetzt > unter;
+    if (!dunkel) hellMin = Math.round(unter - jetzt);
+  }
+  let titel, unter = '';
+  if (s?.stufe === 3) { titel = 'Heute nicht in den Rhein'; unter = `Zu viel Wasser: Pegel oder Abfluss sind hoch.`; }
+  else if (gewitter) { titel = 'Heute nicht in den Rhein'; unter = 'Gewitter in Sicht. Bei Blitz raus aus dem Wasser.'; }
+  else if (!k) { titel = 'Keine Wassertemperatur'; unter = 'Die Messung fehlt gerade. Selbst einschätzen.'; }
+  else if (k.stufe === 4) { titel = 'Eiskalt'; unter = 'Nur für Geübte im Kaltwasser, und nur wenige Minuten.'; }
+  else if (k.stufe === 3) { titel = 'Zu kalt für die meisten'; unter = 'Nur für Abgehärtete und nur eine kurze Strecke.'; }
+  else if (k.stufe === 2) { titel = 'Kalt, nur kurz'; unter = `Empfohlen ist der Rhein ab ${WARM_GENUG} °C.`; }
+  else if (s?.stufe === 2) { titel = 'Nur für Geübte'; unter = 'Das Wasser ist warm genug, aber die Strömung ist stark.'; }
+  else if (s?.stufe === 1) { titel = 'Guter Schwumm'; unter = 'Warm genug, die Strömung ist zügig.'; }
+  else { titel = k.stufe === 0 ? 'Herrlicher Schwumm' : 'Guter Schwumm'; unter = 'Warm genug und gemütliche Strömung.'; }
+  if (dunkel && s?.stufe !== 3 && !gewitter) unter += ' Jetzt ist es dunkel.';
+  return { t, q, h, k, s, gewitter, dunkel, hellMin, titel, unter };
+}
+
+// ---------------------------------------------------------------- Schriften und Satz (wie bon/depeche/)
+const F = { sans: (px, w = 500) => `${w} ${px}px "Plex", system-ui, sans-serif` };
+const sperren = t => [...t.toUpperCase()].join(' ');
+const T = (t, f) => ({ t, f });
+
+function umbrechen(g, teile, breite){
+  const woerter = [];
+  for (const p of teile) for (const w of String(p.t).split(/( +)/)) if (w) woerter.push({ t: w, f: p.f, leer: /^ +$/.test(w) });
+  const zeilen = []; let zeile = [], x = 0;
+  const fertig = () => { while (zeile.length && zeile[zeile.length - 1].leer) x -= zeile.pop().w; zeilen.push({ stuecke: zeile, w: x }); zeile = []; x = 0; };
+  for (const w of woerter) {
+    g.font = w.f;
+    if (w.leer) { if (zeile.length) { const b = g.measureText(w.t).width; zeile.push({ ...w, w: b }); x += b; } continue; }
+    let b = g.measureText(w.t).width;
+    if (x + b > breite && zeile.length) fertig();
+    let t = w.t;
+    while (b > breite) {
+      let n = t.length;
+      while (n > 1 && g.measureText(t.slice(0, n)).width > breite - x) n--;
+      zeile.push({ t: t.slice(0, n), f: w.f, w: g.measureText(t.slice(0, n)).width }); fertig();
+      t = t.slice(n); b = g.measureText(t).width;
+    }
+    if (t) { zeile.push({ t, f: w.f, w: b }); x += b; }
+  }
+  if (zeile.length) fertig();
+  return zeilen;
+}
+
+const absatz = (teile, o = {}) => (g, x, w) => {
+  const lh = o.lh || 26, zeilen = umbrechen(g, teile.filter(p => p && p.t !== ''), w);
+  const ops = []; let y = 0;
+  for (const z of zeilen) {
+    let xx = o.align === 'center' ? x + (w - z.w) / 2 : o.align === 'right' ? x + w - z.w : x;
+    for (const s of z.stuecke) { if (!s.leer) ops.push({ art: 'text', t: s.t, x: xx, y: y + Math.round(lh * 0.76), f: s.f, farbe: o.farbe }); xx += s.w; }
+    y += lh;
+  }
+  return { h: y, ops };
+};
+const leer = h => () => ({ h, ops: [] });
+const linie = (d = 2, oben = 0, unten = 0) => (g, x, w) => ({ h: oben + d + unten, ops: [{ art: 'rect', x, y: oben, w, h: d }] });
+const punkte = (oben = 0, unten = 0) => (g, x, w) => {
+  const ops = []; for (let i = 0; i < w; i += 8) ops.push({ art: 'rect', x: x + i, y: oben, w: 3, h: 2 });
+  return { h: oben + 2 + unten, ops };
+};
+const stapel = (...bl) => (g, x, w) => {
+  let y = 0; const ops = [];
+  for (const b of bl.flat()) {
+    if (!b) continue;
+    const r = b(g, x, w);
+    for (const o of r.ops) ops.push({ ...o, y: o.y + y });
+    y += r.h;
+  }
+  return { h: y, ops };
+};
+const neben = (links, breite, rechts, abstand = 16) => (g, x, w) => {
+  const a = links(g, x, breite), b = rechts(g, x + breite + abstand, w - breite - abstand);
+  return { h: Math.max(a.h, b.h), ops: [...a.ops, ...b.ops] };
+};
+const haengend = (marke, teile, einzug, o) => neben(absatz(marke, o), einzug - 8, absatz(teile, o), 8);
+const rubrik = t => stapel(leer(16), linie(3), leer(5), absatz([T(sperren(t), F.sans(15, 700))], { lh: 18 }), linie(1, 4, 10));
+// eine Zeile Detail: fetter Begriff, normaler Text
+const detail = (fett, text, lh = 23) => absatz([T(fett + ' ', F.sans(17, 700)), T(text, F.sans(17, 500))], { lh });
+
+// Wellenlinie wie Wasser
+const welle = (hoehe = 14, dicke = 3) => (g, x, w) => ({ h: hoehe + dicke + 4, ops: [{ art: 'welle', x, y: 2 + dicke / 2, w, a: hoehe / 2, dicke }] });
+
+// ---------------------------------------------------------------- Die Teile des Bons
+function kopf(jetzt){
+  const titel = 'Rhyschwumm';
+  const gross = (g, x, w) => {
+    g.font = F.sans(100, 700);
+    const px = Math.min(88, Math.floor(100 * w / g.measureText(titel).width));
+    g.font = F.sans(px, 700);
+    const tw = g.measureText(titel).width;
+    return { h: Math.round(px * 1.08), ops: [{ art: 'text', t: titel, x: x + (w - tw) / 2, y: Math.round(px * 0.86), f: F.sans(px, 700) }] };
+  };
+  const datum = jetzt.toLocaleDateString('de-CH', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+  return stapel(gross, leer(2), welle(14, 3), leer(4),
+    absatz([T(`Basel · ${datum} · ${uhr(jetzt)} Uhr`, F.sans(17, 500))], { lh: 22, align: 'center' }));
+}
+
+// Das Urteil weiss auf schwarz
+function urteil(L){
+  return (g, x, w) => {
+    const innen = stapel(leer(12),
+      absatz([T(L.titel, F.sans(34, 700))], { lh: 40, align: 'center', farbe: '#fff' }),
+      leer(4),
+      absatz([T(L.unter, F.sans(18, 500))], { lh: 23, align: 'center', farbe: '#fff' }),
+      leer(14))(g, x + 14, w - 28);
+    return { h: innen.h + 20, ops: [{ art: 'rect', x, y: 18, w, h: innen.h }, ...innen.ops.map(o => ({ ...o, y: o.y + 18 }))] };
+  };
+}
+
+function wasserTeil(L){
+  const r = daten.rhein, v = daten.verlauf;
+  if (!r?.t) return stapel(rubrik('Wasser'), absatz([T('Keine Messung der Wassertemperatur erreichbar.', F.sans(18, 500))], { lh: 24 }));
+  const t = r.t.val, alt = Date.now() - r.t.timestamp * 1000 > 6 * 36e5;
+  const zahl = stapel(absatz([T(komma(t) + '°', F.sans(64, 700))], { lh: 70 }));
+  // Tendenz: jetzt gegen etwa 24 Stunden vorher
+  let tend = null;
+  if (v?.punkte?.length) {
+    const p = v.punkte, letzt = p[p.length - 1], ziel = letzt.z - 864e5;
+    const vor = p.reduce((a, b) => Math.abs(b.z - ziel) < Math.abs(a.z - ziel) ? b : a);
+    if (Math.abs(vor.z - ziel) < 3 * 36e5) {
+      const d = letzt.v - vor.v;
+      tend = (d <= -0.2 ? 'fällt, ' : d >= 0.2 ? 'steigt, ' : 'gleich, ') + minus(`${d >= 0 ? '+' : '-'}${komma(Math.abs(d))}`) + '° in 24 h';
+    }
+  }
+  const rechts = stapel(
+    absatz([T(L.k.wort, F.sans(20, 700))], { lh: 25 }),
+    tend && detail('Tendenz', tend),
+    absatz([T(`${STNAME[r.t.loc]}, ${alt ? 'Messung vom ' + new Date(r.t.timestamp * 1000).toLocaleDateString('de-CH', { timeZone: TZ, day: 'numeric', month: 'numeric' }) + ' ' : ''}${uhr(r.t.timestamp * 1000)} Uhr`, F.sans(14, 500))], { lh: 18 }),
+  );
+  return stapel(rubrik('Wasser'), neben(zahl, 170, rechts, 12), v?.punkte?.length > 20 && stapel(leer(8), kurve(v.punkte)));
+}
+
+// Verlauf der Wassertemperatur über 7 Tage, mit Linie bei 18 °C, wenn sie in der Nähe ist
+const kurve = p => (g, x, w) => {
+  const H = 120, oben = 8, links = 44, unten = 24, ch = H - oben - unten, cw = w - links;
+  let lo = Math.min(...p.map(a => a.v)), hi = Math.max(...p.map(a => a.v));
+  if (WARM_GENUG > hi && WARM_GENUG - hi < 4) hi = WARM_GENUG;
+  if (WARM_GENUG < lo && lo - WARM_GENUG < 4) lo = WARM_GENUG;
+  lo = Math.floor(lo - 0.3); hi = Math.ceil(hi + 0.3); if (hi - lo < 2) hi = lo + 2;
+  const z0 = p[0].z, z1 = p[p.length - 1].z;
+  const X = z => x + links + (z - z0) / (z1 - z0) * cw, Y = v => oben + ch - (v - lo) / (hi - lo) * ch;
+  const ops = [];
+  // Achsen
+  ops.push({ art: 'rect', x: x + links, y: oben + ch, w: cw, h: 2 });
+  for (const v of [lo, hi]) {
+    const t = `${v}°`; g.font = F.sans(14, 500);
+    ops.push({ art: 'text', t, x: x + links - 8 - g.measureText(t).width, y: Y(v) + 5, f: F.sans(14, 500) });
+    for (let i = 0; i < cw; i += 12) ops.push({ art: 'rect', x: x + links + i, y: Math.round(Y(v)), w: 2, h: 1 });
+  }
+  if (WARM_GENUG > lo && WARM_GENUG < hi) {
+    const yy = Math.round(Y(WARM_GENUG));
+    for (let i = 0; i < cw; i += 10) ops.push({ art: 'rect', x: x + links + i, y: yy - 1, w: 5, h: 2 });
+    const t = `${WARM_GENUG}°`; g.font = F.sans(14, 700);
+    ops.push({ art: 'text', t, x: x + links - 8 - g.measureText(t).width, y: yy + 5, f: F.sans(14, 700) });
+  }
+  // Tage: Strich um Mitternacht, Kürzel in der Mitte des Tages
+  const tag = z => isoTag(new Date(z));
+  const grenzen = [z0];
+  for (let i = 1; i < p.length; i++) if (tag(p[i].z) !== tag(p[i - 1].z)) grenzen.push(p[i].z);
+  grenzen.push(z1);
+  for (let i = 0; i < grenzen.length - 1; i++) {
+    const a = grenzen[i], b = grenzen[i + 1];
+    if (i > 0) ops.push({ art: 'rect', x: Math.round(X(a)), y: oben + ch, w: 2, h: 7 });
+    if (X(b) - X(a) < 30) continue;
+    const t = new Date((a + b) / 2).toLocaleDateString('de-CH', { timeZone: TZ, weekday: 'short' }).replace('.', '');
+    g.font = F.sans(14, 500);
+    ops.push({ art: 'text', t, x: (X(a) + X(b)) / 2 - g.measureText(t).width / 2, y: oben + ch + 20, f: F.sans(14, 500) });
+  }
+  ops.push({ art: 'pfad', y: 0, punkte: p.map(a => [X(a.z), Y(a.v)]), dicke: 4 });
+  return { h: H, ops };
+};
+
+function stroemungTeil(L){
+  const r = daten.rhein;
+  if (!r?.q && !r?.h) return null;
+  const zahl = r.q ? absatz([T(tausend(r.q.val), F.sans(48, 700)), T(' m³/s', F.sans(18, 700))], { lh: 56 }) : leer(0);
+  const teil = r.q ? r.q.val / MITTEL_Q : null;
+  const rechts = stapel(
+    L.s && absatz([T(L.s.wort[0].toUpperCase() + L.s.wort.slice(1), F.sans(20, 700))], { lh: 25 }),
+    teil != null && absatz([T(teil < 0.9 ? `Wenig Wasser: ${Math.round(teil * 100)} % vom Mittel` : teil >= 1.5 ? `${komma(teil)}-mal so viel wie im Mittel` : teil > 1.1 ? `Mehr als üblich: ${Math.round(teil * 100)} % vom Mittel` : 'Etwa so viel wie im Mittel', F.sans(16, 500))], { lh: 21 }),
+  );
+  return stapel(rubrik('Strömung'), neben(zahl, 190, rechts, 12),
+    leer(4),
+    r.h && detail('Pegel', `${komma(r.h.val, 2)} m ü. M. · empfohlen unter ${komma(PEGEL_MAX, 1)}`),
+    absatz([T(`Abfluss ${STNAME[r.q?.loc || ST.basel]}, ${uhr((r.q || r.h).timestamp * 1000)} Uhr`, F.sans(14, 500))], { lh: 18 }));
+}
+
+function wetterTeil(L){
+  const w = daten.wetter;
+  if (!w) return stapel(rubrik('Wetter'), absatz([T('Wetter nicht erreichbar.', F.sans(18, 500))], { lh: 24 }));
+  const c = w.current, d = w.daily, [text, bildTag] = wmo(c.weather_code);
+  const bild = (g, x) => ({ h: 76, ops: [{ art: 'icon', tag: bildTag, nacht: !c.is_day, x: x + 34, y: 38, s: 72 }] });
+  const temp = stapel(
+    absatz([T(`${Math.round(c.temperature_2m)}°`, F.sans(44, 700)), T(` Luft`, F.sans(18, 500))], { lh: 50 }),
+    absatz([T(text, F.sans(18, 700))], { lh: 22 }),
+  );
+  const unter = minLokal(d.sunset[0]), jetzt = minLokal(c.time);
+  const sonne = L.dunkel
+    ? (jetzt < minLokal(d.sunrise[0]) ? `Aufgang ${uhrLokal(d.sunrise[0])}, Untergang ${uhrLokal(d.sunset[0])} Uhr` : `untergegangen um ${uhrLokal(d.sunset[0])} Uhr`)
+    : `Untergang ${uhrLokal(d.sunset[0])} Uhr, noch ${L.hellMin >= 60 ? Math.floor(L.hellMin / 60) + ' h ' : ''}${L.hellMin % 60} min hell`;
+  const zeilen = stapel(
+    detail('Gefühlt', `${Math.round(c.apparent_temperature)}° · Tageshöchst ${Math.round(d.temperature_2m_max[0])}°`),
+    detail('Wind', `${Math.round(c.wind_speed_10m)} km/h aus ${RICHTUNG[Math.round(c.wind_direction_10m / 45) % 8]}, Böen ${Math.round(c.wind_gusts_10m)}`),
+    detail('UV', `jetzt ${Math.round(c.uv_index)}, heute höchstens ${Math.round(d.uv_index_max[0])} (${uvWort(d.uv_index_max[0])})`),
+    detail('Sonne', sonne),
+  );
+  // Stundenleiste: ab der nächsten vollen Stunde alle zwei Stunden
+  const zeiten = w.hourly.time, jetztH = c.time.slice(0, 13) + ':00';
+  let i0 = zeiten.findIndex(t => t > jetztH); if (i0 < 0) i0 = 0;
+  const slots = [0, 1, 2, 3, 4, 5].map(k => i0 + k * 2).filter(i => i < zeiten.length);
+  const leiste = (g, x, bw) => {
+    const sw = bw / slots.length, ops = [];
+    const mitte = (t, f, cx, y) => { g.font = f; ops.push({ art: 'text', t, f, x: cx - g.measureText(t).width / 2, y }); };
+    slots.forEach((i, k) => {
+      const cx = x + sw * (k + 0.5);
+      mitte(`${+zeiten[i].slice(11, 13)} Uhr`, F.sans(14, 500), cx, 14);
+      ops.push({ art: 'icon', tag: wmo(w.hourly.weather_code[i])[1], nacht: !w.hourly.is_day[i], x: cx, y: 38, s: 36 });
+      mitte(`${Math.round(w.hourly.temperature_2m[i])}°`, F.sans(19, 700), cx, 78);
+      mitte(`${w.hourly.precipitation_probability[i] ?? 0} % Regen`, F.sans(12, 500), cx, 96);
+    });
+    return { h: 102, ops };
+  };
+  return stapel(rubrik('Wetter'), neben(bild, 76, temp, 14), leer(4), zeilen, leer(6), punkte(0, 6), leiste);
+}
+
+function tippsTeil(L){
+  const tipps = [];
+  if (L.s?.stufe === 3) tipps.push('Bei Hochwasser ist der Rhein reissend und voller Treibgut. Heute am Ufer bleiben.');
+  if (L.gewitter) tipps.push('Bei Gewitter sofort aus dem Wasser.');
+  const zeigen = l => stapel(rubrik('Tipps'), l.map((t, i) => stapel(i && leer(4), haengend([T('–', F.sans(17, 700))], [T(t, F.sans(17, 500))], 22, { lh: 22 }))));
+  if (L.s?.stufe === 3 || L.gewitter) return zeigen(tipps);   // heute nicht: keine Tipps fürs Schwimmen
+  if (L.k && L.k.stufe >= 2) tipps.push('Kaltes Wasser: langsam hineingehen, kurze Strecke, danach sofort warm anziehen. Kälte macht schnell müde.');
+  if (L.dunkel) tipps.push('Im Dunkeln sieht dich niemand, auch kein Schiff. Lieber bei Tag.');
+  else if (L.hellMin != null && L.hellMin < 60) tipps.push('Bald dunkel. Rechtzeitig aussteigen.');
+  tipps.push('Einstieg z. B. beim Tinguely-Museum, am Kleinbasler Ufer bleiben. Den Ausstieg über eine Treppe vorher aussuchen.');
+  tipps.push('Rote Bojen trennen dich von der Fahrrinne. Abstand zu Schiffen, Fähren, Bojen und Brückenpfeilern.');
+  tipps.push('Nie allein. Der Wickelfisch ist für Kleider, keine Schwimmhilfe. Luftmatratzen und Gummiboote sind verboten.');
+  if (!L.dunkel && daten.wetter?.daily.uv_index_max[0] >= 3) tipps.push(`Sonnencreme: UV bis ${Math.round(daten.wetter.daily.uv_index_max[0])}. Auf dem Wasser brennt es mehr.`);
+  return zeigen(tipps.slice(0, 6));
+}
+
+function fuss(jetzt){
+  return stapel(leer(18), linie(1), leer(3), linie(3), leer(8),
+    absatz([T('Ohne Gewähr. Der Rhein ist nur für gute Schwimmerinnen und Schwimmer.', F.sans(14, 700))], { lh: 18, align: 'center' }),
+    leer(4),
+    absatz([T(`Rhein: BAFU · Wetter: Open-Meteo · Regeln: basel.com, Kanton Basel-Stadt · gedruckt ${uhr(jetzt)} Uhr`, F.sans(12, 500))], { lh: 16, align: 'center' }),
+  );
+}
+
+// ---------------------------------------------------------------- Zeichnen (Piktogramme wie in bon/depeche/)
+function piktogramm(g, tag, nacht, cx, cy, s){
+  g.save();
+  g.lineWidth = Math.max(2.5, s / 24); g.lineCap = 'round'; g.lineJoin = 'round';
+  g.strokeStyle = '#000'; g.fillStyle = '#000';
+  const sonne = (x, y, r) => {
+    g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = '#fff'; g.fill(); g.stroke();
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4;
+      g.beginPath(); g.moveTo(x + Math.cos(a) * r * 1.45, y + Math.sin(a) * r * 1.45); g.lineTo(x + Math.cos(a) * r * 1.95, y + Math.sin(a) * r * 1.95); g.stroke();
+    }
+  };
+  const mond = (x, y, r) => {
+    g.beginPath(); g.arc(x, y, r, 0.15 * Math.PI, 1.85 * Math.PI, false);
+    g.arc(x + r * 0.55, y - r * 0.25, r * 0.85, 1.75 * Math.PI, 0.35 * Math.PI, true);
+    g.closePath(); g.fillStyle = '#000'; g.fill();
+  };
+  const wolke = (x, y, r) => {
+    g.beginPath();
+    g.arc(x - r * 0.52, y + r * 0.12, r * 0.36, 0.5 * Math.PI, 1.5 * Math.PI);
+    g.arc(x - r * 0.08, y - r * 0.12, r * 0.48, 1.08 * Math.PI, 1.85 * Math.PI);
+    g.arc(x + r * 0.5, y + r * 0.1, r * 0.38, 1.45 * Math.PI, 0.5 * Math.PI);
+    g.closePath(); g.fillStyle = '#fff'; g.fill(); g.stroke();
+  };
+  const himmel = (x, y, r) => nacht ? mond(x, y, r * 0.85) : sonne(x, y, r * 0.7);
+  const r = s / 2;
+  if (tag === 'sonne') himmel(cx, cy, r * 0.62);
+  else if (tag === 'teils') { himmel(cx - r * 0.25, cy - r * 0.3, r * 0.5); wolke(cx + r * 0.12, cy + r * 0.22, r * 0.72); }
+  else if (tag === 'nebel') {
+    for (let k = 0; k < 4; k++) { const y = cy - r * 0.45 + k * r * 0.3, dx = k % 2 ? r * 0.15 : 0; g.beginPath(); g.moveTo(cx - r * 0.75 + dx, y); g.lineTo(cx + r * 0.75 - (k % 2 ? 0 : r * 0.15), y); g.stroke(); }
+  }
+  else {
+    const fall = tag !== 'wolke', wy = fall ? cy - r * 0.2 : cy;
+    wolke(cx, wy, r * 0.85);
+    g.fillStyle = '#000';   // wolke() füllt weiss; ohne das wären Nieseltropfen und Blitz unsichtbar
+    const unten = wy + r * 0.48;
+    if (tag === 'regen') for (const dx of [-0.4, 0, 0.4]) { g.beginPath(); g.moveTo(cx + r * dx, unten + r * 0.12); g.lineTo(cx + r * (dx - 0.12), unten + r * 0.5); g.stroke(); }
+    if (tag === 'niesel') for (const dx of [-0.4, 0, 0.4]) { g.beginPath(); g.arc(cx + r * dx, unten + r * 0.3, g.lineWidth * 0.7, 0, 2 * Math.PI); g.fill(); }
+    if (tag === 'schnee') for (const dx of [-0.4, 0, 0.4]) {
+      const x = cx + r * dx, y = unten + r * 0.3, a = r * 0.13;
+      for (const [u, v] of [[1, 0], [0.5, 0.87], [-0.5, 0.87]]) { g.beginPath(); g.moveTo(x - u * a, y - v * a); g.lineTo(x + u * a, y + v * a); g.stroke(); }
+    }
+    if (tag === 'gewitter') {
+      g.beginPath(); g.moveTo(cx + r * 0.08, unten + r * 0.02); g.lineTo(cx - r * 0.18, unten + r * 0.36); g.lineTo(cx + r * 0.02, unten + r * 0.36);
+      g.lineTo(cx - r * 0.12, unten + r * 0.68); g.lineTo(cx + r * 0.22, unten + r * 0.26); g.lineTo(cx + r * 0.02, unten + r * 0.26); g.closePath(); g.fill();
+    }
+  }
+  g.restore();
+}
+
+const leinwand = $('bon');
+let raster = null;   // { W, H, bits } des aktuellen Bons
+
+async function schriftenLaden(text){
+  await Promise.all([F.sans(20), F.sans(20, 700)].map(f => document.fonts.load(f, text).catch(() => {})));
+}
+
+async function setzen(){
+  const jetzt = new Date(), L = lage();
+  const bon = stapel(kopf(jetzt), urteil(L), wasserTeil(L), stroemungTeil(L), wetterTeil(L), tippsTeil(L), fuss(jetzt));
+  const g = leinwand.getContext('2d', { willReadFrequently: true });
+  // Schriften zuerst laden, sonst misst die Leinwand mit einer Ersatzschrift
+  await schriftenLaden('Rhyschwumm m³/s ' + bon(g, RAND, INNEN).ops.filter(o => o.t).map(o => o.t).join(' '));
+  const { h, ops } = bon(g, RAND, INNEN);
+  const H = Math.ceil(h + 8);
+  if (H > MAX_H) { raster = null; $('mass').textContent = 'Zu lang zum Drucken.'; return; }
+  leinwand.width = BREITE; leinwand.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.textBaseline = 'alphabetic';
+  for (const o of ops) {
+    if (o.art === 'rect') { g.fillStyle = '#000'; g.fillRect(Math.round(o.x), Math.round(o.y), Math.round(o.w), o.h); }
+    else if (o.art === 'text') { g.fillStyle = o.farbe || '#000'; g.font = o.f; g.fillText(o.t, o.x, o.y); }
+    else if (o.art === 'icon') piktogramm(g, o.tag, o.nacht, o.x, o.y, o.s);
+    else if (o.art === 'pfad') {
+      g.save(); g.strokeStyle = '#000'; g.lineWidth = o.dicke; g.lineJoin = 'round'; g.lineCap = 'round';
+      g.beginPath(); o.punkte.forEach(([px, py], i) => i ? g.lineTo(px, py + o.y) : g.moveTo(px, py + o.y)); g.stroke(); g.restore();
+    }
+    else if (o.art === 'welle') {
+      g.save(); g.strokeStyle = '#000'; g.lineWidth = o.dicke; g.lineCap = 'round';
+      g.beginPath();
+      for (let i = 0; i <= o.w; i += 2) { const yy = o.y + o.a + Math.sin(i / o.w * Math.PI * 14) * o.a; i ? g.lineTo(o.x + i, yy) : g.moveTo(o.x + i, yy); }
+      g.stroke(); g.restore();
+    }
+  }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  raster = { W: BREITE, H, bits };
+  leinwand.hidden = false; $('leer').hidden = true;
+  $('mass').textContent = `Bon etwa ${Math.round(H / 80 + 2)} cm lang`;   // + etwa 2 cm Rand oben wegen dem Messer
+  $('drucken').disabled = false;
+}
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  const mm = (raster.H * 72 / raster.W).toFixed(3);   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Ablauf
+let laeuft = Promise.resolve();
+const neuSetzen = () => (laeuft = laeuft.then(setzen, setzen));
+const allesNeu = async () => { $('neu').disabled = true; msg(''); try { await laden(); await neuSetzen(); } finally { $('neu').disabled = false; } };
+$('neu').addEventListener('click', allesNeu);
+
+// text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+async function bonpost(d){
+  const r = await fetch(BONPOST, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ key: KEY, ...d }) });
+  return r.json();
+}
+
+$('drucken').addEventListener('click', async () => {
+  $('drucken').disabled = true;
+  try {
+    // Messwerte und Wetter nach fünf Minuten vor dem Drucken neu holen
+    if (Date.now() - geholt > 5 * 6e4) { msg('Hole die neusten Daten …'); await laden(); }
+    await neuSetzen();
+    if (!raster) throw new Error($('mass').textContent || 'nichts zu drucken');
+    msg('Sende …');
+    const d = await bonpost({ inhalt: await bonHtml(raster), titel: 'Rhyschwumm ' + isoTag(new Date()), quelle: 'website-rhy' });
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+quellenZeigen();
+allesNeu();
+</script>
+</body>
+</html>

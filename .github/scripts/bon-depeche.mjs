@@ -27,7 +27,8 @@ await new Promise(ok => server.listen(0, '127.0.0.1', ok));
 
 const q = new URLSearchParams({ auto: '1' });
 if (process.env.HALT !== undefined) q.set('halt', process.env.HALT);
-if (process.env.TEILE) q.set('teile', process.env.TEILE);
+if (process.env.TEILE) q.set('teile', process.env.TEILE);   // Abfuhrzone als Teil, z. B. …,abfuhr,zoned
+if (process.env.ZONE) q.set('zone', process.env.ZONE);       // nur zum Ausprobieren, der Zeitplan schickt die Zone in TEILE
 const url = `http://127.0.0.1:${server.address().port}/bon/depeche/?${q}`;
 
 const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' });
