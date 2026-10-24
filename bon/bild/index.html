@@ -35,6 +35,10 @@ label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter
 .seg button:first-child{border-left:0}
 .seg button[aria-pressed="true"]{background:#000;color:#fff}
 .seg button:hover{background:#000;color:#fff}
+/* sechs Punktmuster: zwei Reihen, die Linien sind die Lücken im Raster */
+.seg.raster{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#000}
+.seg.raster button{border:0}
+label output{color:#000;text-transform:none;letter-spacing:0}
 input[type=range]{width:100%;accent-color:#000;margin:6px 0}
 button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
 button:hover{background:#fff;color:#000}
@@ -76,21 +80,34 @@ details p{margin:8px 0}
   </div>
   <div class="knoepfe">
     <span class="label" id="ditherLabel">Punktmuster</span>
-    <div class="seg" id="dither" role="group" aria-labelledby="ditherLabel">
-      <button type="button" data-d="atk">Klar</button><button type="button" data-d="fs">Weich</button><button type="button" data-d="thr">Schwarz-Weiss</button>
+    <div class="seg raster" id="dither" role="group" aria-labelledby="ditherLabel">
+      <button type="button" data-d="atk">Klar</button><button type="button" data-d="stucki">Fein</button><button type="button" data-d="fs">Weich</button>
+      <button type="button" data-d="dots">Zeitung</button><button type="button" data-d="bayer">Raster</button><button type="button" data-d="thr">Schwarz-Weiss</button>
     </div>
-    <label for="bright">Helligkeit</label>
-    <input type="range" id="bright" min="-60" max="60" step="5" value="15">
+    <label for="bright">Helligkeit <output id="brightWert"></output></label>
+    <input type="range" id="bright" min="-60" max="60" step="5">
+    <label for="kontrast">Kontrast <output id="kontrastWert"></output></label>
+    <input type="range" id="kontrast" min="-50" max="100" step="5">
+    <label for="mittel">Mitteltöne <output id="mittelWert"></output></label>
+    <input type="range" id="mittel" min="-50" max="50" step="5">
+    <label for="schaerfe">Schärfe <output id="schaerfeWert"></output></label>
+    <input type="range" id="schaerfe" min="0" max="200" step="10">
+    <span class="label" id="invertLabel">Farben</span>
+    <div class="seg" id="invert" role="group" aria-labelledby="invertLabel">
+      <button type="button" data-i="0">Normal</button><button type="button" data-i="1">Umkehren</button>
+    </div>
     <span class="label" id="rotateLabel">Querformat</span>
     <div class="seg" id="rotate" role="group" aria-labelledby="rotateLabel">
       <button type="button" data-r="1">Drehen</button><button type="button" data-r="0">So lassen</button>
     </div>
+    <button type="button" class="ghost" id="zuruecksetzen">Einstellungen zurücksetzen</button>
     <button id="drucken" disabled>Drucken</button>
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
     <details>
       <summary>Hilfe</summary>
       <p>Die Vorschau zeigt den Bon Punkt für Punkt so, wie er gedruckt wird: 576 Punkte breit (72 mm).</p>
-      <p>Punktmuster: »Klar« für Fotos, »Weich« für feine Verläufe, »Schwarz-Weiss« für Logos, Text und Zeichnungen.</p>
+      <p>Punktmuster: »Klar« für Fotos, »Fein« ist ruhiger und detailreicher, »Weich« für feine Verläufe, »Zeitung« druckt runde Rasterpunkte wie im Zeitungsdruck, »Raster« ein gleichmässiges Muster, »Schwarz-Weiss« für Logos, Text und Zeichnungen.</p>
+      <p>Mitteltöne macht nur das Grau heller oder dunkler, Schwarz und Weiss bleiben. Thermodrucker drucken oft etwas dunkel, dann hilft ein Schritt nach rechts.</p>
       <p>Nach »Drucken« geht der Bon an die Bon-Post. Der Mac druckt ihn innert einer Minute, wenn er wach ist.</p>
     </details>
   </div>
@@ -115,7 +132,16 @@ const store = {
 function say(text, kind = ''){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + kind; }
 
 // ---------------------------------------------------------------- Einstellungen: jede Änderung zeichnet die Vorschau neu
-const opts = { bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', dither: store.get('dither', 'atk') };
+const STANDARD = { dither: 'atk', bright: 15, kontrast: 0, mittel: 0, schaerfe: 70, invert: false, rotate: true };
+const opts = {
+  dither: store.get('dither', STANDARD.dither),
+  bright: +store.get('bright', STANDARD.bright),
+  kontrast: +store.get('kontrast', STANDARD.kontrast),
+  mittel: +store.get('mittel', STANDARD.mittel),
+  schaerfe: +store.get('schaerfe', STANDARD.schaerfe),
+  invert: store.get('invert', '0') === '1',
+  rotate: store.get('rotate', '1') === '1',
+};
 
 function seg(id, attr, current, apply){
   const box = $(id);
@@ -125,11 +151,25 @@ function seg(id, attr, current, apply){
     apply(b.dataset[attr]); mark(); zeichnen();
   });
   mark();
+  return mark;
 }
-seg('rotate', 'r', () => opts.rotate ? 1 : 0, v => { opts.rotate = v === '1'; store.set('rotate', v); });
-seg('dither', 'd', () => opts.dither, v => { opts.dither = v; store.set('dither', v); });
-$('bright').value = opts.bright;
-$('bright').addEventListener('input', e => { opts.bright = +e.target.value; store.set('bright', e.target.value); zeichnen(); });
+const marks = [
+  seg('rotate', 'r', () => opts.rotate ? 1 : 0, v => { opts.rotate = v === '1'; store.set('rotate', v); }),
+  seg('dither', 'd', () => opts.dither, v => { opts.dither = v; store.set('dither', v); }),
+  seg('invert', 'i', () => opts.invert ? 1 : 0, v => { opts.invert = v === '1'; store.set('invert', v); }),
+];
+const REGLER = { bright: v => (v > 0 ? '+' : '') + v, kontrast: v => (v > 0 ? '+' : '') + v + ' %', mittel: v => (v > 0 ? '+' : '') + v, schaerfe: v => v + ' %' };
+function regler(){
+  for (const [k, f] of Object.entries(REGLER)) { $(k).value = opts[k]; $(k + 'Wert').textContent = f(opts[k]); }
+}
+for (const k of Object.keys(REGLER))
+  $(k).addEventListener('input', e => { opts[k] = +e.target.value; store.set(k, e.target.value); regler(); zeichnen(); });
+regler();
+$('zuruecksetzen').addEventListener('click', () => {
+  Object.assign(opts, STANDARD);
+  for (const [k, v] of Object.entries(STANDARD)) store.set(k, typeof v === 'boolean' ? (v ? '1' : '0') : v);
+  regler(); marks.forEach(m => m()); zeichnen();
+});
 
 // ---------------------------------------------------------------- Bild laden
 let bild = null;        // das gewählte Bild, einmal dekodiert
@@ -203,23 +243,28 @@ async function rastern(){
     const a = px[i + 3] / 255; // Transparenz wird weiss
     lum[j] = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) * a + 255 * (1 - a);
   }
-  if (opts.dither !== 'thr') {
-    lum = levels(lum);
-    lum = sharpen(lum, W, H, 0.7);
+  if (opts.dither !== 'thr') lum = levels(lum);
+  if (opts.schaerfe) lum = sharpen(lum, W, H, opts.schaerfe / 100);
+  // Mitteltöne (Gamma, Schwarz und Weiss bleiben), Kontrast um die Mitte, Helligkeit, Umkehren
+  const gamma = Math.pow(2, -opts.mittel / 50), k = 1 + opts.kontrast / 100, b = opts.bright;
+  for (let j = 0; j < N; j++) {
+    let v = Math.min(255, Math.max(0, lum[j]));
+    if (gamma !== 1) v = 255 * Math.pow(v / 255, gamma);
+    v = (v - 128) * k + 128 + b;
+    lum[j] = opts.invert ? 255 - v : v;
   }
-  const b = opts.bright;
-  for (let j = 0; j < N; j++) lum[j] += b;
 
   const bits = new Uint8Array((W >> 3) * H);
   // Fehlerverteilung je Verfahren: [dx, dy, Anteil]
   const KERNEL = {
     atk: [[1, 0, 1/8], [2, 0, 1/8], [-1, 1, 1/8], [0, 1, 1/8], [1, 1, 1/8], [0, 2, 1/8]],
     fs:  [[1, 0, 7/16], [-1, 1, 3/16], [0, 1, 5/16], [1, 1, 1/16]],
-    thr: [],
+    stucki: [[1, 0, 8], [2, 0, 4], [-2, 1, 2], [-1, 1, 4], [0, 1, 8], [1, 1, 4], [2, 1, 2], [-2, 2, 1], [-1, 2, 2], [0, 2, 4], [1, 2, 2], [2, 2, 1]].map(([x, y, f]) => [x, y, f / 42]),
   }[opts.dither] || [];
+  const schwelle = SCHWELLE[opts.dither] || (() => 128);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      const j = y * W + x, old = lum[j], black = old < 128, err = old - (black ? 0 : 255);
+      const j = y * W + x, old = lum[j], black = old < schwelle(x, y), err = old - (black ? 0 : 255);
       if (black) bits[y * (W >> 3) + (x >> 3)] |= 0x80 >> (x & 7);
       const v = black ? 0 : 255;
       px[j * 4] = px[j * 4 + 1] = px[j * 4 + 2] = v; px[j * 4 + 3] = 255;
@@ -235,6 +280,25 @@ async function rastern(){
   $('mass').textContent = `72 × ${Math.round(H / 8)} mm`;
   $('drucken').disabled = false;
 }
+
+// Muster ohne Fehlerverteilung: Schwelle je Punkt
+const BAYER = (() => {   // 8×8-Matrix, Werte 0..63
+  const m = [[0]];
+  for (let n = 1; n < 8; n *= 2) {
+    const z = m.map(r => r.slice());
+    m.length = 0;
+    for (let y = 0; y < 2 * n; y++) m.push(Array.from({ length: 2 * n }, (_, x) => 4 * z[y % n][x % n] + [0, 2, 3, 1][(y >= n) * 2 + (x >= n)]));
+  }
+  return m;
+})();
+const ZELLE = 6, WINKEL = Math.PI / 4;   // Zeitungsraster: 6 Druckpunkte pro Zelle, 45° gedreht (etwa 34 Linien pro Zoll)
+const SCHWELLE = {
+  bayer: (x, y) => (BAYER[y & 7][x & 7] + 0.5) * 4,
+  dots: (x, y) => {
+    const u = (x * Math.cos(WINKEL) + y * Math.sin(WINKEL)) / ZELLE, v = (y * Math.cos(WINKEL) - x * Math.sin(WINKEL)) / ZELLE;
+    return (Math.cos(2 * Math.PI * u) + Math.cos(2 * Math.PI * v) + 2) / 4 * 255;   // Mitte der Zelle zuerst schwarz: runde Punkte
+  },
+};
 
 // Kontrast spreizen: das hellste und dunkelste halbe Prozent wird zu Weiss bzw. Schwarz
 function levels(lum){
