@@ -14,7 +14,9 @@ Startprompt für einen neuen Chat:
 - Neue Kachel: eine Zeile am Ende der Liste `APPS` in bon/index.html (pfad, name, desc, tags).
   Sonst nichts an der Startseite ändern.
 - Vorlagen:
-  - bon/text/: einfachste App, Formular → Bon-Post, Text-Bon.
+  - bon/text/: Text in IBM Plex Sans auf einer Leinwand gesetzt und gerastert → 1-Bit-PNG →
+    Bon-Post, HTML-Bon. Die Vorschau ist genau der Druck. Für schöne Schrift so vorgehen statt
+    `format: 'text'` (das druckt nur die eingebaute Drucker-Schrift).
   - bon/bild/: Bild umrechnen und rastern → 1-Bit-PNG → Bon-Post, HTML-Bon.
   - bon/namen/: druckt direkt per USB, über Stunden im Takt.
 - Stil wie /euroturbo: weiss, schwarz, Monospace, eckig, keine Schatten, keine Rundungen.
