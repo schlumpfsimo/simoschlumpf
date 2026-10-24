@@ -270,7 +270,7 @@
 // ---------------------------------------------------------------- constants
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
 const MPP = 0.6;              // metres per art pixel
-const KN = 0.5144 * 9;        // world metres per second per knot (time compressed)
+const KN = 0.5144 * 11;       // world metres per second per knot (time compressed)
 const WW = 16000, WH = 11000; // world size in metres
 const SX = 2 / 3, SY = 0.6875;  // the islands were laid out on a 24 x 16 km chart; the sea is now smaller
 const CELL = 250, GW = WW / CELL, GH = WH / CELL; // discovery and navigation grid
@@ -280,7 +280,7 @@ const CPX = 40;               // chart: metres per chart pixel
 const CW = WW / CPX, CH = WH / CPX;
 const SAIL_NAMES = ['Furled', 'Reefed', 'Fighting sail', 'Full sail'];
 const SAIL_AREA = [0, 0.42, 0.7, 1];
-const RELOAD = 4.5, BALL_SPEED = 120, GUN_RANGE = 200;
+const RELOAD = 3.2, BALL_SPEED = 145, GUN_RANGE = 200;
 const SAVE_KEY = 'libertalia-v3';
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -749,7 +749,19 @@ function bakeTile(tx, ty){
       for (let k = 2; k < 13; k += 3){ g.fillRect(fx + k, fy - 1, 1, 1); g.fillRect(fx + k, fy + 15, 1, 1); }
     }
   }
-  return new Uint32Array(g.getImageData(0, 0, TILE, TILE).data.buffer);
+  const px2 = new Uint32Array(g.getImageData(0, 0, TILE, TILE).data.buffer);
+  const runs = [];
+  for (let y = 0; y < TILE; y++){
+    const row = [];
+    for (let x = 0; x < TILE;){
+      while (x < TILE && !px2[y * TILE + x]) x++;
+      const a = x;
+      while (x < TILE && px2[y * TILE + x]) x++;
+      if (x > a) row.push(a, x);
+    }
+    runs.push(row);
+  }
+  return { px: px2, runs };
 }
 function getTile(tx, ty, sync){
   const k = ty * 1000 + tx;
@@ -830,7 +842,7 @@ for (const k in TYPES){
   const t = TYPES[k];
   t.id = k;
   t.gunY = Array.from({ length: t.guns }, (_, i) => t.guns === 1 ? 0 : -0.28 + 0.56 * i / (t.guns - 1));
-  t.turn *= 1.35; // brisker helm: the game is about manoeuvre, not waiting
+  t.turn *= 1.75; // brisker helm: the game is about manoeuvre, not waiting
 }
 // shipwright upgrades: faster canvas, more guns a side, a reinforced hull. They belong to the ship.
 const UPG = {
@@ -965,6 +977,29 @@ function reloadTime(s){
   const hands = clamp(s.crew / s.t.crew, 0.25, 1);
   return RELOAD / Math.sqrt(hands) * (s === ship ? 1 : 1.3);
 }
+// angle off the beam (radians, toward the bow positive) that hits the nearest enemy in this broadside, with lead
+const TRAIN = 22 * DEG;
+function aim(s, side, mx, my){
+  const rx = Math.cos(s.h) * side, ry = Math.sin(s.h) * side, fx = Math.sin(s.h), fy = -Math.cos(s.h);
+  const targets = s === ship ? ai : [ship];
+  let best = null, bd = GUN_RANGE * 1.15;
+  for (const o of targets){
+    if (o === s || o.sinking || o.gone || (s === ship && o.struck)) continue;
+    const dx = o.x - mx, dy = o.y - my, d = Math.hypot(dx, dy);
+    if (d > bd) continue;
+    const off = Math.atan2(dx * fx + dy * fy, dx * rx + dy * ry);
+    if (Math.abs(off) > TRAIN + 0.15) continue;
+    best = o; bd = d;
+  }
+  if (!best) return 0;
+  // relative velocity: the ball carries the firing ship's way
+  const vx = (Math.sin(best.h) * best.v - fx * s.v) * KN, vy = (-Math.cos(best.h) * best.v - fy * s.v) * KN;
+  let px = best.x - mx, py = best.y - my;
+  for (let i = 0; i < 3; i++){ const tt = Math.hypot(px, py) / BALL_SPEED; px = best.x + vx * tt - mx; py = best.y + vy * tt - my; }
+  // imperial conscripts lay their guns less well than your gun captains
+  const a = Math.atan2(px * fx + py * fy, px * rx + py * ry) * (s === ship ? 1 : 0.65);
+  return clamp(a, -TRAIN, TRAIN);
+}
 function fire(s, side){ // -1 larboard, +1 starboard
   const idx = side < 0 ? 0 : 1;
   if (s.reload[idx] > 0 || s.sinking || s.crew <= 0){
@@ -978,11 +1013,12 @@ function fire(s, side){ // -1 larboard, +1 starboard
     if (s.sinking || s.struck) return;
     const fx = Math.sin(s.h), fy = -Math.cos(s.h), rx = Math.cos(s.h), ry = Math.sin(s.h);
     const mx = s.x + fx * gy * t.L + rx * side * (t.B / 2 + 0.6), my = s.y + fy * gy * t.L + ry * side * (t.B / 2 + 0.6);
-    const sp = (Math.random() - 0.5) * spread * DEG;
-    const dx = rx * side * Math.cos(sp) - fx * side * Math.sin(sp), dy = ry * side * Math.cos(sp) - fy * side * Math.sin(sp);
+    // gun captains train their pieces on the target and lay them ahead of her, within what the ports allow
+    const lay = aim(s, side, mx, my) + (Math.random() - 0.5) * spread * DEG;
+    const dx = rx * side * Math.cos(lay) - fx * side * Math.sin(lay), dy = ry * side * Math.cos(lay) - fy * side * Math.sin(lay);
     const life = GUN_RANGE / BALL_SPEED * (0.9 + Math.random() * 0.2);
     // the player's crew are better gunners than imperial conscripts
-    const dmg = t.cal * (s === ship ? 2 : 1.4);
+    const dmg = t.cal * (s === ship ? 2.5 : 1.2);
     balls.push({ owner: s, dmg, x: mx, y: my, vx: dx * BALL_SPEED + fx * s.v * KN, vy: dy * BALL_SPEED + fy * s.v * KN, life, max: life });
     const w = s.wind, bx = -Math.sin(w.dir) * w.spd * 0.25, by = Math.cos(w.dir) * w.spd * 0.25;
     if (visible(s)){
@@ -1038,15 +1074,16 @@ function stepShip(s, dt, now = T){
   const inIrons = twa < t.noGo;
   if (inIrons) target = -0.5 * s.sail * (1 - twa / t.noGo);
   if (s.sinking) target = 0;
-  const tau = target > s.v ? t.accel : (inIrons ? 9 : 6);
+  // ships gather way and lose it quickly: lively, not ponderous
+  const tau = target > s.v ? t.accel * 0.5 : (inIrons ? 5 : 3.5);
   s.v += (target - s.v) * Math.min(1, dt / tau);
 
   // turning needs water over the rudder
-  const flow = clamp(0.06 + Math.abs(s.v) / 4, 0, 1);
+  const flow = clamp(0.15 + Math.abs(s.v) / 3, 0, 1);
   let rate = s.rudder * t.turn * DEG * flow * (1 - 0.18 * s.sail) * Math.sign(s.v || 1);
   // a ship caught in irons falls off the wind
   if (twa < t.noGo + 5 && Math.abs(s.v) < 1.5) rate += -Math.sign(rel || 1) * 7 * DEG * (1 - Math.abs(s.v) / 1.5) * Math.max(s.sail, 0.3);
-  s.turn += (rate - s.turn) * Math.min(1, dt / 0.5);
+  s.turn += (rate - s.turn) * Math.min(1, dt / 0.25);
   s.h = norm(s.h + s.turn * dt);
 
   // leeway: sideways drift, strongest close-hauled
@@ -1239,7 +1276,7 @@ function think(s, dt){
     want = sailToward(s, toP + Math.PI, dt);
     s.set = 3;
   } else if (s.mode === 'attack'){
-    if (d > 240){
+    if (d > 170){
       const lead = Math.atan2(p.x + Math.sin(p.h) * p.v * KN * 4 - s.x, -(p.y - Math.cos(p.h) * p.v * KN * 4 - s.y));
       want = sailToward(s, lead, dt);
       s.set = 3;
@@ -1365,7 +1402,7 @@ function encounter(){
       const d = Math.hypot(lerp(x0, x1, f) - ship.x, lerp(y0, y1, f) - ship.y);
       if (d < best){ best = d; bi = i; bf = f; }
     }
-    if (best > 900) continue;
+    if (best > 450) continue;
     // walk back along the route about 1100 m from that point
     let i = bi, x = lerp(r[i - 1][0], r[i][0], bf), y = lerp(r[i - 1][1], r[i][1], bf), left = 460;
     while (left > 0 && i >= 1){
@@ -2080,6 +2117,21 @@ const PB = {
       for (let x = xs; x < xe; x++, si++, di++){ const v = src[si]; if (v) buf[di] = v; }
     }
   },
+  // a terrain tile: copy each run of opaque pixels as one block
+  blitRuns(t, dx, dy){
+    const W = this.w, H = this.h, buf = this.buf, src = t.px;
+    for (let y = 0; y < TILE; y++){
+      const yy = dy + y;
+      if (yy < 0 || yy >= H) continue;
+      const row = t.runs[y];
+      for (let k = 0; k < row.length; k += 2){
+        let a = row[k], b = row[k + 1];
+        if (dx + a < 0) a = -dx;
+        if (dx + b > W) b = W - dx;
+        if (b > a) buf.set(src.subarray(y * TILE + a, y * TILE + b), yy * W + dx + a);
+      }
+    }
+  },
   // nearest-neighbour scaled copy, for the chart
   blitScaled(src, sw, sh, dx, dy, k){
     const W = this.w, buf = this.buf;
@@ -2362,8 +2414,8 @@ function capsule(ax, ay, bx, by, wm, col, al){
   }
 }
 function drawWake(s){
-  for (let i = 1; i < s.wake.length; i++){
-    const a = s.wake[i - 1], b = s.wake[i];
+  for (let i = s.wake.length - 1; i >= 2; i -= 2){
+    const a = s.wake[i - 2], b = s.wake[i];
     const age = T - b.t;
     const al = clamp(1 - age / 7, 0, 1) * clamp(b.v / 5, 0, 1) * 0.55;
     if (al <= 0.02) continue;
@@ -2375,9 +2427,9 @@ const spriteCache = new Map();
 function shipSprite(s){
   const t = s.t, L = t.L, sink = s.sinking, liv = s.liv || LIVERY.free;
   const awa = s.aw.awa / DEG, luff = s.sail > 0.02 && awa < Math.max(24, t.noGo - 8);
-  const h = Math.round(norm(s.h + sink * 0.4) / (2 * DEG)) * 2 * DEG;
-  const key = [t.id, gunsOf(s), Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 4), Math.round(s.sail * 10), s.set,
-    luff ? Math.floor(T * 6) % 6 : -1, Math.floor(T * 9 / TAU * 4) % 4, Math.round(wrap(s.aw.toward - s.h) / (15 * DEG)),
+  const h = Math.round(norm(s.h + sink * 0.4) / (3 * DEG)) * 3 * DEG;
+  const key = [t.id, gunsOf(s), Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 6), Math.round(s.sail * 10), s.set,
+    luff ? Math.floor(T * 4) % 3 : -1, Math.floor(T * 2.5) % 2, Math.round(wrap(s.aw.toward - s.h) / (15 * DEG)),
     s.struck ? 1 : 0, ROLE_LIVERY[s.role] || s.role, Math.round(sink * 10)].join('|');
   let e = spriteCache.get(key);
   if (e){ spriteCache.delete(key); spriteCache.set(key, e); return e; }
@@ -2455,7 +2507,7 @@ function render(){
   const tx0 = Math.floor(ox / TILE), ty0 = Math.floor(oy / TILE), tx1 = Math.floor((ox + LW) / TILE), ty1 = Math.floor((oy + LH) / TILE);
   for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++){
     const t = getTile(tx, ty, true);
-    if (t) PB.blit(t, TILE, TILE, tx * TILE - ox, ty * TILE - oy);
+    if (t) PB.blitRuns(t, tx * TILE - ox, ty * TILE - oy);
   }
   // prefetch a ring around the view, a couple of tiles per frame
   let budget = 1;
