@@ -8,86 +8,97 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
 <style>
-/* Wie Turbo: roh, weiss, schwarz, Monospace, keine Rundungen, keine Schatten */
-:root{ --bg:#fff; --ink:#000; --muted:#666; --card2:#f4f4f4; --ok:#0a7a2f; --err:#b00020;
-  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; color-scheme:light }
+/* Bild-Bon über die Bon-Post, Stil wie Turbo und wie bon/text: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:14px;line-height:1.45}
-a{color:var(--ink);text-decoration:underline} a:hover{background:#000;color:#fff;text-decoration:none}
-a.brand:hover{background:none;color:#000}
-button,input{font:inherit;color:inherit;border-radius:0}
-code{background:var(--card2);padding:0 4px}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
 header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
-.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 16px;max-width:640px;margin:0 auto}
-.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;white-space:nowrap;text-transform:uppercase}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
 .back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
 .back:hover,.back:focus-visible{background:#000;color:#fff}
 .brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
-.wrap{max-width:640px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
-button{padding:5px 10px;border:1px solid #000;background:#000;color:#fff;text-transform:uppercase;font-size:.75rem;letter-spacing:.04em;cursor:pointer}
+/* Am Handy: Bild wählen, gleich darunter die Vorschau, dann Einstellungen und Drucken */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "vorschau" "knoepfe";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+.waehlen{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:120px;border:1px dashed #000;padding:16px;text-align:center;cursor:pointer;margin-top:0;text-transform:none;letter-spacing:0;color:#000;font-size:14px}
+.waehlen:hover,.waehlen.over{border-style:solid;outline:1px solid #000}
+.waehlen strong{text-transform:uppercase;letter-spacing:.1em}
+.waehlen span{color:var(--muted);font-size:.8rem;overflow-wrap:anywhere}
+.waehlen input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:8px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.8rem;text-transform:none}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+.seg button:hover{background:#000;color:#fff}
+input[type=range]{width:100%;accent-color:#000;margin:6px 0}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
 button:hover{background:#fff;color:#000}
-button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;color:#fff}
 button:disabled{opacity:.4;cursor:default}
-.drop{position:relative;border:1px solid #000;background:#fff;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:20px;cursor:pointer}
-.drop:hover,.drop.over{outline:2px solid #000}
-.drop strong{font-size:1rem;text-transform:uppercase;letter-spacing:.1em}
-.drop span{color:var(--muted);font-size:.8rem}
-.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.drop canvas{max-width:100%;max-height:380px;image-rendering:pixelated;image-rendering:crisp-edges;background:#fff;border:1px solid #000}
-.msg{min-height:1.45em;margin:0;font-size:.85rem;letter-spacing:.05em}
-.msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
-h2{font-size:1rem;margin:0;text-transform:uppercase;border-top:1px solid #000;padding-top:6px}
-.opts{display:grid;grid-template-columns:minmax(110px,150px) 1fr;gap:8px 12px;align-items:center}
-.opts label{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em}
-.seg{display:flex;gap:0;flex-wrap:wrap}
-.seg button{margin-right:-1px}
-.seg button[aria-pressed="false"]{background:#fff;color:#000}
-.seg button[aria-pressed="false"]:hover{background:#000;color:#fff}
-input[type=range]{width:100%;accent-color:#000}
-details{border:1px solid #000;padding:6px 10px;margin:6px 0;background:#fff;font-size:.84rem}
+button:disabled:hover{background:#000;color:#fff}
+button.ghost{background:#fff;color:#000;padding:8px;font-size:.75rem;letter-spacing:.04em}
+button.ghost:hover{background:#000;color:#fff}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Vorschau: der Bon genau so, wie er aus dem Drucker kommt (schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+details{border:1px solid #000;padding:6px 10px;margin-top:12px;font-size:.84rem}
 summary{cursor:pointer;font-weight:700;text-transform:uppercase;font-size:.8rem;letter-spacing:.04em}
 details p{margin:8px 0}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px}
+  .waehlen{min-height:200px}
+}
 </style>
 </head>
 <body>
 <header class="top">
-  <div class="topbar">
-    <a class="back" href="../">← Zurück</a>
-    <a class="brand" href="../">BON<span>Bild · über die Bon-Post</span></a>
-  </div>
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Bild · über die Bon-Post</span></a></div>
 </header>
-<main class="wrap">
-  <label class="drop" id="drop">
-    <input type="file" id="file" accept="image/*" multiple>
-    <strong id="dropTitle">Bild wählen</strong>
-    <span id="dropHint">tippen, hierher ziehen oder einfügen – wird sofort gedruckt</span>
-    <canvas id="preview" hidden></canvas>
-  </label>
-  <p class="msg" id="msg" role="status" aria-live="polite"></p>
-
-  <h2>Einstellungen</h2>
-  <section class="opts">
-    <label>Punktmuster</label>
-    <div class="seg" id="dither">
-      <button data-d="atk" aria-pressed="true">Klar</button>
-      <button data-d="fs" aria-pressed="false">Weich</button>
-      <button data-d="thr" aria-pressed="false">Schwarz-Weiss</button>
+<main>
+  <div class="felder">
+    <label class="waehlen" id="drop">
+      <input type="file" id="file" accept="image/*">
+      <strong id="dropTitle">Bild wählen</strong>
+      <span id="dropHint">tippen, hierher ziehen oder einfügen</span>
+    </label>
+    <button type="button" class="ghost" id="entfernen" hidden>Bild entfernen</button>
+  </div>
+  <div class="knoepfe">
+    <span class="label" id="ditherLabel">Punktmuster</span>
+    <div class="seg" id="dither" role="group" aria-labelledby="ditherLabel">
+      <button type="button" data-d="atk">Klar</button><button type="button" data-d="fs">Weich</button><button type="button" data-d="thr">Schwarz-Weiss</button>
     </div>
     <label for="bright">Helligkeit</label>
     <input type="range" id="bright" min="-60" max="60" step="5" value="15">
-    <label>Querformat</label>
-    <div class="seg" id="rotate">
-      <button data-r="1" aria-pressed="true">drehen</button>
-      <button data-r="0" aria-pressed="false">so lassen</button>
+    <span class="label" id="rotateLabel">Querformat</span>
+    <div class="seg" id="rotate" role="group" aria-labelledby="rotateLabel">
+      <button type="button" data-r="1">Drehen</button><button type="button" data-r="0">So lassen</button>
     </div>
-  </section>
-
-  <details>
-    <summary>Hilfe</summary>
-    <p>Das Bild wird im Browser auf 576 Punkte (72 mm) umgerechnet und gerastert. Dann geht es als Bon an die Bon-Post, und der Mac druckt es innert einer Minute, wenn er wach ist. Geht von jedem Gerät aus, auch vom Handy.</p>
-    <p>Punktmuster: »Klar« für Fotos, »Weich« für feine Verläufe, »Schwarz-Weiss« für Logos, Text und Zeichnungen.</p>
-  </details>
+    <button id="drucken" disabled>Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <details>
+      <summary>Hilfe</summary>
+      <p>Die Vorschau zeigt den Bon Punkt für Punkt so, wie er gedruckt wird: 576 Punkte breit (72 mm).</p>
+      <p>Punktmuster: »Klar« für Fotos, »Weich« für feine Verläufe, »Schwarz-Weiss« für Logos, Text und Zeichnungen.</p>
+      <p>Nach »Drucken« geht der Bon an die Bon-Post. Der Mac druckt ihn innert einer Minute, wenn er wach ist.</p>
+    </details>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="papier"><canvas id="bon" hidden></canvas><p class="leer" id="leer">Hier erscheint der Bon.</p></div>
+    <p class="mass" id="mass"></p>
+  </div>
 </main>
 
 <script>
@@ -101,8 +112,9 @@ const store = {
   get(k, d){ try { return localStorage.getItem('bon.' + k) ?? d; } catch { return d; } },
   set(k, v){ try { localStorage.setItem('bon.' + k, v); } catch {} }
 };
+function say(text, kind = ''){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + kind; }
 
-// ---------------------------------------------------------------- Einstellungen
+// ---------------------------------------------------------------- Einstellungen: jede Änderung zeichnet die Vorschau neu
 const opts = { bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', dither: store.get('dither', 'atk') };
 
 function seg(id, attr, current, apply){
@@ -110,35 +122,80 @@ function seg(id, attr, current, apply){
   const mark = () => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(current()))));
   box.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    apply(b.dataset[attr]); mark();
+    apply(b.dataset[attr]); mark(); zeichnen();
   });
   mark();
 }
 seg('rotate', 'r', () => opts.rotate ? 1 : 0, v => { opts.rotate = v === '1'; store.set('rotate', v); });
 seg('dither', 'd', () => opts.dither, v => { opts.dither = v; store.set('dither', v); });
 $('bright').value = opts.bright;
-$('bright').addEventListener('input', e => { opts.bright = +e.target.value; store.set('bright', e.target.value); });
+$('bright').addEventListener('input', e => { opts.bright = +e.target.value; store.set('bright', e.target.value); zeichnen(); });
 
-function say(text, kind = ''){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + kind; }
+// ---------------------------------------------------------------- Bild laden
+let bild = null;        // das gewählte Bild, einmal dekodiert
+let verkleinert = {};   // auf Druckbreite verkleinert, je Ausrichtung
+let raster = null;      // das aktuelle 1-Bit-Raster, genau das wird gedruckt
 
-// ---------------------------------------------------------------- Bild -> 1-Bit-Raster
-async function rasterize(file){
-  const orig = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  const turn = opts.rotate && orig.width > orig.height;
-  const sw = turn ? orig.height : orig.width, sh = turn ? orig.width : orig.height;
-  const W = BREITE, H = Math.max(1, Math.round(sh * W / sw));
-  // Hochwertig verkleinern: Der Standard des Browsers verliert bei grossen Fotos feine Details
-  const bmp = await createImageBitmap(orig, { resizeWidth: turn ? H : W, resizeHeight: turn ? W : H, resizeQuality: 'high' });
-  orig.close();
-  const c = $('preview'); c.width = W; c.height = H;
+async function laden(file){
+  if (!file || !file.type.startsWith('image/')) return;
+  try {
+    const neu = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    leeren();
+    bild = neu;
+    $('dropTitle').textContent = 'Anderes Bild wählen';
+    $('dropHint').textContent = file.name || 'eingefügtes Bild';
+    $('entfernen').hidden = false;
+    say('');
+    await zeichnen();
+  } catch (e) {
+    say('Dieses Bild lässt sich nicht öffnen.', 'err');
+  }
+}
+
+// Bild vergessen: Vorschau und Speicher leeren
+function leeren(){
+  bild?.close(); Object.values(verkleinert).forEach(b => b.close());
+  bild = null; verkleinert = {}; raster = null;
+  const c = $('bon'); c.width = c.height = 0; c.hidden = true;
+  $('leer').hidden = false; $('mass').textContent = '';
+  $('dropTitle').textContent = 'Bild wählen';
+  $('dropHint').textContent = 'tippen, hierher ziehen oder einfügen';
+  $('entfernen').hidden = true; $('drucken').disabled = true;
+  $('file').value = '';
+}
+
+// Hochwertig verkleinern: Der Standard des Browsers verliert bei grossen Fotos feine Details
+async function quelle(turn){
+  if (!verkleinert[turn]) {
+    const W = BREITE, sw = turn ? bild.height : bild.width, sh = turn ? bild.width : bild.height;
+    const H = Math.max(1, Math.round(sh * W / sw));
+    verkleinert[turn] = await createImageBitmap(bild, { resizeWidth: turn ? H : W, resizeHeight: turn ? W : H, resizeQuality: 'high' });
+  }
+  return verkleinert[turn];
+}
+
+// ---------------------------------------------------------------- Vorschau = Druck: Bild -> 1-Bit-Raster
+let zug = 0, laeuft = null;
+async function zeichnen(){
+  if (!bild) return;
+  const meiner = ++zug;
+  await laeuft;                       // nur eine Berechnung aufs Mal; die letzte Änderung gewinnt
+  if (meiner !== zug || !bild) return;
+  laeuft = rastern().catch(() => say('Vorschau fehlgeschlagen.', 'err'));
+  await laeuft;
+}
+
+async function rastern(){
+  const turn = opts.rotate && bild.width > bild.height;
+  const bmp = await quelle(turn);
+  const W = BREITE, H = turn ? bmp.width : bmp.height;
+  const c = $('bon'); c.width = W; c.height = H;
   const g = c.getContext('2d', { willReadFrequently: true });
-  g.imageSmoothingQuality = 'high';
   g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
   g.save();
-  if (turn) { g.translate(W, 0); g.rotate(Math.PI / 2); g.drawImage(bmp, 0, 0, H, W); }
-  else g.drawImage(bmp, 0, 0, W, H);
+  if (turn) { g.translate(W, 0); g.rotate(Math.PI / 2); }
+  g.drawImage(bmp, 0, 0);
   g.restore();
-  bmp.close();
 
   const img = g.getImageData(0, 0, W, H), px = img.data, N = W * H;
   let lum = new Float32Array(N);
@@ -173,7 +230,10 @@ async function rasterize(file){
     }
   }
   g.putImageData(img, 0, 0);
-  return { W, H, bits };
+  raster = { W, H, bits };
+  c.hidden = false; $('leer').hidden = true;
+  $('mass').textContent = `72 × ${Math.round(H / 8)} mm`;
+  $('drucken').disabled = false;
 }
 
 // Kontrast spreizen: das hellste und dunkelste halbe Prozent wird zu Weiss bzw. Schwarz
@@ -216,7 +276,7 @@ async function bonHtml(raster){
 
 // Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
 async function pngDataUrl({ W, H, bits }){
-  if (!('CompressionStream' in window)) return $('preview').toDataURL('image/png');
+  if (!('CompressionStream' in window)) return $('bon').toDataURL('image/png');
   const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
   for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
   const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
@@ -238,57 +298,37 @@ function chunk(type, data){
 const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
 function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
 
-// ---------------------------------------------------------------- Ablauf: wählen -> senden -> Vorschau weg
-const queue = [];
-let busy = false;
-
-function add(files){
-  for (const f of files) if (f && f.type.startsWith('image/')) queue.push(f);
-  $('file').value = '';
-  if (queue.length) run();
-}
-
-async function run(){
-  if (busy) return;
-  busy = true;
-  setPreview(true);
+// ---------------------------------------------------------------- Drucken: genau das Raster aus der Vorschau senden
+$('drucken').addEventListener('click', async () => {
+  if (!raster) return;
+  $('drucken').disabled = true;
+  say('Sende …');
   try {
-    while (queue.length) {
-      const file = queue.shift();
-      say('Sende …');
-      const inhalt = await bonHtml(await rasterize(file));
-      // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
-      const r = await fetch(BONPOST, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ key: KEY, inhalt, titel: 'Bild', quelle: 'website-bild' }),
-      });
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
-      say(queue.length ? `Gesendet. Noch ${queue.length} …` : 'Gesendet. Der Bon kommt innert einer Minute.', 'ok');
-    }
+    await laeuft;
+    const inhalt = await bonHtml(raster);
+    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, inhalt, titel: 'Bild', quelle: 'website-bild' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    leeren();
+    say('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
   } catch (e) {
-    queue.length = 0;
     say('Fehler: ' + e.message, 'err');
-  } finally {
-    busy = false;
-    setTimeout(() => { if (!busy) setPreview(false); }, 1200);
+    $('drucken').disabled = !raster;
   }
-}
+});
 
-// Vorschau nur während des Sendens; danach Leinwand leeren
-function setPreview(on){
-  const c = $('preview');
-  c.hidden = !on; $('dropTitle').hidden = on; $('dropHint').hidden = on;
-  if (!on) { c.width = c.height = 0; }
-}
-
-$('file').addEventListener('change', e => add(e.target.files));
+$('entfernen').addEventListener('click', () => { leeren(); say(''); });
+$('file').addEventListener('change', e => laden(e.target.files[0]));
 const drop = $('drop');
 ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
-drop.addEventListener('drop', e => { e.preventDefault(); add(e.dataTransfer.files); });
-window.addEventListener('paste', e => add([...e.clipboardData.items].filter(i => i.kind === 'file').map(i => i.getAsFile())));
+drop.addEventListener('drop', e => { e.preventDefault(); laden(e.dataTransfer.files[0]); });
+window.addEventListener('paste', e => { const f = [...e.clipboardData.items].find(i => i.kind === 'file'); if (f) laden(f.getAsFile()); });
 </script>
 </body>
 </html>
