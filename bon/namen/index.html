@@ -119,7 +119,7 @@ const W = 576, BAND = 40, RAND = 28, XL = RAND + 6, XR = W - RAND - 6;
 const DICHTEN = {
   gross:  { name: 'Gross',  lat: 16, ar: 18, lh: 21 },
   mittel: { name: 'Mittel', lat: 13, ar: 14, lh: 16 },
-  klein:  { name: 'Klein',  lat: 10, ar: 11, lh: 11, fliessen: true },
+  klein:  { name: 'Klein',  lat: 10, ar: 11, lh: 12 },
 };
 const ZEILEN = 12;   // so viele Zeilen werden auf einmal gesetzt
 const fontLat = d => `600 ${d.lat}px PlexCond`, fontAr = d => `700 ${d.ar}px Naskh`;
@@ -167,43 +167,23 @@ function raender(g, y0, y1, abs){
     g.restore();
   }
 }
-// Raute zwischen zwei Namen
-function raute(g, x, y, r){
-  g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath(); g.fill();
-}
-
 const mess = document.createElement('canvas').getContext('2d');
 function breite(t, f){ mess.font = f; return mess.measureText(t).width; }
 
-// Satz: Namen fliessen zeilenweise, Lateinisch mit Alter, dann Arabisch, getrennt durch eine Raute.
-// Ein Name bleibt auf einer Zeile, ausser er ist allein schon zu breit. Bei «fliessen» (Klein) darf er
-// zwischen Lateinisch und Arabisch umbrechen, nur nicht auf der letzten Zeile vor dem Band.
-const SEP = 12, LUFT = 5;
+// Satz: jeder Name auf einer eigenen Zeile, Lateinisch mit Alter links, Arabisch rechts.
+// Passen beide nicht nebeneinander, kommt Arabisch auf die nächste Zeile.
+const LUFT = 10;
 function setzen(von, d, maxZeilen){
   const zeilen = [];
-  let z = { teile: [], x: XL, bis: von }, i = von;
-  const neu = () => { zeilen.push(z); z = { teile: [], x: XL, bis: z.bis }; };
-  const frei = () => XR - z.x;
+  let i = von;
   while (i < NAMEN.length && zeilen.length < maxZeilen) {
     const [en, ar, alter] = name(i);
-    const lat = en.toUpperCase() + (alter ? ' ' + alter : ''), wl = breite(lat, fontLat(d)) + LUFT, wa = breite(ar, fontAr(d)) + LUFT;
-    const sep = z.teile.length ? SEP : 0;
-    const teilen = d.fliessen && zeilen.length < maxZeilen - 1 && sep + wl <= frei();
-    if (sep + wl + wa > frei() && z.teile.length && !teilen) { neu(); continue; }
-    if (sep) { z.teile.push({ raute: z.x + SEP / 2 - 1 }); z.x += SEP; }
-    if (wl + wa <= frei()) {
-      z.teile.push({ t: lat, x: z.x, f: fontLat(d) }, { t: ar, x: z.x + wl + wa - LUFT, f: fontAr(d), rtl: true });
-      z.x += wl + wa;
-    } else {
-      // Arabisch auf die nächste Zeile
-      z.teile.push({ t: lat, x: z.x, f: fontLat(d), max: XR - z.x });
-      neu();
-      z.teile.push({ t: ar, x: Math.min(XR, XL + wa - LUFT), f: fontAr(d), rtl: true, max: XR - XL });
-      z.x = XL + wa;
-    }
-    z.bis = ++i;
+    const lat = en.toUpperCase() + (alter ? ' ' + alter : ''), fl = fontLat(d), fa = fontAr(d);
+    const tl = { t: lat, x: XL, f: fl, max: XR - XL }, ta = { t: ar, x: XR, f: fa, rtl: true, max: XR - XL };
+    i++;
+    if (breite(lat, fl) + LUFT + breite(ar, fa) <= XR - XL) zeilen.push({ teile: [tl, ta], bis: i });
+    else zeilen.push({ teile: [tl], bis: i - 1 }, { teile: [ta], bis: i });
   }
-  if (z.teile.length && zeilen.length < maxZeilen) zeilen.push(z);
   return zeilen;
 }
 
@@ -234,7 +214,6 @@ function stueck(von, d, { etikett = '' } = {}){
   for (const z of zeilen) {
     const base = y + Math.round(d.lh * 0.78);
     for (const t of z.teile) {
-      if (t.raute != null) { raute(g, t.raute, base - Math.round(d.lat * 0.35), Math.max(2.4, d.lat * 0.24)); continue; }
       g.font = t.f; g.direction = t.rtl ? 'rtl' : 'ltr'; g.textAlign = t.rtl ? 'right' : 'left';
       t.max ? g.fillText(t.t, t.x, base, t.max) : g.fillText(t.t, t.x, base);
     }
