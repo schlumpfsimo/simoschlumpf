@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · POSTKARTE</title>
+<meta name="description" content="Postkarte auf 72 mm: Bild, Gruss in Handschrift, Briefmarke, Poststempel und Adresse, über die Bon-Post.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="caveat-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../menu/playfair-700-italic.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Handschrift: Caveat; Schreibschrift: Dancing Script; Aufschrift: Playfair Display Italic; dazu IBM Plex Serif und Sans (alle SIL Open Font License) */
+@font-face{font-family:"Caveat";src:url(caveat-600.woff2) format("woff2");font-weight:600;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Caveat";src:url(caveat-600-ext.woff2) format("woff2");font-weight:600;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Dancing";src:url(dancing-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Dancing";src:url(dancing-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Playfair";src:url(../menu/playfair-700-italic.woff2) format("woff2");font-weight:700;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Playfair";src:url(../menu/playfair-700-italic-ext.woff2) format("woff2");font-weight:700;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic-ext.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Postkarten-Bon über die Bon-Post, Stil wie Turbo und bon/text: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "vorschau" "knoepfe";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input,textarea{font-family:var(--mono);font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%;min-width:0}
+input[type=date]{min-height:40px;-webkit-appearance:none;appearance:none}
+input:focus,textarea:focus{outline:2px solid #000;outline-offset:-1px}
+textarea{resize:vertical;line-height:1.4}
+#text{min-height:22vh}
+.zwei{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.zwei>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.waehlen{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:90px;border:1px dashed #000;padding:12px;text-align:center;cursor:pointer;margin-top:0;text-transform:none;letter-spacing:0;color:#000;font-size:14px}
+.waehlen:hover,.waehlen.over{border-style:solid;outline:1px solid #000}
+.waehlen strong{text-transform:uppercase;letter-spacing:.1em}
+.waehlen span{color:var(--muted);font-size:.8rem;overflow-wrap:anywhere}
+.waehlen input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.02em;font-size:.8rem;text-transform:none;min-width:0}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+.seg button:hover{background:#000;color:#fff}
+label output{color:#000;text-transform:none;letter-spacing:0}
+input[type=range]{width:100%;accent-color:#000;margin:6px 0;padding:0;border:0}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.ghost{background:#fff;color:#000;padding:8px;font-size:.75rem;letter-spacing:.04em}
+button.ghost:hover{background:#000;color:#fff}
+.bildeinst{display:flex;flex-direction:column;gap:6px;border:1px solid #000;padding:4px 10px 10px}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Vorschau: der Bon genau so, wie er aus dem Drucker kommt (schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 72px);overflow:auto}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Postkarte · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <span class="label">Bild (optional)</span>
+    <label class="waehlen" id="drop">
+      <input type="file" id="file" accept="image/*">
+      <strong id="dropTitle">Foto wählen</strong>
+      <span id="dropHint">tippen, hierher ziehen oder einfügen</span>
+    </label>
+    <div class="bildeinst" id="bildeinst" hidden>
+      <span class="label" id="formatLabel">Bildformat</span>
+      <div class="seg" id="format" role="group" aria-labelledby="formatLabel">
+        <button type="button" data-v="quer">Quer</button><button type="button" data-v="hoch">Hoch</button><button type="button" data-v="ganz">Ganz</button>
+      </div>
+      <span class="label" id="ditherLabel">Punktmuster</span>
+      <div class="seg" id="dither" role="group" aria-labelledby="ditherLabel">
+        <button type="button" data-v="atk">Klar</button><button type="button" data-v="stucki">Fein</button><button type="button" data-v="dots">Zeitung</button>
+      </div>
+      <label for="bright">Helligkeit <output id="brightWert"></output></label>
+      <input type="range" id="bright" min="-60" max="60" step="5">
+      <label for="kontrast">Kontrast <output id="kontrastWert"></output></label>
+      <input type="range" id="kontrast" min="-50" max="100" step="5">
+      <button type="button" class="ghost" id="entfernen">Bild entfernen</button>
+    </div>
+    <label for="aufschrift">Aufschrift (optional)</label>
+    <input id="aufschrift" autocomplete="off" placeholder="Grüsse aus Basel">
+    <label for="text">Gruss</label>
+    <textarea id="text" spellcheck="true" placeholder="Liebe Anna&#10;&#10;Hier ist es wunderschön …&#10;&#10;Herzlich, Simo"></textarea>
+    <span class="label" id="schriftLabel">Schrift</span>
+    <div class="seg" id="schrift" role="group" aria-labelledby="schriftLabel">
+      <button type="button" data-v="hand">Handschrift</button><button type="button" data-v="schreib">Schreibschrift</button><button type="button" data-v="serif">Serif</button>
+    </div>
+    <span class="label" id="groesseLabel">Schriftgrösse</span>
+    <div class="seg" id="groesse" role="group" aria-labelledby="groesseLabel">
+      <button type="button" data-v="s">Klein</button><button type="button" data-v="m">Mittel</button><button type="button" data-v="l">Gross</button>
+    </div>
+    <span class="label">Poststempel</span>
+    <div class="zwei">
+      <div><input id="ort" autocomplete="off" placeholder="Ort" aria-label="Ort im Poststempel"></div>
+      <div><input id="datum" type="date" aria-label="Datum im Poststempel"></div>
+    </div>
+    <label for="adresse">Adresse (optional, leer = Linien zum Schreiben)</label>
+    <textarea id="adresse" rows="4" autocomplete="off" placeholder="Anna Muster&#10;Rheinweg 1&#10;4058 Basel"></textarea>
+  </div>
+  <div class="knoepfe">
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="papier"><canvas id="bon"></canvas></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const MITTE = BREITE / 2;
+const RAND = 28;                 // Satzrand links und rechts
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_H = 28000;
+
+// Schriften für den Gruss: Grösse je nach Wahl, Zeilenhöhe als Faktor
+const HAND = {
+  hand:    { f: px => `600 ${px}px "Caveat", cursive`, px: { s: 38, m: 46, l: 56 }, zh: 1.12 },
+  schreib: { f: px => `700 ${px}px "Dancing", cursive`, px: { s: 32, m: 38, l: 46 }, zh: 1.25 },
+  serif:   { f: px => `italic 500 ${px}px "PSerif", Georgia, serif`, px: { s: 24, m: 28, l: 34 }, zh: 1.4 },
+};
+const F = {
+  titel: px => `italic 700 ${px}px "Playfair", Georgia, serif`,
+  sans: px => `700 ${px}px "Plex", system-ui, sans-serif`,
+};
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+
+// ---------------------------------------------------------------- Eingaben merken (das Bild nicht)
+const heute = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+let s = { aufschrift: '', text: '', ort: 'Basel', datum: heute(), adresse: '', schrift: 'hand', groesse: 'm', format: 'quer', dither: 'atk', bright: 15, kontrast: 0 };
+try { const alt = JSON.parse(localStorage.getItem('bon.postkarte')); if (alt) s = { ...s, ...alt, datum: heute() }; } catch {}   // Stempel immer mit heutigem Datum
+const merken = () => { try { localStorage.setItem('bon.postkarte', JSON.stringify(s)); } catch {} };
+
+for (const id of ['aufschrift', 'text', 'ort', 'datum', 'adresse']) {
+  $(id).value = s[id];
+  $(id).addEventListener('input', () => { s[id] = $(id).value; merken(); spaeter(); if ($('msg').classList.contains('err')) msg(''); });
+}
+for (const id of ['schrift', 'groesse', 'format', 'dither']) {
+  const box = $(id), mark = () => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === s[id])));
+  box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; s[id] = b.dataset.v; merken(); mark(); spaeter(0); });
+  mark();
+}
+const REGLER = { bright: v => (v > 0 ? '+' : '') + v, kontrast: v => (v > 0 ? '+' : '') + v + ' %' };
+for (const [k, f] of Object.entries(REGLER)) {
+  const zeig = () => { $(k).value = s[k]; $(k + 'Wert').textContent = f(s[k]); };
+  $(k).addEventListener('input', e => { s[k] = +e.target.value; merken(); zeig(); spaeter(60); });
+  zeig();
+}
+
+// ---------------------------------------------------------------- Bild
+let bild = null, klein = null, kleinKey = '';
+async function laden(file){
+  if (!file || !file.type.startsWith('image/')) return;
+  try {
+    const neu = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    bildWeg(); bild = neu;
+    $('dropTitle').textContent = 'Anderes Foto wählen';
+    $('dropHint').textContent = file.name || 'eingefügtes Bild';
+    $('bildeinst').hidden = false; msg('');
+    spaeter(0);
+  } catch { msg('Dieses Bild lässt sich nicht öffnen.', 'err'); }
+}
+function bildWeg(){
+  bild?.close(); klein?.close(); bild = klein = null; kleinKey = '';
+  $('dropTitle').textContent = 'Foto wählen'; $('dropHint').textContent = 'tippen, hierher ziehen oder einfügen';
+  $('bildeinst').hidden = true; $('file').value = '';
+}
+// Ausschnitt in der Mitte, hochwertig auf Druckbreite verkleinert
+async function bildAusschnitt(){
+  const verh = { quer: 2 / 3, hoch: 5 / 4 }[s.format] ?? Math.min(1.6, bild.height / bild.width);
+  const H = Math.round(BREITE * verh), key = s.format + H;
+  if (key !== kleinKey) {
+    let sw = bild.width, sh = Math.round(sw * verh);
+    if (sh > bild.height) { sh = bild.height; sw = Math.round(sh / verh); }
+    klein?.close();
+    klein = await createImageBitmap(bild, (bild.width - sw) >> 1, (bild.height - sh) >> 1, sw, sh, { resizeWidth: BREITE, resizeHeight: H, resizeQuality: 'high' });
+    kleinKey = key;
+  }
+  return klein;
+}
+
+// Foto -> 1-Bit, wie in bon/bild: Kontrast spreizen, schärfen, Fehler verteilen
+function rastern(g, y0, W, H){
+  const img = g.getImageData(0, y0, W, H), px = img.data, N = W * H;
+  let lum = new Float32Array(N);
+  for (let i = 0, j = 0; j < N; i += 4, j++) lum[j] = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+  if (s.dither !== 'dots') lum = levels(lum);
+  lum = sharpen(lum, W, H, 0.7);
+  const k = 1 + s.kontrast / 100, b = s.bright;
+  for (let j = 0; j < N; j++) lum[j] = (Math.min(255, Math.max(0, lum[j])) - 128) * k + 128 + b;
+  const KERNEL = {
+    atk: [[1, 0, 1/8], [2, 0, 1/8], [-1, 1, 1/8], [0, 1, 1/8], [1, 1, 1/8], [0, 2, 1/8]],
+    stucki: [[1, 0, 8], [2, 0, 4], [-2, 1, 2], [-1, 1, 4], [0, 1, 8], [1, 1, 4], [2, 1, 2], [-2, 2, 1], [-1, 2, 2], [0, 2, 4], [1, 2, 2], [2, 2, 1]].map(([x, y, f]) => [x, y, f / 42]),
+  }[s.dither] || [];
+  const ZELLE = 6, WINKEL = Math.PI / 4;
+  const schwelle = s.dither === 'dots' ? (x, y) => {
+    const u = (x * Math.cos(WINKEL) + y * Math.sin(WINKEL)) / ZELLE, v = (y * Math.cos(WINKEL) - x * Math.sin(WINKEL)) / ZELLE;
+    return (Math.cos(2 * Math.PI * u) + Math.cos(2 * Math.PI * v) + 2) / 4 * 255;
+  } : () => 128;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const j = y * W + x, old = lum[j], schwarz = old < schwelle(x, y), err = old - (schwarz ? 0 : 255);
+    px[j * 4] = px[j * 4 + 1] = px[j * 4 + 2] = schwarz ? 0 : 255; px[j * 4 + 3] = 255;
+    for (const [dx, dy, f] of KERNEL) { const xx = x + dx, yy = y + dy; if (xx >= 0 && xx < W && yy < H) lum[yy * W + xx] += err * f; }
+  }
+  g.putImageData(img, 0, y0);
+}
+function levels(lum){
+  const hist = new Uint32Array(256);
+  for (const v of lum) hist[Math.max(0, Math.min(255, v | 0))]++;
+  const cut = lum.length * 0.005; let lo = 0, hi = 255, n = 0;
+  while (lo < 255 && (n += hist[lo]) < cut) lo++;
+  n = 0; while (hi > 0 && (n += hist[hi]) < cut) hi--;
+  if (hi - lo < 32) return lum;
+  const k = 255 / (hi - lo);
+  return lum.map(v => (v - lo) * k);
+}
+function sharpen(lum, W, H, amount){
+  const out = new Float32Array(lum.length);
+  for (let y = 0; y < H; y++) {
+    const y0 = Math.max(0, y - 1), y1 = Math.min(H - 1, y + 1);
+    for (let x = 0; x < W; x++) {
+      const x0 = Math.max(0, x - 1), x1 = Math.min(W - 1, x + 1);
+      let sum = 0;
+      for (const yy of [y0, y, y1]) { const r = yy * W; sum += lum[r + x0] + lum[r + x] + lum[r + x1]; }
+      const j = y * W + x; out[j] = lum[j] + amount * (lum[j] - sum / 9);
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- Setzen
+function umbrechen(g, text, f, breite){
+  g.font = f;
+  const zeilen = [];
+  for (const absatz of String(text).split('\n')) {
+    let z = '';
+    const woerter = absatz.split(/\s+/).filter(Boolean);
+    if (!woerter.length) { zeilen.push(''); continue; }   // Leerzeile bleibt
+    for (let w of woerter) {
+      const probe = z ? z + ' ' + w : w;
+      if (g.measureText(probe).width <= breite) { z = probe; continue; }
+      if (z) zeilen.push(z);
+      while (g.measureText(w).width > breite) {
+        let n = w.length; while (n > 1 && g.measureText(w.slice(0, n)).width > breite) n--;
+        zeilen.push(w.slice(0, n)); w = w.slice(n);
+      }
+      z = w;
+    }
+    zeilen.push(z);
+  }
+  return zeilen.map(t => ({ t, w: g.measureText(t).width }));
+}
+function gesperrt(g, t, f, sp){
+  g.font = f; const zeichen = [...t];
+  const w = zeichen.reduce((a, c) => a + g.measureText(c).width, 0) + sp * (zeichen.length - 1);
+  return { w, zeichnen: (g, x, y) => { g.font = f; for (const c of zeichen) { g.fillText(c, x, y); x += g.measureText(c).width + sp; } } };
+}
+// Text auf einem Kreisbogen, Mitte oben (unten = false) oder unten
+function bogen(g, t, f, r, oben, sp){
+  g.font = f; const zeichen = [...t];
+  const breiten = zeichen.map(c => g.measureText(c).width), ganz = breiten.reduce((a, b) => a + b, 0) + sp * (zeichen.length - 1);
+  let a = -ganz / 2 / r;
+  zeichen.forEach((c, i) => {
+    const mitte = a + breiten[i] / 2 / r;
+    g.save(); g.rotate(oben ? mitte : -mitte); g.translate(0, oben ? -r : r);
+    g.fillText(c, -breiten[i] / 2, oben ? 0 : g.measureText('X').actualBoundingBoxAscent); g.restore();
+    a += (breiten[i] + sp) / r;
+  });
+}
+
+function datumKurz(d){ const m = /^\d{2}(\d{2})-(\d{2})-(\d{2})$/.exec(d || ''); return m ? `${m[3]}.${m[2]}.${m[1]}` : ''; }
+
+// Briefmarke mit gezacktem Rand: schwarzes Band, weisse Kreise stanzen die Zähne aus
+function marke(g, x, y, w, h){
+  g.fillRect(x, y, w, h);
+  g.fillStyle = '#fff';
+  const r = 5, schritt = 14;
+  const nx = Math.round(w / schritt), ny = Math.round(h / schritt);
+  for (let i = 0; i <= nx; i++) for (const yy of [y, y + h]) { g.beginPath(); g.arc(x + i * w / nx, yy, r, 0, 7); g.fill(); }
+  for (let i = 0; i <= ny; i++) for (const xx of [x, x + w]) { g.beginPath(); g.arc(xx, y + i * h / ny, r, 0, 7); g.fill(); }
+  g.fillRect(x + 9, y + 9, w - 18, h - 18);
+  g.fillStyle = '#000';
+  // Innen: Rahmen, Wert, Sonne über Bergen, Schrift
+  const ix = x + 15, iy = y + 15, iw = w - 30, ih = h - 30;
+  g.lineWidth = 2; g.strokeRect(ix, iy, iw, ih);
+  g.font = F.sans(22); g.fillText('120', ix + 8, iy + 26);
+  const sx = ix + iw - 26, sy = iy + 30;
+  g.beginPath(); g.arc(sx, sy, 10, 0, 7); g.fill();
+  g.lineWidth = 3;
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; g.beginPath(); g.moveTo(sx + Math.cos(a) * 14, sy + Math.sin(a) * 14); g.lineTo(sx + Math.cos(a) * 19, sy + Math.sin(a) * 19); g.stroke(); }
+  const fuss = iy + ih - 30;
+  g.beginPath(); g.moveTo(ix, fuss); g.lineTo(ix + iw * .32, iy + ih * .42); g.lineTo(ix + iw * .5, iy + ih * .58); g.lineTo(ix + iw * .7, iy + ih * .36); g.lineTo(ix + iw, fuss); g.closePath(); g.fill();
+  g.fillStyle = '#fff';   // Schnee
+  g.beginPath(); g.moveTo(ix + iw * .32, iy + ih * .42); g.lineTo(ix + iw * .25, iy + ih * .52); g.lineTo(ix + iw * .3, iy + ih * .5); g.lineTo(ix + iw * .35, iy + ih * .53); g.lineTo(ix + iw * .39, iy + ih * .5); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(ix + iw * .7, iy + ih * .36); g.lineTo(ix + iw * .63, iy + ih * .45); g.lineTo(ix + iw * .68, iy + ih * .43); g.lineTo(ix + iw * .72, iy + ih * .47); g.lineTo(ix + iw * .78, iy + ih * .44); g.closePath(); g.fill();
+  g.fillStyle = '#000';
+  const t = gesperrt(g, 'BONPOST', F.sans(13), 3); t.zeichnen(g, ix + (iw - t.w) / 2, iy + ih - 9);
+}
+
+// Poststempel: Doppelkreis mit Ort oben, Datum in der Mitte, Wellenlinien nach links
+function stempel(g, cx, cy, ort, datum){
+  const R = 64;
+  g.save(); g.translate(cx, cy); g.rotate(-0.16);
+  g.lineWidth = 3;
+  for (let k = 0; k < 5; k++) {   // Wellen zuerst, der Kreis deckt ihr Ende ab
+    const y = (k - 2) * 15; g.beginPath();
+    for (let x = -R - 12; x >= -R - 236; x -= 2) { const yy = y + 5 * Math.sin((x + k * 6) / 9); x === -R - 12 ? g.moveTo(x, yy) : g.lineTo(x, yy); }
+    g.stroke();
+  }
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, R + 6, 0, 7); g.fill(); g.fillStyle = '#000';
+  g.lineWidth = 4; g.beginPath(); g.arc(0, 0, R, 0, 7); g.stroke();
+  g.lineWidth = 2; g.beginPath(); g.arc(0, 0, R - 28, 0, 7); g.stroke();
+  let px = 17; g.font = F.sans(px);
+  const t = ort.toUpperCase();
+  while (px > 10 && g.measureText(t).width + t.length * 2 > Math.PI * (R - 23) * 1.1) g.font = F.sans(--px);
+  bogen(g, t, F.sans(px), R - 23, true, 2);
+  bogen(g, '★ ★ ★', F.sans(12), R - 21, false, 3);
+  g.fillStyle = '#fff'; g.fillRect(-R + 20, -13, 2 * R - 40, 26); g.fillStyle = '#000';
+  g.font = F.sans(19); const w = g.measureText(datum).width; g.fillText(datum, -w / 2, 7);
+  g.restore();
+}
+
+function setzen(g, bildH){
+  const ops = []; let y = 0;
+  const hand = HAND[s.schrift] || HAND.hand, px = hand.px[s.groesse] || hand.px.m, f = hand.f(px), zh = Math.round(px * hand.zh);
+  if (bildH) { const yy = y; ops.push(async g => { g.drawImage(klein, 0, yy); rastern(g, yy, BREITE, bildH); }); y += bildH + 26; }
+  else y += 30;
+  const auf = s.aufschrift.trim();
+  if (auf) {
+    for (const z of umbrechen(g, auf, F.titel(48), BREITE - 2 * RAND)) { const yy = y + 46; ops.push(g => { g.font = F.titel(48); g.fillText(z.t, MITTE - z.w / 2, yy); }); y += 58; }
+    y += 6; const yy = y; ops.push(g => { g.fillRect(MITTE - 70, yy, 140, 3); }); y += 26;
+  }
+  const text = s.text.replace(/\r\n?/g, '\n').replace(/^\n+|\s+$/g, '').replace(/\n{3,}/g, '\n\n');
+  if (text) {
+    for (const z of umbrechen(g, text, f, BREITE - 2 * RAND)) {
+      if (!z.t) { y += Math.round(zh * 0.5); continue; }
+      const yy = y + Math.round(px * 0.92); ops.push(g => { g.font = f; g.fillText(z.t, RAND, yy); }); y += zh;
+    }
+    y += 22;
+  }
+  // Rückseite: Trennlinie, POSTKARTE, Marke, Stempel, Adresslinien
+  const top = y; ops.push(g => g.fillRect(RAND - 12, top, BREITE - 2 * RAND + 24, 2));
+  const mw = 148, mh = 180, mx = BREITE - RAND - mw + 4, my = top + 22;
+  ops.push(g => {
+    const t1 = gesperrt(g, 'POSTKARTE', F.sans(20), 5); t1.zeichnen(g, RAND, top + 46);
+    const t2 = gesperrt(g, 'CARTE POSTALE · CARTOLINA', F.sans(11), 2); t2.zeichnen(g, RAND, top + 68);
+    marke(g, mx, my, mw, mh);
+    stempel(g, mx + 4, my + mh - 10, s.ort.trim() || 'Basel', datumKurz(s.datum) || datumKurz(heute()));
+  });
+  y = my + mh + 72;
+  const zeilen = s.adresse.split('\n').map(z => z.trim()).filter(Boolean).slice(0, 6);
+  const n = Math.max(3, zeilen.length), af = hand.f(Math.min(px, hand.px.m)), ah = 62;
+  for (let i = 0; i < n; i++) {
+    const yy = y + ah, t = zeilen[i] || '';
+    ops.push(g => {
+      g.fillRect(RAND, yy, BREITE - 2 * RAND, 2);
+      if (t) { let gr = Math.min(px, hand.px.m); g.font = hand.f(gr); while (gr > 16 && g.measureText(t).width > BREITE - 2 * RAND - 16) g.font = hand.f(--gr); g.fillText(t, RAND + 8, yy - 10); }
+    });
+    y += ah;
+  }
+  const H = Math.ceil((y + 40) / 36) * 36;   // Vielfaches von 36: auf dem Mac ganze CSS-Pixel und ganze Druckpunkte
+  return { H, ops };
+}
+
+// ---------------------------------------------------------------- Zeichnen und rastern
+const leinwand = $('bon');
+let raster = null;
+async function zeichnen(){
+  const hand = HAND[s.schrift] || HAND.hand;
+  const alles = [s.aufschrift, s.text, s.adresse, s.ort].join(' ') + 'POSTKARTE CARTOLINA 0123456789★';
+  await Promise.all([hand.f(20), F.titel(20), F.sans(20)].map(f => document.fonts.load(f, alles).catch(() => {})));
+  const bildH = bild ? (await bildAusschnitt()).height : 0;
+  const g = leinwand.getContext('2d', { willReadFrequently: true });
+  const { ops, H } = setzen(g, bildH);
+  if (H > MAX_H) { msg(`Zu lang: etwa ${(H / 80).toFixed(0)} cm.`, 'err'); raster = null; return; }
+  leinwand.width = BREITE; leinwand.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.fillStyle = g.strokeStyle = '#000'; g.textBaseline = 'alphabetic';
+  for (const o of ops) { g.save(); await o(g); g.restore(); }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), p = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    p[i] = p[i + 1] = p[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  raster = { W: BREITE, H, bits };
+  $('mass').textContent = `Postkarte etwa ${(H / 80 + 2).toFixed(0)} cm lang`;   // + etwa 2 cm Rand oben wegen dem Messer
+}
+let warte = null, laeuft = Promise.resolve();
+function spaeter(ms = 150){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, ms); }
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  // Feste Höhe, denn der Mac misst den Bon, bevor das Bild geladen ist. In CSS-Pixeln statt mm:
+  // 272 px × Faktor 2,117647 = genau 576 Punkte. 72 mm wären 272,13 px, dann verdoppelt Chrome einzelne Zeilen.
+  // Die Höhe ist ein Vielfaches von 36 Punkten, also eine ganze Zahl CSS-Pixel (36 Punkte = 17 px).
+  const h = raster.H * 272 / raster.W;
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${h}px;image-rendering:pixelated">`;
+}
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
+$('drucken').addEventListener('click', async () => {
+  if (!s.text.trim() && !s.aufschrift.trim() && !bild) { msg('Gruss fehlt.', 'err'); $('text').focus(); return; }
+  $('drucken').disabled = true; msg('Sende …');
+  try {
+    clearTimeout(warte);
+    await (laeuft = laeuft.then(zeichnen, zeichnen));   // sicher den neusten Stand drucken
+    if (!raster) throw new Error('nichts zu drucken');
+    const inhalt = await bonHtml(raster);
+    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, inhalt, titel: 'Postkarte', quelle: 'website-postkarte' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+$('entfernen').addEventListener('click', () => { bildWeg(); spaeter(0); });
+$('file').addEventListener('change', e => laden(e.target.files[0]));
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
+drop.addEventListener('drop', e => { e.preventDefault(); laden(e.dataTransfer.files[0]); });
+window.addEventListener('paste', e => { const f = [...e.clipboardData.items].find(i => i.kind === 'file'); if (f) laden(f.getAsFile()); });
+
+zeichnen();
+</script>
+</body>
+</html>
