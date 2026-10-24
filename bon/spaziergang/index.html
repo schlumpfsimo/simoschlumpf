@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · SPAZIERGANG</title>
+<meta name="description" content="Ein gewürfelter Spaziergang auf echten Wegen aus OpenStreetMap, mit Karte und Wegbeschreibung auf dem Bon.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans (SIL Open Font License), dieselben Dateien wie bon/text */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Stil wie Turbo und bon/text: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+/* Am Handy: Start und Dauer, gleich darunter Würfeln und Drucken, dann der Bon */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "knoepfe" "vorschau";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input{font-family:var(--mono);font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:10px 8px;width:100%;min-width:0}
+input:focus{outline:2px solid #000;outline-offset:-1px}
+.zeile{display:flex;gap:6px;align-items:stretch}
+.zeile input{flex:1}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 2px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.02em;font-size:.8rem;text-transform:none;min-width:0}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+.seg button:hover{background:#000;color:#fff}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button:disabled:hover{background:#000;color:#fff}
+button.ghost{background:#fff;color:#000}
+button.ghost:hover{background:#000;color:#fff}
+button.ghost:disabled:hover{background:#fff;color:#000}
+.zeile button{width:auto;flex:none;margin:0;padding:8px 10px;font-size:.72rem;letter-spacing:.04em}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+details{border:1px solid #000;padding:6px 10px;margin-top:12px;font-size:.84rem}
+summary{cursor:pointer;font-weight:700;text-transform:uppercase;font-size:.8rem;letter-spacing:.04em}
+details p{margin:8px 0}
+/* Vorschau: der Bon genau so, wie er aus dem Drucker kommt (schon schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,360px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Spaziergang · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <label for="start">Start</label>
+    <div class="zeile">
+      <input id="start" autocomplete="off" enterkeyhint="go" placeholder="Adresse oder Ort">
+      <button type="button" class="ghost" id="hier">Mein Standort</button>
+    </div>
+    <p class="hint" id="startHint">Adresse, Platz oder Haltestelle. Leer lassen für Basel, Marktplatz.</p>
+    <span class="label" id="dauerLabel">Ungefähre Dauer</span>
+    <div class="seg" id="dauer" role="group" aria-labelledby="dauerLabel">
+      <button type="button" data-v="30">30 Min</button><button type="button" data-v="45">45</button><button type="button" data-v="60">60</button><button type="button" data-v="90">90</button><button type="button" data-v="120">120</button>
+    </div>
+    <span class="label" id="formLabel">Art</span>
+    <div class="seg" id="form" role="group" aria-labelledby="formLabel">
+      <button type="button" data-v="rund">Rundtour</button><button type="button" data-v="strecke">Strecke</button>
+    </div>
+  </div>
+  <div class="knoepfe">
+    <button id="wuerfeln">Würfeln</button>
+    <button class="ghost" id="drucken" disabled>Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <details>
+      <summary>Wie es geht</summary>
+      <p>Die App holt alle Wege, Strassen, Gewässer und sehenswerten Orte rund um den Start aus OpenStreetMap. Dann läuft sie im Kopf viele zufällige Spaziergänge ab, nimmt lieber Fusswege, Gassen und Wege am Wasser als grosse Strassen und meidet Wege, die sie schon gegangen ist. Bei der Rundtour geht es am Schluss auf dem kürzesten neuen Weg zurück. Der beste Versuch kommt auf den Bon.</p>
+      <p>Gerechnet wird mit 4,5 km pro Stunde, ohne Pausen. Nochmals würfeln gibt einen anderen Weg, ohne die Daten neu zu holen.</p>
+      <p>Die Route ist automatisch berechnet. Unterwegs auf Verkehr, Baustellen und gesperrte Wege achten.</p>
+      <p>Daten: © OpenStreetMap-Mitwirkende (ODbL), über die Overpass-API. Adressen sucht Nominatim, nur beim Würfeln und nur, wenn sich der Start geändert hat.</p>
+    </details>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="papier"><canvas id="bon" hidden></canvas><p class="leer" id="leer">Hier erscheint der Spaziergang.</p></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_H = 28000;             // grössere Leinwände schafft Safari am iPhone nicht
+const TEMPO = 75;                // Meter pro Minute (4,5 km/h)
+const BASEL = { lat: 47.55814, lon: 7.58785, name: 'Basel, Marktplatz' };
+// Overpass: zuerst der Hauptserver, dann Spiegel. Wer zu lange braucht, wird übersprungen.
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+const OVERPASS_WARTEN = 25000;   // danach der nächste Server; der letzte bekommt 60 s
+const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.spaziergang.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.spaziergang.' + k, v); } catch {} }
+};
+const komma = (x, n = 1) => x.toFixed(n).replace('.', ',');
+const meter = m => m < 1000 ? `${Math.max(10, Math.round(m / (m < 200 ? 10 : 50)) * (m < 200 ? 10 : 50))} m` : `${komma(m / 1000)} km`;
+const schlaf = ms => new Promise(ok => setTimeout(ok, ms));
+
+// ---------------------------------------------------------------- Einstellungen
+const einst = {
+  dauer: +store.get('dauer', 60) || 60,
+  form: store.get('form', 'rund') === 'strecke' ? 'strecke' : 'rund',
+};
+let standort = null;   // { lat, lon } vom Gerät, solange das Feld «Mein Standort» zeigt
+$('start').value = store.get('start', '');
+
+function seg(id, key){
+  const box = $(id);
+  const mark = () => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(einst[key]))));
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    einst[key] = key === 'dauer' ? +b.dataset.v : b.dataset.v; store.set(key, einst[key]); mark();
+  });
+  mark();
+}
+seg('dauer', 'dauer'); seg('form', 'form');
+
+$('start').addEventListener('input', () => { standort = null; store.set('start', $('start').value.trim()); });
+$('start').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('wuerfeln').click(); } });
+$('hier').addEventListener('click', () => {
+  if (!navigator.geolocation) { msg('Dieses Gerät gibt keinen Standort heraus.', 'err'); return; }
+  msg('Suche deinen Standort …');
+  navigator.geolocation.getCurrentPosition(p => {
+    standort = { lat: p.coords.latitude, lon: p.coords.longitude, genau: p.coords.accuracy };
+    $('start').value = 'Mein Standort';
+    $('startHint').textContent = `Standort gefunden, auf etwa ${Math.max(5, Math.round(p.coords.accuracy / 5) * 5)} m genau.`;
+    msg('');
+    $('wuerfeln').click();
+  }, e => {
+    msg(e.code === 1 ? 'Standort nicht erlaubt. Bitte in den Einstellungen freigeben oder eine Adresse eintippen.' : 'Standort nicht gefunden.', 'err');
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+});
+
+// ---------------------------------------------------------------- Startpunkt
+async function startpunkt(){
+  const text = $('start').value.trim();
+  if (standort && text === 'Mein Standort') return { ...standort, name: 'deinem Standort', eigen: true };
+  if (!text || /^basel,?\s*marktplatz$/i.test(text) || /^basel$/i.test(text)) return { ...BASEL };
+  // Nominatim: nur eine Abfrage pro neuem Text, Ergebnis wird gemerkt
+  const gemerkt = store.get('ort.' + text.toLowerCase(), '');
+  if (gemerkt) try { return JSON.parse(gemerkt); } catch {}
+  msg('Suche die Adresse …');
+  const q = new URLSearchParams({ q: text, format: 'jsonv2', limit: 1, 'accept-language': 'de', viewbox: '7.45,47.65,7.75,47.45', bounded: 0 });
+  // Nominatim will wissen, wer fragt; der Browser darf keinen User-Agent setzen, darum mit Absender-Adresse (Referer)
+  const r = await fetch(`${NOMINATIM}?${q}`, { referrerPolicy: 'strict-origin-when-cross-origin', signal: AbortSignal.timeout?.(15000) });
+  if (!r.ok) throw new Error('Adresssuche gerade nicht erreichbar (' + r.status + ')');
+  const d = await r.json();
+  if (!d.length) throw new Error(`«${text}» nicht gefunden. Etwas genauer eintippen, z. B. «Wettsteinplatz, Basel».`);
+  const ort = { lat: +d[0].lat, lon: +d[0].lon, name: text };
+  store.set('ort.' + text.toLowerCase(), JSON.stringify(ort));
+  return ort;
+}
+
+// ---------------------------------------------------------------- Daten aus OpenStreetMap (Overpass)
+let geholt = null;   // { box, json } – die letzte Antwort, für nochmals Würfeln am selben Ort
+
+function abfrage([s, w, n, e]){
+  const hw = 'footway|path|pedestrian|living_street|residential|service|track|steps|cycleway|unclassified|road|tertiary|tertiary_link|secondary|secondary_link|primary|primary_link|bridleway|corridor';
+  // Gehsteige und Fussgängerstreifen sind in Basel oft eigene Linien: weglassen, gegangen wird auf der Strasse mit ihrem Namen
+  return `[out:json][timeout:60][bbox:${s},${w},${n},${e}];
+way[highway~"^(${hw})$"][footway!~"^(sidewalk|crossing)$"][service!~"^(parking_aisle|driveway|drive-through|emergency_access)$"][access!~"^(private|no)$"]->.wege;
+.wege out body qt;
+node(w.wege);
+out skel qt;
+(relation[natural=water];relation[waterway=riverbank];)->.seen;
+(way(r.seen)(${s},${w},${n},${e});way[natural=water];way[waterway=riverbank];);
+out geom qt;
+way[waterway~"^(river|canal|stream)$"];
+out geom qt;
+(way[leisure~"^(park|garden)$"];way[landuse~"^(grass|forest|meadow|recreation_ground|cemetery|village_green)$"];way[natural=wood];);
+out geom qt;
+(
+  node[amenity~"^(fountain|drinking_water|bench|cafe|ice_cream)$"];
+  nwr[tourism~"^(artwork|viewpoint|attraction|museum)$"];
+  nwr[historic];
+  nwr[amenity=place_of_worship][name];
+  node[natural=tree][name];
+  way[leisure=park][name];
+  node[railway=tram_stop][name];
+  node[highway=bus_stop][name];
+);
+out center qt;`;
+}
+
+const drin = (a, b) => a[0] >= b[0] && a[1] >= b[1] && a[2] <= b[2] && a[3] <= b[3];
+
+async function netzHolen(box){
+  if (geholt && drin(box, geholt.box)) return geholt.json;
+  const body = 'data=' + encodeURIComponent(abfrage(box));
+  let fehler = null;
+  for (const [i, url] of OVERPASS.entries()) {
+    if (i) msg(`Kartenserver ${i} antwortet nicht, probiere Server ${i + 1} …`);
+    try {
+      // Formular-Daten: einfache Anfrage ohne CORS-Vorabfrage
+      const r = await fetch(url, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, signal: AbortSignal.timeout?.(i === OVERPASS.length - 1 ? 60000 : OVERPASS_WARTEN) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const json = await r.json();
+      if (!json.elements) throw new Error('leere Antwort');
+      if (json.remark && /runtime error|timed out|out of memory/i.test(json.remark) && json.elements.length < 50) throw new Error(json.remark);
+      geholt = { box, json };
+      return json;
+    } catch (e) { fehler = e; console.warn(url, e); }
+  }
+  throw new Error('Kein Kartenserver erreichbar (' + (fehler?.name === 'TimeoutError' ? 'zu langsam' : fehler?.message) + '). Bitte später nochmals.');
+}
+
+// ---------------------------------------------------------------- Wegnetz bauen
+const NICHT_BEGEHBAR = /^(motorway|motorway_link|trunk|trunk_link|construction|proposed|raceway|bus_guideway|platform|elevator|abandoned|razed|escape|busway|via_ferrata)$/;
+function begehbar(t){
+  if (!t.highway || NICHT_BEGEHBAR.test(t.highway)) return false;
+  if (t.foot === 'no' || t.access === 'no' && !/^(yes|designated|permissive)$/.test(t.foot || '')) return false;
+  if (/^(private|customers|delivery|agricultural|forestry)$/.test(t.access || '') && !/^(yes|designated|permissive)$/.test(t.foot || '')) return false;
+  if (t.footway === 'sidewalk' || t.footway === 'crossing') return false;
+  return true;
+}
+// Wie schön ein Weg zum Spazieren ist: 1 = Fussweg, 0,2 = Hauptstrasse
+function schoen(t){
+  let s = { footway: 1, path: 1, pedestrian: 1, living_street: .9, steps: .85, track: .9, bridleway: .85, cycleway: .65, corridor: .6,
+    residential: .65, service: .45, unclassified: .55, road: .5, tertiary: .4, tertiary_link: .4, secondary: .28, secondary_link: .28, primary: .2, primary_link: .2 }[t.highway] ?? .4;
+  if (t.highway === 'cycleway' && /^(yes|designated)$/.test(t.foot || '')) s = .8;
+  if (t.highway === 'service' && t.service) s = .35;
+  return s;
+}
+const MERKMAL = {   // Name für Wege ohne Namen, mit Geschlecht für den Satzbau
+  footway: 'Fussweg', path: 'Weg', pedestrian: 'Fussgängerzone', steps: 'Treppe', track: 'Feldweg', cycleway: 'Veloweg',
+  service: 'Zufahrt', living_street: 'Begegnungszone', residential: 'Quartierstrasse', bridleway: 'Reitweg', corridor: 'Durchgang',
+};
+const ohneName = t => t.bridge && t.bridge !== 'no' ? 'Brücke' : t.tunnel && t.tunnel !== 'no' ? 'Unterführung'
+  : t.highway === 'pedestrian' && t.area === 'yes' ? 'Platz' : MERKMAL[t.highway] || 'Strasse';
+
+// Sehenswerte Orte: [Art, Gewicht]
+function ortArt(t){
+  if (t.tourism === 'viewpoint') return ['Aussicht', 3];
+  if (t.tourism === 'artwork') return [{ sculpture: 'Skulptur', statue: 'Statue', mural: 'Wandbild', installation: 'Installation', relief: 'Relief', fountain: 'Brunnen', graffiti: 'Graffiti', bust: 'Büste', mosaic: 'Mosaik' }[t.artwork_type] || 'Kunst', 3];
+  if (t.amenity === 'fountain') return ['Brunnen', 3];
+  if (t.amenity === 'drinking_water') return [t.name ? 'Brunnen' : 'Trinkbrunnen', t.name ? 3 : 1.4];
+  if (t.historic === 'memorial') return [t.memorial === 'stolperstein' ? 'Stolperstein' : t.memorial === 'plaque' ? 'Gedenktafel' : 'Denkmal', t.name ? 2 : 1];
+  if (t.historic === 'monument') return ['Denkmal', 2.5];
+  if (t.historic === 'city_gate') return ['Stadttor', 3];
+  if (t.historic === 'boundary_stone') return ['Grenzstein', 1.5];
+  if (t.historic && t.name) return ['Geschichte', 2];
+  if (t.tourism === 'museum' && t.name) return ['Museum', 2];
+  if (t.tourism === 'attraction' && t.name) return ['Sehenswert', 2.5];
+  if (t.amenity === 'place_of_worship') return [/christian/.test(t.religion || 'christian') ? 'Kirche' : 'Gotteshaus', 2];
+  if (t.natural === 'tree') return ['Baum', 2];
+  if (t.leisure === 'park') return ['Park', 2];
+  if (t.amenity === 'cafe' && t.name) return ['Café', 1.8];
+  if (t.amenity === 'ice_cream' && t.name) return ['Glace', 1.8];
+  if (t.amenity === 'bench') return ['Bank', .5];
+  return null;
+}
+function ortDetail(t){
+  const d = [];
+  if (t.artist_name) d.push(t.artist_name);
+  if (t.start_date && /^\d{3,4}$/.test(t.start_date)) d.push(t.start_date);
+  if (t.amenity === 'drinking_water' || t.drinking_water === 'yes') d.push('Trinkwasser');
+  if (t.amenity === 'bench') d.push(t.backrest === 'no' ? 'ohne Lehne' : 'zum Ausruhen');
+  if (t.amenity === 'cafe' && t.outdoor_seating === 'yes') d.push('mit Plätzen draussen');
+  return d.join(', ');
+}
+
+function netzBauen(json, ort){
+  const lat0 = ort.lat, lon0 = ort.lon, kx = Math.cos(lat0 * Math.PI / 180) * 111320, ky = 110574;
+  const P = (lat, lon) => [(lon - lon0) * kx, (lat - lat0) * ky];
+  const knoten = new Map(), wege = [], ufer = [], fluesse = [], gruen = [], orte = [], halte = [];
+  for (const e of json.elements) {
+    const t = e.tags || {};
+    if (e.type === 'node' && e.lat != null) knoten.set(e.id, P(e.lat, e.lon));
+    const mitte = e.center ? P(e.center.lat, e.center.lon) : e.type === 'node' && e.tags ? P(e.lat, e.lon) : null;
+    if (mitte) {   // Ort aus der letzten Abfrage
+      if ((t.railway === 'tram_stop' || t.highway === 'bus_stop') && t.name) halte.push({ p: mitte, name: t.name, tram: t.railway === 'tram_stop' });
+      else { const a = ortArt(t); if (a) orte.push({ p: mitte, art: a[0], gewicht: a[1], name: t.name || '', detail: ortDetail(t), id: e.type + e.id }); }
+      continue;
+    }
+    if (e.type === 'way' && e.geometry) {
+      const pts = e.geometry.filter(Boolean).map(g => P(g.lat, g.lon));
+      if (pts.length < 2) continue;
+      const zu = e.nodes ? e.nodes[0] === e.nodes[e.nodes.length - 1] : Math.hypot(pts[0][0] - pts.at(-1)[0], pts[0][1] - pts.at(-1)[1]) < 0.5;
+      if (/^(river|canal|stream)$/.test(t.waterway || '')) { if (!t.tunnel || t.tunnel === 'no') fluesse.push({ pts, name: t.name || '', gross: t.waterway !== 'stream' }); }
+      else if (t.leisure || t.landuse || t.natural === 'wood') { if (zu) gruen.push(pts); }
+      else ufer.push({ pts, zu });
+      continue;
+    }
+    if (e.type === 'relation' && e.members) for (const m of e.members) if (m.geometry) ufer.push({ pts: m.geometry.filter(Boolean).map(g => P(g.lat, g.lon)), zu: false });
+    if (e.type === 'way' && e.nodes && begehbar(t)) wege.push(e);
+  }
+  // doppelte Wege (gleiche Id aus zwei Ausgaben) nur einmal
+  const gesehen = new Set();
+  const liste = wege.filter(w => !gesehen.has(w.id) && gesehen.add(w.id));
+
+  // Knoten zählen: Kreuzungen, Wegenden und der Start werden Ecken des Graphen
+  const zahl = new Map(), ende = new Set();
+  for (const w of liste) w.nodes.forEach((id, i) => { zahl.set(id, (zahl.get(id) || 0) + 1); if (!i || i === w.nodes.length - 1) ende.add(id); });
+  // Start: der nächste Knoten auf einem Weg
+  let startId = null, best = Infinity;
+  for (const id of zahl.keys()) { const p = knoten.get(id); if (!p) continue; const d = p[0] * p[0] + p[1] * p[1]; if (d < best) { best = d; startId = id; } }
+  if (startId == null || best > 400 * 400) throw new Error('In der Nähe des Starts gibt es keine Wege.');
+
+  const vIndex = new Map(), vx = [], vy = [];
+  const ecke = id => { let i = vIndex.get(id); if (i === undefined) { i = vx.length; vIndex.set(id, i); const p = knoten.get(id); vx.push(p[0]); vy.push(p[1]); } return i; };
+  const ea = [], eb = [], elen = [], epts = [], ewg = [], es = [], weginfo = [];
+  for (const w of liste) {
+    const ids = w.nodes.filter(id => knoten.has(id));
+    if (ids.length < 2) continue;
+    const zu = ids[0] === ids.at(-1);
+    const wi = weginfo.length;
+    weginfo.push({ name: (w.tags.name || '').trim(), label: (w.tags.name || '').trim() || ohneName(w.tags), hw: w.tags.highway, bruecke: !!w.tags.bridge && w.tags.bridge !== 'no', tunnel: !!w.tags.tunnel && w.tags.tunnel !== 'no' });
+    let von = 0;
+    for (let i = 1; i < ids.length; i++) {
+      const id = ids[i];
+      const istEcke = i === ids.length - 1 || ende.has(id) || zahl.get(id) > 1 || id === startId || (zu && i === ids.length >> 1);
+      if (!istEcke) continue;
+      const pts = [];
+      let len = 0;
+      for (let k = von; k <= i; k++) { const p = knoten.get(ids[k]); if (pts.length) len += Math.hypot(p[0] - pts[pts.length - 2], p[1] - pts[pts.length - 1]); pts.push(p[0], p[1]); }
+      const a = ecke(ids[von]), b = ecke(id);
+      if (a !== b && len > 0) { ea.push(a); eb.push(b); elen.push(len); epts.push(pts); ewg.push(wi); es.push(schoen(w.tags)); }
+      von = i;
+    }
+  }
+  const nV = vx.length, adj = Array.from({ length: nV }, () => []);
+  for (let e = 0; e < ea.length; e++) { adj[ea[e]].push(e); adj[eb[e]].push(e); }
+
+  // Zusammenhängende Teile: Start muss im grossen Netz liegen, nicht auf einem abgeschnittenen Weglein
+  const teil = new Int32Array(nV).fill(-1), groesse = [];
+  for (let s = 0; s < nV; s++) {
+    if (teil[s] >= 0) continue;
+    const k = groesse.length; let n = 0; const stapel = [s]; teil[s] = k;
+    while (stapel.length) { const u = stapel.pop(); n++; for (const e of adj[u]) { const w = ea[e] === u ? eb[e] : ea[e]; if (teil[w] < 0) { teil[w] = k; stapel.push(w); } } }
+    groesse.push(n);
+  }
+  const gross = Math.max(...groesse);
+  let start = vIndex.get(startId);
+  if (groesse[teil[start]] < gross * 0.3) {
+    let bd = Infinity;
+    for (let v = 0; v < nV; v++) if (groesse[teil[v]] === gross) { const d = vx[v] * vx[v] + vy[v] * vy[v]; if (d < bd) { bd = d; start = v; } }
+  }
+
+  // Richtungspunkte: wohin eine Kante in den ersten 30 m führt
+  const richt = epts.map(pts => [punktNach(pts, 30, false), punktNach(pts, 30, true)]);
+
+  // Am Wasser ist es schöner: Kanten nahe an Ufern bekommen einen Bonus
+  const NASS = 40, nass = new Set();
+  const zelle = (x, y, c) => Math.floor(x / c) + ',' + Math.floor(y / c);
+  for (const u of [...ufer, ...fluesse.filter(f => f.gross)]) for (const [x, y] of abtasten(u.pts, 15)) nass.add(zelle(x, y, NASS));
+  const amWasser = (x, y) => { for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) if (nass.has(zelle(x + i * NASS, y + j * NASS, NASS))) return true; return false; };
+  for (let e = 0; e < ea.length; e++) {
+    const p = epts[e], m = p.length >> 2 << 1;
+    if (amWasser(p[m], p[m + 1])) es[e] = Math.min(1.25, es[e] * 1.35);
+  }
+
+  // Raster der Kantenstücke: schnell finden, welche Orte an welcher Kante liegen
+  const RZ = 50, raster = new Map();
+  for (let e = 0; e < ea.length; e++) {
+    const p = epts[e];
+    for (let i = 0; i + 3 < p.length; i += 2) {
+      const k = zelle((p[i] + p[i + 2]) / 2, (p[i + 1] + p[i + 3]) / 2, RZ);
+      (raster.get(k) || raster.set(k, []).get(k)).push(e);
+    }
+  }
+  const epoi = new Float32Array(ea.length);
+  for (const o of orte) {
+    if (o.gewicht < 1.4) continue;
+    const nah = new Set();
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const e of raster.get(zelle(o.p[0] + i * RZ, o.p[1] + j * RZ, RZ)) || []) nah.add(e);
+    for (const e of nah) if (abstandZuLinie(o.p, epts[e]).d < 35) epoi[e] += o.gewicht;
+  }
+  return { vx, vy, adj, ea, eb, elen, epts, ewg, es, epoi, richt, weginfo, start, ufer, fluesse, gruen, orte, halte, ort, P };
+}
+
+// Punkt nach «m» Metern entlang einer Linie (vom Anfang oder vom Ende her)
+function punktNach(pts, m, vomEnde){
+  const n = pts.length >> 1, idx = k => vomEnde ? n - 1 - k : k;
+  let rest = m;
+  for (let k = 1; k < n; k++) {
+    const i0 = idx(k - 1) * 2, i1 = idx(k) * 2;
+    const d = Math.hypot(pts[i1] - pts[i0], pts[i1 + 1] - pts[i0 + 1]);
+    if (d >= rest) { const f = rest / d; return [pts[i0] + (pts[i1] - pts[i0]) * f, pts[i0 + 1] + (pts[i1 + 1] - pts[i0 + 1]) * f]; }
+    rest -= d;
+  }
+  const i = idx(n - 1) * 2; return [pts[i], pts[i + 1]];
+}
+// Punkte alle «schritt» Meter auf einer Linie aus [x,y]-Paaren
+function abtasten(pts, schritt){
+  const out = [];
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, ay] = pts[i - 1], [bx, by] = pts[i], d = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.ceil(d / schritt));
+    for (let k = 0; k < n; k++) out.push([ax + (bx - ax) * k / n, ay + (by - ay) * k / n]);
+  }
+  if (pts.length) out.push(pts.at(-1));
+  return out;
+}
+// Abstand eines Punkts zu einer Linie (flaches Array) und wie weit entlang der Linie
+function abstandZuLinie(p, pts){
+  let best = Infinity, entlang = 0, lauf = 0;
+  for (let i = 0; i + 3 < pts.length; i += 2) {
+    const ax = pts[i], ay = pts[i + 1], dx = pts[i + 2] - ax, dy = pts[i + 3] - ay, l2 = dx * dx + dy * dy, l = Math.sqrt(l2);
+    const f = l2 ? Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - ay) * dy) / l2)) : 0;
+    const d = Math.hypot(ax + dx * f - p[0], ay + dy * f - p[1]);
+    if (d < best) { best = d; entlang = lauf + l * f; }
+    lauf += l;
+  }
+  return { d: best, entlang };
+}
+
+// ---------------------------------------------------------------- Kürzeste Wege (Dijkstra)
+class Haufen {
+  constructor(){ this.k = []; this.v = []; }
+  get size(){ return this.k.length; }
+  push(k, v){
+    const K = this.k, V = this.v; let i = K.length; K.push(k); V.push(v);
+    while (i > 0) { const p = (i - 1) >> 1; if (K[p] <= k) break; K[i] = K[p]; V[i] = V[p]; i = p; }
+    K[i] = k; V[i] = v;
+  }
+  pop(){
+    const K = this.k, V = this.v, oben = [K[0], V[0]], k = K.pop(), v = V.pop(), n = K.length;
+    if (n) {
+      let i = 0;
+      for (;;) { let c = 2 * i + 1; if (c >= n) break; if (c + 1 < n && K[c + 1] < K[c]) c++; if (K[c] >= k) break; K[i] = K[c]; V[i] = V[c]; i = c; }
+      K[i] = k; V[i] = v;
+    }
+    return oben;
+  }
+}
+function dijkstra(N, von, kosten, ziel = -1){
+  const n = N.vx.length, d = new Float64Array(n).fill(Infinity), vor = new Int32Array(n).fill(-1), h = new Haufen();
+  d[von] = 0; h.push(0, von);
+  while (h.size) {
+    const [k, u] = h.pop();
+    if (k > d[u]) continue;
+    if (u === ziel) break;
+    for (const e of N.adj[u]) {
+      const w = N.ea[e] === u ? N.eb[e] : N.ea[e], nd = k + kosten(e);
+      if (nd < d[w]) { d[w] = nd; vor[w] = e; h.push(nd, w); }
+    }
+  }
+  return { d, vor };
+}
+
+// ---------------------------------------------------------------- Würfeln: viele Zufallsspaziergänge, der beste gewinnt
+function zufall(seed){
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+function versuch(N, rnd, L, rund, dStart){
+  const { vx, vy, adj, ea, eb, elen, es, epoi, richt } = N;
+  const zaehl = new Uint16Array(ea.length), besucht = new Uint8Array(vx.length), weg = [];
+  let u = N.start, vorher = -1, gelaufen = 0;
+  // Rundtour: entlang eines gedachten Kreises durch den Start, im oder gegen den Uhrzeigersinn
+  const th = rnd() * 2 * Math.PI, dreh = rnd() < 0.5 ? 1 : -1, R = L / (2 * Math.PI * 1.3);
+  const cx = vx[u] + R * Math.cos(th), cy = vy[u] + R * Math.sin(th);
+  let kurs = th;
+  besucht[u] = 1;
+  const gehe = e => { const vorw = ea[e] === u, w = vorw ? eb[e] : ea[e]; weg.push([e, vorw]); zaehl[e]++; gelaufen += elen[e]; besucht[w] = 1; vorher = e; u = w; };
+  for (let schritt = 0; schritt < 5000; schritt++) {
+    if (rund) {
+      if (schritt > 2 && gelaufen + dStart[u] >= L * 0.96) break;   // ab jetzt reicht es gerade für den Rückweg
+      if (u === N.start && gelaufen > L * 0.7) break;
+    } else if (gelaufen >= L * 0.97) break;
+    let dx, dy;
+    if (rund) {
+      const px = vx[u] - cx, py = vy[u] - cy, r = Math.hypot(px, py) || 1, k = (r - R) / R * 1.5;
+      dx = -py / r * dreh - px / r * k; dy = px / r * dreh - py / r * k;
+    } else { kurs += (rnd() - 0.5) * 0.3; dx = Math.cos(kurs); dy = Math.sin(kurs); }
+    const dn = Math.hypot(dx, dy) || 1; dx /= dn; dy /= dn;
+    const nb = adj[u], gew = new Float64Array(nb.length);
+    let summe = 0;
+    nb.forEach((e, i) => {
+      if (e === vorher && nb.length > 1) return;   // nicht umkehren, ausser in der Sackgasse
+      const vorw = ea[e] === u, w = vorw ? eb[e] : ea[e], q = richt[e][vorw ? 0 : 1];
+      const ax = q[0] - vx[u], ay = q[1] - vy[u], an = Math.hypot(ax, ay) || 1;
+      let g = es[e] * es[e] * Math.exp(2.4 * (ax * dx + ay * dy) / an);
+      if (zaehl[e]) g *= 0.03;
+      if (besucht[w]) g *= 0.3;
+      if (adj[w].length === 1 && w !== N.start) g *= 0.05;
+      g *= 1 + Math.min(epoi[e], 6) * 0.15;
+      gew[i] = g; summe += g;
+    });
+    if (!summe) break;
+    let z = rnd() * summe, i = 0;
+    for (; i < nb.length - 1; i++) { z -= gew[i]; if (z <= 0 && gew[i] > 0) break; }
+    while (!gew[i] && i > 0) i--;
+    gehe(nb[i]);
+  }
+  // Rückweg: kürzester Weg zum Start, schon gegangene Wege sind teuer
+  if (rund && u !== N.start) {
+    const { vor } = dijkstra(N, u, e => elen[e] / Math.pow(es[e], 0.8) * (zaehl[e] ? 5 : 1), N.start);
+    const zurueck = [];
+    for (let v = N.start; v !== u;) { const e = vor[v]; if (e < 0) return null; const w = ea[e] === v ? eb[e] : ea[e]; zurueck.push([e, ea[e] === w]); v = w; }
+    for (const [e, vorw] of zurueck.reverse()) { weg.push([e, vorw]); zaehl[e]++; gelaufen += elen[e]; }
+  }
+  if (!weg.length) return null;
+  // Bewertung: Länge treffen, wenig doppelt, schöne Wege, Orte unterwegs
+  let doppelt = 0, schoenheit = 0, orte = 0;
+  for (let e = 0; e < ea.length; e++) if (zaehl[e]) {
+    doppelt += (zaehl[e] - 1) * elen[e]; schoenheit += Math.min(1, es[e]) * elen[e] * zaehl[e]; orte += epoi[e];
+  }
+  const ende = weg.length ? (weg.at(-1)[1] ? eb[weg.at(-1)[0]] : ea[weg.at(-1)[0]]) : N.start;
+  let halt = 0;
+  if (!rund) for (const h of N.halte) if (Math.hypot(h.p[0] - vx[ende], h.p[1] - vy[ende]) < 250) { halt = 1; break; }
+  // Strecke: das Ziel soll nicht wieder beim Start liegen
+  const heimkehr = rund ? 0 : Math.max(0, 0.35 - Math.hypot(vx[ende] - vx[N.start], vy[ende] - vy[N.start]) / L) * 4;
+  const punkte = heimkehr + Math.abs(gelaufen - L) / L * 4 + doppelt / gelaufen * 4 - schoenheit / gelaufen * 0.8 - Math.min(orte, 25) * 0.012 - halt * 0.15;
+  return { weg, len: gelaufen, punkte, ende };
+}
+
+function routeWuerfeln(N, L, rund, seed){
+  const rnd = zufall(seed), dStart = dijkstra(N, N.start, e => N.elen[e]).d, t0 = performance.now();
+  let best = null;
+  for (let i = 0; i < 120 && (i < 15 || performance.now() - t0 < 1500); i++) {
+    const v = versuch(N, rnd, L, rund, dStart);
+    if (v && (!best || v.punkte < best.punkte)) best = v;
+  }
+  if (!best) throw new Error('Hier lässt sich kein Spaziergang würfeln.');
+  return best;
+}
+
+// ---------------------------------------------------------------- Wegbeschreibung
+// Strassennamen mit Artikel: «in die Rheingasse», «auf den Oberen Rheinweg», «ins Totengässlein»
+const ADJ = /^(Ober|Unter|Mittler|Klein|Gross|Hinter|Vorder|Neu|Alt|Lang|Hoh|Frei|Äusser|Inner|Nieder|Breit|Kurz|Schmal|Weiss|Rot|Schwarz|Grün|Mittel)(er|e|es)$/;
+function strassenArt(name){
+  const w = name.split(/\s+/), letzt = w.at(-1).toLowerCase().replace(/.*-/, '');
+  if (w.length > 1 && /^(am|an|auf|im|in|bei|beim|zum|zur|unter|ob|hinter|vor|uf|bim|über|nach)$/i.test(w[0])) return null;
+  let g = null;
+  if (/(gässlein|gässli|gässchen|ufer|tor|tal|gut|areal|quartier|viertel|bord)$/.test(letzt)) g = 'n';
+  else if (/(gasse|strasse|straße|allee|promenade|brücke|anlage|treppe|stiege|halde|matte|zeile|passage|rampe|achse|esplanade|terrasse|chaussee|vorstadt|schanze|mauer|lände|pfalz|steige|zone|fahrt|führung|halle)$/.test(letzt)) g = 'f';
+  else if (/(weg|platz|graben|steg|ring|berg|steig|durchgang|pfad|markt|hof|damm|kai|quai|park|rain|stutz|boulevard|sprung|bühl|winkel|garten|hügel|kanal|wall|rank|kreisel|gang|boden)$/.test(letzt)) g = 'm';
+  if (!g) return null;
+  const auf = /(platz|brücke|steg|treppe|stiege|promenade|ufer|weg|pfad|quai|kai|damm|anlage|lände|pfalz|esplanade|terrasse|markt|rampe|wall|boulevard|bord)$/.test(letzt);
+  return { g, auf };
+}
+function mitArtikel(name, fall){   // fall: 'akk' (wohin) oder 'dat' (wo)
+  const a = strassenArt(name);
+  if (!a) return `auf «${name}»`;
+  const w = name.split(/\s+/), m = w.length > 1 && w[0].match(ADJ);
+  if (m) w[0] = m[1] + (fall === 'dat' || a.g === 'm' ? 'en' : 'e');
+  const art = { m: { akk: 'den', dat: 'dem' }, f: { akk: 'die', dat: 'der' }, n: { akk: 'das', dat: 'dem' } }[a.g][fall];
+  let vorn = (a.auf ? 'auf ' : 'in ') + art;
+  if (vorn === 'in das') vorn = 'ins'; else if (vorn === 'in dem') vorn = 'im';
+  return `${vorn} ${w.join(' ')}`;
+}
+const RICHTUNG = ['Norden', 'Nordosten', 'Osten', 'Südosten', 'Süden', 'Südwesten', 'Westen', 'Nordwesten'];
+const himmel = (dx, dy) => RICHTUNG[Math.round(((Math.atan2(dx, dy) * 180 / Math.PI) + 360) % 360 / 45) % 8];
+
+function abbiegen(grad){   // positiv = links
+  const a = Math.abs(grad), s = grad > 0 ? 'links' : 'rechts';
+  if (a < 22) return ['gerade', 'geradeaus'];
+  if (a < 55) return [grad > 0 ? 'leicht-l' : 'leicht-r', 'leicht ' + s];
+  if (a < 140) return [grad > 0 ? 'links' : 'rechts', s];
+  return [grad > 0 ? 'scharf-l' : 'scharf-r', 'scharf ' + s];
+}
+
+function beschreibung(N, tour, rund){
+  // Kanten in Fahrtrichtung, gruppiert nach Strassenname
+  const teile = [];
+  for (const [e, vorw] of tour.weg) {
+    const p = N.epts[e], pts = vorw ? p : umdrehen(p), info = N.weginfo[N.ewg[e]];
+    const letzt = teile.at(-1);
+    if (letzt && letzt.label === info.label) { letzt.pts.push(...pts.slice(2)); letzt.len += N.elen[e]; }
+    else teile.push({ label: info.label, benannt: !!info.name, pts: pts.slice(), len: N.elen[e] });
+  }
+  // kurze namenlose Stücke (über einen Platz, ein Verbindungsweglein) dem vorherigen Teil zuschlagen
+  const glatt = [];
+  for (const t of teile) {
+    const letzt = glatt.at(-1);
+    if (letzt && (letzt.label === t.label || (!t.benannt && t.len < 25))) { letzt.pts.push(...t.pts.slice(2)); letzt.len += t.len; }
+    else glatt.push(t);
+  }
+  // nochmals gleiche Namen zusammenfassen, die erst jetzt nebeneinander liegen
+  const segs = [];
+  for (const t of glatt) { const l = segs.at(-1); if (l && l.label === t.label) { l.pts.push(...t.pts.slice(2)); l.len += t.len; } else segs.push(t); }
+
+  const schritte = [], erst = segs[0];
+  const q = punktNach(erst.pts, 30, false);
+  schritte.push({ icon: 'start', text: [['Los geht es ', 0], ['Richtung ' + himmel(q[0] - erst.pts[0], q[1] - erst.pts[1]), 1], [' ' + mitArtikel(erst.label, 'dat') + '.', 0]], km: 0 });
+  let km = erst.len;
+  for (let i = 1; i < segs.length; i++) {
+    const a = segs[i - 1], b = segs[i];
+    const e1 = punktNach(a.pts, 15, true), ex = a.pts.at(-2), ey = a.pts.at(-1), s1 = punktNach(b.pts, 15, false);
+    const v1 = [ex - e1[0], ey - e1[1]], v2 = [s1[0] - ex, s1[1] - ey];
+    const grad = Math.atan2(v1[0] * v2[1] - v1[1] * v2[0], v1[0] * v2[0] + v1[1] * v2[1]) * 180 / Math.PI;
+    const [icon, wort] = abbiegen(grad);
+    schritte.push({ icon, text: [['Nach ' + meter(a.len) + ' ', 0], [wort + (icon === 'gerade' ? ' weiter' : ''), 1], [' ' + mitArtikel(b.label, 'akk') + '.', 0]], km });
+    km += b.len;
+  }
+  const letzt = segs.at(-1);
+  schritte.push({ icon: 'ziel', text: [['Nach ' + meter(letzt.len) + ' ', 0], [rund ? 'bist du zurück am Start.' : 'bist du am Ziel.', 1]], km });
+  return { schritte, segs };
+}
+const umdrehen = p => { const o = new Array(p.length); for (let i = 0; i < p.length; i += 2) { o[p.length - 2 - i] = p[i]; o[p.length - 1 - i] = p[i + 1]; } return o; };
+
+// Orte am Weg: ein paar zufällige, gut verteilt und verschieden
+function orteAmWeg(N, linie, rnd){
+  const kand = [];
+  for (const o of N.orte) {
+    const { d, entlang } = abstandZuLinie(o.p, linie);
+    const max = o.art === 'Aussicht' ? 60 : o.art === 'Park' ? 120 : 40;
+    if (d <= max) kand.push({ ...o, entlang, d });
+  }
+  // gleiche Orte (Knoten und Fläche, oder doppelt erfasst) nur einmal
+  const gewaehlt = [], proArt = {};
+  const gezogen = kand.map(o => ({ o, z: Math.pow(rnd(), 1 / (o.gewicht * (o.name ? 1.6 : 1))) })).sort((a, b) => b.z - a.z);
+  for (const { o } of gezogen) {
+    if (gewaehlt.length >= 7) break;
+    if ((proArt[o.art] || 0) >= (o.art === 'Bank' ? 1 : 2)) continue;
+    if (gewaehlt.some(g => Math.abs(g.entlang - o.entlang) < 120 || (o.name && g.name === o.name))) continue;
+    if (o.art === 'Bank' && gewaehlt.length >= 4) continue;
+    gewaehlt.push(o); proArt[o.art] = (proArt[o.art] || 0) + 1;
+  }
+  return gewaehlt.sort((a, b) => a.entlang - b.entlang);
+}
+
+// ---------------------------------------------------------------- Karte zeichnen (selbst, aus den OSM-Linien)
+const F = (px, w = 500) => `${w} ${px}px "Plex", system-ui, sans-serif`;
+
+function karte(N, linie, orte, rund){
+  // Ausschnitt: Route und Orte mit Rand, mindestens 600 m
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const nimm = (x, y) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); };
+  for (let i = 0; i < linie.length; i += 2) nimm(linie[i], linie[i + 1]);
+  for (const o of orte) nimm(o.p[0], o.p[1]);
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  let bw = Math.max(600, (x1 - x0) * 1.14 + 80), bh = Math.max(600, (y1 - y0) * 1.14 + 80);
+  const W = INNEN, H = Math.round(Math.max(380, Math.min(760, W * bh / bw)));
+  const s = Math.min(W / bw, H / bh);
+  bw = W / s; bh = H / s;
+  const X = x => (x - mx + bw / 2) * s, Y = y => (my + bh / 2 - y) * s;
+
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const pfad = (gg, pts, flach) => {
+    gg.beginPath();
+    if (flach) for (let i = 0; i < pts.length; i += 2) i ? gg.lineTo(X(pts[i]), Y(pts[i + 1])) : gg.moveTo(X(pts[i]), Y(pts[i + 1]));
+    else pts.forEach(([x, y], i) => i ? gg.lineTo(X(x), Y(y)) : gg.moveTo(X(x), Y(y)));
+  };
+  const ausserhalb = (pts, flach) => {
+    let a = Infinity, b = Infinity, cc = -Infinity, d = -Infinity;
+    if (flach) for (let i = 0; i < pts.length; i += 2) { const x = X(pts[i]), y = Y(pts[i + 1]); a = Math.min(a, x); cc = Math.max(cc, x); b = Math.min(b, y); d = Math.max(d, y); }
+    else for (const [px, py] of pts) { const x = X(px), y = Y(py); a = Math.min(a, x); cc = Math.max(cc, x); b = Math.min(b, y); d = Math.max(d, y); }
+    return cc < -20 || a > W + 20 || d < -20 || b > H + 20;
+  };
+
+  // 1. Flächen als Masken: Wasser (Ufer als Grenzen, von der Flussmitte her gefüllt) und Grün
+  const maske = () => { const m = document.createElement('canvas'); m.width = W; m.height = H; const mg = m.getContext('2d', { willReadFrequently: true }); mg.fillStyle = '#fff'; mg.fillRect(0, 0, W, H); mg.fillStyle = mg.strokeStyle = '#000'; return [m, mg]; };
+  const [, wg] = maske();
+  wg.lineWidth = 2;
+  for (const u of N.ufer) { if (ausserhalb(u.pts)) continue; pfad(wg, u.pts); if (u.zu) wg.fill(); wg.stroke(); }
+  const wd = wg.getImageData(0, 0, W, H).data, wasser = new Uint8Array(W * H);
+  for (let j = 0; j < W * H; j++) wasser[j] = wd[j * 4] < 128 ? 1 : 0;
+  const rand = wasser.slice();   // Uferlinien selbst
+  for (const f of N.fluesse) {
+    if (!f.gross || ausserhalb(f.pts)) continue;
+    for (const [px, py] of abtasten(f.pts, 4 / s)) {
+      const x = Math.round(X(px)), y = Math.round(Y(py));
+      if (x < 0 || y < 0 || x >= W || y >= H || wasser[y * W + x]) continue;
+      // Füllen bis an die Ufer; läuft es über die halbe Karte, fehlt das Ufer: rückgängig, nur als Linie zeichnen
+      const neu = [], st = [y * W + x]; wasser[y * W + x] = 2;
+      while (st.length) {
+        const j = st.pop(); neu.push(j);
+        const xx = j % W;
+        if (xx > 0 && !wasser[j - 1]) { wasser[j - 1] = 2; st.push(j - 1); }
+        if (xx < W - 1 && !wasser[j + 1]) { wasser[j + 1] = 2; st.push(j + 1); }
+        if (j >= W && !wasser[j - W]) { wasser[j - W] = 2; st.push(j - W); }
+        if (j < W * (H - 1) && !wasser[j + W]) { wasser[j + W] = 2; st.push(j + W); }
+      }
+      if (neu.length > W * H * 0.6) for (const j of neu) wasser[j] = 0; else for (const j of neu) wasser[j] = 1;
+    }
+  }
+  const [, gg] = maske();
+  for (const p of N.gruen) { if (ausserhalb(p)) continue; pfad(gg, p); gg.fill(); }
+  const gd = gg.getImageData(0, 0, W, H).data;
+
+  // 2. Grundbild: Wasser schraffiert, Grün gepunktet
+  const img = g.createImageData(W, H), px = img.data;
+  for (let y = 0, j = 0; y < H; y++) for (let x = 0; x < W; x++, j++) {
+    let schwarz = false;
+    if (wasser[j] && !rand[j]) schwarz = (x + y) % 6 < 2;
+    else if (gd[j * 4] < 128) schwarz = (x % 6 === 0 && y % 6 === 0) || ((x + 3) % 6 === 0 && (y + 3) % 6 === 0);
+    const v = schwarz ? 0 : 255; px[j * 4] = px[j * 4 + 1] = px[j * 4 + 2] = v; px[j * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  g.lineCap = g.lineJoin = 'round'; g.strokeStyle = '#000';
+  g.lineWidth = 1.6;
+  for (const u of N.ufer) { if (ausserhalb(u.pts)) continue; pfad(g, u.pts); g.stroke(); }
+  // Bäche und Flüsse ohne Uferfläche als Linie
+  for (const f of N.fluesse) {
+    if (ausserhalb(f.pts)) continue;
+    const pts = f.pts.filter(([x, y]) => { const xx = Math.round(X(x)), yy = Math.round(Y(y)); return !(xx >= 0 && yy >= 0 && xx < W && yy < H && wasser[yy * W + xx]); });
+    if (pts.length < f.pts.length * 0.7) continue;
+    g.lineWidth = f.gross ? 4 : 2.5; pfad(g, f.pts); g.stroke();
+  }
+
+  // 3. Strassen und Wege: dünn, Hauptstrassen etwas dicker, Brücken mit Rand
+  const breite = hw => /^(primary|secondary|tertiary)/.test(hw) ? 3.6 : /^(residential|unclassified|living_street|pedestrian|road|service)$/.test(hw) ? 2.2 : 1.3;
+  const kanten = [];
+  for (let e = 0; e < N.ea.length; e++) if (!ausserhalb(N.epts[e], true)) kanten.push(e);
+  for (const e of kanten) {
+    const w = N.weginfo[N.ewg[e]]; if (!w.bruecke) continue;
+    g.lineCap = 'butt'; g.strokeStyle = '#000'; g.lineWidth = breite(w.hw) + 7; pfad(g, N.epts[e], true); g.stroke();
+    g.strokeStyle = '#fff'; g.lineWidth = breite(w.hw) + 3; pfad(g, N.epts[e], true); g.stroke();
+  }
+  g.lineCap = 'round'; g.strokeStyle = '#000';
+  for (const e of kanten) {
+    const w = N.weginfo[N.ewg[e]]; if (w.tunnel) continue;
+    g.lineWidth = breite(w.hw); pfad(g, N.epts[e], true); g.stroke();
+  }
+
+  // 4. Name des Flusses
+  const fluss = N.fluesse.filter(f => f.gross && f.name && !ausserhalb(f.pts)).sort((a, b) => b.pts.length - a.pts.length)[0];
+  if (fluss) {
+    const pts = abtasten(fluss.pts, 10).map(([x, y]) => [X(x), Y(y)]).filter(([x, y]) => x > 60 && x < W - 60 && y > 30 && y < H - 30);
+    // möglichst weit weg von der Route
+    let best = null, bd = -1;
+    for (const p of pts.filter((_, i) => i % 3 === 0)) {
+      let d = Infinity;
+      for (let i = 0; i < linie.length; i += 6) d = Math.min(d, Math.hypot(X(linie[i]) - p[0], Y(linie[i + 1]) - p[1]));
+      if (d > bd) { bd = d; best = p; }
+    }
+    if (best && bd > 45) {
+      const t = [...fluss.name.toUpperCase()].join(' ');
+      g.font = F(17, 700); const tw = g.measureText(t).width;
+      g.fillStyle = '#fff'; g.fillRect(best[0] - tw / 2 - 5, best[1] - 13, tw + 10, 21);
+      g.fillStyle = '#000'; g.fillText(t, best[0] - tw / 2, best[1] + 3);
+    }
+  }
+
+  // 5. Route: dick, mit weissem Rand, Pfeile in Gehrichtung
+  g.lineCap = g.lineJoin = 'round';
+  g.strokeStyle = '#fff'; g.lineWidth = 15; pfad(g, linie, true); g.stroke();
+  g.strokeStyle = '#000'; g.lineWidth = 8; pfad(g, linie, true); g.stroke();
+  {
+    let lauf = 0, naechst = 70;
+    for (let i = 2; i < linie.length; i += 2) {
+      const ax = X(linie[i - 2]), ay = Y(linie[i - 1]), bx = X(linie[i]), by = Y(linie[i + 1]), d = Math.hypot(bx - ax, by - ay);
+      while (lauf + d >= naechst && d > 0) {
+        const f = (naechst - lauf) / d, x = ax + (bx - ax) * f, y = ay + (by - ay) * f, ux = (bx - ax) / d, uy = (by - ay) / d;
+        g.strokeStyle = '#fff'; g.lineWidth = 2.2; g.lineCap = 'butt';
+        g.beginPath(); g.moveTo(x - ux * 3 - uy * 3.2, y - uy * 3 + ux * 3.2); g.lineTo(x + ux * 1.5, y + uy * 1.5); g.lineTo(x - ux * 3 + uy * 3.2, y - uy * 3 - ux * 3.2); g.stroke();
+        naechst += 90;
+      }
+      lauf += d;
+    }
+  }
+
+  // 6. Orte: schwarze Punkte mit Nummer
+  orte.forEach((o, i) => marke(g, X(o.p[0]), Y(o.p[1]), String(i + 1), 12));
+  // 7. Start und Ziel
+  const sx = X(linie[0]), sy = Y(linie[1]);
+  if (!rund) {
+    const zx = X(linie.at(-2)), zy = Y(linie.at(-1)), k = 7;
+    g.fillStyle = '#fff'; g.fillRect(zx - 2 * k - 3, zy - 2 * k - 3, 4 * k + 6, 4 * k + 6);
+    g.fillStyle = '#000'; g.fillRect(zx - 2 * k - 1, zy - 2 * k - 1, 4 * k + 2, 4 * k + 2);
+    for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) if ((a + b) % 2) { g.fillStyle = '#fff'; g.fillRect(zx - 2 * k + a * k, zy - 2 * k + b * k, k, k); }
+  }
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(sx, sy, 17, 0, 2 * Math.PI); g.fill();
+  g.fillStyle = '#000'; g.beginPath(); g.arc(sx, sy, 15, 0, 2 * Math.PI); g.fill();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(sx, sy, 11, 0, 2 * Math.PI); g.fill();
+  g.fillStyle = '#000'; g.font = F(16, 700); const sw = g.measureText('S').width; g.fillText('S', sx - sw / 2, sy + 6);
+
+  // 8. Massstab, Nordpfeil, Quelle
+  const ziel = W * 0.25 / s, stufen = [50, 100, 200, 250, 500, 1000, 2000];
+  const m = stufen.reduce((a, b) => Math.abs(b - ziel) < Math.abs(a - ziel) ? b : a), ml = m * s;
+  g.fillStyle = '#fff'; g.fillRect(6, H - 40, ml + 20, 34);
+  g.fillStyle = '#000'; g.fillRect(14, H - 16, ml, 6);
+  g.fillStyle = '#fff'; g.fillRect(14 + ml / 4, H - 14, ml / 4, 2); g.fillRect(14 + ml * 3 / 4, H - 14, ml / 4, 2);
+  g.fillStyle = '#000'; g.font = F(14, 700); g.fillText(m >= 1000 ? `${m / 1000} km` : `${m} m`, 14, H - 22);
+  g.fillStyle = '#fff'; g.fillRect(W - 40, 6, 34, 50);
+  g.fillStyle = '#000'; g.beginPath(); g.moveTo(W - 23, 12); g.lineTo(W - 32, 34); g.lineTo(W - 23, 29); g.lineTo(W - 14, 34); g.closePath(); g.fill();
+  g.font = F(15, 700); const nw = g.measureText('N').width; g.fillText('N', W - 23 - nw / 2, 51);
+  g.font = F(12, 500); const quelle = '© OpenStreetMap', qw = g.measureText(quelle).width;
+  g.fillStyle = '#fff'; g.fillRect(W - qw - 12, H - 20, qw + 12, 20);
+  g.fillStyle = '#000'; g.fillText(quelle, W - qw - 6, H - 6);
+  // Rahmen
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, 2); g.fillRect(0, H - 2, W, 2); g.fillRect(0, 0, 2, H); g.fillRect(W - 2, 0, 2, H);
+  return c;
+}
+
+function marke(g, x, y, t, r){
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, r + 2.5, 0, 2 * Math.PI); g.fill();
+  g.fillStyle = '#000'; g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fill();
+  g.fillStyle = '#fff'; g.font = F(Math.round(r * 1.25), 700);
+  const w = g.measureText(t).width; g.fillText(t, x - w / 2, y + r * 0.45);
+}
+
+// Pfeil-Piktogramme für die Wegbeschreibung
+function pfeil(g, art, cx, cy, s){
+  g.save(); g.strokeStyle = g.fillStyle = '#000'; g.lineWidth = 3.6; g.lineCap = 'butt'; g.lineJoin = 'miter';
+  if (art === 'start' || art === 'ziel') {
+    g.beginPath(); g.arc(cx, cy, s * 0.42, 0, 2 * Math.PI); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(cx, cy, s * 0.28, 0, 2 * Math.PI); g.fill();
+    if (art === 'ziel') { g.fillStyle = '#000'; g.beginPath(); g.arc(cx, cy, s * 0.14, 0, 2 * Math.PI); g.fill(); }
+    g.restore(); return;
+  }
+  const winkel = { gerade: 0, 'leicht-l': -45, 'leicht-r': 45, links: -90, rechts: 90, 'scharf-l': -135, 'scharf-r': 135 }[art] * Math.PI / 180;
+  const unten = cy + s * 0.45, knick = cy + s * 0.05, l = s * 0.38;
+  const ex = cx + Math.sin(winkel) * l, ey = knick - Math.cos(winkel) * l;
+  g.beginPath(); g.moveTo(cx, unten); g.lineTo(cx, knick); g.lineTo(ex, ey); g.stroke();
+  const ux = Math.sin(winkel), uy = -Math.cos(winkel), k = s * 0.2;
+  g.beginPath(); g.moveTo(ex + ux * k * 0.9, ey + uy * k * 0.9); g.lineTo(ex - uy * k * 0.75, ey + ux * k * 0.75); g.lineTo(ex + uy * k * 0.75, ey - ux * k * 0.75); g.closePath(); g.fill();
+  g.restore();
+}
+
+// ---------------------------------------------------------------- Setzen: kleine Satz-Maschine wie in bon/depeche
+const T = (t, f) => ({ t, f });
+function umbrechen(g, teile, breite){
+  const woerter = [];
+  for (const p of teile) for (const w of String(p.t).split(/( +)/)) if (w) woerter.push({ t: w, f: p.f, leer: /^ +$/.test(w) });
+  const zeilen = []; let zeile = [], x = 0;
+  const fertig = () => { while (zeile.length && zeile[zeile.length - 1].leer) x -= zeile.pop().w; zeilen.push({ stuecke: zeile, w: x }); zeile = []; x = 0; };
+  for (const w of woerter) {
+    g.font = w.f;
+    if (w.leer) { if (zeile.length) { const b = g.measureText(w.t).width; zeile.push({ ...w, w: b }); x += b; } continue; }
+    let b = g.measureText(w.t).width;
+    if (x + b > breite && zeile.length) fertig();
+    let t = w.t;
+    while (b > breite) {
+      let n = t.length;
+      while (n > 1 && g.measureText(t.slice(0, n)).width > breite - x) n--;
+      const strich = t.lastIndexOf('-', n - 1);
+      if (strich > n / 2) n = strich + 1;
+      zeile.push({ t: t.slice(0, n), f: w.f, w: g.measureText(t.slice(0, n)).width }); fertig();
+      t = t.slice(n); b = g.measureText(t).width;
+    }
+    if (t) { zeile.push({ t, f: w.f, w: b }); x += b; }
+  }
+  if (zeile.length) fertig();
+  return zeilen;
+}
+const absatz = (teile, o = {}) => (g, x, w) => {
+  const lh = o.lh || 28, zeilen = umbrechen(g, teile.filter(p => p && p.t !== ''), w), ops = [];
+  let y = 0;
+  for (const z of zeilen) {
+    let xx = o.align === 'center' ? x + (w - z.w) / 2 : o.align === 'right' ? x + w - z.w : x;
+    for (const s of z.stuecke) { if (!s.leer) ops.push({ art: 'text', t: s.t, x: xx, y: y + Math.round(lh * 0.76), f: s.f }); xx += s.w; }
+    y += lh;
+  }
+  return { h: y, ops };
+};
+const leer = h => () => ({ h, ops: [] });
+const linie = (d = 2, oben = 0, unten = 0) => (g, x, w) => ({ h: oben + d + unten, ops: [{ art: 'rect', x, y: oben, w, h: d }] });
+const stapel = (...bl) => (g, x, w) => {
+  let y = 0; const ops = [];
+  for (const b of bl.flat()) { if (!b) continue; const r = b(g, x, w); for (const o of r.ops) ops.push({ ...o, y: o.y + y }); y += r.h; }
+  return { h: y, ops };
+};
+const neben = (links, breite, rechts, abstand = 10) => (g, x, w) => {
+  const a = links(g, x, breite), b = rechts(g, x + breite + abstand, w - breite - abstand);
+  return { h: Math.max(a.h, b.h), ops: [...a.ops, ...b.ops] };
+};
+const sperren = t => [...t.toUpperCase()].join(' ');
+const rubrik = t => stapel(leer(16), linie(3), leer(5), absatz([T(sperren(t), F(15, 700))], { lh: 18 }), linie(1, 4, 10));
+
+function bonBauen(tour){
+  const { N, rund, ort, L, seed, schritte, orte, km } = tour;
+  const jetzt = new Date();
+  const minuten = Math.max(5, Math.round(km * 1000 / TEMPO / 5) * 5);
+  const wo = ort.eigen ? 'ab deinem Standort' : 'ab ' + ort.name;
+  const kopf = stapel(
+    absatz([T('Spaziergang', F(54, 700))], { lh: 60 }),
+    absatz([T((rund ? 'Rundtour ' : 'Strecke ') + wo, F(21, 700))], { lh: 26 }),
+    absatz([T(jetzt.toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + jetzt.toLocaleTimeString('de-CH', { hour: 'numeric', minute: '2-digit' }).replace(':', '.') + ' Uhr', F(18))], { lh: 24 }),
+    leer(8), linie(4), leer(8),
+    (g, x, w) => {
+      const ops = [], drei = [[komma(km) + ' km', 'Länge'], ['≈ ' + minuten + ' Min', 'zu Fuss'], [String(schritte.length - 2), 'Abzweigungen']];
+      const sw = w / 3;
+      drei.forEach(([gross, klein], i) => {
+        ops.push({ art: 'text', t: gross, x: x + i * sw, y: 34, f: F(32, 700) });
+        ops.push({ art: 'text', t: klein, x: x + i * sw, y: 58, f: F(16) });
+      });
+      return { h: 66, ops };
+    },
+    leer(6),
+  );
+  const kartenbild = tour.karte;
+  const kartenTeil = () => ({ h: kartenbild.height + 4, ops: [{ art: 'bild', bild: kartenbild, x: RAND, y: 0 }] });
+  const legende = absatz([T(rund ? 'S  Start und Ziel   ' : 'S  Start   ▦  Ziel   ', F(15, 500)), T('●  Orte unterwegs', F(15, 500))], { lh: 22 });
+
+  const weg = stapel(rubrik('Weg'), schritte.map((s, i) => stapel(i && leer(5),
+    neben((g, x) => ({ h: 30, ops: [{ art: 'pfeil', pfeil: s.icon, x: x + 15, y: 14, s: 30 }] }), 32,
+      absatz(s.text.map(([t, fett]) => T(t, F(21, fett ? 700 : 500))), { lh: 27 }), 12))));
+
+  const unterwegs = orte.length ? stapel(rubrik('Unterwegs anschauen'), orte.map((o, i) => stapel(i && leer(8),
+    neben((g, x) => ({ h: 30, ops: [{ art: 'marke', t: String(i + 1), x: x + 14, y: 14, r: 13 }] }), 30, stapel(
+      absatz([T(o.art, F(21, 700)), o.name && o.name !== o.art && T(' · ' + o.name, F(21, 500))], { lh: 27 }),
+      absatz([T((o.entlang < 50 ? 'gleich am Start' : `nach ${komma(o.entlang / 1000)} km`) + (o.detail ? ' · ' + o.detail : ''), F(16, 500))], { lh: 21 }),
+    ), 12)))) : null;
+
+  let heim = null;
+  if (!rund) {
+    const ex = tour.linie.at(-2), ey = tour.linie.at(-1);
+    const h = N.halte.map(h => ({ ...h, d: Math.hypot(h.p[0] - ex, h.p[1] - ey) })).sort((a, b) => a.d - b.d)[0];
+    if (h && h.d < 600) heim = stapel(rubrik('Heimweg'), absatz([T(`${h.tram ? 'Tram' : 'Bus'} ab `, F(21)), T(h.name, F(21, 700)), T(`, etwa ${meter(h.d)} vom Ziel.`, F(21))], { lh: 27 }));
+  }
+
+  const fuss = stapel(leer(18), linie(1), leer(8),
+    absatz([T('Kartendaten © OpenStreetMap-Mitwirkende (ODbL). Weg automatisch gewürfelt, ohne Gewähr: auf Verkehr und Sperrungen achten.', F(15))], { lh: 20 }),
+    absatz([T(`Würfel Nr. ${seed} · Ziel ${einst.dauer} Min`, F(15))], { lh: 20 }),
+  );
+  return stapel(kopf, kartenTeil, legende, weg, unterwegs, heim, fuss);
+}
+
+// ---------------------------------------------------------------- Bon zeichnen und rastern
+const leinwand = $('bon');
+let raster = null, tour = null;
+
+async function schriftenLaden(text){
+  await Promise.all([F(20), F(20, 700)].map(f => document.fonts.load(f, text).catch(() => {})));
+}
+
+async function zeichnen(){
+  const g = leinwand.getContext('2d', { willReadFrequently: true });
+  const bon = bonBauen(tour);
+  const { h, ops } = bon(g, RAND, INNEN);
+  const H = Math.ceil(h + 8);
+  if (H > MAX_H) throw new Error('Der Bon würde zu lang.');
+  leinwand.width = BREITE; leinwand.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.textBaseline = 'alphabetic';
+  for (const o of ops) {
+    if (o.art === 'rect') { g.fillStyle = '#000'; g.fillRect(Math.round(o.x), Math.round(o.y), Math.round(o.w), o.h); }
+    else if (o.art === 'text') { g.fillStyle = '#000'; g.font = o.f; g.fillText(o.t, o.x, o.y); }
+    else if (o.art === 'bild') g.drawImage(o.bild, o.x, o.y);
+    else if (o.art === 'pfeil') pfeil(g, o.pfeil, o.x, o.y, o.s);
+    else if (o.art === 'marke') marke(g, o.x, o.y, o.t, o.r);
+  }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  raster = { W: BREITE, H, bits };
+  leinwand.hidden = false; $('leer').hidden = true;
+  $('mass').textContent = `Bon etwa ${Math.round(H / 80 + 2)} cm lang`;   // + etwa 2 cm Rand oben wegen dem Messer
+  $('drucken').disabled = false;
+}
+
+// ---------------------------------------------------------------- Ablauf
+const ADRESSE = new URLSearchParams(location.search);
+let netz = null;   // { schluessel, N }
+
+async function wuerfeln(){
+  $('wuerfeln').disabled = true; $('drucken').disabled = true;
+  try {
+    const ort = await startpunkt();
+    const rund = einst.form === 'rund', L = einst.dauer * TEMPO;
+    const r = Math.min(3800, rund ? L * 0.36 + 350 : L * 0.62 + 300);
+    const dlat = r / 110574, dlon = r / (111320 * Math.cos(ort.lat * Math.PI / 180));
+    const box = [ort.lat - dlat, ort.lon - dlon, ort.lat + dlat, ort.lon + dlon].map(v => +v.toFixed(5));
+    const schluessel = `${ort.lat.toFixed(5)},${ort.lon.toFixed(5)}`;
+    if (!geholt || !drin(box, geholt.box)) msg('Hole Wege und Orte aus OpenStreetMap …');
+    const json = await netzHolen(box);
+    msg('Würfle …');
+    await schlaf(20);   // damit die Meldung erscheint, bevor gerechnet wird
+    if (!netz || netz.schluessel !== schluessel || netz.json !== json) netz = { schluessel, json, N: netzBauen(json, ort) };
+    const N = netz.N;
+    const seed = +ADRESSE.get('seed') || 1 + Math.floor(Math.random() * 9999);
+    const best = routeWuerfeln(N, L, rund, seed);
+    const linieXY = [];
+    for (const [e, vorw] of best.weg) { const p = vorw ? N.epts[e] : umdrehen(N.epts[e]); linieXY.push(...(linieXY.length ? p.slice(2) : p)); }
+    const { schritte } = beschreibung(N, best, rund);
+    const orte = orteAmWeg(N, linieXY, zufall(seed * 7 + 1));
+    await schriftenLaden('Spaziergang ' + schritte.map(s => s.text.map(t => t[0]).join('')).join(' ') + orte.map(o => o.art + o.name + o.detail).join(' ') + N.fluesse.map(f => f.name).join(' '));
+    tour = { N, rund, ort, L, seed, schritte, orte, km: best.len / 1000, linie: linieXY, karte: karte(N, linieXY, orte, rund) };
+    await zeichnen();
+    msg(`${komma(best.len / 1000)} km, etwa ${Math.max(5, Math.round(best.len / TEMPO / 5) * 5)} Minuten. Nochmals würfeln gibt einen anderen Weg.`, 'ok');
+  } catch (e) {
+    console.error(e);
+    msg(e.message || 'Fehler', 'err');
+    $('drucken').disabled = !raster;
+  } finally {
+    $('wuerfeln').disabled = false;
+  }
+}
+$('wuerfeln').addEventListener('click', wuerfeln);
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  const mm = (raster.H * 72 / raster.W).toFixed(3);   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
+$('drucken').addEventListener('click', async () => {
+  if (!raster) return;
+  $('drucken').disabled = true;
+  msg('Sende …');
+  try {
+    const inhalt = await bonHtml(raster);
+    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, inhalt, titel: 'Spaziergang', quelle: 'website-spaziergang' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = !raster;
+  }
+});
+
+// Beim Öffnen gleich einen Spaziergang würfeln, ausser der Start war der eigene Standort (das fragt erst nach)
+if ($('start').value.trim() === 'Mein Standort') { $('start').value = ''; msg('Tippe auf «Mein Standort» oder gib eine Adresse ein.'); }
+else wuerfeln();
+</script>
+</body>
+</html>
