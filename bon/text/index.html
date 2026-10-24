@@ -7,31 +7,57 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="plex-700.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* IBM Plex Sans (SIL Open Font License), aufgeteilt wie bei Fontsource: Latein und Latein erweitert */
+@font-face{font-family:"Plex";src:url(plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 /* Text-Bon über die Bon-Post, Stil wie Turbo: weiss, schwarz, Monospace, eckig */
 :root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
 *{box-sizing:border-box}
 html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
 header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
-.topbar,main{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
 .brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
 .back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
 .back:hover,.back:focus-visible{background:#000;color:#fff}
 .brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
-main{padding-top:14px;padding-bottom:40px;display:flex;flex-direction:column;gap:6px}
-label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* Am Handy steht die Vorschau gleich unter dem Text, damit man sie beim Hineinkopieren sieht */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "vorschau" "knoepfe";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
 /* 16px in Feldern, sonst zoomt iOS beim Antippen */
-input,textarea{font:inherit;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%}
+input,textarea{font-family:"Plex",system-ui,sans-serif;font-weight:500;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%}
 input:focus,textarea:focus{outline:2px solid #000;outline-offset:-1px}
-textarea{min-height:42vh;resize:vertical;line-height:1.35}
-.hint{min-height:1.45em;margin:0;font-size:.78rem;color:var(--muted)}
-.hint.warn{color:#000}
+textarea{min-height:24vh;resize:vertical;line-height:1.4}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.hint code{font-family:var(--mono);color:#000}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:8px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.8rem}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
 button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
 button:hover{background:#fff;color:#000}
 button:disabled{opacity:.4;cursor:default}
 .msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
 .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Vorschau: der Bon genau so, wie er aus dem Drucker kommt (schon schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px}
+  textarea{min-height:52vh}
+}
 </style>
 </head>
 <body>
@@ -39,59 +65,252 @@ button:disabled{opacity:.4;cursor:default}
   <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Text · über die Bon-Post</span></a></div>
 </header>
 <main>
-  <label for="titel">Titel (optional)</label>
-  <input id="titel" autocomplete="off" enterkeyhint="next">
-  <label for="text">Text</label>
-  <textarea id="text" spellcheck="true"></textarea>
-  <p class="hint" id="hint">48 Zeichen pro Zeile</p>
-  <button id="drucken">Drucken</button>
-  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  <div class="felder">
+    <label for="titel">Titel (optional)</label>
+    <input id="titel" autocomplete="off" enterkeyhint="next">
+    <label for="text">Text</label>
+    <textarea id="text" spellcheck="true" placeholder="Text eintippen oder hineinkopieren"></textarea>
+    <p class="hint"><code># </code>Zwischentitel · <code>- </code>Aufzählung · <code>**fett**</code> · <code>---</code> Linie</p>
+  </div>
+  <div class="knoepfe">
+    <span class="label" id="groesseLabel">Schriftgrösse</span>
+    <div class="seg" id="groesse" role="group" aria-labelledby="groesseLabel">
+      <button type="button" data-g="s">Klein</button><button type="button" data-g="m">Mittel</button><button type="button" data-g="l">Gross</button>
+    </div>
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="papier"><canvas id="bon" hidden></canvas><p class="leer" id="leer">Hier erscheint der Bon.</p></div>
+    <p class="mass" id="mass"></p>
+  </div>
 </main>
 
 <script>
 // Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
 const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
 const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
-const BREITE = 48;
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_H = 28000;             // grössere Leinwände schafft Safari am iPhone nicht (etwa 3,5 m Bon)
+const GROESSE = { s: 24, m: 28, l: 34 };   // Grundschrift in Punkten (28 ≈ 3,5 mm)
+const SCHRIFT = '"Plex", system-ui, sans-serif';
 
 const $ = id => document.getElementById(id);
 const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.' + k, v); } catch {} }
+};
+let groesse = GROESSE[store.get('textgroesse', 'm')] ? store.get('textgroesse', 'm') : 'm';
 
-// Zeilen über 48 Zeichen nur melden, nicht abschneiden: Den Umbruch macht der Drucker
-function pruefen(){
-  const lang = $('text').value.split('\n').filter(z => [...z].length > BREITE).length;
-  $('hint').textContent = lang ? `${lang} Zeile${lang > 1 ? 'n' : ''} über ${BREITE} Zeichen, wird umbrochen` : `${BREITE} Zeichen pro Zeile`;
-  $('hint').className = 'hint' + (lang ? ' warn' : '');
-}
-$('text').addEventListener('input', () => { pruefen(); if ($('msg').classList.contains('err')) msg(''); });
-
-// Der Titel wird als Kopfzeile in den Text gesetzt, denn die Bon-Post druckt nur den Inhalt
-function inhalt(){
-  const titel = $('titel').value.trim(), text = $('text').value.replace(/\s+$/, '');
-  return (titel ? titel.toUpperCase() + '\n' + '-'.repeat(BREITE) + '\n' : '') + text + '\n';
+// ---------------------------------------------------------------- Text -> Blöcke
+// Kopierter Text bringt oft Tabs, geschützte Leerzeichen, unsichtbare Zeichen und viele Leerzeilen mit
+function bereinigen(t){
+  return t.replace(/\r\n?/g, '\n').replace(/[   ]/g, ' ').replace(/[​-‍⁠﻿­]/g, '')
+    .replace(/\t/g, '    ').replace(/[ ]+$/gm, '').replace(/\n{3,}/g, '\n\n').replace(/^\n+|\s+$/g, '');
 }
 
+// **fett** innerhalb einer Zeile
+function teile(t, fett = false){
+  return t.split(/(\*\*[^*]+\*\*)/).filter(Boolean)
+    .map(s => /^\*\*[^*]+\*\*$/.test(s) ? { t: s.slice(2, -2), fett: true } : { t: s, fett });
+}
+
+function bloecke(titel, text){
+  const out = [];
+  if (titel) out.push({ art: 'titel', teile: teile(titel, true) });
+  for (const z of bereinigen(text).split('\n')) {
+    let m;
+    if (!z.trim()) out.push({ art: 'leer' });
+    else if (/^\s*([-_=*])(\s*\1){2,}\s*$/.test(z)) out.push({ art: 'linie' });
+    else if ((m = z.match(/^\s*(#{1,3})\s+(.*)$/))) out.push({ art: 'zwischen', stufe: m[1].length, teile: teile(m[2], true) });
+    else if ((m = z.match(/^(\s*)([-*•–·▪◦]|\d{1,3}[.)]|[a-z][.)])\s+(.*)$/))) out.push({ art: 'punkt', tiefe: Math.min(3, m[1].length >> 1), marke: /^[-*•–·▪◦]$/.test(m[2]) ? '•' : m[2], teile: teile(m[3]) });
+    else out.push({ art: 'zeile', teile: teile(z.trim()) });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- Blöcke -> Zeichenbefehle
+const font = (px, fett) => `${fett ? 700 : 500} ${px}px ${SCHRIFT}`;
+
+// Wörter auf die Breite verteilen; zu lange Wörter (Links) werden zeichenweise getrennt
+function umbrechen(g, teileListe, px, breite){
+  const woerter = [];
+  for (const p of teileListe) for (const w of p.t.split(/( +)/)) if (w) woerter.push({ t: w, fett: p.fett, leer: /^ +$/.test(w) });
+  const zeilen = []; let zeile = [], x = 0;
+  const fertig = () => { while (zeile.length && zeile[zeile.length - 1].leer) x -= zeile.pop().w; zeilen.push({ stuecke: zeile, w: x }); zeile = []; x = 0; };
+  for (const w of woerter) {
+    g.font = font(px, w.fett);
+    if (w.leer) { if (zeile.length) { const b = g.measureText(w.t).width; zeile.push({ ...w, w: b }); x += b; } continue; }
+    let b = g.measureText(w.t).width;
+    if (x + b > breite && zeile.length) fertig();
+    let t = w.t;
+    while (b > breite) {   // Wort länger als die ganze Zeile
+      let n = t.length;
+      while (n > 1 && g.measureText(t.slice(0, n)).width > breite - x) n--;
+      zeile.push({ t: t.slice(0, n), fett: w.fett, w: g.measureText(t.slice(0, n)).width }); fertig();
+      t = t.slice(n); b = g.measureText(t).width;
+    }
+    if (t) { zeile.push({ t, fett: w.fett, w: b }); x += b; }
+  }
+  if (zeile.length) fertig();
+  return zeilen;
+}
+
+function setzen(g, liste){
+  const px = GROESSE[groesse], zh = Math.round(px * 1.38);
+  const ops = []; let y = 0, vorher = null;
+  const text = (zeilen, x0, gr, hoehe, mitte) => {
+    for (const z of zeilen) {
+      let x = mitte ? RAND + (INNEN - z.w) / 2 : x0;
+      for (const s of z.stuecke) { ops.push({ t: s.t, x, y: y + Math.round(hoehe * 0.78), f: font(gr, s.fett) }); x += s.w; }
+      y += hoehe;
+    }
+  };
+  for (const b of liste) {
+    if (b.art === 'leer') { if (vorher && vorher !== 'leer') y += Math.round(px * 0.6); }
+    else if (b.art === 'titel') {
+      const gr = Math.round(px * 1.6), h = Math.round(gr * 1.18);
+      text(umbrechen(g, b.teile, gr, INNEN), RAND, gr, h, true);
+      y += Math.round(px * 0.35);
+      ops.push({ rect: [RAND, y, INNEN, 4] });
+      y += 4 + Math.round(px * 0.7);
+    }
+    else if (b.art === 'zwischen') {
+      const gr = Math.round(px * [1.3, 1.15, 1][b.stufe - 1]), h = Math.round(gr * 1.25);
+      if (vorher && vorher !== 'leer' && vorher !== 'titel') y += Math.round(px * 0.5);
+      text(umbrechen(g, b.teile, gr, INNEN), RAND, gr, h, false);
+      y += Math.round(px * 0.15);
+    }
+    else if (b.art === 'linie') {
+      y += Math.round(px * 0.45);
+      ops.push({ rect: [RAND, y, INNEN, 2] });
+      y += 2 + Math.round(px * 0.45);
+    }
+    else if (b.art === 'punkt') {
+      g.font = font(px, false);
+      const einzug = RAND + b.tiefe * Math.round(px * 1.2);
+      const markeB = g.measureText(b.marke).width;
+      const spalte = Math.max(Math.round(px * 1.1), Math.ceil(markeB + px * 0.4));
+      ops.push({ t: b.marke, x: einzug, y: y + Math.round(zh * 0.78), f: font(px, false) });
+      text(umbrechen(g, b.teile, px, BREITE - RAND - einzug - spalte), einzug + spalte, px, zh, false);
+    }
+    else text(umbrechen(g, b.teile, px, INNEN), RAND, px, zh, false);
+    vorher = b.art;
+  }
+  return { ops, H: Math.ceil(y + px * 0.4) };
+}
+
+// ---------------------------------------------------------------- Zeichnen und rastern
+const leinwand = $('bon');
+let raster = null;   // { W, H, bits } des aktuellen Bons
+
+async function zeichnen(){
+  const titel = $('titel').value.trim(), text = $('text').value;
+  const liste = bloecke(titel, text);
+  if (!liste.some(b => b.teile)) { raster = null; leinwand.hidden = true; $('leer').hidden = false; $('mass').textContent = ''; return; }
+  // Schrift zuerst laden, auch die erweiterten Buchstaben (č, ł, ő …), sonst misst die Leinwand mit einer Ersatzschrift
+  const alles = titel + text;
+  await Promise.all([document.fonts.load(font(20, false), alles), document.fonts.load(font(20, true), alles)]);
+  const g = leinwand.getContext('2d', { willReadFrequently: true });
+  const { ops, H } = setzen(g, liste);
+  if (H > MAX_H) { raster = null; leinwand.hidden = true; $('leer').hidden = false; $('mass').textContent = `Zu lang: etwa ${(H / 80).toFixed(0)} cm, höchstens ${MAX_H / 80} cm.`; return; }
+  leinwand.width = BREITE; leinwand.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+  for (const o of ops) {
+    if (o.rect) g.fillRect(...o.rect);
+    else { g.font = o.f; g.fillText(o.t, o.x, o.y); }
+  }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  raster = { W: BREITE, H, bits };
+  leinwand.hidden = false; $('leer').hidden = true;
+  $('mass').textContent = `Bon etwa ${(H / 80 + 2).toFixed(0)} cm lang`;   // + etwa 2 cm Rand oben wegen dem Messer
+}
+
+// Beim Tippen nicht jede Taste neu zeichnen, sondern kurz warten
+let warte = null, laeuft = Promise.resolve();
+function spaeter(){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, 120); }
+['titel', 'text'].forEach(id => $(id).addEventListener('input', () => { spaeter(); if ($('msg').classList.contains('err')) msg(''); }));
+
+const markieren = () => $('groesse').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.g === groesse)));
+$('groesse').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  groesse = b.dataset.g; store.set('textgroesse', groesse); markieren(); spaeter();
+});
+markieren();
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  const mm = (raster.H * 72 / raster.W).toFixed(3);   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
 $('drucken').addEventListener('click', async () => {
   if (!$('text').value.trim() && !$('titel').value.trim()) { msg('Text fehlt.', 'err'); $('text').focus(); return; }
   $('drucken').disabled = true;
   msg('Sende …');
   try {
+    clearTimeout(warte);
+    await (laeuft = laeuft.then(zeichnen, zeichnen));   // sicher den neusten Stand drucken
+    if (!raster) throw new Error($('mass').textContent || 'nichts zu drucken');
+    const inhalt = await bonHtml(raster);
     // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
     const r = await fetch(BONPOST, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ key: KEY, format: 'text', quelle: 'website', titel: $('titel').value.trim(), inhalt: inhalt() }),
+      body: JSON.stringify({ key: KEY, inhalt, titel: $('titel').value.trim() || 'Text', quelle: 'website' }),
     });
     const d = await r.json();
     if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
     msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
-    $('titel').value = ''; $('text').value = ''; pruefen();
+    $('titel').value = ''; $('text').value = ''; spaeter();
   } catch (e) {
     msg('Fehler: ' + e.message, 'err');
   } finally {
     $('drucken').disabled = false;
   }
 });
+
+zeichnen();
 </script>
 </body>
 </html>
