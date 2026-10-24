@@ -8,12 +8,12 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
-<link rel="preload" href="fraktur.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="titel.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="serif-500.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="serif-700.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Zeitungskopf: UnifrakturMaguntia; Text: IBM Plex Serif und IBM Plex Sans (alle SIL Open Font License) */
-@font-face{font-family:"Fraktur";src:url(fraktur.woff2) format("woff2");font-weight:400;font-display:block}
+/* Zeitungskopf: Playfair Display Black; Text: IBM Plex Serif und IBM Plex Sans (alle SIL Open Font License) */
+@font-face{font-family:"Titel";src:url(titel.woff2) format("woff2");font-weight:900;font-display:block}
 @font-face{font-family:"PSerif";src:url(serif-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:"PSerif";src:url(serif-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:"PSerif";src:url(serif-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
@@ -275,7 +275,7 @@ function schlagzeilen(){
 const F = {
   serif: (px, w = 500, kursiv = false) => `${kursiv ? 'italic ' : ''}${w} ${px}px "PSerif", Georgia, serif`,
   sans: (px, w = 500) => `${w} ${px}px "Plex", system-ui, sans-serif`,
-  fraktur: px => `400 ${px}px "Fraktur", serif`,
+  titel: px => `900 ${px}px "Titel", Georgia, serif`,
 };
 const sperren = t => [...t.toUpperCase()].join(' ');   // Haarspatien: gesperrte Rubrik wie in der Zeitung
 
@@ -382,11 +382,11 @@ function zeitungskopf(jetzt){
   const ohrR = an.wetter && rh ? `Rhein ${komma(rh.temp)} °C` : '';
   const titel = 'Dépêche du Matin';
   const kopf = (g, x, wd) => {
-    g.font = F.fraktur(100);
+    g.font = F.titel(100);
     const px = Math.min(96, Math.floor(100 * wd / g.measureText(titel).width));
-    g.font = F.fraktur(px);
+    g.font = F.titel(px);
     const tw = g.measureText(titel).width;
-    return { h: Math.round(px * 1.12), ops: [{ art: 'text', t: titel, x: x + (wd - tw) / 2, y: Math.round(px * 0.86), f: F.fraktur(px) }] };
+    return { h: Math.round(px * 1.12), ops: [{ art: 'text', t: titel, x: x + (wd - tw) / 2, y: Math.round(px * 0.86), f: F.titel(px) }] };
   };
   const nr = tagNr(jetzt);
   return stapel(
@@ -538,7 +538,7 @@ function kurseTeil(){
 
 function fuss(jetzt){
   return stapel(leer(24), linie(1), linie(4, 3, 10),
-    absatz([T('Dépêche du Matin', F.fraktur(30))], { lh: 34, align: 'center' }),
+    absatz([T('Dépêche du Matin', F.titel(30))], { lh: 34, align: 'center' }),
     absatz([T(`gesetzt am ${langDatum(jetzt)} um ${uhr(jetzt)} Uhr`, F.sans(14, 500))], { lh: 20, align: 'center' }),
     absatz([T('Quellen: Open-Meteo, BAFU, SRF, NZZ, Tagesschau, Kanton Basel-Stadt, Wikipedia, opendata.ch, EZB', F.sans(13, 500))], { lh: 18, align: 'center' }),
   );
@@ -597,7 +597,7 @@ const leinwand = $('bon');
 let raster = null;   // { W, H, bits } des aktuellen Bons
 
 async function schriftenLaden(text){
-  const fs = [F.serif(20), F.serif(20, 700), F.serif(20, 500, true), F.sans(20), F.sans(20, 700), F.fraktur(20)];
+  const fs = [F.serif(20), F.serif(20, 700), F.serif(20, 500, true), F.sans(20), F.sans(20, 700), F.titel(20)];
   await Promise.all(fs.map(f => document.fonts.load(f, text).catch(() => {})));
 }
 
