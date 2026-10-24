@@ -27,6 +27,8 @@ Startprompt für einen neuen Chat:
     Punkten zeichnen, Linien 2 Punkte, Rahmen 4 Punkte, Kästchen zum Schreiben mindestens 6–7 mm.
   - bon/vokabeln/: Text auf dem Kopf (translate + rotate(π) auf der Leinwand) und Falzkarten.
   - bon/postkarte/: Foto, Briefmarke, Poststempel. bon/spaziergang/: selbst gezeichnete Karte.
+  - bon/rezept/: eigene Datensammlung (200 Rezepte in rezepte.js), Filter, Mengen umrechnen, Liste
+    mit Kästchen zum Abhaken. Bettet das PNG schon nach der Regel mit 272 px und H × 17/36 px ein.
 - Schriften (alle OFL) relativ einbinden statt kopieren: IBM Plex Sans (bon/text/), IBM Plex Serif
   inkl. kursiv und Playfair Display Black (bon/depeche/), Playfair Display Italic (bon/menu/),
   Caveat als Handschrift und Dancing Script als Schreibschrift (bon/postkarte/). Neue Schriften
