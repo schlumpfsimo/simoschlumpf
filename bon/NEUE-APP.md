@@ -87,6 +87,8 @@ Startprompt für einen neuen Chat:
   (Artikel des Tages, «Was geschah am», «Schon gewusst?», Bild des Tages).
 - Kurse der EZB: `api.frankfurter.dev/v1/latest?base=CHF`.
 - Schlagzeilen: `/feed/data/news.json` liegt auf derselben Website und wird stündlich aufgefrischt.
+- Ölpreis (Brent, WTI): keine freie Quelle mit CORS. `.github/workflows/bon-maerkte.yml` holt die Kurse
+  alle drei Stunden bei Yahoo Finance und legt sie als `bon/depeche/maerkte.json` ab.
 
 ## Zeitplan: Bon zu einer festen Zeit (Beispiel bon/depeche/)
 - Eine Webseite kann nur drucken, solange sie offen ist. Darum so:
