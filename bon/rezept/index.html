@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · REZEPT</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans (SIL Open Font License) aus bon/text/, aufgeteilt wie bei Fontsource: Latein und Latein erweitert */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Rezept mit Einkaufsliste über die Bon-Post, Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "vorschau" "knoepfe";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+select{font-family:var(--mono);font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,#000 50%),linear-gradient(135deg,#000 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
+select:focus{outline:2px solid #000;outline-offset:-1px}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.8rem;text-transform:none}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+.reihe{display:flex;gap:8px;align-items:stretch}
+.reihe > *{min-width:0}
+.personen{display:flex;border:1px solid #000;flex:none}
+.personen button{margin:0;width:48px;padding:8px 0;background:#fff;color:#000;border:0;font-size:1.1rem}
+.personen button:hover{background:#000;color:#fff}
+.personen output{min-width:92px;display:flex;align-items:center;justify-content:center;border-left:1px solid #000;border-right:1px solid #000;font-size:.85rem}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.hell{background:#fff;color:#000}
+button.hell:hover{background:#000;color:#fff}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+/* Zutaten antippen: was schon zu Hause ist, kommt nicht auf die Einkaufsliste */
+.zutaten{display:flex;flex-direction:column;border:1px solid #000;border-bottom:0}
+.zutaten button{margin:0;padding:10px;display:flex;gap:10px;align-items:baseline;text-align:left;text-transform:none;letter-spacing:0;background:#fff;color:#000;border:0;border-bottom:1px solid #000;font-size:.9rem}
+.zutaten button:hover{background:#f2f2f2;color:#000}
+.zutaten .k{flex:none;width:14px;height:14px;border:2px solid #000;align-self:center}
+.zutaten .n{flex:1;min-width:0}
+.zutaten .m{flex:none;white-space:nowrap}
+.zutaten button[aria-pressed="true"]{color:var(--muted)}
+.zutaten button[aria-pressed="true"] .n,.zutaten button[aria-pressed="true"] .m{text-decoration:line-through}
+.zutaten button[aria-pressed="true"] .k{border-color:var(--muted);background:var(--muted)}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Rezept mit Einkaufsliste</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <label for="monat">Saison</label>
+    <select id="monat"></select>
+    <span class="label" id="artLabel">Was</span>
+    <div class="seg" id="art" role="group" aria-labelledby="artLabel">
+      <button type="button" data-w="">Alles</button><button type="button" data-w="v">Vegi</button><button type="button" data-w="f">Fleisch</button><button type="button" data-w="fi">Fisch</button>
+    </div>
+    <span class="label" id="zeitLabel">Zeit</span>
+    <div class="seg" id="zeit" role="group" aria-labelledby="zeitLabel">
+      <button type="button" data-w="0">Egal</button><button type="button" data-w="30">bis 30 Min</button><button type="button" data-w="45">bis 45 Min</button>
+    </div>
+    <label for="wahl" id="wahlLabel">Rezept</label>
+    <select id="wahl"></select>
+    <div class="reihe">
+      <button type="button" class="hell" id="anderes" style="flex:1">Anderes Rezept</button>
+      <div class="personen" style="margin-top:8px">
+        <button type="button" id="weniger" aria-label="Eine Person weniger">−</button>
+        <output id="personen"></output>
+        <button type="button" id="mehr" aria-label="Eine Person mehr">+</button>
+      </div>
+    </div>
+    <span class="label">Einkaufen · antippen, was du schon hast</span>
+    <div class="zutaten" id="zutaten"></div>
+  </div>
+  <div class="knoepfe">
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="papier"><canvas id="bon"></canvas></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script src="rezepte.js"></script>
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const SCHRIFT = '"Plex", system-ui, sans-serif';
+const BASIS = 3;                 // alle Rezepte in rezepte.js sind für 3 Personen
+
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const KURZ = ['Jan', 'Feb', 'März', 'April', 'Mai', 'Juni', 'Juli', 'Aug', 'Sept', 'Okt', 'Nov', 'Dez'];
+const TAGE = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
+const ART = { vg: 'vegan', v: 'vegetarisch', fi: 'Fisch', f: 'Fleisch' };
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.' + k, v); } catch {} }
+};
+
+const wahl = {
+  monat: new Date().getMonth() + 1,                       // 0 = ganzes Jahr
+  art: ['', 'v', 'f', 'fi'].includes(store.get('rezept.art', '')) ? store.get('rezept.art', '') : '',
+  zeit: ['0', '30', '45'].includes(store.get('rezept.zeit', '0')) ? +store.get('rezept.zeit', '0') : 0,
+  personen: Math.min(12, Math.max(1, +store.get('rezept.personen', BASIS) || BASIS)),
+  rezept: null,
+  habIch: new Set(),                                       // Indizes der Zutaten, die schon zu Hause sind
+};
+
+// ---------------------------------------------------------------- Auswahl
+const inSaison = (r, m) => !m || (r.von <= r.bis ? m >= r.von && m <= r.bis : m >= r.von || m <= r.bis);
+const passt = r => inSaison(r, wahl.monat)
+  && (!wahl.art || (wahl.art === 'v' ? r.k === 'v' || r.k === 'vg' : r.k === wahl.art))
+  && (!wahl.zeit || r.z <= wahl.zeit);
+const treffer = () => REZEPTE.filter(passt).sort((a, b) => a.n.localeCompare(b.n, 'de'));
+
+// Zufall ohne baldige Wiederholung: erst alle passenden Rezepte einmal, dann von vorn
+let gezeigt = new Set();
+function zufall(){
+  const liste = treffer();
+  if (!liste.length) return null;
+  let frei = liste.filter(r => !gezeigt.has(r.n) && r !== wahl.rezept);
+  if (!frei.length) { gezeigt = new Set(); frei = liste.filter(r => r !== wahl.rezept); if (!frei.length) frei = liste; }
+  const r = frei[Math.floor(Math.random() * frei.length)];
+  gezeigt.add(r.n);
+  return r;
+}
+
+function setzeRezept(r){
+  wahl.rezept = r; wahl.habIch = new Set();
+  liste(); zutatenListe(); spaeter();
+}
+
+// ---------------------------------------------------------------- Mengen umrechnen
+const MEHRZAHL = { Dose: 'Dosen', Glas: 'Gläser', Packung: 'Packungen', Zehe: 'Zehen' };
+const PACKUNG = ['Dose', 'Glas', 'Packung', 'Becher'];
+const auf = (x, s) => Math.round(x / s) * s;
+
+function zahl(x){
+  const ganz = Math.floor(x + 1e-9), rest = x - ganz;
+  if (Math.abs(rest - 0.5) < 1e-6) return (ganz || '') + '½';
+  if (rest < 1e-6) return String(ganz);
+  return String(Math.round(x * 10) / 10).replace('.', ',');
+}
+
+function menge([m, e]){
+  if (!m) return e;
+  let x = m * wahl.personen / BASIS;
+  if (e === 'kg' && x < 1) { x *= 1000; e = 'g'; }      // 0,4 kg liest sich schlechter als 400 g
+  if (e === 'l' && x < 1) { x *= 10; e = 'dl'; }
+  if (e === 'Zehe') x = Math.max(1, x);
+  if (e === 'g') x = x < 20 ? Math.max(5, auf(x, 5)) : x < 300 ? auf(x, 10) : auf(x, 50);
+  else if (e === 'kg' || e === 'l') x = Math.max(0.1, auf(x, 0.1));
+  else if (PACKUNG.includes(e)) x = Math.max(1, Math.round(x));
+  else x = x >= 3 && e !== 'dl' ? Math.round(x) : Math.max(0.5, auf(x, 0.5));   // Stück, Bund, Zehe, dl, EL, TL
+  if (e === 'g' && x >= 1000) return zahl(auf(x / 1000, 0.1)) + ' kg';
+  const einheit = x > 1 && MEHRZAHL[e] ? MEHRZAHL[e] : e;
+  return zahl(x) + (einheit ? ' ' + einheit : '');
+}
+
+// ---------------------------------------------------------------- Bedienfeld
+function monate(){
+  $('monat').innerHTML = MONATE.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('') + '<option value="0">Ganzes Jahr</option>';
+  $('monat').value = wahl.monat;
+}
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function liste(){
+  const l = treffer();
+  $('wahlLabel').textContent = `Rezept · ${l.length} passen`;
+  if (!l.length) { $('wahl').innerHTML = '<option>Kein Rezept passt, Filter lockern</option>'; $('wahl').disabled = true; return; }
+  $('wahl').disabled = false;
+  $('wahl').innerHTML = l.map((r, i) => `<option value="${i}">${esc(r.n)} · ${r.z} Min</option>`).join('');
+  const i = l.indexOf(wahl.rezept);
+  if (i >= 0) $('wahl').value = i;
+}
+
+function zutatenListe(){
+  const r = wahl.rezept;
+  if (!r) { $('zutaten').innerHTML = ''; return; }
+  $('zutaten').innerHTML = r.zu.map((z, i) => `<button type="button" data-i="${i}" aria-pressed="${wahl.habIch.has(i)}">
+    <span class="k"></span><span class="n">${esc(z[2])}</span><span class="m">${esc(menge(z))}</span></button>`).join('');
+}
+
+function markieren(){
+  $('art').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.w === wahl.art)));
+  $('zeit').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.w === wahl.zeit)));
+  $('personen').textContent = wahl.personen + (wahl.personen === 1 ? ' Person' : ' Personen');
+}
+
+// Nach einem Filterwechsel das Rezept behalten, wenn es noch passt
+function neuFiltern(){
+  markieren();
+  if (wahl.rezept && passt(wahl.rezept)) { liste(); spaeter(); }
+  else setzeRezept(zufall());
+}
+
+$('monat').addEventListener('change', () => { wahl.monat = +$('monat').value; neuFiltern(); });
+$('art').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  wahl.art = b.dataset.w; store.set('rezept.art', wahl.art); neuFiltern();
+});
+$('zeit').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  wahl.zeit = +b.dataset.w; store.set('rezept.zeit', wahl.zeit); neuFiltern();
+});
+$('wahl').addEventListener('change', () => setzeRezept(treffer()[+$('wahl').value]));
+$('anderes').addEventListener('click', () => setzeRezept(zufall()));
+const personen = d => {
+  wahl.personen = Math.min(12, Math.max(1, wahl.personen + d)); store.set('rezept.personen', wahl.personen);
+  markieren(); zutatenListe(); spaeter();
+};
+$('weniger').addEventListener('click', () => personen(-1));
+$('mehr').addEventListener('click', () => personen(1));
+$('zutaten').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const i = +b.dataset.i;
+  wahl.habIch.has(i) ? wahl.habIch.delete(i) : wahl.habIch.add(i);
+  b.setAttribute('aria-pressed', String(wahl.habIch.has(i))); spaeter();
+});
+
+// ---------------------------------------------------------------- Bon setzen (Layout A)
+const font = (px, fett) => `${fett ? 700 : 500} ${px}px ${SCHRIFT}`;
+
+// Höhe auf ein Vielfaches von 36 Punkten = 17 CSS-Pixel aufrunden. Nur dann bildet der Mac das Bild
+// Punkt für Punkt ab; sonst verdoppelt Chrome irgendwo eine Punktzeile und eine Linie wird dicker.
+const ganz = h => Math.ceil(h / 36) * 36;
+
+function umbrechen(g, t, px, fett, breite){
+  g.font = font(px, fett);
+  const zeilen = []; let z = '';
+  for (const w of t.split(/\s+/).filter(Boolean)) {
+    const probe = z ? z + ' ' + w : w;
+    if (g.measureText(probe).width <= breite || !z) z = probe;
+    else { zeilen.push(z); z = w; }
+  }
+  if (z) zeilen.push(z);
+  return zeilen;
+}
+
+// Gesperrte Rubrik Zeichen für Zeichen setzen: ctx.letterSpacing kann nicht jedes Safari
+function gesperrt(ops, t, x, y, px){
+  const g = leinwand.getContext('2d');
+  g.font = font(px, true);
+  for (const c of t) { ops.push({ t: c, x, y, f: font(px, true) }); x += g.measureText(c).width + px * 0.16; }
+}
+
+function setzen(g, r){
+  const ops = []; let y = 4;
+  const text = (t, x, px, fett, breite, zh) => {
+    for (const z of umbrechen(g, t, px, fett, breite)) { ops.push({ t: z, x, y: y + Math.round(zh * 0.78), f: font(px, fett) }); y += zh; }
+  };
+  const linie = (d, vor, nach) => { y += vor; ops.push({ rect: [RAND, y, INNEN, d] }); y += d + nach; };
+
+  const heute = new Date();
+  text(`REZEPT · ${TAGE[heute.getDay()]} ${heute.getDate()}.${heute.getMonth() + 1}.${heute.getFullYear()}`, RAND, 21, false, INNEN, 30);
+  y += 6;
+  text(r.n, RAND, 44, true, INNEN, 50);
+  y += 4;
+  text(`${wahl.personen} ${wahl.personen === 1 ? 'Person' : 'Personen'} · ${r.z} Min · ${ART[r.k] || ''}`, RAND, 22, false, INNEN, 30);
+  linie(4, 10, 20);
+
+  // Einkaufsliste: Kästchen, Name links, Menge rechtsbündig
+  const px = 26, zh = 38, kasten = 24;
+  gesperrt(ops, 'EINKAUFEN', RAND, y + 22, 22); y += 36;
+  const kaufen = r.zu.filter((_, i) => !wahl.habIch.has(i));
+  for (const z of kaufen) {
+    const m = menge(z);
+    g.font = font(px, false);
+    const mb = g.measureText(m).width, x0 = RAND + kasten + 14;
+    const zeilen = umbrechen(g, z[2], px, false, BREITE - RAND - x0 - mb - 16);
+    const oben = y + Math.round((zh - kasten) / 2);
+    ops.push({ rect: [RAND, oben, kasten, 3] }, { rect: [RAND, oben + kasten - 3, kasten, 3] },
+             { rect: [RAND, oben, 3, kasten] }, { rect: [RAND + kasten - 3, oben, 3, kasten] });
+    ops.push({ t: m, x: BREITE - RAND - mb, y: y + Math.round(zh * 0.72), f: font(px, false) });
+    zeilen.forEach((t, k) => ops.push({ t, x: x0, y: y + k * 32 + Math.round(zh * 0.72), f: font(px, false) }));
+    y += zh + (zeilen.length - 1) * 32;
+  }
+  if (!kaufen.length) text('Alles schon zu Hause.', RAND, px, false, INNEN, zh);
+  const vorrat = [...r.zu.filter((_, i) => wahl.habIch.has(i)).map(z => z[2]), ...r.vo];
+  if (vorrat.length) { y += 6; text('Vorrat: ' + vorrat.join(', '), RAND, 21, false, INNEN, 28); }
+  linie(2, 14, 20);
+
+  // Zubereitung mit hängendem Einzug
+  gesperrt(ops, 'ZUBEREITUNG', RAND, y + 22, 22); y += 38;
+  r.s.forEach((s, i) => {
+    const nr = (i + 1) + '.';
+    ops.push({ t: nr, x: RAND, y: y + Math.round(36 * 0.76), f: font(px, true) });
+    text(s, RAND + 40, px, false, INNEN - 40, 35);
+    y += 8;
+  });
+  linie(2, 8, 10);
+  const saison = r.von === 1 && r.bis === 12 ? 'ganzes Jahr' : `${KURZ[r.von - 1]}–${KURZ[r.bis - 1]}`;
+  text(`Saison: ${saison}`, RAND, 20, false, INNEN, 28);
+  return { ops, H: ganz(y + 8) };
+}
+
+// ---------------------------------------------------------------- Zeichnen und rastern
+const leinwand = $('bon');
+let raster = null;
+
+async function zeichnen(){
+  const r = wahl.rezept;
+  const g = leinwand.getContext('2d', { willReadFrequently: true });
+  if (!r) { raster = null; leinwand.width = BREITE; leinwand.height = 0; $('mass').textContent = 'Kein Rezept passt zu diesen Filtern.'; return; }
+  const alles = r.n + r.zu.map(z => z[2]).join('') + r.vo.join('') + r.s.join('') + '½–·';
+  await Promise.all([document.fonts.load(font(20, false), alles), document.fonts.load(font(20, true), alles)]);
+  const { ops, H } = setzen(g, r);
+  leinwand.width = BREITE; leinwand.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+  for (const o of ops) {
+    if (o.rect) g.fillRect(...o.rect);
+    else { g.font = o.f; g.fillText(o.t, o.x, o.y); }
+  }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  raster = { W: BREITE, H, bits };
+  $('mass').textContent = `Bon etwa ${(H / 80 + 2).toFixed(0)} cm lang`;   // + etwa 2 cm Rand oben wegen dem Messer
+}
+
+let warte = null, laeuft = Promise.resolve();
+function spaeter(){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, 60); }
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Breite 272 CSS-Pixel und Höhe H × 17/36 Pixel (H ein Vielfaches von 36): So kommt jeder Punkt 1:1 an.
+async function bonHtml(raster){
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${raster.H * 17 / 36}px;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
+$('drucken').addEventListener('click', async () => {
+  if (!wahl.rezept) { msg('Kein Rezept gewählt.', 'err'); return; }
+  $('drucken').disabled = true;
+  msg('Sende …');
+  try {
+    clearTimeout(warte);
+    await (laeuft = laeuft.then(zeichnen, zeichnen));   // sicher den neusten Stand drucken
+    const inhalt = await bonHtml(raster);
+    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, inhalt, titel: 'Rezept ' + wahl.rezept.n, quelle: 'website-rezept' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+monate(); markieren(); setzeRezept(zufall());
+</script>
+</body>
+</html>
