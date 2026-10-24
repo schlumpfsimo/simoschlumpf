@@ -123,7 +123,7 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
     </div>
     <span class="label">Quellen</span>
     <ul class="quellen" id="quellen"></ul>
-    <p class="hint">Alles öffentlich, ohne Anmeldung: Wetter von Open-Meteo, Rhein vom BAFU, Schlagzeilen aus dem Feed (SRF, NZZ, Tagesschau, Kanton Basel-Stadt …), Wikipedia, Fahrplan von opendata.ch, Kurse der EZB.</p>
+    <p class="hint">Alles öffentlich, ohne Anmeldung: Wetter von Open-Meteo, Rhein vom BAFU, Schlagzeilen aus dem Feed (SRF, NZZ, Tagesschau, Kanton Basel-Stadt …), Wikipedia, Fahrplan von opendata.ch, Kurse der EZB, Ölpreis von Yahoo Finance (alle drei Stunden über GitHub abgeholt).</p>
   </div>
 </main>
 
@@ -138,6 +138,7 @@ const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird
 const MAX_H = 28000;             // grössere Leinwände schafft Safari am iPhone nicht (etwa 3,5 m Bon)
 const TZ = 'Europe/Zurich';
 const ORT = { lat: 47.5596, lon: 7.5886 };   // Basel
+const ABFAHRT_SPAETER = 45;      // Minuten
 
 const $ = id => document.getElementById(id);
 const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
@@ -148,8 +149,8 @@ const store = {
 
 // ---------------------------------------------------------------- Teile der Zeitung
 const TEILE = [
-  ['wetter', 'Wetter'], ['aufmacher', 'Aufmacher'], ['meldungen', 'Schweiz und Welt'], ['basel', 'Basel'],
-  ['tag', 'An diesem Tag'], ['wissen', 'Schon gewusst?'], ['artikel', 'Artikel des Tages'], ['abfahrten', 'Abfahrten'], ['kurse', 'Devisen'],
+  ['wetter', 'Wetter'], ['aufmacher', 'Aufmacher'], ['meldungen', 'Schweiz und Welt'], ['basel', 'Basel'], ['kultur', 'Kultur in Basel'],
+  ['abfahrten', 'Abfahrten'], ['tag', 'An diesem Tag'], ['wissen', 'Schon gewusst?'], ['artikel', 'Artikel des Tages'], ['kurse', 'Devisen'], ['oel', 'Ölpreis'],
 ];
 // Automatischer Druck (GitHub): ?auto=1&halt=…&teile=wetter,basel,…  Dann gelten nur die Angaben aus der Adresse.
 const ADRESSE = new URLSearchParams(location.search);
@@ -171,7 +172,8 @@ const langDatum = d => d.toLocaleDateString('de-CH', { timeZone: TZ, weekday: 'l
 const uhr = d => { const p = teileVon(new Date(d), { hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }); return `${+p.hour}.${p.minute}`; };
 const uhrLokal = s => `${+s.slice(11, 13)}.${s.slice(14, 16)}`;   // Open-Meteo liefert Ortszeit ohne Zone: «2026-10-24T08:05»
 const hhmm = d => { const p = teileVon(new Date(d), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); return `${p.hour}:${p.minute}`; };
-const tagNr = d => { const [y, m, t] = isoTag(d).split('-').map(Number); return Math.round((Date.UTC(y, m - 1, t) - Date.UTC(y, 0, 1)) / 864e5) + 1; };
+// Nr. 1 erschien am 24. Oktober 2026, jeden Tag eine Nummer mehr
+const ausgabeNr = d => { const [y, m, t] = isoTag(d).split('-').map(Number); return Math.round((Date.UTC(y, m - 1, t) - Date.UTC(2026, 9, 24)) / 864e5) + 1; };
 const komma = (x, n = 1) => x.toFixed(n).replace('.', ',');
 
 // Text kürzen, am liebsten am Satzende, sonst am Wortende
@@ -214,9 +216,13 @@ const QUELLEN = {
   abfahrten: ['Abfahrten', async () => {
     const halt = $('halt').value.trim();
     if (!halt) return null;
-    return holen('https://transport.opendata.ch/v1/stationboard?' + new URLSearchParams({ station: halt, limit: 12 }));
+    // Abfahrten erst ab 45 Minuten nach dem Druck: so lange dauert es, bis man aus dem Haus ist
+    const ab = Date.now() + ABFAHRT_SPAETER * 6e4, z = teileVon(new Date(ab), { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const d = await holen('https://transport.opendata.ch/v1/stationboard?' + new URLSearchParams({ station: halt, limit: 12, datetime: `${z.year}-${z.month}-${z.day} ${z.hour}:${z.minute}` }));
+    return { ...d, ab };
   }],
   kurse: ['Devisen', () => holen('https://api.frankfurter.dev/v1/latest?base=CHF&symbols=EUR,USD,GBP')],
+  oel: ['Ölpreis', () => holen('maerkte.json')],   // legt .github/workflows/bon-maerkte.yml alle drei Stunden ab
 };
 const daten = {}, status = {};
 let geholt = 0;
@@ -253,20 +259,20 @@ const WMO = {
   95: ['Gewitter', 'gewitter'], 96: ['Gewitter mit Hagel', 'gewitter'], 99: ['Gewitter mit Hagel', 'gewitter'],
 };
 const wmo = c => WMO[c] || ['', 'wolke'];
-const RICHTUNG = ['Nord', 'Nordost', 'Ost', 'Südost', 'Süd', 'Südwest', 'West', 'Nordwest'];
+const RICHTUNG = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
 
 function mond(d){
   const P = 29.530588853, ref = Date.UTC(2000, 0, 6, 18, 14);
   const ph = (((d - ref) / 864e5 / P) % 1 + 1) % 1, licht = Math.round((1 - Math.cos(2 * Math.PI * ph)) / 2 * 100);
   if (ph < 0.03 || ph > 0.97) return 'Neumond';
   if (ph > 0.47 && ph < 0.53) return 'Vollmond';
-  return `Mond zu ${licht} % beleuchtet, ${ph < 0.5 ? 'zunehmend' : 'abnehmend'}`;
+  return `Mond ${licht} %, ${ph < 0.5 ? 'zunehmend' : 'abnehmend'}`;
 }
 
 // Titel aus dem Feed: «Spitzmarke – Titel» (SRF) und Vorsätze wie «DIE NEUESTEN ENTWICKLUNGEN -» (NZZ)
 function meldung(x){
   const ticker = /^DIE NEUESTEN ENTWICKLUNGEN/i.test(x.title || '');
-  let titel = ohneHtml(x.title).replace(/^DIE NEUESTEN ENTWICKLUNGEN\s*[-–]\s*/i, '').trim(), kicker = '';
+  let titel = ohneHtml(x.title).replace(/^DIE NEUESTEN ENTWICKLUNGEN\s*[-–]\s*/i, '').replace(/ - [^–]{3,40}$/, '').trim(), kicker = '';
   const m = titel.match(/^(.{3,45}?) [–-] (.{12,})$/);
   if (m && !/[.?!]$/.test(m[1])) { kicker = m[1]; titel = m[2]; }
   return { titel, kicker, ticker, text: ohneHtml(x.summary), quelle: x.sourceLabel, datum: x.date, source: x.source };
@@ -277,18 +283,24 @@ function schlagzeilen(){
     .sort((a, b) => new Date(b.date) - new Date(a.date));
   const frisch = alle.filter(x => Date.now() - new Date(x.date) < 30 * 36e5);
   const liste = frisch.length > 10 ? frisch : alle;
-  const gesehen = new Set();
-  const nimm = (quellen, n, pruef = () => true) => {
+  // Dieselbe Geschichte steht oft mehrfach im Feed: gleiche lange Wörter = gleiche Meldung
+  const gesehen = [];
+  const woerter = t => new Set(t.toLowerCase().match(/[a-zäöüéèàç]{5,}/g)?.filter(w => w !== 'basel') || []);
+  const doppelt = t => { const w = woerter(t); return w.size > 0 && gesehen.some(g => [...w].filter(x => g.has(x)).length >= Math.min(2, w.size)); };
+  const nimm = (quellen, n, pruef = () => true, aus = liste) => {
     const out = [];
-    for (const x of liste) {
+    for (const x of aus) {
       if (out.length >= n) break;
       if (!quellen.includes(x.source)) continue;
-      const m = meldung(x), sig = m.titel.toLowerCase().slice(0, 40);
-      if (gesehen.has(sig) || !pruef(m)) continue;
-      gesehen.add(sig); out.push(m);
+      const m = meldung(x);
+      if (!pruef(m) || doppelt(m.titel)) continue;
+      gesehen.push(woerter(m.titel)); out.push(m);
     }
     return out;
   };
+  // Kulturmeldungen kommen seltener: die letzte Woche, ohne Titel in Grossbuchstaben
+  const woche = alle.filter(x => Date.now() - new Date(x.date) < 7 * 864e5);
+  const leise = m => m.titel.replace(/[^A-Za-zÄÖÜäöü]/g, '').replace(/[^a-zäöü]/g, '').length > m.titel.length * 0.3;
   // Aufmacher am liebsten von der NZZ, aber kein Live-Ticker
   const gut = m => m.text.length > 60 && !m.ticker;
   const aufmacher = nimm(['nzz'], 1, gut)[0] || nimm(['srf', 'srf-int', 'tagesschau'], 1, gut)[0];
@@ -296,7 +308,8 @@ function schlagzeilen(){
     aufmacher,
     schweiz: nimm(['srf', 'nzz', 'srf-wirtschaft', 'bund-de'], 3),
     welt: nimm(['srf-int', 'tagesschau', 'nzz'], 3),
-    basel: nimm(['bs', 'basel', 'bz', 'bajour', 'basel-kultur', 'teb', 'regbas'], 4),
+    kultur: nimm(['basel-kultur', 'basel-museen'], 4, leise, woche),
+    basel: nimm(['bs', 'basel', 'bz', 'bajour', 'teb', 'regbas'], 3),
   };
 }
 
@@ -402,32 +415,28 @@ const zweiseitig = (links, rechts, lh) => (g, x, w) => {
 // Marke links (Jahreszahl, Strich), Text eingerückt daneben
 const haengend = (marke, teile, einzug, o) => neben(absatz(marke, o), einzug - 8, absatz(teile, o), 8);
 
-const rubrik = t => stapel(leer(22), linie(4), leer(7), absatz([T(sperren(t), F.sans(16, 700))], { lh: 20 }), linie(1, 5, 12));
+const rubrik = t => stapel(leer(14), linie(3), leer(5), absatz([T(sperren(t), F.sans(15, 700))], { lh: 18 }), linie(1, 4, 8));
 
 // ---------------------------------------------------------------- Die Teile der Zeitung
 function zeitungskopf(jetzt){
-  const w = daten.wetter, rh = daten.rhein;
-  const ohrL = an.wetter && w ? `Heute ${Math.round(w.daily.temperature_2m_min[0])}° bis ${Math.round(w.daily.temperature_2m_max[0])}°` : '';
-  const ohrR = an.wetter && rh ? `Rhein ${komma(rh.temp)} °C` : '';
   const titel = 'Dépêche du Matin';
   const kopf = (g, x, wd) => {
     g.font = F.titel(100);
     const px = Math.min(96, Math.floor(100 * wd / g.measureText(titel).width));
     g.font = F.titel(px);
     const tw = g.measureText(titel).width;
-    return { h: Math.round(px * 1.12), ops: [{ art: 'text', t: titel, x: x + (wd - tw) / 2, y: Math.round(px * 0.86), f: F.titel(px) }] };
+    return { h: Math.round(px * 1.1), ops: [{ art: 'text', t: titel, x: x + (wd - tw) / 2, y: Math.round(px * 0.84), f: F.titel(px) }] };
   };
-  const nr = tagNr(jetzt);
-  return stapel(
-    (ohrL || ohrR) && zweiseitig([T(ohrL, F.sans(17, 500))], [T(ohrR, F.sans(17, 500))], 22),
-    (ohrL || ohrR) && leer(6),
-    kopf,
-    linie(1, 2, 6),
-    absatz([T(sperren('Ausgabe Basel'), F.sans(15, 700)), T('   ·   ', F.sans(15, 500)), T(sperren('gegründet 2026'), F.sans(15, 500))], { lh: 20, align: 'center' }),
-    leer(4),
-    zweiseitig([T(langDatum(jetzt), F.serif(19, 500))], [T(`Nr. ${nr} · 1. Jg.`, F.serif(19, 500))], 26),
-    linie(4, 6, 0), linie(1, 3, 0),
-  );
+  // Datum links, Ausgabe in der Mitte, Nummer rechts, wie im Kopf der NZZ
+  const leiste = (g, x, w) => {
+    const ops = [], y = 19;
+    const setz = (t, f, wo) => { g.font = f; const b = g.measureText(t).width; ops.push({ art: 'text', t, f, y, x: wo === 'l' ? x : wo === 'r' ? x + w - b : x + (w - b) / 2 }); };
+    setz(jetzt.toLocaleDateString('de-CH', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' }).replace('.,', ','), F.serif(17, 500), 'l');
+    setz(sperren('Ausgabe Basel'), F.sans(14, 700), 'm');
+    setz(`Nr. ${ausgabeNr(jetzt)}`, F.serif(17, 500), 'r');
+    return { h: 25, ops };
+  };
+  return stapel(kopf, linie(1, 2, 4), leiste, linie(4, 4, 0), linie(1, 3, 0));
 }
 
 function wetterTeil(jetzt){
@@ -435,19 +444,18 @@ function wetterTeil(jetzt){
   if (!an.wetter || !w) return null;
   const d = w.daily, [text, tag] = wmo(d.weather_code[0]);
   const zeilen = [
-    `Regen bis ${d.precipitation_probability_max[0]} %` + (d.precipitation_sum[0] >= 0.1 ? `, ${komma(d.precipitation_sum[0])} mm` : ''),
-    `Wind bis ${Math.round(d.wind_speed_10m_max[0])} km/h aus ${RICHTUNG[Math.round(d.wind_direction_10m_dominant[0] / 45) % 8]}`,
-    `Sonne ${uhrLokal(d.sunrise[0])} bis ${uhrLokal(d.sunset[0])} Uhr` + (d.uv_index_max[0] >= 3 ? ` · UV ${Math.round(d.uv_index_max[0])}` : ''),
-    rh ? `Rhein ${komma(rh.temp)} °C` + (rh.flow ? ` · ${Math.round(rh.flow)} m³/s` : '') : '',
+    `Regen ${d.precipitation_probability_max[0]} %` + (d.precipitation_sum[0] >= 0.1 ? ` · ${komma(d.precipitation_sum[0])} mm` : ''),
+    `Wind ${Math.round(d.wind_speed_10m_max[0])} km/h aus ${RICHTUNG[Math.round(d.wind_direction_10m_dominant[0] / 45) % 8]}`,
+    `Sonne ${uhrLokal(d.sunrise[0])} – ${uhrLokal(d.sunset[0])}` + (d.uv_index_max[0] >= 3 ? ` · UV ${Math.round(d.uv_index_max[0])}` : ''),
+    rh ? `Rhein ${komma(rh.temp)} °C` : '',
     mond(jetzt),
   ].filter(Boolean);
-  const gross = (g, x, bw) => ({ h: 150, ops: [{ art: 'icon', tag, nacht: false, x: x + bw / 2, y: 72, s: 140 }] });
-  const rechts = stapel(
-    absatz([T(`${Math.round(d.temperature_2m_max[0])}°`, F.serif(58, 700)), T(`  ${Math.round(d.temperature_2m_min[0])}°`, F.serif(34, 500))], { lh: 62 }),
-    absatz([T(text, F.serif(25, 700))], { lh: 30 }),
-    leer(4),
-    zeilen.map(z => absatz([T(z, F.sans(18, 500))], { lh: 23 })),
+  const bild = (g, x, bw) => ({ h: 76, ops: [{ art: 'icon', tag, nacht: false, x: x + bw / 2, y: 40, s: 76 }] });
+  const temp = stapel(
+    absatz([T(`${Math.round(d.temperature_2m_max[0])}°`, F.serif(44, 700)), T(` ${Math.round(d.temperature_2m_min[0])}°`, F.serif(26, 500))], { lh: 48 }),
+    absatz([T(text, F.serif(20, 700))], { lh: 24 }),
   );
+  const details = stapel(zeilen.map(z => absatz([T(z, F.sans(15, 500))], { lh: 19 })));
   // Stundenleiste: ab der nächsten vollen Stunde alle drei Stunden
   const zeiten = w.hourly.time, jetztH = `${isoTag(jetzt)}T${teileVon(jetzt, { hour: '2-digit', hourCycle: 'h23' }).hour}:00`;
   let i0 = zeiten.findIndex(t => t > jetztH); if (i0 < 0) i0 = 0;
@@ -457,119 +465,137 @@ function wetterTeil(jetzt){
     const mitte = (t, f, cx, y) => { g.font = f; ops.push({ art: 'text', t, f, x: cx - g.measureText(t).width / 2, y }); };
     slots.forEach((i, k) => {
       const cx = x + sw * (k + 0.5);
-      mitte(`${+zeiten[i].slice(11, 13)} Uhr`, F.sans(16, 500), cx, 18);
-      ops.push({ art: 'icon', tag: wmo(w.hourly.weather_code[i])[1], nacht: !w.hourly.is_day[i], x: cx, y: 54, s: 54 });
-      mitte(`${Math.round(w.hourly.temperature_2m[i])}°`, F.serif(25, 700), cx, 106);
-      mitte(`${w.hourly.precipitation_probability[i]} %`, F.sans(15, 500), cx, 128);
+      mitte(`${+zeiten[i].slice(11, 13)} Uhr`, F.sans(14, 500), cx, 14);
+      ops.push({ art: 'icon', tag: wmo(w.hourly.weather_code[i])[1], nacht: !w.hourly.is_day[i], x: cx, y: 38, s: 36 });
+      const tt = `${Math.round(w.hourly.temperature_2m[i])}°`, rr = ` ${w.hourly.precipitation_probability[i]}%`;
+      g.font = F.serif(19, 700); const tb = g.measureText(tt).width; g.font = F.sans(13, 500); const rb = g.measureText(rr).width;
+      ops.push({ art: 'text', t: tt, f: F.serif(19, 700), x: cx - (tb + rb) / 2, y: 76 });
+      ops.push({ art: 'text', t: rr, f: F.sans(13, 500), x: cx - (tb + rb) / 2 + tb, y: 76 });
     });
-    return { h: 136, ops };
+    return { h: 82, ops };
   };
-  return stapel(rubrik('Wetter in Basel'), neben(gross, 168, rechts, 14), leer(10), punkte(0, 6), leiste);
+  return stapel(rubrik('Wetter in Basel'), neben(bild, 78, neben(temp, 150, details, 10), 10), leer(4), punkte(0, 4), leiste);
 }
 
 function aufmacherTeil(n){
   if (!an.aufmacher || !n) return null;
   return stapel(
-    leer(22),
-    n.kicker && absatz([T(n.kicker, F.sans(17, 700))], { lh: 22, align: 'center' }),
-    absatz([T(n.titel, F.serif(40, 700))], { lh: 45, align: 'center' }),
-    leer(10),
-    absatz([T(kurz(n.text, 320), F.serif(23, 500, true))], { lh: 30, align: 'justify' }),
-    absatz([T(`${n.quelle}, ${uhr(n.datum)} Uhr`, F.sans(15, 500))], { lh: 22, align: 'right' }),
+    leer(16),
+    n.kicker && absatz([T(n.kicker, F.sans(16, 700))], { lh: 20, align: 'center' }),
+    absatz([T(n.titel, F.serif(34, 700))], { lh: 39, align: 'center' }),
+    leer(6),
+    absatz([T(kurz(n.text, 220), F.serif(20, 500, true))], { lh: 26, align: 'justify' }),
+    absatz([T(`${n.quelle}, ${uhr(n.datum)} Uhr`, F.sans(13, 500))], { lh: 18, align: 'right' }),
   );
 }
 
 const kurzmeldung = n => stapel(
-  n.kicker && absatz([T(n.kicker, F.sans(15, 700))], { lh: 19 }),
-  absatz([T(n.titel, F.serif(22, 700))], { lh: 26 }),
-  n.text && leer(2),
-  n.text && absatz([T(kurz(n.text, 150), F.serif(19, 500))], { lh: 24, align: 'justify' }),
-  absatz([T(`${n.quelle}, ${uhr(n.datum)}`, F.sans(14, 500))], { lh: 20 }),
+  n.kicker && absatz([T(n.kicker, F.sans(14, 700))], { lh: 17 }),
+  absatz([T(n.titel, F.serif(20, 700))], { lh: 24 }),
+  n.text && absatz([T(kurz(n.text, 100), F.serif(18, 500))], { lh: 22, align: 'justify' }),
+  absatz([T(`${n.quelle}, ${uhr(n.datum)}`, F.sans(13, 500))], { lh: 17 }),
 );
-const liste = items => stapel(items.map((n, i) => stapel(i && punkte(6, 8), kurzmeldung(n))));
+const liste = items => stapel(items.map((n, i) => stapel(i && punkte(5, 6), kurzmeldung(n))));
 
 function meldungenTeil(s){
   if (!an.meldungen || (!s.schweiz.length && !s.welt.length)) return null;
   return spalten(stapel(rubrik('Schweiz'), liste(s.schweiz)), stapel(rubrik('International'), liste(s.welt)));
 }
 
+// Fliesstext mit fettem Titel vorne, wie «In Kürze»
+const inKuerze = (n, laenge) => absatz([
+  T(n.titel + (/[.?!»«"]$/.test(n.titel) ? ' ' : '. '), F.serif(20, 700)),
+  n.text && T(kurz(n.text, laenge), F.serif(19, 500)),
+  T(`  ${n.quelle}`, F.sans(13, 500)),
+], { lh: 25, align: 'justify' });
+
 function baselTeil(s){
   if (!an.basel || !s.basel.length) return null;
-  return stapel(rubrik('Basel'), s.basel.map((n, i) => stapel(
-    i && leer(10),
-    absatz([T(n.titel + (/[.?!»«"]$/.test(n.titel) ? ' ' : '. '), F.serif(22, 700)), T(kurz(n.text, 170), F.serif(21, 500)),
-      T(`  (${n.quelle})`, F.sans(14, 500))], { lh: 28, align: 'justify' }),
-  )));
+  return stapel(rubrik('Basel'), s.basel.map((n, i) => stapel(i && leer(7), inKuerze(n, 120))));
+}
+
+function kulturTeil(s){
+  if (!an.kultur || !s.kultur.length) return null;
+  return stapel(rubrik('Kultur in Basel'), s.kultur.map((n, i) => stapel(i && leer(6),
+    haengend([T('–', F.serif(19, 700))], [T(n.titel, F.serif(19, 700)), n.text && T(' ' + kurz(n.text, 90), F.serif(18, 500)), T(`  ${n.quelle}`, F.sans(13, 500))], 22, { lh: 24 }))));
 }
 
 function tagTeil(jetzt){
   const t = daten.wiki?.onthisday;
   if (!an.tag || !t?.length) return null;
   const tm = jetzt.toLocaleDateString('de-CH', { timeZone: TZ, day: 'numeric', month: 'long' });
-  const auswahl = t.filter(e => e.text && e.year).slice(0, 5).sort((a, b) => a.year - b.year);
-  return stapel(rubrik('Am ' + tm), auswahl.map((e, i) => stapel(i && leer(8),
-    haengend([T(String(e.year).replace('-', '') + (e.year < 0 ? ' v. Chr.' : ''), F.serif(21, 700))], [T(kurz(ohneHtml(e.text), 220), F.serif(21, 500))], 74, { lh: 27 }))));
+  const auswahl = t.filter(e => e.text && e.year).slice(0, 4).sort((a, b) => a.year - b.year);
+  return stapel(rubrik('Am ' + tm), auswahl.map((e, i) => stapel(i && leer(5),
+    haengend([T(String(e.year).replace('-', '') + (e.year < 0 ? ' v. Chr.' : ''), F.serif(19, 700))], [T(kurz(ohneHtml(e.text), 170), F.serif(19, 500))], 62, { lh: 24 }))));
 }
 
 function wissenTeil(){
   const d = daten.wiki?.dyk;
   if (!an.wissen || !d?.length) return null;
-  return stapel(rubrik('Schon gewusst?'), d.slice(0, 3).map((e, i) => stapel(i && leer(8),
-    haengend([T('–', F.serif(21, 700))], [T(kurz(ohneHtml(e.text || e.html), 230), F.serif(21, 500))], 28, { lh: 27 }))));
+  return stapel(rubrik('Schon gewusst?'), d.slice(0, 2).map((e, i) => stapel(i && leer(5),
+    haengend([T('–', F.serif(19, 700))], [T(kurz(ohneHtml(e.text || e.html), 180), F.serif(19, 500))], 22, { lh: 24 }))));
 }
 
 function artikelTeil(){
   const a = daten.wiki?.tfa;
   if (!an.artikel || !a) return null;
   return stapel(rubrik('Artikel des Tages'),
-    absatz([T(a.titles?.normalized || a.title, F.serif(30, 700))], { lh: 36 }),
-    a.description && absatz([T(a.description, F.serif(20, 500, true))], { lh: 26 }),
-    leer(6),
-    absatz([T(kurz(a.extract, 560), F.serif(21, 500))], { lh: 28, align: 'justify' }),
+    absatz([T(a.titles?.normalized || a.title, F.serif(24, 700)), a.description && T(' – ' + a.description, F.serif(18, 500, true))], { lh: 28 }),
+    leer(3),
+    absatz([T(kurz(a.extract, 380), F.serif(19, 500))], { lh: 24, align: 'justify' }),
   );
 }
 
-function abfahrtenTeil(jetzt){
+function abfahrtenTeil(){
   const d = daten.abfahrten;
   if (!an.abfahrten || !d?.stationboard?.length) return null;
-  const naechste = d.stationboard.filter(s => s.stop.departureTimestamp * 1000 + (s.stop.delay || 0) * 6e4 >= jetzt - 6e4).slice(0, 8);
+  const naechste = d.stationboard.filter(s => s.stop.departureTimestamp * 1000 + (s.stop.delay || 0) * 6e4 >= d.ab - 6e4).slice(0, 6);
   if (!naechste.length) return null;
   const zeile = s => (g, x, w) => {
-    const ops = [], lh = 34, base = 24, nr = (s.number || s.category || '').trim();
-    ops.push({ art: 'text', t: hhmm(s.stop.departure), x, y: base, f: F.sans(21, 700) });
+    const ops = [], lh = 29, base = 21, nr = (s.number || s.category || '').trim();
+    ops.push({ art: 'text', t: hhmm(s.stop.departure), x, y: base, f: F.sans(19, 700) });
     // Liniennummer weiss auf schwarz, wie an der Haltestelle
-    g.font = F.sans(18, 700);
-    const nw = g.measureText(nr).width, bw = Math.max(44, nw + 12), bx = x + 70;
-    ops.push({ art: 'rect', x: bx, y: 4, w: bw, h: 26 });
-    ops.push({ art: 'text', t: nr, x: bx + (bw - nw) / 2, y: base - 1, f: F.sans(18, 700), farbe: '#fff' });
+    g.font = F.sans(16, 700);
+    const nw = g.measureText(nr).width, bw = Math.max(40, nw + 10), bx = x + 62;
+    ops.push({ art: 'rect', x: bx, y: 3, w: bw, h: 23 });
+    ops.push({ art: 'text', t: nr, x: bx + (bw - nw) / 2, y: base - 1, f: F.sans(16, 700), farbe: '#fff' });
     const versp = s.stop.delay > 0 ? `+${s.stop.delay}′` : '';
-    g.font = F.sans(19, 700); const vw = versp ? g.measureText(versp).width + 8 : 0;
-    if (versp) ops.push({ art: 'text', t: versp, x: x + w - vw + 8, y: base, f: F.sans(19, 700) });
-    let ziel = (s.to || '').replace(/^Basel, /, ''); const fz = F.serif(20, 500), frei = w - (bx + bw + 10 - x) - vw;
+    g.font = F.sans(17, 700); const vw = versp ? g.measureText(versp).width + 8 : 0;
+    if (versp) ops.push({ art: 'text', t: versp, x: x + w - vw + 8, y: base, f: F.sans(17, 700) });
+    let ziel = (s.to || '').replace(/^Basel, /, ''); const fz = F.serif(18, 500), frei = w - (bx + bw + 10 - x) - vw;
     g.font = fz;
     while (ziel.length > 3 && g.measureText(ziel).width > frei) ziel = ziel.slice(0, -2).trimEnd() + '…';
     ops.push({ art: 'text', t: ziel, x: bx + bw + 10, y: base, f: fz });
     return { h: lh, ops };
   };
   return stapel(rubrik('Abfahrten'),
-    absatz([T(`${d.station?.name || $('halt').value} · Stand ${uhr(jetzt)} Uhr`, F.sans(16, 500))], { lh: 22 }),
-    leer(6), naechste.map(zeile));
+    absatz([T(`${d.station?.name || $('halt').value} · ab ${uhr(d.ab)} Uhr`, F.sans(15, 500))], { lh: 20 }),
+    leer(3), naechste.map(zeile));
 }
 
-function kurseTeil(){
-  const k = daten.kurse;
-  if (!an.kurse || !k?.rates) return null;
-  const t = ['EUR', 'USD', 'GBP'].filter(c => k.rates[c]).map(c => `1 ${c} = ${(1 / k.rates[c]).toFixed(4)} CHF`);
-  const [y, m, d] = k.date.split('-');
-  return stapel(rubrik('Devisen'), t.map(z => absatz([T(z, F.serif(21, 500))], { lh: 27 })),
-    absatz([T(`Referenzkurse der EZB vom ${+d}.${+m}.${y}`, F.sans(14, 500))], { lh: 20 }));
+function maerkteTeil(){
+  const k = an.kurse && daten.kurse?.rates ? daten.kurse : null, o = an.oel ? daten.oel : null;
+  if (!k && !o?.brent) return null;
+  const zeile = (l, r, rf = F.serif(19, 500)) => zweiseitig([T(l, F.serif(19, 500))], [T(r, rf)], 24);
+  const kurse = k && stapel(['EUR', 'USD', 'GBP'].filter(c => k.rates[c]).map(c => zeile(c, `${(1 / k.rates[c]).toFixed(4)} CHF`)));
+  const sorte = (name, s) => {
+    if (!s) return null;
+    const ver = (s.preis - s.vortag) / s.vortag * 100;
+    return stapel(zeile(name, `${s.preis.toFixed(2)} $`, F.serif(19, 700)),
+      absatz([T(`${ver >= 0 ? '+' : '−'}${komma(Math.abs(ver))} % zum Vortag`, F.sans(13, 500))], { lh: 17, align: 'right' }));
+  };
+  const oel = o?.brent && stapel(sorte('Brent', o.brent), leer(3), sorte('WTI', o.wti));
+  const datum = iso => { const [y, m, d] = iso.split('-'); return `${+d}.${+m}.`; };
+  const fuss = [k && `Devisen: EZB, ${datum(k.date)}`, o?.brent && `Öl je Fass: Schluss ${datum(o.brent.datum)}`].filter(Boolean).join(' · ');
+  return stapel(rubrik('Märkte'), kurse && oel ? spalten(kurse, oel, 30) : (kurse || oel),
+    leer(2), absatz([T(fuss, F.sans(13, 500))], { lh: 17 }));
 }
 
 function fuss(jetzt){
-  return stapel(leer(24), linie(1), linie(4, 3, 10),
-    absatz([T('Dépêche du Matin', F.titel(30))], { lh: 34, align: 'center' }),
-    absatz([T(`gesetzt am ${langDatum(jetzt)} um ${uhr(jetzt)} Uhr`, F.sans(14, 500))], { lh: 20, align: 'center' }),
-    absatz([T('Quellen: Open-Meteo, BAFU, SRF, NZZ, Tagesschau, Kanton Basel-Stadt, Wikipedia, opendata.ch, EZB', F.sans(13, 500))], { lh: 18, align: 'center' }),
+  return stapel(leer(20), linie(1), linie(4, 3, 8),
+    absatz([T('Dépêche du Matin', F.titel(26))], { lh: 30, align: 'center' }),
+    absatz([T(`Nr. ${ausgabeNr(jetzt)} · gesetzt ${uhr(jetzt)} Uhr`, F.sans(13, 500))], { lh: 17, align: 'center' }),
+    absatz([T('Open-Meteo · BAFU · SRF · NZZ · Tagesschau · Kanton Basel-Stadt · bz · Bajour · Wikipedia · opendata.ch · EZB · Yahoo Finance', F.sans(12, 500))], { lh: 16, align: 'center' }),
   );
 }
 
@@ -639,11 +665,12 @@ async function setzen(){
     aufmacherTeil(s.aufmacher),
     meldungenTeil(s),
     baselTeil(s),
-    abfahrtenTeil(jetzt),
+    kulturTeil(s),
+    abfahrtenTeil(),
     tagTeil(jetzt),
     wissenTeil(),
     artikelTeil(),
-    kurseTeil(),
+    maerkteTeil(),
     fuss(jetzt),
   );
   // Schriften zuerst laden, auch die erweiterten Buchstaben, sonst misst die Leinwand mit einer Ersatzschrift
