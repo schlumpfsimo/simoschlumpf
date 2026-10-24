@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · SCHIFFE VERSENKEN</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans (SIL Open Font License), dieselben Dateien wie bon/text/ */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Spielblock über die Bon-Post, Stil wie bon/text/: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+/* Am Handy: Einstellungen, darunter Drucken, dann die Vorschau */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "knoepfe" "vorschau";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input{font-family:"Plex",system-ui,sans-serif;font-weight:500;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%;min-width:0}
+input:focus{outline:2px solid #000;outline-offset:-1px}
+.namen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.85rem;text-transform:none;min-width:0}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.ghost{background:#fff;color:#000;padding:10px;font-size:.8rem;letter-spacing:.04em}
+button.ghost:hover{background:#000;color:#fff}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Vorschau: die Bons genau so, wie sie aus dem Drucker kommen (schon schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 72px);overflow-y:auto;padding-bottom:12px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Schiffe versenken · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <span class="label" id="anzahlLabel">Bons</span>
+    <div class="seg" id="anzahl" role="group" aria-labelledby="anzahlLabel">
+      <button type="button" data-v="2">Zwei (beide Spieler)</button><button type="button" data-v="1">Einer</button>
+    </div>
+    <span class="label">Namen (optional, sonst von Hand)</span>
+    <div class="namen" id="namen">
+      <input id="name1" autocomplete="off" maxlength="24" placeholder="Spieler 1" aria-label="Name Spieler 1">
+      <input id="name2" autocomplete="off" maxlength="24" placeholder="Spieler 2" aria-label="Name Spieler 2">
+    </div>
+    <span class="label" id="flotteLabel">Flotte</span>
+    <div class="seg" id="flotte" role="group" aria-labelledby="flotteLabel">
+      <button type="button" data-v="de">10 Schiffe</button><button type="button" data-v="klein">5 Schiffe</button>
+    </div>
+    <p class="hint" id="flotteHint"></p>
+    <span class="label" id="zufallLabel">Eigene Flotte</span>
+    <div class="seg" id="zufall" role="group" aria-labelledby="zufallLabel">
+      <button type="button" data-v="1">Zufällig einzeichnen</button><button type="button" data-v="0">Selbst zeichnen</button>
+    </div>
+    <button type="button" class="ghost" id="neu">Neue Zufallsflotte</button>
+  </div>
+  <div class="knoepfe">
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <p class="hint">Jeder Spieler bekommt einen eigenen Bon und hält ihn verdeckt. Die Schiffe berühren sich nicht, auch nicht über Eck. Mit Kugelschreiber ausfüllen.</p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div id="papiere" style="display:contents"></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const N = 10;                    // Spielfeld 10 × 10
+const ZELLE = 50;                // 6,25 mm pro Kästchen: 10 Kästchen + Spalte für 1–10 füllen die 68 mm
+const LINKS = BREITE - RAND - N * ZELLE;   // x der ersten Gitterlinie, links davon die Zahlen 1–10
+const BUCHSTABEN = 'ABCDEFGHIJ';
+const SCHRIFT = '"Plex", system-ui, sans-serif';
+const font = (px, fett) => `${fett ? 700 : 500} ${px}px ${SCHRIFT}`;
+
+// Übliche deutsche Variante (Wikipedia «Schiffe versenken»): 10 Schiffe, 30 Kästchen.
+// Kleine Variante wie bei Hasbro «Battleship»: 5 Schiffe, 17 Kästchen.
+const FLOTTEN = {
+  de: [{ name: 'Schlachtschiff', l: 5, n: 1 }, { name: 'Kreuzer', l: 4, n: 2 }, { name: 'Zerstörer', l: 3, n: 3 }, { name: 'U-Boot', l: 2, n: 4 }],
+  klein: [{ name: 'Schlachtschiff', l: 5, n: 1 }, { name: 'Kreuzer', l: 4, n: 1 }, { name: 'Zerstörer', l: 3, n: 2 }, { name: 'U-Boot', l: 2, n: 1 }],
+};
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.schiffe.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.schiffe.' + k, v); } catch {} }
+};
+const wahl = {
+  anzahl: store.get('anzahl', '2') === '1' ? '1' : '2',
+  flotte: store.get('flotte', 'de') === 'klein' ? 'klein' : 'de',
+  zufall: store.get('zufall', '1') === '0' ? '0' : '1',
+};
+$('name1').value = store.get('name1', ''); $('name2').value = store.get('name2', '');
+
+// ---------------------------------------------------------------- Zufallsflotte
+// Grosse Schiffe zuerst, jedes an eine zufällige erlaubte Stelle: im Feld, nicht auf und nicht neben
+// einem anderen Schiff (auch nicht über Eck). Geht es nicht auf, von vorn beginnen.
+function zufallsFlotte(art, zufall = Math.random){
+  const typen = FLOTTEN[art].flatMap(t => Array.from({ length: t.n }, () => t.l)).sort((a, b) => b - a);
+  for (let versuch = 0; versuch < 1000; versuch++) {
+    const belegt = Array.from({ length: N }, () => new Array(N).fill(false)), schiffe = [];
+    let ok = true;
+    for (const l of typen) {
+      const moegliche = [];
+      for (const quer of [true, false]) for (let r = 0; r < (quer ? N : N - l + 1); r++) for (let c = 0; c < (quer ? N - l + 1 : N); c++) {
+        let frei = true;
+        for (let k = 0; k < l && frei; k++) {
+          const rr = quer ? r : r + k, cc = quer ? c + k : c;
+          for (let dr = -1; dr <= 1 && frei; dr++) for (let dc = -1; dc <= 1; dc++) {
+            const a = rr + dr, b = cc + dc;
+            if (a >= 0 && a < N && b >= 0 && b < N && belegt[a][b]) { frei = false; break; }
+          }
+        }
+        if (frei) moegliche.push({ r, c, l, quer });
+      }
+      if (!moegliche.length) { ok = false; break; }
+      const s = moegliche[Math.floor(zufall() * moegliche.length)];
+      for (let k = 0; k < l; k++) belegt[s.quer ? s.r : s.r + k][s.quer ? s.c + k : s.c] = true;
+      schiffe.push(s);
+    }
+    if (ok) return schiffe;
+  }
+  throw new Error('Keine Flotte gefunden');
+}
+window.zufallsFlotte = zufallsFlotte;   // für den Test
+
+// Ganze Bonhöhe auf ein Vielfaches von 36 Punkten = 17 CSS-Pixel. Nur dann bildet der Mac das Bild
+// Punkt für Punkt ab; sonst verdoppelt Chrome irgendwo eine Punktzeile und eine Linie wird dicker.
+const ganz = h => Math.ceil(h / 36) * 36;
+
+function passend(g, t, px, fett, breite, min = 14){
+  for (; px > min; px--) { g.font = font(px, fett); if (g.measureText(t).width <= breite) return { t, px }; }
+  g.font = font(min, fett);
+  while (t.length > 1 && g.measureText(t + '…').width > breite) t = t.slice(0, -1);
+  return { t: g.measureText(t).width <= breite ? t : t + '…', px: min };
+}
+
+// ---------------------------------------------------------------- Zeichnen
+// Gitter mit Buchstaben oben und Zahlen links. Linien 2 Punkte (0,25 mm), Rahmen 4 Punkte, immer
+// auf ganzen Punkten, damit nichts verwaschen wird.
+function gitter(g, y, schiffe){
+  g.font = font(24, true); g.textAlign = 'center';
+  for (let i = 0; i < N; i++) g.fillText(BUCHSTABEN[i], LINKS + i * ZELLE + ZELLE / 2, y + 26);
+  const y0 = y + 36;
+  for (let i = 0; i < N; i++) g.fillText(String(i + 1), RAND + (LINKS - RAND) / 2 - 2, y0 + i * ZELLE + ZELLE / 2 + 9);
+  g.textAlign = 'left';
+  for (let i = 0; i <= N; i++) {
+    const rahmen = i === 0 || i === N, d = rahmen ? 4 : 2;
+    const x = i === 0 ? LINKS - 2 : i === N ? LINKS + N * ZELLE - 2 : LINKS + i * ZELLE - 1;
+    const yy = i === 0 ? y0 - 2 : i === N ? y0 + N * ZELLE - 2 : y0 + i * ZELLE - 1;
+    g.fillRect(x, y0 - 2, d, N * ZELLE + 4);       // senkrecht
+    g.fillRect(LINKS - 2, yy, N * ZELLE + 4, d);   // waagrecht
+  }
+  // Schiffe als dicker Umriss mit weissem Inneren: So sieht man Treffer-Kreuze darin noch gut
+  for (const s of schiffe || []) {
+    const ein = 8, d = 5;
+    const x = LINKS + s.c * ZELLE + ein, yy = y0 + s.r * ZELLE + ein;
+    const w = (s.quer ? s.l : 1) * ZELLE - 2 * ein, h = (s.quer ? 1 : s.l) * ZELLE - 2 * ein;
+    g.fillRect(x, yy, w, d); g.fillRect(x, yy + h - d, w, d); g.fillRect(x, yy, d, h); g.fillRect(x + w - d, yy, d, h);
+  }
+  return y0 + N * ZELLE + 2;
+}
+
+function kaestchen(g, x, y, s, d = 2){ g.fillRect(x, y, s, d); g.fillRect(x, y + s - d, s, d); g.fillRect(x, y, d, s); g.fillRect(x + s - d, y, d, s); }
+
+function bon(name, schiffe){
+  const c = document.createElement('canvas'), g = c.getContext('2d', { willReadFrequently: true });
+  const flotte = FLOTTEN[wahl.flotte];
+  c.width = BREITE; c.height = 2400;   // reicht sicher, am Schluss wird auf die echte Länge gekürzt
+  let H = c.height;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H); g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+
+  // Titel und Name
+  g.font = font(38, true); g.fillText('Schiffe versenken', RAND, 40);
+  let y = 52;
+  g.fillRect(RAND, y, INNEN, 4); y += 18;
+  const titel = (t, rechts) => {
+    g.font = font(28, true); g.fillText(t, RAND, y + 30);
+    if (rechts) { const p = passend(g, rechts, 24, false, INNEN - g.measureText(t).width - 24); g.font = font(p.px, false); g.textAlign = 'right'; g.fillText(p.t, BREITE - RAND, y + 30); g.textAlign = 'left'; }
+    y += 52;
+  };
+  if (name) titel('Meine Flotte', name);
+  else { titel('Meine Flotte', ''); g.font = font(20, false); g.textAlign = 'right'; g.fillText('Name', BREITE - RAND - 170, y - 22); g.textAlign = 'left'; g.fillRect(BREITE - RAND - 160, y - 20, 160, 2); }
+  y = gitter(g, y - 10, schiffe) + 24;
+  titel('Gegner', 'X Treffer,  • Wasser');
+  y = gitter(g, y - 10, null) + 24;
+
+  // Flottenliste zum Abhaken
+  g.font = font(24, true); g.fillText('Flotte', RAND, y + 26);
+  g.font = font(18, false);
+  const xMeine = 300, xGegner = 430, kb = 24, abst = 28;   // je bis 4 Kästchen, bleibt im Rand
+  g.fillText('meine', xMeine, y + 26); g.fillText('Gegner', xGegner, y + 26);
+  y += 40;
+  g.fillRect(RAND, y - 6, INNEN, 2);
+  for (const t of flotte) {
+    g.font = font(22, false); g.fillText(t.name, RAND, y + 25);
+    for (let k = 0; k < t.l; k++) g.fillRect(RAND + 166 + k * 18, y + 10, 14, 14);   // Grösse als Balken
+    for (let k = 0; k < t.n; k++) { kaestchen(g, xMeine + k * abst, y + 5, kb); kaestchen(g, xGegner + k * abst, y + 5, kb); }
+    y += 40;
+  }
+  g.fillRect(RAND, y - 6, INNEN, 2);
+  y += 20;
+  const regeln = ['Abwechselnd ein Feld ansagen, z. B. «C7». Antwort: Wasser,', 'Treffer oder versenkt. Bei Treffer nochmals schiessen.', 'Schiffe liegen gerade und berühren sich nicht, auch nicht über Eck.'];
+  g.font = font(17, false);
+  for (const z of regeln) { g.fillText(z, RAND, y + 18); y += 25; }
+  H = ganz(y + 16);
+  const fertig = document.createElement('canvas'); fertig.width = BREITE; fertig.height = H;
+  fertig.getContext('2d').drawImage(c, 0, 0);
+  return rastern(fertig);
+}
+
+// Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+function rastern(c){
+  const g = c.getContext('2d', { willReadFrequently: true }), W = c.width, H = c.height;
+  const img = g.getImageData(0, 0, W, H), px = img.data, bpr = W >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < W * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / W | 0) * bpr + ((j % W) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255; px[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return { W, H, bits, canvas: c };
+}
+
+// ---------------------------------------------------------------- Zustand und Vorschau
+// Die Zufallsflotten bleiben, bis man «Neue Zufallsflotte» drückt: Gedruckt wird genau die Vorschau
+let flotten = [null, null], flottenArt = null, bons = [];
+function neueFlotten(){ flotten = [zufallsFlotte(wahl.flotte), zufallsFlotte(wahl.flotte)]; flottenArt = wahl.flotte; }
+
+async function zeichnen(){
+  const namen = [$('name1').value.trim(), $('name2').value.trim()];
+  await Promise.all([document.fonts.load(font(20, false), 'Schiffe äöü«»' + namen.join('')), document.fonts.load(font(20, true), 'Schiffe äöü' + namen.join(''))]);
+  if (flottenArt !== wahl.flotte) neueFlotten();
+  const n = +wahl.anzahl;
+  bons = [];
+  for (let i = 0; i < n; i++) bons.push({ titel: 'Schiffe versenken ' + (namen[i] || 'Spieler ' + (i + 1)), raster: bon(namen[i], wahl.zufall === '1' ? flotten[i] : null) });
+  const box = $('papiere'); box.innerHTML = '';
+  for (const b of bons) { const p = document.createElement('div'); p.className = 'papier'; p.appendChild(b.raster.canvas); box.appendChild(p); }
+  $('drucken').textContent = n === 1 ? '1 Bon drucken' : '2 Bons drucken';
+  $('mass').textContent = `Ein Bon etwa ${(bons[0].raster.H / 80 + 2).toFixed(0)} cm lang, Kästchen ${ZELLE / 8} mm`;
+  $('name2').hidden = n === 1;
+  $('neu').hidden = wahl.zufall !== '1';
+  const f = FLOTTEN[wahl.flotte];
+  $('flotteHint').textContent = f.map(t => (t.n > 1 ? t.n + '× ' : '') + t.name + ' ' + t.l).join(', ') + ' · ' + f.reduce((s, t) => s + t.l * t.n, 0) + ' Kästchen';
+}
+
+let warte = null, laeuft = Promise.resolve();
+function spaeter(){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, 120); }
+
+function markieren(){
+  for (const k of ['anzahl', 'flotte', 'zufall'])
+    $(k).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === wahl[k])));
+}
+for (const k of ['anzahl', 'flotte', 'zufall']) $(k).addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  wahl[k] = b.dataset.v; store.set(k, wahl[k]); markieren(); spaeter();
+});
+for (const id of ['name1', 'name2']) $(id).addEventListener('input', () => { store.set(id, $(id).value); spaeter(); });
+$('neu').addEventListener('click', () => { neueFlotten(); spaeter(); });
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+// Die Höhe ist ein Vielfaches von 36 Punkten (siehe ganz), so kommt jeder Punkt 1:1 an.
+async function bonHtml(raster){
+  const mm = raster.H * 72 / raster.W;   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits, canvas }){
+  if (!('CompressionStream' in window)) return canvas.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
+// Jeder Spieler ein eigener Bon und eine eigene Einreichung: Das Messer schneidet dazwischen
+$('drucken').addEventListener('click', async () => {
+  $('drucken').disabled = true;
+  try {
+    clearTimeout(warte);
+    await (laeuft = laeuft.then(zeichnen, zeichnen));   // sicher den neusten Stand drucken
+    for (let i = 0; i < bons.length; i++) {
+      msg(bons.length > 1 ? `Sende ${i + 1} von ${bons.length} …` : 'Sende …');
+      // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+      const r = await fetch(BONPOST, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ key: KEY, inhalt: await bonHtml(bons[i].raster), titel: bons[i].titel, quelle: 'website-schiffe' }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    }
+    msg(bons.length > 1 ? '2 Bons gesendet. Sie kommen in ein, zwei Minuten.' : 'Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+markieren(); zeichnen();
+</script>
+</body>
+</html>

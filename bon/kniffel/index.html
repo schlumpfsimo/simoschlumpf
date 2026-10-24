@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · KNIFFEL</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans (SIL Open Font License), dieselben Dateien wie bon/text/ */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Spielblock über die Bon-Post, Stil wie bon/text/: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+/* Am Handy: Einstellungen, darunter Drucken, dann die Vorschau */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "knoepfe" "vorschau";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input{font-family:"Plex",system-ui,sans-serif;font-weight:500;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%;min-width:0}
+input:focus{outline:2px solid #000;outline-offset:-1px}
+.namen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.85rem;text-transform:none;min-width:0}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Vorschau: die Bons genau so, wie sie aus dem Drucker kommen (schon schwarz-weiss gerastert) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,340px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
+.mal{margin:0 0 10px;font-size:.78rem;color:var(--muted);text-align:center}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 72px);overflow-y:auto;padding-bottom:12px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Kniffel · Spielblock über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <span class="label" id="spielerLabel">Spieler</span>
+    <div class="seg" id="spieler" role="group" aria-labelledby="spielerLabel">
+      <button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button><button type="button" data-v="6">6</button>
+    </div>
+    <span class="label">Namen (optional, sonst von Hand)</span>
+    <div class="namen" id="namen"></div>
+    <div id="aufteilungBox">
+      <span class="label" id="aufteilungLabel">Blatt</span>
+      <div class="seg" id="aufteilung" role="group" aria-labelledby="aufteilungLabel">
+        <button type="button" data-v="alle">Alle auf einem</button><button type="button" data-v="je">Eines pro Spieler</button>
+      </div>
+      <p class="hint" id="aufteilungHint"></p>
+    </div>
+    <span class="label" id="blaetterLabel">Wie viele Blätter</span>
+    <div class="seg" id="blaetter" role="group" aria-labelledby="blaetterLabel">
+      <button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="5">5</button><button type="button" data-v="10">10</button>
+    </div>
+    <span class="label" id="regelnLabel">Spielregeln kurz (eigener Bon)</span>
+    <div class="seg" id="regeln" role="group" aria-labelledby="regelnLabel">
+      <button type="button" data-v="1">Mitdrucken</button><button type="button" data-v="0">Nein</button>
+    </div>
+  </div>
+  <div class="knoepfe">
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <p class="hint">Jedes Blatt ist ein eigener Bon, das Messer schneidet sie einzeln ab. Mit Kugelschreiber ausfüllen: Bleistift und Filzstift halten auf Thermopapier schlecht.</p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div id="papiere" style="display:contents"></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const SPIELE = 6;                // Spalten auf dem Blatt «eines pro Spieler»
+const SCHRIFT = '"Plex", system-ui, sans-serif';
+const font = (px, fett) => `${fett ? 700 : 500} ${px}px ${SCHRIFT}`;
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.kniffel.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.kniffel.' + k, v); } catch {} }
+};
+const wahl = {
+  spieler: +store.get('spieler', '2') || 2,
+  aufteilung: store.get('aufteilung', 'alle') === 'je' ? 'je' : 'alle',
+  blaetter: +store.get('blaetter', '1') || 1,
+  regeln: store.get('regeln', '0') === '1' ? '1' : '0',
+};
+let namen = []; try { namen = JSON.parse(store.get('namen', '[]')); } catch {} if (!Array.isArray(namen)) namen = [];
+
+// ---------------------------------------------------------------- Zeilen des Spielblocks
+// art: feld (zum Eintragen), summe (fett, Linie darüber), ende (Endsumme, gross)
+const ZEILEN = [
+  { t: 'Einer', h: 'nur Einer zählen' },
+  { t: 'Zweier', h: 'nur Zweier zählen' },
+  { t: 'Dreier', h: 'nur Dreier zählen' },
+  { t: 'Vierer', h: 'nur Vierer zählen' },
+  { t: 'Fünfer', h: 'nur Fünfer zählen' },
+  { t: 'Sechser', h: 'nur Sechser zählen' },
+  { t: 'Summe oben', art: 'summe', linie: 4 },
+  { t: 'Bonus', h: 'ab 63 Punkten: 35', art: 'summe' },
+  { t: 'Gesamt oben', h: 'Summe + Bonus', art: 'summe' },
+  { t: 'Dreierpasch', h: '3 gleiche: alle Augen', linie: 6 },
+  { t: 'Viererpasch', h: '4 gleiche: alle Augen' },
+  { t: 'Full House', h: '3 + 2 gleiche: 25' },
+  { t: 'Kleine Strasse', h: '4 in Folge: 30' },
+  { t: 'Grosse Strasse', h: '5 in Folge: 40' },
+  { t: 'Kniffel', h: '5 gleiche: 50' },
+  { t: 'Chance', h: 'alle Augen' },
+  { t: 'Summe unten', art: 'summe', linie: 4 },
+  { t: 'Gesamt oben', h: 'von oben übertragen', art: 'summe' },
+  { t: 'Endsumme', art: 'ende', linie: 4 },
+];
+const ZH = 60, ZH_ENDE = 76, KOPF_H = 64;   // Zeilenhöhen: 7,5 mm zum Schreiben, 9,5 mm Endsumme
+
+// Höhe auf ein Vielfaches von 36 Punkten = 17 CSS-Pixel aufrunden. Nur dann bildet der Mac das Bild
+// Punkt für Punkt ab; sonst verdoppelt Chrome irgendwo eine Punktzeile und eine Linie wird dicker.
+const ganz = h => Math.ceil(h / 36) * 36;
+
+// Schrift so weit verkleinern, bis der Text passt, notfalls kürzen
+function passend(g, t, px, fett, breite, min = 13){
+  for (; px > min; px--) { g.font = font(px, fett); if (g.measureText(t).width <= breite) return { t, px }; }
+  g.font = font(min, fett);
+  while (t.length > 1 && g.measureText(t + '…').width > breite) t = t.slice(0, -1);
+  return { t: g.measureText(t).width <= breite ? t : t + '…', px: min };
+}
+
+// ---------------------------------------------------------------- Blatt zeichnen
+// spalten: Köpfe der Spalten (Namen oder Spielnummern), kopfLabel: was links oben steht
+function blatt(spalten, { kopfLabel, oben }){
+  const c = document.createElement('canvas'), g = c.getContext('2d', { willReadFrequently: true });
+  const n = spalten.length;
+  // Spalten für Punkte möglichst breit, die Namensspalte so schmal, wie die Wörter es erlauben
+  const L0 = n >= 5 ? 156 : n === 4 ? 172 : 190;
+  const spB = Math.floor((INNEN - L0) / n), L = INNEN - spB * n;
+  const titelH = 74;
+  let H = titelH + KOPF_H;
+  for (const z of ZEILEN) H += z.art === 'ende' ? ZH_ENDE : ZH;
+  H = ganz(H + 20);   // etwas Weiss unten, damit das Messer nicht in die Endsumme schneidet
+  c.width = BREITE; c.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+
+  // Titel
+  g.font = font(44, true); g.fillText('Kniffel', RAND, 46);
+  if (oben) { const p = passend(g, oben, 30, true, INNEN - 190, 18); g.font = font(p.px, true); g.textAlign = 'right'; g.fillText(p.t, BREITE - RAND, 46); g.textAlign = 'left'; }
+  g.fillRect(RAND, 58, INNEN, 4);
+
+  const x0 = RAND, y0 = titelH, xs = [x0, x0 + L];
+  for (let i = 1; i <= n; i++) xs.push(x0 + L + i * spB);   // Spaltengrenzen, letzte = BREITE - RAND
+  // Kopfzeile
+  const kopf = passend(g, kopfLabel, 18, false, L - 16);
+  g.font = font(kopf.px, false); g.fillText(kopf.t, x0 + 10, y0 + KOPF_H - 14);
+  // alle Namen gleich gross: so gross, wie es der längste erlaubt, aber nicht unter 16 Punkte (2 mm)
+  const kopfPx = Math.min(24, ...spalten.filter(Boolean).map(s => passend(g, s, 24, true, spB - 12, 16).px));
+  spalten.forEach((s, i) => {
+    if (!s) return;
+    const p = passend(g, s, kopfPx, true, spB - 12, kopfPx);
+    g.font = font(p.px, true); g.textAlign = 'center';
+    g.fillText(p.t, (xs[i + 1] + xs[i + 2]) / 2, y0 + KOPF_H - 18);
+    g.textAlign = 'left';
+  });
+  // Zeilen
+  let y = y0 + KOPF_H;
+  const waag = [{ y: y0, d: 4 }, { y, d: 4 }];
+  for (const z of ZEILEN) {
+    const h = z.art === 'ende' ? ZH_ENDE : ZH;
+    if (z.linie) waag[waag.length - 1].d = Math.max(waag[waag.length - 1].d, z.linie);
+    const fett = z.art === 'summe' || z.art === 'ende';
+    const gr = z.art === 'ende' ? 30 : 24;
+    const t = passend(g, z.t, gr, fett, L - 16, 16);
+    g.font = font(t.px, fett);
+    if (z.h) {
+      g.fillText(t.t, x0 + 10, y + 27);
+      const hh = passend(g, z.h, 16, false, L - 16, 12);
+      g.font = font(hh.px, false); g.fillText(hh.t, x0 + 10, y + 50);
+    } else g.fillText(t.t, x0 + 10, y + Math.round(h / 2 + t.px * 0.36));
+    y += h;
+    waag.push({ y, d: 2 });
+  }
+  waag[waag.length - 1].d = 4;
+  // Linien auf ganze Punkte: dünn 2 Punkte (0,25 mm), dick 4 bis 6 Punkte, keine halben Punkte
+  const yEnde = y;
+  for (const w of waag) g.fillRect(x0, w.y - (w.d >> 1), INNEN, w.d);
+  xs.forEach((x, i) => {
+    const d = i === 0 || i === xs.length - 1 ? 4 : i === 1 ? 4 : 2;
+    const xx = i === 0 ? x : i === xs.length - 1 ? x - d : x - (d >> 1);
+    g.fillRect(xx, y0 - 2, d, yEnde - y0 + 4);
+  });
+  return rastern(c);
+}
+
+// Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+function rastern(c){
+  const g = c.getContext('2d', { willReadFrequently: true }), W = c.width, H = c.height;
+  const img = g.getImageData(0, 0, W, H), px = img.data, bpr = W >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < W * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / W | 0) * bpr + ((j % W) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255; px[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return { W, H, bits, canvas: c };
+}
+
+// ---------------------------------------------------------------- Spielregeln als Text-Bon
+const REGELN = [
+  ['t', 'Kniffel – Spielregeln kurz'],
+  ['p', 'Gespielt wird mit 5 Würfeln, reihum. Wer am Ende die höchste Endsumme hat, gewinnt.'],
+  ['h', 'Ein Zug'],
+  ['p', 'Bis zu dreimal würfeln. Nach jedem Wurf beliebige Würfel liegen lassen und den Rest nochmals werfen.'],
+  ['p', 'Dann genau ein leeres Feld eintragen. Passt nichts, muss trotzdem ein Feld gestrichen werden (0 Punkte).'],
+  ['p', 'Nach 13 Zügen sind alle Felder voll, das Spiel ist aus.'],
+  ['h', 'Oben'],
+  ['p', 'Einer bis Sechser: nur die Würfel dieser Zahl zählen. Beispiel: drei Vierer = 12.'],
+  ['p', 'Bonus: Sind es oben 63 Punkte oder mehr, gibt es 35 dazu.'],
+  ['h', 'Unten'],
+  ['p', 'Dreierpasch: mindestens 3 gleiche, alle Augen zählen.'],
+  ['p', 'Viererpasch: mindestens 4 gleiche, alle Augen zählen.'],
+  ['p', 'Full House: 3 gleiche und 2 gleiche = 25.'],
+  ['p', 'Kleine Strasse: 4 Zahlen in Folge, z. B. 2-3-4-5\u00a0=\u00a030.'],
+  ['p', 'Grosse Strasse: 5 Zahlen in Folge, 1 bis 5 oder 2 bis 6\u00a0=\u00a040.'],
+  ['p', 'Kniffel: 5 gleiche = 50.'],
+  ['p', 'Chance: alles geht, alle Augen zählen.'],
+  ['h', 'Am Schluss'],
+  ['p', 'Summe oben + Bonus + Summe unten = Endsumme.'],
+];
+
+function umbrechen(g, text, breite){
+  const zeilen = []; let z = '';
+  for (const w of text.split(' ')) {
+    const neu = z ? z + ' ' + w : w;
+    if (g.measureText(neu).width > breite && z) { zeilen.push(z); z = w; } else z = neu;
+  }
+  if (z) zeilen.push(z);
+  return zeilen;
+}
+
+function regelnBon(){
+  const c = document.createElement('canvas'), g = c.getContext('2d', { willReadFrequently: true });
+  const ops = []; let y = 0;
+  for (const [art, text] of REGELN) {
+    const px = art === 't' ? 36 : art === 'h' ? 28 : 25, fett = art !== 'p', zh = Math.round(px * 1.35);
+    if (art === 'h') y += 14;
+    g.font = font(px, fett);
+    for (const z of umbrechen(g, text, INNEN)) { ops.push({ t: z, x: RAND, y: y + Math.round(zh * 0.78), f: font(px, fett) }); y += zh; }
+    if (art === 't') { y += 8; ops.push({ rect: [RAND, y, INNEN, 4] }); y += 18; }
+    else if (art === 'p') y += 6;
+  }
+  const H = ganz(y + 20);
+  c.width = BREITE; c.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H); g.fillStyle = '#000';
+  for (const o of ops) { if (o.rect) g.fillRect(...o.rect); else { g.font = o.f; g.fillText(o.t, o.x, o.y); } }
+  return rastern(c);
+}
+
+// ---------------------------------------------------------------- Welche Bons
+// Gibt die verschiedenen Bons mit ihrer Anzahl zurück; gedruckt wird Blatt für Blatt
+function plan(){
+  const n = wahl.spieler, je = n === 1 || wahl.aufteilung === 'je';
+  const name = i => (namen[i] || '').trim();
+  const sorten = [];
+  if (je) for (let i = 0; i < n; i++) sorten.push({ titel: 'Kniffel ' + (name(i) || 'Spieler ' + (i + 1)), bon: () => blatt(Array.from({ length: SPIELE }, (_, k) => String(k + 1)), { kopfLabel: 'Spiel', oben: name(i) || (n > 1 ? 'Name: ______' : '') }) });
+  else sorten.push({ titel: 'Kniffel', bon: () => blatt(Array.from({ length: n }, (_, i) => name(i)), { kopfLabel: 'Name', oben: '' }) });
+  return { sorten, je };
+}
+
+let bons = [], regeln = null;
+async function zeichnen(){
+  await Promise.all([document.fonts.load(font(20, false), 'Kniffel äöü' + namen.join('')), document.fonts.load(font(20, true), 'Kniffel äöü' + namen.join(''))]);
+  const { sorten, je } = plan();
+  bons = sorten.map(s => ({ titel: s.titel, raster: s.bon() }));
+  regeln = wahl.regeln === '1' ? regelnBon() : null;
+  const box = $('papiere'); box.innerHTML = '';
+  const zeige = (r, text) => {
+    const p = document.createElement('div'); p.className = 'papier';
+    p.appendChild(r.canvas); box.appendChild(p);
+    if (text) { const m = document.createElement('p'); m.className = 'mal'; m.textContent = text; box.appendChild(m); }
+  };
+  const mal = wahl.blaetter > 1 ? `wird ${wahl.blaetter}× gedruckt` : '';
+  bons.forEach(b => zeige(b.raster, mal));
+  if (regeln) zeige(regeln, 'Spielregeln, einmal');
+  const anzahl = bons.length * wahl.blaetter + (regeln ? 1 : 0);
+  $('drucken').textContent = anzahl === 1 ? '1 Bon drucken' : anzahl + ' Bons drucken';
+  $('mass').textContent = `Ein Blatt etwa ${(bons[0].raster.H / 80 + 2).toFixed(0)} cm lang` + (je ? `, ${SPIELE} Spiele nebeneinander` : '');
+}
+
+// ---------------------------------------------------------------- Bedienung
+function namenFelder(){
+  const box = $('namen');
+  while (box.children.length < wahl.spieler) {
+    const i = box.children.length, f = document.createElement('input');
+    f.autocomplete = 'off'; f.enterKeyHint = 'next'; f.maxLength = 24; f.placeholder = 'Spieler ' + (i + 1);
+    f.setAttribute('aria-label', 'Name Spieler ' + (i + 1)); f.value = namen[i] || '';
+    f.addEventListener('input', () => { namen[i] = f.value; store.set('namen', JSON.stringify(namen)); spaeter(); });
+    box.appendChild(f);
+  }
+  while (box.children.length > wahl.spieler) box.lastChild.remove();
+  $('aufteilungBox').hidden = wahl.spieler === 1;
+  $('aufteilungHint').textContent = wahl.aufteilung === 'je'
+    ? `Jeder Spieler bekommt ein eigenes Blatt mit ${SPIELE} Spalten für ${SPIELE} Spiele.`
+    : `Eine Spalte pro Spieler, ${wahl.spieler >= 5 ? 'bei ' + wahl.spieler + ' Spielern etwa 8 mm breit' : 'breit genug für dreistellige Zahlen'}.`;
+}
+
+function markieren(){
+  for (const k of ['spieler', 'aufteilung', 'blaetter', 'regeln'])
+    $(k).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(wahl[k]))));
+}
+for (const k of ['spieler', 'aufteilung', 'blaetter', 'regeln']) $(k).addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  wahl[k] = k === 'spieler' || k === 'blaetter' ? +b.dataset.v : b.dataset.v;
+  store.set(k, String(wahl[k])); markieren(); namenFelder(); spaeter();
+});
+
+let warte = null, laeuft = Promise.resolve();
+function spaeter(){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, 120); }
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+// Die Höhe ist ein Vielfaches von 36 Punkten (siehe ganz), so kommt jeder Punkt 1:1 an.
+async function bonHtml(raster){
+  const mm = raster.H * 72 / raster.W;   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits, canvas }){
+  if (!('CompressionStream' in window)) return canvas.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+async function einreichen(inhalt, titel){
+  // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+  const r = await fetch(BONPOST, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key: KEY, inhalt, titel, quelle: 'website-kniffel' }),
+  });
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+}
+
+// ---------------------------------------------------------------- Senden
+// Jedes Blatt ist eine eigene Einreichung: So schneidet das Messer nach jedem Blatt
+$('drucken').addEventListener('click', async () => {
+  $('drucken').disabled = true;
+  try {
+    clearTimeout(warte);
+    await (laeuft = laeuft.then(zeichnen, zeichnen));   // sicher den neusten Stand drucken
+    const html = await Promise.all(bons.map(b => bonHtml(b.raster)));
+    const liste = [];
+    for (let k = 0; k < wahl.blaetter; k++) bons.forEach((b, i) => liste.push({ inhalt: html[i], titel: b.titel }));
+    if (regeln) liste.push({ inhalt: await bonHtml(regeln), titel: 'Kniffel Spielregeln' });
+    for (let i = 0; i < liste.length; i++) {
+      msg(liste.length > 1 ? `Sende ${i + 1} von ${liste.length} …` : 'Sende …');
+      await einreichen(liste[i].inhalt, liste[i].titel);
+    }
+    msg(liste.length > 1 ? `${liste.length} Bons gesendet. Sie kommen in ein, zwei Minuten.` : 'Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+markieren(); namenFelder(); zeichnen();
+</script>
+</body>
+</html>
