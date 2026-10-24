@@ -75,6 +75,18 @@ Startprompt für einen neuen Chat:
   und danach wieder einschalte:
   `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ch.bonpost.abholen.plist`
 
+## Öffentliche Daten (getestet, ohne Schlüssel, vom Browser aus abrufbar)
+- Vorlage für eine Zeitung aus vielen Quellen mit Spalten, Rubriken und Wetter-Piktogrammen: bon/depeche/.
+- Wetter: Open-Meteo `api.open-meteo.com/v1/forecast` (Basel 47.5596, 7.5886, `timezone=Europe/Zurich`).
+  Zeiten kommen als Ortszeit ohne Zone («2026-10-24T08:05»), also nicht mit `new Date` umrechnen.
+- Rhein: BAFU-Messwerte über `api.existenz.ch/apiv1/hydro/latest?locations=2091` (Rheinfelden,
+  Temperatur und Abfluss). data.bs.ch war aus der Cloud-Testumgebung nicht erreichbar.
+- Fahrplan: `transport.opendata.ch/v1/stationboard?station=…`.
+- Wikipedia Deutsch, alles in einem Abruf: `de.wikipedia.org/api/rest_v1/feed/featured/JJJJ/MM/TT`
+  (Artikel des Tages, «Was geschah am», «Schon gewusst?», Bild des Tages).
+- Kurse der EZB: `api.frankfurter.dev/v1/latest?base=CHF`.
+- Schlagzeilen: `/feed/data/news.json` liegt auf derselben Website und wird stündlich aufgefrischt.
+
 ## Mac-Seite (zur Info)
 - ~/bonpost/bonpost.sh holt die Bons ab. Text geht roh an `lp -d POS80 -o raw`. HTML wird mit
   Chrome zum Bild, dann als `GS v 0`-Raster in Blöcken zu 128 Zeilen gesendet. Am Ende folgen

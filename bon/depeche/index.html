@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · DÉPÊCHE</title>
+<meta name="description" content="Die Morgenzeitung auf 72 mm: Wetter, Schlagzeilen, Basel, Wikipedia und Abfahrten.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="fraktur.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="serif-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="serif-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Zeitungskopf: UnifrakturMaguntia; Text: IBM Plex Serif und IBM Plex Sans (alle SIL Open Font License) */
+@font-face{font-family:"Fraktur";src:url(fraktur.woff2) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:"PSerif";src:url(serif-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(serif-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(serif-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(serif-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(serif-500-italic.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(serif-500-italic-ext.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+/* Am Handy: zuerst Drucken, dann der Bon, dann die Einstellungen */
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"knoepfe" "vorschau" "einst";column-gap:32px}
+.knoepfe,.einst{display:flex;flex-direction:column;gap:6px;min-width:0}
+.knoepfe{grid-area:knoepfe} .einst{grid-area:einst} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input{font-family:var(--mono);font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%}
+input:focus{outline:2px solid #000;outline-offset:-1px}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;color:#fff}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Teile ein- und ausschalten */
+.teile{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #000}
+.teile button{margin:0;padding:10px 6px;font-size:.74rem;letter-spacing:.03em;text-transform:none;border:0;border-top:1px solid #000;border-left:1px solid #000;background:#fff;color:#000;text-align:left;display:flex;gap:8px;align-items:center}
+.teile button:nth-child(-n+2){border-top:0}
+.teile button:nth-child(odd){border-left:0}
+.teile button:last-child:nth-child(odd){grid-column:1/-1}
+.teile button::before{content:"";flex:none;width:12px;height:12px;border:1px solid #000;background:#fff}
+.teile button[aria-pressed="true"]::before{background:#000}
+.teile button:hover{background:#f0f0f0;color:#000}
+.quellen{margin:0;padding:0;list-style:none;font-size:.78rem;border-top:1px solid #000}
+.quellen li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #ddd}
+.quellen .ok{color:var(--ok)} .quellen .err{color:var(--err)} .quellen .warte{color:var(--muted)}
+/* Vorschau: der Bon genau so, wie er aus dem Drucker kommt */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.papier{width:min(100%,360px);background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:14px 0 18px}
+.papier canvas{display:block;width:100%;height:auto}
+.papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+.mass{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto 1fr;grid-template-areas:"knoepfe vorschau" "einst vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Dépêche du Matin · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="knoepfe">
+    <button id="drucken" disabled>Drucken</button>
+    <button class="ghost" id="neu">Neu laden</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="vorschau">
+    <span class="label">So wird gedruckt</span>
+    <div class="papier"><canvas id="bon" hidden></canvas><p class="leer" id="leer">Die Zeitung wird gesetzt …</p></div>
+    <p class="mass" id="mass"></p>
+  </div>
+  <div class="einst">
+    <label for="halt">Haltestelle für die Abfahrten</label>
+    <input id="halt" autocomplete="off" enterkeyhint="done" placeholder="z. B. Basel, Bahnhof SBB">
+    <p class="hint" id="haltHint">Tram, Bus oder Bahnhof, so wie im SBB-Fahrplan.</p>
+    <span class="label" id="teileLabel">Was in die Zeitung kommt</span>
+    <div class="teile" id="teile" role="group" aria-labelledby="teileLabel"></div>
+    <span class="label">Quellen</span>
+    <ul class="quellen" id="quellen"></ul>
+    <p class="hint">Alles öffentlich, ohne Anmeldung: Wetter von Open-Meteo, Rhein vom BAFU, Schlagzeilen aus dem Feed (SRF, NZZ, Tagesschau, Kanton Basel-Stadt …), Wikipedia, Fahrplan von opendata.ch, Kurse der EZB.</p>
+  </div>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;              // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const RAND = 16;                 // 2 mm links und rechts
+const INNEN = BREITE - 2 * RAND;
+const SCHWELLE = 170;            // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_H = 28000;             // grössere Leinwände schafft Safari am iPhone nicht (etwa 3,5 m Bon)
+const TZ = 'Europe/Zurich';
+const ORT = { lat: 47.5596, lon: 7.5886 };   // Basel
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.depeche.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.depeche.' + k, v); } catch {} }
+};
+
+// ---------------------------------------------------------------- Teile der Zeitung
+const TEILE = [
+  ['wetter', 'Wetter'], ['aufmacher', 'Aufmacher'], ['meldungen', 'Schweiz und Welt'], ['basel', 'Basel'],
+  ['tag', 'An diesem Tag'], ['wissen', 'Schon gewusst?'], ['artikel', 'Artikel des Tages'], ['abfahrten', 'Abfahrten'], ['kurse', 'Devisen'],
+];
+const an = Object.fromEntries(TEILE.map(([k]) => [k, store.get('teil.' + k, '1') === '1']));
+$('teile').innerHTML = TEILE.map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${an[k]}">${n}</button>`).join('');
+$('teile').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const k = b.dataset.k; an[k] = !an[k]; store.set('teil.' + k, an[k] ? '1' : '0');
+  b.setAttribute('aria-pressed', String(an[k])); setzen();
+});
+$('halt').value = store.get('halt', 'Basel, Bahnhof SBB');
+
+// ---------------------------------------------------------------- Datum und Zahlen
+const teileVon = (d, o) => Object.fromEntries(new Intl.DateTimeFormat('de-CH', { timeZone: TZ, ...o }).formatToParts(d).map(p => [p.type, p.value]));
+const isoTag = d => d.toLocaleDateString('sv-SE', { timeZone: TZ });
+const langDatum = d => d.toLocaleDateString('de-CH', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const uhr = d => { const p = teileVon(new Date(d), { hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }); return `${+p.hour}.${p.minute}`; };
+const uhrLokal = s => `${+s.slice(11, 13)}.${s.slice(14, 16)}`;   // Open-Meteo liefert Ortszeit ohne Zone: «2026-10-24T08:05»
+const hhmm = d => { const p = teileVon(new Date(d), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); return `${p.hour}:${p.minute}`; };
+const tagNr = d => { const [y, m, t] = isoTag(d).split('-').map(Number); return Math.round((Date.UTC(y, m - 1, t) - Date.UTC(y, 0, 1)) / 864e5) + 1; };
+const komma = (x, n = 1) => x.toFixed(n).replace('.', ',');
+
+// Text kürzen, am liebsten am Satzende, sonst am Wortende
+function kurz(t, n){
+  t = (t || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= n) return t;
+  const s = t.slice(0, n), satz = Math.max(s.lastIndexOf('. '), s.lastIndexOf('? '), s.lastIndexOf('! '));
+  if (satz > n * 0.55) return s.slice(0, satz + 1);
+  return s.slice(0, s.lastIndexOf(' ')).replace(/[\s,;:–-]+$/, '') + ' …';
+}
+const ohneHtml = t => (t || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+
+// ---------------------------------------------------------------- Daten holen
+const holen = async (url, o = {}) => {
+  const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout?.(15000), ...o });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+};
+
+const QUELLEN = {
+  wetter: ['Wetter', async () => {
+    const q = new URLSearchParams({
+      latitude: ORT.lat, longitude: ORT.lon, timezone: TZ, forecast_days: 2,
+      current: 'temperature_2m,weather_code,is_day',
+      hourly: 'temperature_2m,weather_code,precipitation_probability,is_day',
+      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_direction_10m_dominant,sunrise,sunset,uv_index_max',
+    });
+    return holen('https://api.open-meteo.com/v1/forecast?' + q);
+  }],
+  rhein: ['Rhein', async () => {
+    // BAFU-Messstation 2091 Rhein – Rheinfelden (die nächste mit Wassertemperatur)
+    const d = await holen('https://api.existenz.ch/apiv1/hydro/latest?locations=2091&parameters=temperature,flow&app=bon-depeche');
+    const w = p => d.payload.find(x => x.par === p);
+    if (!w('temperature')) throw new Error('keine Messung');
+    return { temp: w('temperature').val, flow: w('flow')?.val, zeit: w('temperature').timestamp * 1000 };
+  }],
+  news: ['Schlagzeilen', () => holen('../../feed/data/news.json')],
+  wiki: ['Wikipedia', () => { const [y, m, t] = isoTag(new Date()).split('-'); return holen(`https://de.wikipedia.org/api/rest_v1/feed/featured/${y}/${m}/${t}`); }],
+  abfahrten: ['Abfahrten', async () => {
+    const halt = $('halt').value.trim();
+    if (!halt) return null;
+    return holen('https://transport.opendata.ch/v1/stationboard?' + new URLSearchParams({ station: halt, limit: 12 }));
+  }],
+  kurse: ['Devisen', () => holen('https://api.frankfurter.dev/v1/latest?base=CHF&symbols=EUR,USD,GBP')],
+};
+const daten = {}, status = {};
+let geholt = 0;
+
+function quellenZeigen(){
+  $('quellen').innerHTML = Object.entries(QUELLEN).map(([k, [name]]) => {
+    const s = status[k] || 'warte';
+    const t = s === 'ok' ? 'da' : s === 'warte' ? 'lädt …' : 'nicht erreichbar';
+    return `<li><span>${name}</span><span class="${s}">${t}</span></li>`;
+  }).join('');
+}
+
+async function laden(nur){
+  const keys = nur ? [nur] : Object.keys(QUELLEN);
+  keys.forEach(k => status[k] = 'warte'); quellenZeigen();
+  await Promise.all(keys.map(async k => {
+    try { daten[k] = await QUELLEN[k][1](); status[k] = 'ok'; }
+    catch (e) { daten[k] = null; status[k] = 'err'; console.warn(k, e); }
+    quellenZeigen();
+  }));
+  if (!nur) geholt = Date.now();
+  const s = daten.abfahrten?.station;
+  $('haltHint').textContent = s?.name ? `Gefunden: ${s.name}` : $('halt').value.trim() ? 'Haltestelle nicht gefunden.' : 'Leer lassen, dann gibt es keine Abfahrten.';
+}
+
+// ---------------------------------------------------------------- Inhalte aufbereiten
+const WMO = {
+  0: ['Sonnig', 'sonne'], 1: ['Meist sonnig', 'sonne'], 2: ['Teils bewölkt', 'teils'], 3: ['Bedeckt', 'wolke'],
+  45: ['Nebel', 'nebel'], 48: ['Raureif-Nebel', 'nebel'],
+  51: ['Leichter Niesel', 'niesel'], 53: ['Nieselregen', 'niesel'], 55: ['Starker Niesel', 'niesel'], 56: ['Gefrierender Niesel', 'niesel'], 57: ['Gefrierender Niesel', 'niesel'],
+  61: ['Leichter Regen', 'regen'], 63: ['Regen', 'regen'], 65: ['Starker Regen', 'regen'], 66: ['Gefrierender Regen', 'regen'], 67: ['Gefrierender Regen', 'regen'],
+  71: ['Leichter Schneefall', 'schnee'], 73: ['Schneefall', 'schnee'], 75: ['Starker Schneefall', 'schnee'], 77: ['Schneegriesel', 'schnee'],
+  80: ['Regenschauer', 'regen'], 81: ['Regenschauer', 'regen'], 82: ['Heftige Schauer', 'regen'], 85: ['Schneeschauer', 'schnee'], 86: ['Schneeschauer', 'schnee'],
+  95: ['Gewitter', 'gewitter'], 96: ['Gewitter mit Hagel', 'gewitter'], 99: ['Gewitter mit Hagel', 'gewitter'],
+};
+const wmo = c => WMO[c] || ['', 'wolke'];
+const RICHTUNG = ['Nord', 'Nordost', 'Ost', 'Südost', 'Süd', 'Südwest', 'West', 'Nordwest'];
+
+function mond(d){
+  const P = 29.530588853, ref = Date.UTC(2000, 0, 6, 18, 14);
+  const ph = (((d - ref) / 864e5 / P) % 1 + 1) % 1, licht = Math.round((1 - Math.cos(2 * Math.PI * ph)) / 2 * 100);
+  if (ph < 0.03 || ph > 0.97) return 'Neumond';
+  if (ph > 0.47 && ph < 0.53) return 'Vollmond';
+  return `Mond zu ${licht} % beleuchtet, ${ph < 0.5 ? 'zunehmend' : 'abnehmend'}`;
+}
+
+// Titel aus dem Feed: «Spitzmarke – Titel» (SRF) und Vorsätze wie «DIE NEUESTEN ENTWICKLUNGEN -» (NZZ)
+function meldung(x){
+  const ticker = /^DIE NEUESTEN ENTWICKLUNGEN/i.test(x.title || '');
+  let titel = ohneHtml(x.title).replace(/^DIE NEUESTEN ENTWICKLUNGEN\s*[-–]\s*/i, '').trim(), kicker = '';
+  const m = titel.match(/^(.{3,45}?) [–-] (.{12,})$/);
+  if (m && !/[.?!]$/.test(m[1])) { kicker = m[1]; titel = m[2]; }
+  return { titel, kicker, ticker, text: ohneHtml(x.summary), quelle: x.sourceLabel, datum: x.date, source: x.source };
+}
+
+function schlagzeilen(){
+  const alle = (daten.news?.items || []).filter(x => x.title && new Date(x.date) <= Date.now() + 36e5)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const frisch = alle.filter(x => Date.now() - new Date(x.date) < 30 * 36e5);
+  const liste = frisch.length > 10 ? frisch : alle;
+  const gesehen = new Set();
+  const nimm = (quellen, n, pruef = () => true) => {
+    const out = [];
+    for (const x of liste) {
+      if (out.length >= n) break;
+      if (!quellen.includes(x.source)) continue;
+      const m = meldung(x), sig = m.titel.toLowerCase().slice(0, 40);
+      if (gesehen.has(sig) || !pruef(m)) continue;
+      gesehen.add(sig); out.push(m);
+    }
+    return out;
+  };
+  // Aufmacher am liebsten von der NZZ, aber kein Live-Ticker
+  const gut = m => m.text.length > 60 && !m.ticker;
+  const aufmacher = nimm(['nzz'], 1, gut)[0] || nimm(['srf', 'srf-int', 'tagesschau'], 1, gut)[0];
+  return {
+    aufmacher,
+    schweiz: nimm(['srf', 'nzz', 'srf-wirtschaft', 'bund-de'], 3),
+    welt: nimm(['srf-int', 'tagesschau', 'nzz'], 3),
+    basel: nimm(['bs', 'basel', 'bz', 'bajour', 'basel-kultur', 'teb', 'regbas'], 4),
+  };
+}
+
+// ---------------------------------------------------------------- Schriften
+const F = {
+  serif: (px, w = 500, kursiv = false) => `${kursiv ? 'italic ' : ''}${w} ${px}px "PSerif", Georgia, serif`,
+  sans: (px, w = 500) => `${w} ${px}px "Plex", system-ui, sans-serif`,
+  fraktur: px => `400 ${px}px "Fraktur", serif`,
+};
+const sperren = t => [...t.toUpperCase()].join(' ');   // Haarspatien: gesperrte Rubrik wie in der Zeitung
+
+// ---------------------------------------------------------------- Setzen: kleine Satz-Maschine
+// Jeder Baustein ist eine Funktion (g, x, w) -> { h, ops }. ops liegen ab y = 0 und werden beim Stapeln verschoben.
+const T = (t, f) => ({ t, f });
+
+function umbrechen(g, teile, breite){
+  const woerter = [];
+  for (const p of teile) for (const w of String(p.t).split(/( +)/)) if (w) woerter.push({ t: w, f: p.f, leer: /^ +$/.test(w) });
+  const zeilen = []; let zeile = [], x = 0;
+  const fertig = () => { while (zeile.length && zeile[zeile.length - 1].leer) x -= zeile.pop().w; zeilen.push({ stuecke: zeile, w: x }); zeile = []; x = 0; };
+  for (const w of woerter) {
+    g.font = w.f;
+    if (w.leer) { if (zeile.length) { const b = g.measureText(w.t).width; zeile.push({ ...w, w: b }); x += b; } continue; }
+    let b = g.measureText(w.t).width;
+    if (x + b > breite && zeile.length) fertig();
+    let t = w.t;
+    while (b > breite) {   // Wort länger als die ganze Zeile: an Bindestrich oder zeichenweise trennen
+      let n = t.length;
+      while (n > 1 && g.measureText(t.slice(0, n)).width > breite - x) n--;
+      const strich = t.lastIndexOf('-', n - 1);
+      if (strich > n / 2) n = strich + 1;
+      zeile.push({ t: t.slice(0, n), f: w.f, w: g.measureText(t.slice(0, n)).width }); fertig();
+      t = t.slice(n); b = g.measureText(t).width;
+    }
+    if (t) { zeile.push({ t, f: w.f, w: b }); x += b; }
+  }
+  if (zeile.length) fertig();
+  return zeilen;
+}
+
+// Absatz; align: left | center | right | justify (Blocksatz nur, wenn die Lücken nicht zu gross werden)
+const absatz = (teile, o = {}) => (g, x, w) => {
+  const lh = o.lh || 28;
+  let zeilen = umbrechen(g, teile.filter(p => p && p.t !== ''), w);
+  if (o.max && zeilen.length > o.max) {
+    zeilen = zeilen.slice(0, o.max);
+    const z = zeilen[o.max - 1], f = z.stuecke[z.stuecke.length - 1].f;
+    g.font = f; const pw = g.measureText(' …').width;
+    while (z.stuecke.length > 1 && z.w + pw > w) z.w -= z.stuecke.pop().w;
+    while (z.stuecke.length && z.stuecke[z.stuecke.length - 1].leer) z.w -= z.stuecke.pop().w;
+    z.stuecke.push({ t: ' …', f, w: pw }); z.w += pw;
+  }
+  const ops = []; let y = 0;
+  zeilen.forEach((z, i) => {
+    let xx = x, extra = 0;
+    if (o.align === 'center') xx = x + (w - z.w) / 2;
+    else if (o.align === 'right') xx = x + w - z.w;
+    else if (o.align === 'justify' && i < zeilen.length - 1) {
+      const n = z.stuecke.filter(s => s.leer).length, e = n ? (w - z.w) / n : 0;
+      if (e < lh * 0.22) extra = e;   // sonst lieber Flattersatz als grosse Löcher
+    }
+    for (const s of z.stuecke) {
+      if (!s.leer) ops.push({ art: 'text', t: s.t, x: xx, y: y + Math.round(lh * 0.76), f: s.f, farbe: o.farbe });
+      xx += s.w + (s.leer ? extra : 0);
+    }
+    y += lh;
+  });
+  return { h: y, ops };
+};
+
+const leer = h => () => ({ h, ops: [] });
+const linie = (d = 2, oben = 0, unten = 0) => (g, x, w) => ({ h: oben + d + unten, ops: [{ art: 'rect', x, y: oben, w, h: d }] });
+const punkte = (oben = 0, unten = 0) => (g, x, w) => {   // gepunktete Trennlinie zwischen Meldungen
+  const ops = []; for (let i = 0; i < w; i += 8) ops.push({ art: 'rect', x: x + i, y: oben, w: 3, h: 2 });
+  return { h: oben + 2 + unten, ops };
+};
+const stapel = (...bl) => (g, x, w) => {
+  let y = 0; const ops = [];
+  for (const b of bl.flat()) {
+    if (!b) continue;
+    const r = b(g, x, w);
+    for (const o of r.ops) ops.push({ ...o, y: o.y + y });
+    y += r.h;
+  }
+  return { h: y, ops };
+};
+// zwei Bausteine nebeneinander, links feste Breite
+const neben = (links, breite, rechts, abstand = 16) => (g, x, w) => {
+  const a = links(g, x, breite), b = rechts(g, x + breite + abstand, w - breite - abstand);
+  return { h: Math.max(a.h, b.h), ops: [...a.ops, ...b.ops] };
+};
+// zwei gleich breite Spalten mit senkrechter Linie
+const spalten = (a, b, abstand = 26) => (g, x, w) => {
+  const sw = Math.floor((w - abstand) / 2);
+  const ra = a(g, x, sw), rb = b(g, x + w - sw, sw), h = Math.max(ra.h, rb.h);
+  return { h, ops: [...ra.ops, ...rb.ops, { art: 'rect', x: x + sw + Math.floor(abstand / 2) - 1, y: 8, w: 2, h: h - 16 }] };
+};
+// zwei Texte auf derselben Zeile: links und rechts
+const zweiseitig = (links, rechts, lh) => (g, x, w) => {
+  const a = absatz(links, { lh })(g, x, w), b = absatz(rechts, { lh, align: 'right' })(g, x, w);
+  return { h: Math.max(a.h, b.h), ops: [...a.ops, ...b.ops] };
+};
+// Marke links (Jahreszahl, Strich), Text eingerückt daneben
+const haengend = (marke, teile, einzug, o) => neben(absatz(marke, o), einzug - 8, absatz(teile, o), 8);
+
+const rubrik = t => stapel(leer(22), linie(4), leer(7), absatz([T(sperren(t), F.sans(16, 700))], { lh: 20 }), linie(1, 5, 12));
+
+// ---------------------------------------------------------------- Die Teile der Zeitung
+function zeitungskopf(jetzt){
+  const w = daten.wetter, rh = daten.rhein;
+  const ohrL = an.wetter && w ? `Heute ${Math.round(w.daily.temperature_2m_min[0])}° bis ${Math.round(w.daily.temperature_2m_max[0])}°` : '';
+  const ohrR = an.wetter && rh ? `Rhein ${komma(rh.temp)} °C` : '';
+  const titel = 'Dépêche du Matin';
+  const kopf = (g, x, wd) => {
+    g.font = F.fraktur(100);
+    const px = Math.min(96, Math.floor(100 * wd / g.measureText(titel).width));
+    g.font = F.fraktur(px);
+    const tw = g.measureText(titel).width;
+    return { h: Math.round(px * 1.12), ops: [{ art: 'text', t: titel, x: x + (wd - tw) / 2, y: Math.round(px * 0.86), f: F.fraktur(px) }] };
+  };
+  const nr = tagNr(jetzt);
+  return stapel(
+    (ohrL || ohrR) && zweiseitig([T(ohrL, F.sans(17, 500))], [T(ohrR, F.sans(17, 500))], 22),
+    (ohrL || ohrR) && leer(6),
+    kopf,
+    linie(1, 2, 6),
+    absatz([T(sperren('Ausgabe Basel'), F.sans(15, 700)), T('   ·   ', F.sans(15, 500)), T(sperren('gegründet 2026'), F.sans(15, 500))], { lh: 20, align: 'center' }),
+    leer(4),
+    zweiseitig([T(langDatum(jetzt), F.serif(19, 500))], [T(`Nr. ${nr} · 1. Jg.`, F.serif(19, 500))], 26),
+    linie(4, 6, 0), linie(1, 3, 0),
+  );
+}
+
+function wetterTeil(jetzt){
+  const w = daten.wetter, rh = daten.rhein;
+  if (!an.wetter || !w) return null;
+  const d = w.daily, [text, tag] = wmo(d.weather_code[0]);
+  const zeilen = [
+    `Regen bis ${d.precipitation_probability_max[0]} %` + (d.precipitation_sum[0] >= 0.1 ? `, ${komma(d.precipitation_sum[0])} mm` : ''),
+    `Wind bis ${Math.round(d.wind_speed_10m_max[0])} km/h aus ${RICHTUNG[Math.round(d.wind_direction_10m_dominant[0] / 45) % 8]}`,
+    `Sonne ${uhrLokal(d.sunrise[0])} bis ${uhrLokal(d.sunset[0])} Uhr` + (d.uv_index_max[0] >= 3 ? ` · UV ${Math.round(d.uv_index_max[0])}` : ''),
+    rh ? `Rhein ${komma(rh.temp)} °C` + (rh.flow ? ` · ${Math.round(rh.flow)} m³/s` : '') : '',
+    mond(jetzt),
+  ].filter(Boolean);
+  const gross = (g, x, bw) => ({ h: 150, ops: [{ art: 'icon', tag, nacht: false, x: x + bw / 2, y: 72, s: 140 }] });
+  const rechts = stapel(
+    absatz([T(`${Math.round(d.temperature_2m_max[0])}°`, F.serif(58, 700)), T(`  ${Math.round(d.temperature_2m_min[0])}°`, F.serif(34, 500))], { lh: 62 }),
+    absatz([T(text, F.serif(25, 700))], { lh: 30 }),
+    leer(4),
+    zeilen.map(z => absatz([T(z, F.sans(18, 500))], { lh: 23 })),
+  );
+  // Stundenleiste: ab der nächsten vollen Stunde alle drei Stunden
+  const zeiten = w.hourly.time, jetztH = `${isoTag(jetzt)}T${teileVon(jetzt, { hour: '2-digit', hourCycle: 'h23' }).hour}:00`;
+  let i0 = zeiten.findIndex(t => t > jetztH); if (i0 < 0) i0 = 0;
+  const slots = [0, 1, 2, 3, 4, 5].map(k => i0 + k * 3).filter(i => i < zeiten.length);
+  const leiste = (g, x, bw) => {
+    const sw = bw / slots.length, ops = [];
+    const mitte = (t, f, cx, y) => { g.font = f; ops.push({ art: 'text', t, f, x: cx - g.measureText(t).width / 2, y }); };
+    slots.forEach((i, k) => {
+      const cx = x + sw * (k + 0.5);
+      mitte(`${+zeiten[i].slice(11, 13)} Uhr`, F.sans(16, 500), cx, 18);
+      ops.push({ art: 'icon', tag: wmo(w.hourly.weather_code[i])[1], nacht: !w.hourly.is_day[i], x: cx, y: 54, s: 54 });
+      mitte(`${Math.round(w.hourly.temperature_2m[i])}°`, F.serif(25, 700), cx, 106);
+      mitte(`${w.hourly.precipitation_probability[i]} %`, F.sans(15, 500), cx, 128);
+    });
+    return { h: 136, ops };
+  };
+  return stapel(rubrik('Wetter in Basel'), neben(gross, 168, rechts, 14), leer(10), punkte(0, 6), leiste);
+}
+
+function aufmacherTeil(n){
+  if (!an.aufmacher || !n) return null;
+  return stapel(
+    leer(22),
+    n.kicker && absatz([T(n.kicker, F.sans(17, 700))], { lh: 22, align: 'center' }),
+    absatz([T(n.titel, F.serif(40, 700))], { lh: 45, align: 'center' }),
+    leer(10),
+    absatz([T(kurz(n.text, 320), F.serif(23, 500, true))], { lh: 30, align: 'justify' }),
+    absatz([T(`${n.quelle}, ${uhr(n.datum)} Uhr`, F.sans(15, 500))], { lh: 22, align: 'right' }),
+  );
+}
+
+const kurzmeldung = n => stapel(
+  n.kicker && absatz([T(n.kicker, F.sans(15, 700))], { lh: 19 }),
+  absatz([T(n.titel, F.serif(22, 700))], { lh: 26 }),
+  n.text && leer(2),
+  n.text && absatz([T(kurz(n.text, 150), F.serif(19, 500))], { lh: 24, align: 'justify' }),
+  absatz([T(`${n.quelle}, ${uhr(n.datum)}`, F.sans(14, 500))], { lh: 20 }),
+);
+const liste = items => stapel(items.map((n, i) => stapel(i && punkte(6, 8), kurzmeldung(n))));
+
+function meldungenTeil(s){
+  if (!an.meldungen || (!s.schweiz.length && !s.welt.length)) return null;
+  return spalten(stapel(rubrik('Schweiz'), liste(s.schweiz)), stapel(rubrik('International'), liste(s.welt)));
+}
+
+function baselTeil(s){
+  if (!an.basel || !s.basel.length) return null;
+  return stapel(rubrik('Basel'), s.basel.map((n, i) => stapel(
+    i && leer(10),
+    absatz([T(n.titel + (/[.?!»«"]$/.test(n.titel) ? ' ' : '. '), F.serif(22, 700)), T(kurz(n.text, 170), F.serif(21, 500)),
+      T(`  (${n.quelle})`, F.sans(14, 500))], { lh: 28, align: 'justify' }),
+  )));
+}
+
+function tagTeil(jetzt){
+  const t = daten.wiki?.onthisday;
+  if (!an.tag || !t?.length) return null;
+  const tm = jetzt.toLocaleDateString('de-CH', { timeZone: TZ, day: 'numeric', month: 'long' });
+  const auswahl = t.filter(e => e.text && e.year).slice(0, 5).sort((a, b) => a.year - b.year);
+  return stapel(rubrik('Am ' + tm), auswahl.map((e, i) => stapel(i && leer(8),
+    haengend([T(String(e.year).replace('-', '') + (e.year < 0 ? ' v. Chr.' : ''), F.serif(21, 700))], [T(kurz(ohneHtml(e.text), 220), F.serif(21, 500))], 74, { lh: 27 }))));
+}
+
+function wissenTeil(){
+  const d = daten.wiki?.dyk;
+  if (!an.wissen || !d?.length) return null;
+  return stapel(rubrik('Schon gewusst?'), d.slice(0, 3).map((e, i) => stapel(i && leer(8),
+    haengend([T('–', F.serif(21, 700))], [T(kurz(ohneHtml(e.text || e.html), 230), F.serif(21, 500))], 28, { lh: 27 }))));
+}
+
+function artikelTeil(){
+  const a = daten.wiki?.tfa;
+  if (!an.artikel || !a) return null;
+  return stapel(rubrik('Artikel des Tages'),
+    absatz([T(a.titles?.normalized || a.title, F.serif(30, 700))], { lh: 36 }),
+    a.description && absatz([T(a.description, F.serif(20, 500, true))], { lh: 26 }),
+    leer(6),
+    absatz([T(kurz(a.extract, 560), F.serif(21, 500))], { lh: 28, align: 'justify' }),
+  );
+}
+
+function abfahrtenTeil(jetzt){
+  const d = daten.abfahrten;
+  if (!an.abfahrten || !d?.stationboard?.length) return null;
+  const naechste = d.stationboard.filter(s => s.stop.departureTimestamp * 1000 + (s.stop.delay || 0) * 6e4 >= jetzt - 6e4).slice(0, 8);
+  if (!naechste.length) return null;
+  const zeile = s => (g, x, w) => {
+    const ops = [], lh = 34, base = 24, nr = (s.number || s.category || '').trim();
+    ops.push({ art: 'text', t: hhmm(s.stop.departure), x, y: base, f: F.sans(21, 700) });
+    // Liniennummer weiss auf schwarz, wie an der Haltestelle
+    g.font = F.sans(18, 700);
+    const nw = g.measureText(nr).width, bw = Math.max(44, nw + 12), bx = x + 70;
+    ops.push({ art: 'rect', x: bx, y: 4, w: bw, h: 26 });
+    ops.push({ art: 'text', t: nr, x: bx + (bw - nw) / 2, y: base - 1, f: F.sans(18, 700), farbe: '#fff' });
+    const versp = s.stop.delay > 0 ? `+${s.stop.delay}′` : '';
+    g.font = F.sans(19, 700); const vw = versp ? g.measureText(versp).width + 8 : 0;
+    if (versp) ops.push({ art: 'text', t: versp, x: x + w - vw + 8, y: base, f: F.sans(19, 700) });
+    let ziel = (s.to || '').replace(/^Basel, /, ''); const fz = F.serif(20, 500), frei = w - (bx + bw + 10 - x) - vw;
+    g.font = fz;
+    while (ziel.length > 3 && g.measureText(ziel).width > frei) ziel = ziel.slice(0, -2).trimEnd() + '…';
+    ops.push({ art: 'text', t: ziel, x: bx + bw + 10, y: base, f: fz });
+    return { h: lh, ops };
+  };
+  return stapel(rubrik('Abfahrten'),
+    absatz([T(`${d.station?.name || $('halt').value} · Stand ${uhr(jetzt)} Uhr`, F.sans(16, 500))], { lh: 22 }),
+    leer(6), naechste.map(zeile));
+}
+
+function kurseTeil(){
+  const k = daten.kurse;
+  if (!an.kurse || !k?.rates) return null;
+  const t = ['EUR', 'USD', 'GBP'].filter(c => k.rates[c]).map(c => `1 ${c} = ${(1 / k.rates[c]).toFixed(4)} CHF`);
+  const [y, m, d] = k.date.split('-');
+  return stapel(rubrik('Devisen'), t.map(z => absatz([T(z, F.serif(21, 500))], { lh: 27 })),
+    absatz([T(`Referenzkurse der EZB vom ${+d}.${+m}.${y}`, F.sans(14, 500))], { lh: 20 }));
+}
+
+function fuss(jetzt){
+  return stapel(leer(24), linie(1), linie(4, 3, 10),
+    absatz([T('Dépêche du Matin', F.fraktur(30))], { lh: 34, align: 'center' }),
+    absatz([T(`gesetzt am ${langDatum(jetzt)} um ${uhr(jetzt)} Uhr`, F.sans(14, 500))], { lh: 20, align: 'center' }),
+    absatz([T('Quellen: Open-Meteo, BAFU, SRF, NZZ, Tagesschau, Kanton Basel-Stadt, Wikipedia, opendata.ch, EZB', F.sans(13, 500))], { lh: 18, align: 'center' }),
+  );
+}
+
+// ---------------------------------------------------------------- Zeichnen
+function piktogramm(g, tag, nacht, cx, cy, s){
+  g.save();
+  g.lineWidth = Math.max(2.5, s / 24); g.lineCap = 'round'; g.lineJoin = 'round';
+  g.strokeStyle = '#000'; g.fillStyle = '#000';
+  const sonne = (x, y, r) => {
+    g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = '#fff'; g.fill(); g.stroke();
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4;
+      g.beginPath(); g.moveTo(x + Math.cos(a) * r * 1.45, y + Math.sin(a) * r * 1.45); g.lineTo(x + Math.cos(a) * r * 1.95, y + Math.sin(a) * r * 1.95); g.stroke();
+    }
+  };
+  const mond = (x, y, r) => {
+    g.beginPath(); g.arc(x, y, r, 0.15 * Math.PI, 1.85 * Math.PI, false);
+    g.arc(x + r * 0.55, y - r * 0.25, r * 0.85, 1.75 * Math.PI, 0.35 * Math.PI, true);
+    g.closePath(); g.fillStyle = '#000'; g.fill();
+  };
+  const wolke = (x, y, r) => {   // x, y: Mitte; r: halbe Breite
+    g.beginPath();
+    g.arc(x - r * 0.52, y + r * 0.12, r * 0.36, 0.5 * Math.PI, 1.5 * Math.PI);
+    g.arc(x - r * 0.08, y - r * 0.12, r * 0.48, 1.08 * Math.PI, 1.85 * Math.PI);
+    g.arc(x + r * 0.5, y + r * 0.1, r * 0.38, 1.45 * Math.PI, 0.5 * Math.PI);
+    g.closePath(); g.fillStyle = '#fff'; g.fill(); g.stroke();
+  };
+  const himmel = (x, y, r) => nacht ? mond(x, y, r * 0.85) : sonne(x, y, r * 0.7);
+  const r = s / 2;
+  if (tag === 'sonne') himmel(cx, cy, r * 0.62);
+  else if (tag === 'teils') { himmel(cx - r * 0.25, cy - r * 0.3, r * 0.5); wolke(cx + r * 0.12, cy + r * 0.22, r * 0.72); }
+  else if (tag === 'nebel') {
+    for (let k = 0; k < 4; k++) { const y = cy - r * 0.45 + k * r * 0.3, dx = k % 2 ? r * 0.15 : 0; g.beginPath(); g.moveTo(cx - r * 0.75 + dx, y); g.lineTo(cx + r * 0.75 - (k % 2 ? 0 : r * 0.15), y); g.stroke(); }
+  }
+  else {
+    const fall = tag !== 'wolke', wy = fall ? cy - r * 0.2 : cy;
+    wolke(cx, wy, r * 0.85);
+    const unten = wy + r * 0.48;
+    if (tag === 'regen') for (const dx of [-0.4, 0, 0.4]) { g.beginPath(); g.moveTo(cx + r * dx, unten + r * 0.12); g.lineTo(cx + r * (dx - 0.12), unten + r * 0.5); g.stroke(); }
+    if (tag === 'niesel') for (const dx of [-0.4, 0, 0.4]) { g.beginPath(); g.arc(cx + r * dx, unten + r * 0.3, g.lineWidth * 0.7, 0, 2 * Math.PI); g.fill(); }
+    if (tag === 'schnee') for (const dx of [-0.4, 0, 0.4]) {
+      const x = cx + r * dx, y = unten + r * 0.3, a = r * 0.13;
+      for (const [u, v] of [[1, 0], [0.5, 0.87], [-0.5, 0.87]]) { g.beginPath(); g.moveTo(x - u * a, y - v * a); g.lineTo(x + u * a, y + v * a); g.stroke(); }
+    }
+    if (tag === 'gewitter') {
+      g.beginPath(); g.moveTo(cx + r * 0.08, unten + r * 0.02); g.lineTo(cx - r * 0.18, unten + r * 0.36); g.lineTo(cx + r * 0.02, unten + r * 0.36);
+      g.lineTo(cx - r * 0.12, unten + r * 0.68); g.lineTo(cx + r * 0.22, unten + r * 0.26); g.lineTo(cx + r * 0.02, unten + r * 0.26); g.closePath(); g.fill();
+    }
+  }
+  g.restore();
+}
+
+const leinwand = $('bon');
+let raster = null;   // { W, H, bits } des aktuellen Bons
+
+async function schriftenLaden(text){
+  const fs = [F.serif(20), F.serif(20, 700), F.serif(20, 500, true), F.sans(20), F.sans(20, 700), F.fraktur(20)];
+  await Promise.all(fs.map(f => document.fonts.load(f, text).catch(() => {})));
+}
+
+async function setzen(){
+  const jetzt = new Date();
+  const s = schlagzeilen();
+  const zeitung = stapel(
+    zeitungskopf(jetzt),
+    wetterTeil(jetzt),
+    aufmacherTeil(s.aufmacher),
+    meldungenTeil(s),
+    baselTeil(s),
+    abfahrtenTeil(jetzt),
+    tagTeil(jetzt),
+    wissenTeil(),
+    artikelTeil(),
+    kurseTeil(),
+    fuss(jetzt),
+  );
+  // Schriften zuerst laden, auch die erweiterten Buchstaben, sonst misst die Leinwand mit einer Ersatzschrift
+  const g = leinwand.getContext('2d', { willReadFrequently: true });
+  const probe = zeitung(g, RAND, INNEN);
+  await schriftenLaden('Dépêche du Matin ' + probe.ops.filter(o => o.t).map(o => o.t).join(' '));
+  const { h, ops } = zeitung(g, RAND, INNEN);
+  const H = Math.ceil(h + 8);
+  if (H > MAX_H) { raster = null; $('mass').textContent = 'Zu lang zum Drucken. Bitte Teile ausschalten.'; return; }
+  leinwand.width = BREITE; leinwand.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.textBaseline = 'alphabetic';
+  for (const o of ops) {
+    if (o.art === 'rect') { g.fillStyle = '#000'; g.fillRect(Math.round(o.x), Math.round(o.y), Math.round(o.w), o.h); }
+    else if (o.art === 'text') { g.fillStyle = o.farbe || '#000'; g.font = o.f; g.fillText(o.t, o.x, o.y); }
+    else if (o.art === 'icon') piktogramm(g, o.tag, o.nacht, o.x, o.y, o.s);
+  }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  raster = { W: BREITE, H, bits };
+  leinwand.hidden = false; $('leer').hidden = true;
+  $('mass').textContent = `Bon etwa ${Math.round(H / 80 + 2)} cm lang`;   // + etwa 2 cm Rand oben wegen dem Messer
+  $('drucken').disabled = false;
+}
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  const mm = (raster.H * 72 / raster.W).toFixed(3);   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Ablauf
+let laeuft = Promise.resolve();
+const neuSetzen = () => (laeuft = laeuft.then(setzen, setzen));
+const allesNeu = async () => { $('neu').disabled = true; msg(''); try { await laden(); await neuSetzen(); } finally { $('neu').disabled = false; } };
+
+$('neu').addEventListener('click', allesNeu);
+let warte = null;
+$('halt').addEventListener('input', () => {
+  clearTimeout(warte);
+  warte = setTimeout(async () => { store.set('halt', $('halt').value.trim()); await laden('abfahrten'); neuSetzen(); }, 700);
+});
+
+$('drucken').addEventListener('click', async () => {
+  $('drucken').disabled = true;
+  try {
+    // Abfahrten und Wetter veralten schnell: nach zwei Minuten vor dem Drucken neu holen
+    if (Date.now() - geholt > 2 * 6e4) { msg('Hole die neusten Daten …'); await laden(); }
+    await neuSetzen();
+    if (!raster) throw new Error($('mass').textContent || 'nichts zu drucken');
+    msg('Sende …');
+    const inhalt = await bonHtml(raster);
+    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, inhalt, titel: 'Dépêche ' + isoTag(new Date()), quelle: 'website-depeche' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+quellenZeigen();
+allesNeu();
+</script>
+</body>
+</html>
