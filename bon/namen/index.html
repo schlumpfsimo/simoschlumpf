@@ -313,8 +313,12 @@ async function belegen(){
   if (!device.opened) await device.open();
   if (device.configuration === null) await device.selectConfiguration(1);
   await device.claimInterface(iface);
-  if (ep.alt) await device.selectAlternateInterface(iface, ep.alt);
+  // Hat vorher der Mac gedruckt (Bon-Post), zählen Mac und Drucker die USB-Pakete anders als Chrome und der Drucker
+  // verwirft das erste Paket. Schnittstelle neu wählen und Endpunkt zurücksetzen bringt beide wieder in Takt (wie bon/bild).
+  await device.selectAlternateInterface(iface, ep.alt).catch(() => {});
+  await device.clearHalt('out', ep.ep).catch(() => {});
   offen = true;
+  await senden(new Uint8Array(128));   // Füllung: geht trotzdem ein Paket verloren, ist es nur diese
 }
 async function freigeben(){
   if (!offen || !device) return;
