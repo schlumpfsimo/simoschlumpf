@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BON · RHYSCHWUMM</title>
-<meta name="description" content="Rheinschwimmen in Basel auf 72 mm: Wassertemperatur, Strömung, Wetter, Sonne und Tipps.">
+<meta name="description" content="Rhein in Basel auf 72 mm: Wassertemperatur, Abfluss, Pegel, Wetter und Sonne.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
@@ -74,7 +74,7 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
   <div class="einst">
     <span class="label">Quellen</span>
     <ul class="quellen" id="quellen"></ul>
-    <p class="hint">Wassertemperatur, Abfluss und Pegel misst das BAFU (Weil, Palmrainbrücke und Basel, Rheinhalle), Wetter von Open-Meteo. Die Einschätzung ist eine Faustregel ohne Gewähr. Ob du schwimmst, entscheidest du selbst.</p>
+    <p class="hint">Wassertemperatur, Abfluss und Pegel misst das BAFU (Weil, Palmrainbrücke und Basel, Rheinhalle), Wetter von Open-Meteo.</p>
   </div>
 </main>
 
@@ -97,18 +97,7 @@ const ORT = { lat: 47.5596, lon: 7.5886 };   // Basel
 const ST = { temp: '2613', basel: '2289', ersatz: '2091' };
 const STNAME = { 2613: 'Weil, Palmrainbrücke', 2289: 'Basel, Rheinhalle', 2091: 'Rheinfelden' };
 
-// Schwellen fürs Schwimmen.
-// Quelle: Basel Tourismus, basel.com/de/rheinschwimmen (abgerufen Oktober 2026): Rheinschwimmen
-//   empfohlen ab 18 °C Wassertemperatur und bei einem Wasserstand unter 246,5 m ü. M. (Pegel unter 6,5 m).
-//   Der Wasserstand ist der Wert «height» der Station 2289 Basel, Rheinhalle.
-// Kanton Basel-Stadt (Medienmitteilung JSD 2017): Schwimmhilfen verboten, Badeverbot vor der Schleuse
-//   Birsfelden und in den Hafengebieten, nicht in der Fahrrinne schwimmen (rote Bojen).
-// Die Stufen für den Abfluss sind eine EIGENE Faustregel, keine amtliche Grenze: Mittel in Basel etwa
-//   1050 m³/s (BAFU-Stationsblatt 2289). Darum auf dem Bon vorsichtig formuliert.
-const PEGEL_MAX = 246.5;          // m ü. M., basel.com
-const WARM_GENUG = 18;            // °C, basel.com
 const MITTEL_Q = 1050;            // m³/s, langjähriges Mittel Basel
-const Q_STUFEN = [700, 1300, 1800];   // gemütlich | zügig | sehr zügig | zu viel Wasser (eigene Faustregel)
 
 const $ = id => document.getElementById(id);
 const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
@@ -180,7 +169,7 @@ async function laden(){
   geholt = Date.now();
 }
 
-// ---------------------------------------------------------------- Einschätzen
+// ---------------------------------------------------------------- Wetter-Wörter
 const WMO = {
   0: ['Sonnig', 'sonne'], 1: ['Meist sonnig', 'sonne'], 2: ['Teils bewölkt', 'teils'], 3: ['Bedeckt', 'wolke'],
   45: ['Nebel', 'nebel'], 48: ['Raureif-Nebel', 'nebel'],
@@ -194,48 +183,16 @@ const wmo = c => WMO[c] || ['', 'wolke'];
 const RICHTUNG = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
 const uvWort = u => u < 3 ? 'niedrig' : u < 6 ? 'mässig' : u < 8 ? 'hoch' : u < 11 ? 'sehr hoch' : 'extrem';
 
-function kaelte(t){
-  if (t == null) return null;
-  if (t < 10) return { stufe: 4, wort: 'Eiskalt' };
-  if (t < 16) return { stufe: 3, wort: 'Kalt' };
-  if (t < WARM_GENUG) return { stufe: 2, wort: 'Kühl' };
-  if (t < 21) return { stufe: 1, wort: 'Frisch' };
-  return { stufe: 0, wort: 'Angenehm' };
-}
-
-function stroemung(q, h){
-  if (h != null && h >= PEGEL_MAX) return { stufe: 3, wort: 'zu viel Wasser' };
-  if (q == null) return null;
-  const s = Q_STUFEN.findIndex(g => q < g);
-  return [{ stufe: 0, wort: 'gemütlich' }, { stufe: 1, wort: 'zügig' }, { stufe: 2, wort: 'sehr zügig' }][s] || { stufe: 3, wort: 'zu viel Wasser' };
-}
-
 // Alles, was der Bon braucht, an einem Ort
 function lage(){
-  const r = daten.rhein, w = daten.wetter;
-  const t = r?.t?.val ?? null, q = r?.q?.val ?? null, h = r?.h?.val ?? null;
-  const k = kaelte(t), s = stroemung(q, h);
-  let gewitter = false, dunkel = false, hellMin = null;
+  const w = daten.wetter;
+  let dunkel = false, hellMin = null;
   if (w) {
-    const jetztH = w.current.time.slice(0, 13) + ':00';
-    const i0 = Math.max(0, w.hourly.time.indexOf(jetztH));
-    gewitter = w.hourly.weather_code.slice(i0, i0 + 4).some(c => c >= 95) || w.current.weather_code >= 95;
     const jetzt = minLokal(w.current.time), auf = minLokal(w.daily.sunrise[0]), unter = minLokal(w.daily.sunset[0]);
     dunkel = jetzt < auf || jetzt > unter;
     if (!dunkel) hellMin = Math.round(unter - jetzt);
   }
-  let titel, unter = '';
-  if (s?.stufe === 3) { titel = 'Heute nicht in den Rhein'; unter = `Zu viel Wasser: Pegel oder Abfluss sind hoch.`; }
-  else if (gewitter) { titel = 'Heute nicht in den Rhein'; unter = 'Gewitter in Sicht. Bei Blitz raus aus dem Wasser.'; }
-  else if (!k) { titel = 'Keine Wassertemperatur'; unter = 'Die Messung fehlt gerade. Selbst einschätzen.'; }
-  else if (k.stufe === 4) { titel = 'Eiskalt'; unter = 'Nur für Geübte im Kaltwasser, und nur wenige Minuten.'; }
-  else if (k.stufe === 3) { titel = 'Zu kalt für die meisten'; unter = 'Nur für Abgehärtete und nur eine kurze Strecke.'; }
-  else if (k.stufe === 2) { titel = 'Kalt, nur kurz'; unter = `Empfohlen ist der Rhein ab ${WARM_GENUG} °C.`; }
-  else if (s?.stufe === 2) { titel = 'Nur für Geübte'; unter = 'Das Wasser ist warm genug, aber die Strömung ist stark.'; }
-  else if (s?.stufe === 1) { titel = 'Guter Schwumm'; unter = 'Warm genug, die Strömung ist zügig.'; }
-  else { titel = k.stufe === 0 ? 'Herrlicher Schwumm' : 'Guter Schwumm'; unter = 'Warm genug und gemütliche Strömung.'; }
-  if (dunkel && s?.stufe !== 3 && !gewitter) unter += ' Jetzt ist es dunkel.';
-  return { t, q, h, k, s, gewitter, dunkel, hellMin, titel, unter };
+  return { dunkel, hellMin };
 }
 
 // ---------------------------------------------------------------- Schriften und Satz (wie bon/depeche/)
@@ -319,18 +276,6 @@ function kopf(jetzt){
     absatz([T(`Basel · ${datum} · ${uhr(jetzt)} Uhr`, F.sans(17, 500))], { lh: 22, align: 'center' }));
 }
 
-// Das Urteil weiss auf schwarz
-function urteil(L){
-  return (g, x, w) => {
-    const innen = stapel(leer(12),
-      absatz([T(L.titel, F.sans(34, 700))], { lh: 40, align: 'center', farbe: '#fff' }),
-      leer(4),
-      absatz([T(L.unter, F.sans(18, 500))], { lh: 23, align: 'center', farbe: '#fff' }),
-      leer(14))(g, x + 14, w - 28);
-    return { h: innen.h + 20, ops: [{ art: 'rect', x, y: 18, w, h: innen.h }, ...innen.ops.map(o => ({ ...o, y: o.y + 18 }))] };
-  };
-}
-
 function wasserTeil(L){
   const r = daten.rhein, v = daten.verlauf;
   if (!r?.t) return stapel(rubrik('Wasser'), absatz([T('Keine Messung der Wassertemperatur erreichbar.', F.sans(18, 500))], { lh: 24 }));
@@ -347,19 +292,16 @@ function wasserTeil(L){
     }
   }
   const rechts = stapel(
-    absatz([T(L.k.wort, F.sans(20, 700))], { lh: 25 }),
     tend && detail('Tendenz', tend),
     absatz([T(`${STNAME[r.t.loc]}, ${alt ? 'Messung vom ' + new Date(r.t.timestamp * 1000).toLocaleDateString('de-CH', { timeZone: TZ, day: 'numeric', month: 'numeric' }) + ' ' : ''}${uhr(r.t.timestamp * 1000)} Uhr`, F.sans(14, 500))], { lh: 18 }),
   );
   return stapel(rubrik('Wasser'), neben(zahl, 170, rechts, 12), v?.punkte?.length > 20 && stapel(leer(8), kurve(v.punkte)));
 }
 
-// Verlauf der Wassertemperatur über 7 Tage, mit Linie bei 18 °C, wenn sie in der Nähe ist
+// Verlauf der Wassertemperatur über 7 Tage
 const kurve = p => (g, x, w) => {
   const H = 120, oben = 8, links = 44, unten = 24, ch = H - oben - unten, cw = w - links;
   let lo = Math.min(...p.map(a => a.v)), hi = Math.max(...p.map(a => a.v));
-  if (WARM_GENUG > hi && WARM_GENUG - hi < 4) hi = WARM_GENUG;
-  if (WARM_GENUG < lo && lo - WARM_GENUG < 4) lo = WARM_GENUG;
   lo = Math.floor(lo - 0.3); hi = Math.ceil(hi + 0.3); if (hi - lo < 2) hi = lo + 2;
   const z0 = p[0].z, z1 = p[p.length - 1].z;
   const X = z => x + links + (z - z0) / (z1 - z0) * cw, Y = v => oben + ch - (v - lo) / (hi - lo) * ch;
@@ -370,12 +312,6 @@ const kurve = p => (g, x, w) => {
     const t = `${v}°`; g.font = F.sans(14, 500);
     ops.push({ art: 'text', t, x: x + links - 8 - g.measureText(t).width, y: Y(v) + 5, f: F.sans(14, 500) });
     for (let i = 0; i < cw; i += 12) ops.push({ art: 'rect', x: x + links + i, y: Math.round(Y(v)), w: 2, h: 1 });
-  }
-  if (WARM_GENUG > lo && WARM_GENUG < hi) {
-    const yy = Math.round(Y(WARM_GENUG));
-    for (let i = 0; i < cw; i += 10) ops.push({ art: 'rect', x: x + links + i, y: yy - 1, w: 5, h: 2 });
-    const t = `${WARM_GENUG}°`; g.font = F.sans(14, 700);
-    ops.push({ art: 'text', t, x: x + links - 8 - g.measureText(t).width, y: yy + 5, f: F.sans(14, 700) });
   }
   // Tage: Strich um Mitternacht, Kürzel in der Mitte des Tages
   const tag = z => isoTag(new Date(z));
@@ -400,12 +336,11 @@ function stroemungTeil(L){
   const zahl = r.q ? absatz([T(tausend(r.q.val), F.sans(48, 700)), T(' m³/s', F.sans(18, 700))], { lh: 56 }) : leer(0);
   const teil = r.q ? r.q.val / MITTEL_Q : null;
   const rechts = stapel(
-    L.s && absatz([T(L.s.wort[0].toUpperCase() + L.s.wort.slice(1), F.sans(20, 700))], { lh: 25 }),
-    teil != null && absatz([T(teil < 0.9 ? `Wenig Wasser: ${Math.round(teil * 100)} % vom Mittel` : teil >= 1.5 ? `${komma(teil)}-mal so viel wie im Mittel` : teil > 1.1 ? `Mehr als üblich: ${Math.round(teil * 100)} % vom Mittel` : 'Etwa so viel wie im Mittel', F.sans(16, 500))], { lh: 21 }),
+    teil != null && absatz([T(`${Math.round(teil * 100)} % vom Mittel (${tausend(MITTEL_Q)} m³/s)`, F.sans(16, 500))], { lh: 21 }),
   );
   return stapel(rubrik('Strömung'), neben(zahl, 190, rechts, 12),
     leer(4),
-    r.h && detail('Pegel', `${komma(r.h.val, 2)} m ü. M. · empfohlen unter ${komma(PEGEL_MAX, 1)}`),
+    r.h && detail('Pegel', `${komma(r.h.val, 2)} m ü. M.`),
     absatz([T(`Abfluss ${STNAME[r.q?.loc || ST.basel]}, ${uhr((r.q || r.h).timestamp * 1000)} Uhr`, F.sans(14, 500))], { lh: 18 }));
 }
 
@@ -447,27 +382,9 @@ function wetterTeil(L){
   return stapel(rubrik('Wetter'), neben(bild, 76, temp, 14), leer(4), zeilen, leer(6), punkte(0, 6), leiste);
 }
 
-function tippsTeil(L){
-  const tipps = [];
-  if (L.s?.stufe === 3) tipps.push('Bei Hochwasser ist der Rhein reissend und voller Treibgut. Heute am Ufer bleiben.');
-  if (L.gewitter) tipps.push('Bei Gewitter sofort aus dem Wasser.');
-  const zeigen = l => stapel(rubrik('Tipps'), l.map((t, i) => stapel(i && leer(4), haengend([T('–', F.sans(17, 700))], [T(t, F.sans(17, 500))], 22, { lh: 22 }))));
-  if (L.s?.stufe === 3 || L.gewitter) return zeigen(tipps);   // heute nicht: keine Tipps fürs Schwimmen
-  if (L.k && L.k.stufe >= 2) tipps.push('Kaltes Wasser: langsam hineingehen, kurze Strecke, danach sofort warm anziehen. Kälte macht schnell müde.');
-  if (L.dunkel) tipps.push('Im Dunkeln sieht dich niemand, auch kein Schiff. Lieber bei Tag.');
-  else if (L.hellMin != null && L.hellMin < 60) tipps.push('Bald dunkel. Rechtzeitig aussteigen.');
-  tipps.push('Einstieg z. B. beim Tinguely-Museum, am Kleinbasler Ufer bleiben. Den Ausstieg über eine Treppe vorher aussuchen.');
-  tipps.push('Rote Bojen trennen dich von der Fahrrinne. Abstand zu Schiffen, Fähren, Bojen und Brückenpfeilern.');
-  tipps.push('Nie allein. Der Wickelfisch ist für Kleider, keine Schwimmhilfe. Luftmatratzen und Gummiboote sind verboten.');
-  if (!L.dunkel && daten.wetter?.daily.uv_index_max[0] >= 3) tipps.push(`Sonnencreme: UV bis ${Math.round(daten.wetter.daily.uv_index_max[0])}. Auf dem Wasser brennt es mehr.`);
-  return zeigen(tipps.slice(0, 6));
-}
-
 function fuss(jetzt){
   return stapel(leer(18), linie(1), leer(3), linie(3), leer(8),
-    absatz([T('Ohne Gewähr. Der Rhein ist nur für gute Schwimmerinnen und Schwimmer.', F.sans(14, 700))], { lh: 18, align: 'center' }),
-    leer(4),
-    absatz([T(`Rhein: BAFU · Wetter: Open-Meteo · Regeln: basel.com, Kanton Basel-Stadt · gedruckt ${uhr(jetzt)} Uhr`, F.sans(12, 500))], { lh: 16, align: 'center' }),
+    absatz([T(`Rhein: BAFU · Wetter: Open-Meteo · gedruckt ${uhr(jetzt)} Uhr`, F.sans(12, 500))], { lh: 16, align: 'center' }),
   );
 }
 
@@ -530,7 +447,7 @@ async function schriftenLaden(text){
 
 async function setzen(){
   const jetzt = new Date(), L = lage();
-  const bon = stapel(kopf(jetzt), urteil(L), wasserTeil(L), stroemungTeil(L), wetterTeil(L), tippsTeil(L), fuss(jetzt));
+  const bon = stapel(kopf(jetzt), wasserTeil(L), stroemungTeil(L), wetterTeil(L), fuss(jetzt));
   const g = leinwand.getContext('2d', { willReadFrequently: true });
   // Schriften zuerst laden, sonst misst die Leinwand mit einer Ersatzschrift
   await schriftenLaden('Rhyschwumm m³/s ' + bon(g, RAND, INNEN).ops.filter(o => o.t).map(o => o.t).join(' '));
