@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · NZZ</title>
+<meta name="description" content="Die Titelseite der heutigen NZZ, ganz, auf 72 mm Breite.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<style>
+/* Wie Turbo: roh, weiss, schwarz, Monospace, keine Rundungen, keine Schatten */
+:root{ --bg:#fff; --ink:#000; --muted:#666; --card2:#f4f4f4; --ok:#0a7a2f; --err:#b00020;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; color-scheme:light }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:14px;line-height:1.45}
+a{color:var(--ink);text-decoration:underline} a:hover{background:#000;color:#fff;text-decoration:none}
+a.brand:hover{background:none;color:#000}
+button,input{font:inherit;color:inherit;border-radius:0}
+code{background:var(--card2);padding:0 4px}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 16px;max-width:640px;margin:0 auto}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;white-space:nowrap;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+.wrap{max-width:640px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+button{padding:5px 10px;border:1px solid #000;background:#000;color:#fff;text-transform:uppercase;font-size:.75rem;letter-spacing:.04em;cursor:pointer}
+button:hover{background:#fff;color:#000}
+button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;color:#fff}
+button:disabled{opacity:.4;cursor:default}
+.drop{position:relative;border:1px solid #000;background:#fff;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:20px;cursor:pointer}
+.drop:hover,.drop.over{outline:2px solid #000}
+.drop strong{font-size:1rem;text-transform:uppercase;letter-spacing:.1em}
+.drop span{color:var(--muted);font-size:.8rem}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop canvas{width:72mm;max-width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges;background:#fff;border:1px solid #000}
+.msg{min-height:1.45em;margin:0;font-size:.85rem;letter-spacing:.05em}
+.msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+h2{font-size:1rem;margin:0;text-transform:uppercase;border-top:1px solid #000;padding-top:6px}
+.opts{display:grid;grid-template-columns:minmax(110px,150px) 1fr;gap:8px 12px;align-items:center}
+.opts label{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em}
+.seg{display:flex;gap:0;flex-wrap:wrap}
+.seg button{margin-right:-1px}
+.seg button[aria-pressed="false"]{background:#fff;color:#000}
+.seg button[aria-pressed="false"]:hover{background:#000;color:#fff}
+input[type=range]{width:100%;accent-color:#000}
+details{border:1px solid #000;padding:6px 10px;margin:6px 0;background:#fff;font-size:.84rem}
+summary{cursor:pointer;font-weight:700;text-transform:uppercase;font-size:.8rem;letter-spacing:.04em}
+details p{margin:8px 0}
+.big{padding:12px 16px;font-size:.9rem}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.datum{font-size:.84rem}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar">
+    <a class="back" href="../">← Zurück</a>
+    <a class="brand" href="../">BON<span>NZZ · Titelseite auf 72 mm</span></a>
+  </div>
+</header>
+<main class="wrap">
+  <p class="datum" id="datum">Suche die heutige Titelseite …</p>
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="image/*">
+    <strong id="dropTitle">Titelseite wählen</strong>
+    <span id="dropHint">Screenshot oder Foto der Titelseite tippen, hierher ziehen oder einfügen</span>
+    <canvas id="preview" hidden></canvas>
+  </label>
+  <div class="row">
+    <button class="big" id="drucken" disabled>Drucken</button>
+    <button class="big ghost" id="anderes" hidden>Anderes Bild</button>
+  </div>
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+
+  <h2>Einstellungen</h2>
+  <section class="opts">
+    <label>Punktmuster</label>
+    <div class="seg" id="dither">
+      <button data-d="atk" aria-pressed="true">Klar</button>
+      <button data-d="fs" aria-pressed="false">Weich</button>
+      <button data-d="thr" aria-pressed="false">Schwarz-Weiss</button>
+    </div>
+    <label for="bright">Helligkeit</label>
+    <input type="range" id="bright" min="-60" max="60" step="5" value="15">
+  </section>
+
+  <details>
+    <summary>Hilfe</summary>
+    <p>Die ganze Titelseite wird auf 72 mm Breite verkleinert, gerastert und als Bon an die Bon-Post geschickt. Der Mac druckt sie innert einer Minute, wenn er wach ist. Der Bon wird etwa 11 cm lang. Schlagzeilen und Bilder sind gut zu erkennen, der kleine Fliesstext nicht.</p>
+    <p>Die Titelseite des Tages liegt jeweils hier bereit, sobald sie automatisch abgeholt wurde. Fehlt sie, kannst du einen Screenshot aus der NZZ-App oder dem E-Paper wählen. Weisse Ränder schneidet die App selbst weg.</p>
+  </details>
+</main>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;   // Druckbreite in Punkten: 72 mm bei 203 dpi
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.nzz.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.nzz.' + k, v); } catch {} }
+};
+
+// ---------------------------------------------------------------- Einstellungen
+const opts = { bright: +store.get('bright', 15), dither: store.get('dither', 'atk') };
+
+function seg(id, attr, current, apply){
+  const box = $(id);
+  const mark = () => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(current()))));
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    apply(b.dataset[attr]); mark(); neu();
+  });
+  mark();
+}
+seg('dither', 'd', () => opts.dither, v => { opts.dither = v; store.set('dither', v); });
+$('bright').value = opts.bright;
+$('bright').addEventListener('change', e => { opts.bright = +e.target.value; store.set('bright', e.target.value); neu(); });
+
+function say(text, kind = ''){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + kind; }
+
+// ---------------------------------------------------------------- Titelseite -> 1-Bit-Raster
+let quelle = null;   // ImageBitmap der Titelseite, beschnitten
+let raster = null;
+
+// Weisse oder einfarbige Ränder (Screenshot, Scan) wegschneiden
+function rand(bmp){
+  const k = Math.min(1, 800 / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
+  const c = new OffscreenCanvas(w, h), g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(bmp, 0, 0, w, h);
+  const px = g.getImageData(0, 0, w, h).data;
+  const hell = (x, y) => { const i = (y * w + x) * 4; return px[i] + px[i + 1] + px[i + 2] > 3 * 235; };
+  const leer = (x0, y0, dx, dy, n) => { let d = 0; for (let i = 0; i < n; i++) if (!hell(x0 + dx * i, y0 + dy * i)) d++; return d < n * 0.004; };
+  let t = 0, b = h - 1, l = 0, r = w - 1;
+  while (t < b && leer(0, t, 1, 0, w)) t++;
+  while (b > t && leer(0, b, 1, 0, w)) b--;
+  while (l < r && leer(l, t, 0, 1, b - t + 1)) l++;
+  while (r > l && leer(r, t, 0, 1, b - t + 1)) r--;
+  if ((r - l) < w * 0.3 || (b - t) < h * 0.3) return null;   // fast leer: lieber nichts abschneiden
+  return { sx: l / k, sy: t / k, sw: (r - l + 1) / k, sh: (b - t + 1) / k };
+}
+
+async function laden(blob){
+  const bmp = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+  const z = rand(bmp) || { sx: 0, sy: 0, sw: bmp.width, sh: bmp.height };
+  const H = Math.max(1, Math.round(z.sh * BREITE / z.sw));
+  quelle?.close?.();
+  quelle = await createImageBitmap(bmp, z.sx, z.sy, z.sw, z.sh, { resizeWidth: BREITE, resizeHeight: H, resizeQuality: 'high' });
+  bmp.close();
+  neu();
+}
+
+function neu(){
+  if (!quelle) return;
+  raster = rasterize(quelle);
+  $('preview').hidden = false; $('dropTitle').hidden = true; $('dropHint').hidden = true;
+  $('drucken').disabled = false; $('anderes').hidden = false;
+  say(`${(raster.H * 72 / BREITE / 10).toFixed(1)} cm lang`);
+}
+
+function rasterize(bmp){
+  const W = BREITE, H = bmp.height;
+  const c = $('preview'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+  g.drawImage(bmp, 0, 0);
+
+  const img = g.getImageData(0, 0, W, H), px = img.data, N = W * H;
+  let lum = new Float32Array(N);
+  for (let i = 0, j = 0; j < N; i += 4, j++) {
+    const a = px[i + 3] / 255; // Transparenz wird weiss
+    lum[j] = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) * a + 255 * (1 - a);
+  }
+  if (opts.dither !== 'thr') {
+    lum = levels(lum);
+    lum = sharpen(lum, W, H, 0.7);
+  }
+  const b = opts.bright;
+  for (let j = 0; j < N; j++) lum[j] += b;
+
+  const bits = new Uint8Array((W >> 3) * H);
+  // Fehlerverteilung je Verfahren: [dx, dy, Anteil]
+  const KERNEL = {
+    atk: [[1, 0, 1/8], [2, 0, 1/8], [-1, 1, 1/8], [0, 1, 1/8], [1, 1, 1/8], [0, 2, 1/8]],
+    fs:  [[1, 0, 7/16], [-1, 1, 3/16], [0, 1, 5/16], [1, 1, 1/16]],
+    thr: [],
+  }[opts.dither] || [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const j = y * W + x, old = lum[j], black = old < 128, err = old - (black ? 0 : 255);
+      if (black) bits[y * (W >> 3) + (x >> 3)] |= 0x80 >> (x & 7);
+      const v = black ? 0 : 255;
+      px[j * 4] = px[j * 4 + 1] = px[j * 4 + 2] = v; px[j * 4 + 3] = 255;
+      for (const [dx, dy, f] of KERNEL) {
+        const xx = x + dx, yy = y + dy;
+        if (xx >= 0 && xx < W && yy < H) lum[yy * W + xx] += err * f;
+      }
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return { W, H, bits };
+}
+
+// Kontrast spreizen: das hellste und dunkelste halbe Prozent wird zu Weiss bzw. Schwarz
+function levels(lum){
+  const hist = new Uint32Array(256);
+  for (const v of lum) hist[Math.max(0, Math.min(255, v | 0))]++;
+  const cut = lum.length * 0.005;
+  let lo = 0, hi = 255, n = 0;
+  while (lo < 255 && (n += hist[lo]) < cut) lo++;
+  n = 0;
+  while (hi > 0 && (n += hist[hi]) < cut) hi--;
+  if (hi - lo < 32) return lum;   // fast einfarbig: nichts verstärken
+  const k = 255 / (hi - lo);
+  return lum.map(v => (v - lo) * k);
+}
+
+// Unscharf maskieren mit 3×3-Weichzeichner: Kanten bleiben nach dem Rastern sichtbar
+function sharpen(lum, W, H, amount){
+  const out = new Float32Array(lum.length);
+  for (let y = 0; y < H; y++) {
+    const y0 = Math.max(0, y - 1), y1 = Math.min(H - 1, y + 1);
+    for (let x = 0; x < W; x++) {
+      const x0 = Math.max(0, x - 1), x1 = Math.min(W - 1, x + 1);
+      let sum = 0;
+      for (const yy of [y0, y, y1]) { const r = yy * W; sum += lum[r + x0] + lum[r + x] + lum[r + x1]; }
+      const j = y * W + x;
+      out[j] = lum[j] + amount * (lum[j] - sum / 9);
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  const mm = (raster.H * 72 / raster.W).toFixed(3);   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return $('preview').toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Titelseite des Tages
+// titelseite.json wird jeden Morgen automatisch abgelegt: {"datum":"2026-10-24","bild":"titelseite.jpg"}
+const heute = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' });
+const lang = d => new Date(d + 'T12:00:00').toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+async function tagesseite(){
+  try {
+    const r = await fetch('titelseite.json', { cache: 'no-store' });
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    if (d.datum !== heute()) {
+      $('datum').textContent = `Die heutige Titelseite ist noch nicht da (zuletzt: ${lang(d.datum)}). Du kannst einen Screenshot wählen.`;
+      return;
+    }
+    const b = await fetch(d.bild + '?' + d.datum);
+    if (!b.ok) throw 0;
+    await laden(await b.blob());
+    $('datum').textContent = 'NZZ vom ' + lang(d.datum);
+  } catch {
+    $('datum').textContent = 'Die heutige Titelseite ist noch nicht da. Du kannst einen Screenshot wählen.';
+  }
+}
+
+// ---------------------------------------------------------------- Senden
+$('drucken').addEventListener('click', async () => {
+  if (!raster) return;
+  $('drucken').disabled = true;
+  say('Sende …');
+  try {
+    const inhalt = await bonHtml(raster);
+    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, inhalt, titel: 'NZZ ' + heute(), quelle: 'website-nzz' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    say('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    say('Fehler: ' + e.message, 'err');
+  } finally {
+    $('drucken').disabled = false;
+  }
+});
+
+function waehlen(files){
+  const f = [...files].find(f => f && f.type.startsWith('image/'));
+  $('file').value = '';
+  if (f) laden(f).then(() => { $('datum').textContent = 'Eigenes Bild'; }).catch(e => say('Fehler: ' + e.message, 'err'));
+}
+$('file').addEventListener('change', e => waehlen(e.target.files));
+$('anderes').addEventListener('click', () => $('file').click());
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
+drop.addEventListener('drop', e => { e.preventDefault(); waehlen(e.dataTransfer.files); });
+window.addEventListener('paste', e => waehlen([...e.clipboardData.items].filter(i => i.kind === 'file').map(i => i.getAsFile())));
+
+tagesseite();
+</script>
+</body>
+</html>
