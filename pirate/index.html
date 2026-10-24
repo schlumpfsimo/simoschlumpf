@@ -74,15 +74,21 @@
 
     #fireRow{ display:flex; gap:10px; }
     .fire{
-      position:relative; width:72px; height:46px; padding:0; background:#3b1a10; overflow:hidden;
-      display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; font-size:10px;
+      position:relative; width:84px; height:46px; padding:0; background:#3b1a10; overflow:hidden;
+      display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; font-size:9px;
     }
     .fire::before{
       content:""; position:absolute; left:0; bottom:0; width:100%; height:calc(var(--p,1) * 100%);
       background:#8a2a1a;
     }
     .fire.ready{ border-color:#e8b84a; }
-    .fire span{ position:relative; }
+    .fire span{ position:relative; margin-left:10px; }
+    .fire .rg{
+      position:absolute; left:0; top:0; bottom:0; width:9px; z-index:1;
+      background:linear-gradient(#cfdde6 0 33%, #e8b84a 33% 67%, #2f78a8 67% 100%);
+      border-right:2px solid #0c2236;
+    }
+    .fire .rg i{ position:absolute; left:-1px; width:11px; height:4px; margin-top:-2px; background:#12100e; border:1px solid #fff; top:50%; }
 
     #helmWrap{ display:flex; flex-direction:column; gap:4px; }
     #helm{
@@ -95,6 +101,12 @@
       background:#6b4423; border:3px solid #e8b84a; box-shadow:2px 2px 0 #000a;
     }
     #helmKnob::after{ content:""; position:absolute; left:12px; top:0; width:6px; height:30px; background:#3f2412; }
+    #trimWrap{ display:flex; flex-direction:column; gap:4px; }
+    #trim{
+      position:relative; width:min(49vw,250px); height:34px; background:#0c2236cc;
+      border:3px solid #f1e8cf; box-shadow:3px 3px 0 #000a; touch-action:none;
+    }
+    #trimKnob{ position:absolute; top:3px; width:22px; height:22px; margin-left:-11px; left:30%; background:#f1e8cf; border:3px solid #6b4423; }
     .labs{ display:flex; justify-content:space-between; font-size:10px; opacity:.8; text-shadow:1px 1px 0 #000; }
 
     #sails{
@@ -198,6 +210,10 @@
   <div id="toast"></div>
   <button class="px hidden" id="actBtn">-</button>
   <div id="left">
+    <div id="trimWrap" class="hidden">
+      <div id="trim"><div id="trimKnob"></div></div>
+      <div class="labs"><span>&lt; HAUL IN</span><span>SHEET</span><span>EASE OUT &gt;</span></div>
+    </div>
     <div id="helmWrap">
       <div id="helm"><div id="helmKnob"></div></div>
       <div class="labs"><span>&lt; LARBOARD</span><span>STARBOARD &gt;</span></div>
@@ -205,8 +221,8 @@
   </div>
   <div id="right">
     <div id="fireRow">
-      <button class="px fire" id="fireL"><span>FIRE<br>LARBOARD</span></button>
-      <button class="px fire" id="fireR"><span>FIRE<br>STARBOARD</span></button>
+      <button class="px fire" id="fireL"><b class="rg"><i></i></b><span>FIRE<br>LARBOARD</span></button>
+      <button class="px fire" id="fireR"><b class="rg"><i></i></b><span>FIRE<br>STARBOARD</span></button>
     </div>
     <div id="sails">
       <div class="stop" data-s="3">FULL SAIL</div>
@@ -552,12 +568,20 @@ function creditFreed(name, n){
 
 // wind: trades from ENE with slow drifting variation, gusts and island lee
 const WIND_BASE = 65 * DEG;
+// gusts: patches of stronger wind that drift downwind; they show on the water as dark ripples (cat's paws)
+function gust(x, y, t){
+  const gx = x + Math.sin(WIND_BASE) * t * 22, gy = y - Math.cos(WIND_BASE) * t * 22;
+  const g = vnoise(gx / 380, gy / 380, 13) + 0.5 * vnoise(gx / 160, gy / 160, 14);
+  return Math.sign(g) * Math.pow(Math.min(1, Math.abs(g)), 0.8);
+}
 function windAt(x, y, t, lee = true){
   const n1 = vnoise(x / 7000 + t * 0.006, y / 7000 - t * 0.004, 11);
   const n2 = vnoise(x / 2500 - t * 0.02, y / 2500, 12);
-  const g = vnoise(x / 600 + t * 0.25, y / 600 - t * 0.15, 13);
-  const dir = WIND_BASE + n1 * 0.45 + n2 * 0.12;
-  let spd = 13 + n1 * 3 + n2 * 4 + g * 2.2;
+  const g = gust(x, y, t);
+  // the whole wind slowly veers and backs by up to ten degrees
+  const shift = 0.18 * vnoise(t * 0.012, 0.5, 19);
+  const dir = WIND_BASE + n1 * 0.45 + n2 * 0.12 + shift + g * 0.06;
+  let spd = 13 + n1 * 3 + n2 * 4 + g * 4.5;
   if (lee){
     const sx = Math.sin(dir), sy = -Math.cos(dir);
     if (land(x + sx * 120, y + sy * 120)) spd *= 0.5;
@@ -1025,11 +1049,13 @@ function fire(s, side){ // -1 larboard, +1 starboard
     // guns fire straight out of the ports; you aim by steering
     const lay = (Math.random() - 0.5) * spread * DEG;
     const dx = rx * side * Math.cos(lay) - fx * side * Math.sin(lay), dy = ry * side * Math.cos(lay) - fy * side * Math.sin(lay);
-    const life = GUN_RANGE / BALL_SPEED * (0.9 + Math.random() * 0.2);
+    // fired on the uproll the shot flies high and long into the rigging; on the downroll it falls short, at the waterline
+    const e = (s.roll || 0) * side;
+    const life = GUN_RANGE / BALL_SPEED * (0.9 + Math.random() * 0.2) * clamp(1 + e * 0.04, 0.45, 1.3);
     // the player's crew are better gunners than imperial conscripts
     const dmg = t.cal * (s === ship ? 2 : 1.4);
     stats.shots[s === ship ? 0 : 1]++;
-    balls.push({ owner: s, dmg, x: mx, y: my, vx: dx * BALL_SPEED + fx * s.v * KN, vy: dy * BALL_SPEED + fy * s.v * KN, life, max: life });
+    balls.push({ owner: s, dmg, elev: e > 4 ? 'high' : e < -4 ? 'low' : 'level', x: mx, y: my, vx: dx * BALL_SPEED + fx * s.v * KN, vy: dy * BALL_SPEED + fy * s.v * KN, life, max: life });
     const w = s.wind, bx = -Math.sin(w.dir) * w.spd * 0.25, by = Math.cos(w.dir) * w.spd * 0.25;
     if (visible(s)){
       for (let i = 0; i < 6; i++) puff('smoke', mx + dx * i * 1.4 + rnd(-1, 1), my + dy * i * 1.4 + rnd(-1, 1),
@@ -1081,6 +1107,21 @@ function stepShip(s, dt, now = T){
   const fast = 1 + 0.07 * upOf(s, 'sails');
   let target = w.spd * polar(t, twa) * s.sail * s.rigging * (s.laden || 1) * fast;
   target = t.cap * fast * Math.tanh(target / (t.cap * fast)) * (0.6 + 0.4 * s.hull / maxHull(s));
+  // trim: the crew sheets the sails to the apparent wind; with manual trim the sheet is yours
+  const awaD = s.aw.awa / DEG, opt = clamp((awaD - 20) * 0.62, 3, 84);
+  if (s === ship && trimManual){
+    const err = s.trimErr = (s.trimA == null ? opt : s.trimA) - opt;
+    // eased too far, the sails luff and lose drive; hauled too tight, they stall
+    target *= err < -4 ? Math.max(0.35, 1 - Math.pow((-err - 4) / 28, 1.5)) : err > 4 ? Math.max(0.1, 1 - (err - 4) / 22) : 1;
+  } else { s.trimA = opt; s.trimErr = 0; }
+  // heel: wind pressing on the canvas leans her over; past fifteen degrees she slows and gripes into the wind
+  const power = s.sail * Math.sin(Math.min(Math.PI / 2, s.aw.awa)) * (s.trimErr > 0 ? Math.max(0.2, 1 - s.trimErr / 30) : 1);
+  const heelT = s.sinking ? 0 : 0.07 * w.spd * w.spd * power * (8 / t.B);
+  s.heel = (s.heel || 0) + (heelT - (s.heel || 0)) * Math.min(1, dt / 1.2);
+  if (s.heel > 15) target *= Math.max(0.6, 1 - (s.heel - 15) / 25);
+  // rolling on the swell, about the heel; the period grows with the beam
+  s.rollPh = (s.rollPh == null ? Math.random() * TAU : s.rollPh) + dt * TAU / (3.5 + t.B * 0.15);
+  s.roll = (s.aw.rel > 0 ? 1 : -1) * s.heel + (2.5 + w.spd * 0.12) * Math.sin(s.rollPh);
   const inIrons = twa < t.noGo;
   if (inIrons) target = -0.5 * s.sail * (1 - twa / t.noGo);
   if (s.sinking) target = 0;
@@ -1089,7 +1130,10 @@ function stepShip(s, dt, now = T){
 
   // turning needs water over the rudder
   const flow = clamp(0.06 + Math.abs(s.v) / 4, 0, 1);
-  let rate = s.rudder * t.turn * DEG * flow * (1 - 0.18 * s.sail) * Math.sign(s.v || 1);
+  const gripe = s.heel > 12 ? (s.heel - 12) : 0;
+  let rate = s.rudder * t.turn * DEG * flow * (1 - 0.18 * s.sail) * Math.max(0.5, 1 - gripe / 30) * Math.sign(s.v || 1);
+  // weather helm: a hard-pressed ship tries to round up into the wind
+  rate += Math.sign(rel || 1) * gripe * 0.4 * DEG * flow;
   // a ship caught in irons falls off the wind
   if (twa < t.noGo + 5 && Math.abs(s.v) < 1.5) rate += -Math.sign(rel || 1) * 7 * DEG * (1 - Math.abs(s.v) / 1.5) * Math.max(s.sail, 0.3);
   s.turn += (rate - s.turn) * Math.min(1, dt / 0.5);
@@ -1479,14 +1523,17 @@ function hitShip(s, b){
   const bl = Math.hypot(b.vx, b.vy) || 1, along = Math.abs((b.vx * Math.sin(s.h) - b.vy * Math.cos(s.h)) / bl);
   const rake = along > 0.8;
   const k = rake ? 2 : 1;
-  const dd = b.dmg * k * rnd(0.7, 1.3);
+  // where the shot strikes: high shot tears rigging, low shot holes her at the waterline
+  const hullF = b.elev === 'high' ? 0.35 : b.elev === 'low' ? 1.3 : 1;
+  if (b.elev === 'high') s.rigging = Math.max(0.2, s.rigging - 0.06 * k);
+  const dd = b.dmg * k * hullF * rnd(0.7, 1.3);
   s.hull -= dd; stats.dmg[who] += dd; if (rake) stats.rakes[who]++;
   if (Math.random() < 0.55) s.crew = Math.max(0, s.crew - Math.round(irnd(1, 3) * k));
   if (s === ship && s.crew <= 0 && !dead){ lose('The last of your crew falls. The Empire takes your ship; friends in Libertalia buy you free.'); return; }
   if (Math.random() < 0.5) s.rigging = Math.max(0.2, s.rigging - 0.04 * k);
   if (b.owner === ship && rake && T > rakeToastT){ rakeToastT = T + 4; toast('Raked her, bow to stern!'); }
   // a lucky shot brings down a mast
-  if (s !== ship && b.owner === ship && s.rigging > 0.35 && Math.random() < 0.03 * k){
+  if (s !== ship && b.owner === ship && s.rigging > 0.35 && Math.random() < 0.03 * k * (b.elev === 'high' ? 2 : 1)){
     s.rigging = Math.max(0.2, s.rigging - 0.3);
     toast(`Her mast goes by the board! The ${s.name} is crippled.`);
   }
@@ -1763,7 +1810,8 @@ const GUIDE = [
     </svg>
     <ol><li>The <b>flag</b> on your mast and the <b>arrow</b> on the compass show the wind.</li>
     <li>The <b>hint</b> under your speed tells you how you are sailing, and which way to steer when you are too close to the wind.</li>
-    <li>Wind from the side is fastest. Head to wind, she stops.</li></ol>`],
+    <li>Wind from the side is fastest. Head to wind, she stops.</li>
+    <li><b>Dark ripples</b> on the water are gusts drifting downwind: more wind, more speed, more heel. Smooth water is a lull. The wind also veers and backs slowly.</li></ol>`],
   ['Sailing against the wind', () => `
     <p>You cannot sail straight into the wind. To get somewhere upwind you <b>zig-zag</b>. Sailors call it <b>beating to windward</b>, and each turn across the wind is a <b>tack</b>.</p>
     <svg viewBox="0 0 200 200" shape-rendering="crispEdges">${windSvg}
@@ -1782,6 +1830,10 @@ const GUIDE = [
     <li><b>Larboard</b> is the ship's left side, <b>starboard</b> her right. Sailors use these words because left and right change when you face the stern.</li>
     <li><b>Sails</b> (bottom right): full sail is fastest; fighting sail turns better in battle; reefed is gentle; furled stops her.</li>
     <li><b>Guns</b> fire out of the ship's sides. Turn so the enemy is beside you, then fire that side. The button fills up while the crew reloads.</li>
+    <li>She <b>rolls</b> on the swell, and the gauge on each fire button shows where a broadside from that side would go now: <b>gold</b> = her hull, <b>top band</b> = high into her rigging (and further), <b>blue</b> = low and short, at the waterline if she is close. Time it.</li>
+    <li>In a fresh wind she <b>heels</b>: the guns on the windward side point up, the leeward ones down. Fighting sail heels her less.</li>
+    <li>Past about fifteen degrees of heel she slows and tries to turn into the wind. Reef, or (with manual trim) ease the sheet.</li>
+    <li><b>Manual trim</b> (INFO, SETTINGS): the SHEET slider hauls the sails in or eases them out. Eased too far they luff and flap; hauled too tight they stall. The hint tells you which.</li>
     <li><b>Rake</b> her: a broadside through her bow or stern runs the length of the ship and does double damage.</li>
     <li>Fewer hands means slower reloading. Hire sailors in free ports.</li></ol>`],
   ['Taking ships', () => `
@@ -1801,6 +1853,7 @@ const GUIDE = [
     <li>Free every port and the sea is free.</li></ol>`],
   ['Settings', () => `
     <p>Sound: <b>${['music and effects', 'effects only', 'off'][sfx.mode]}</b></p>
+    <p>Sail trim: <b>${trimManual ? 'manual (the SHEET slider)' : 'automatic (the crew trims)'}</b></p>
     <p>Controls lifted: <b>${LIFTS[lift]} px</b>. Use this if a browser bar covers the helm or the sail lever.</p>
     <p class="help">Best of all: open the browser menu and choose <b>Add to Home screen</b>. Libertalia then opens full screen, without any browser bars.</p>`],
 ];
@@ -1829,6 +1882,12 @@ function guide(i){
   if (i === GUIDE.length - 1){
     btns.push(['SOUND', () => { sfx.cycle(); guide(i); }]);
     btns.push(['CONTROLS UP', () => { setLift((lift + 1) % LIFTS.length); sfx.tap(); guide(i); }]);
+    btns.push([trimManual ? 'AUTO TRIM' : 'MANUAL TRIM', () => {
+      trimManual = !trimManual;
+      try { localStorage.setItem('libertalia-trim', trimManual ? '1' : '0'); } catch (e){}
+      if (trimManual) ship.trimA = ship.trimA || 30;
+      setTrimUI(); sfx.tap(); guide(i);
+    }]);
     if (document.fullscreenEnabled) btns.push([document.fullscreenElement ? 'LEAVE FULL SCREEN' : 'FULL SCREEN', () => { toggleFull(); setTimeout(() => guide(i), 300); }]);
   } else btns.push(['SETTINGS', () => { sfx.tap(); guide(GUIDE.length - 1); }]);
   btns.push(['CLOSE', () => { sfx.tap(); closePanel(); }, true]);
@@ -1969,6 +2028,12 @@ function update(dt){
     if (quietT > (firstMeet ? 8 : warp ? 60 : 15)){ quietT = 0; if (encounter()) firstMeet = false; }
   } else quietT = 0;
 
+  // fire buttons show the roll of that side: where a broadside fired now would go
+  for (let i = 0; i < 2; i++){
+    const e = (ship.roll || 0) * (i ? 1 : -1), tp = Math.round(clamp((12 - e) / 24, 0, 1) * 40) * 2.5;
+    const mk = fireBtn[i]._mk || (fireBtn[i]._mk = fireBtn[i].querySelector('.rg i'));
+    if (mk._tp !== tp){ mk._tp = tp; mk.style.top = tp + '%'; }
+  }
   // fire buttons show reload
   for (let i = 0; i < 2; i++){
     const pr = Math.round((1 - ship.reload[i] / reloadTime(ship)) * 20) / 20;
@@ -2041,6 +2106,7 @@ function update(dt){
   warmRoutes();
   sfx.ambient(dt, ship.wind.spd, dead ? 0 : Math.abs(ship.v), !dead && ship.sail > 0.1 && ship.aw.awa < ship.t.noGo * 0.6 * DEG,
     Math.abs(ship.turn), depthFast(ship.x, ship.y) > -350);
+  if (trimManual && !trimHeld && (hudT % 30) === 0) setTrimUI();
   updToast(dt);
   updHud();
 }
@@ -2052,6 +2118,9 @@ const hudEl = { hp: el('hpFill'), spdN: el('spdN'), spd: el('spd'), pos: el('pos
 function sailHint(rel, twa){
   const t = ship.t;
   if (ship.set === 0) return 'Sails furled: push the sail lever up.';
+  if (trimManual && (ship.trimErr || 0) > 6) return 'Sails luffing: haul in the sheet.';
+  if (trimManual && (ship.trimErr || 0) < -8) return 'Sheeted too hard, she stalls: ease out.';
+  if ((ship.heel || 0) > 16) return trimManual ? 'Heeling hard: ease the sheet or reef.' : 'Heeling hard: reef or take in sail.';
   if (twa < t.noGo) return `Too close to the wind! Steer ${rel > 0 ? 'LEFT' : 'RIGHT'}.`;
   if (twa < t.noGo + 14) return 'As near the wind as she goes. Upwind? Zig-zag (INFO).';
   if (twa < 120) return 'Wind on the side: fastest.';
@@ -2069,7 +2138,7 @@ function updHud(){
   setText(hudEl.pos, pointOfSail(twa, ship.v));
   setText(hudEl.tack, twa > 174 ? 'Before the wind' : rel > 0 ? 'Starboard tack' : 'Larboard tack');
   setText(hudEl.wind, `Wind ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn`);
-  setText(hudEl.hull, `${ship.t.name}  ${SAIL_NAMES[ship.set]}`);
+  setText(hudEl.hull, `${ship.t.name}  ${SAIL_NAMES[ship.set]}  heel ${Math.round(ship.heel || 0)}°`);
   setText(hudEl.hint, sailHint(rel, twa));
   setText(hudEl.purse, `Gold ${pl.gold}${pl.bounty ? ' (+' + pl.bounty + ' bounty)' : ''}  Crew ${ship.crew}${pl.mercs ? '+' + pl.mercs : ''}  Hold ${pl.goods + pl.people}/${ship.t.hold}`);
 }
@@ -2236,9 +2305,9 @@ function drawRig(g, s, shadow){
   for (const m of rig.masts){
     const my = m.y * L;
     if (m.kind === 'gaff'){
-      const luff = awa < 24 && f > 0.02;
+      const luff = (awa < 24 || (s.trimErr || 0) > 6) && f > 0.02;
       const flap = luff ? Math.sin(T * 18 + s.seed) * 0.8 : 0;
-      const ba = (f < 0.02 ? 2 : clamp((awa - 20) * 0.62, 3, 84)) * DEG + flap * 0.05;
+      const ba = (f < 0.02 ? 2 : clamp(s.trimA != null ? s.trimA : (awa - 20) * 0.62, 3, 84)) * DEG + flap * 0.05;
       const Lb = L * m.boom;
       const bdx = lee * Math.sin(ba), bdy = Math.cos(ba);
       const bx = bdx * Lb, by = my + bdy * Lb;
@@ -2272,7 +2341,7 @@ function drawRig(g, s, shadow){
       g.beginPath(); g.moveTo(0, my); g.lineTo(bx, by); g.stroke();
     } else {
       // square sail: yard braced round, the leeward yardarm aft; belly toward where the wind pushes
-      const luff = awa < t.noGo - 8 && f > 0.02;
+      const luff = (awa < t.noGo - 8 || (s.trimErr || 0) > 6) && f > 0.02;
       const brace = clamp((175 - awa) / 125, 0, 1) * 58 * DEG;
       const half = B * 0.85 * m.w;
       const ux = lee * Math.cos(brace), uy = Math.sin(brace);
@@ -2640,7 +2709,14 @@ function drawWaves(){
       if (u > 0.85) continue;
       const px = i * G + h2 * G + bx * u * 14 - ox, py = j * G + h1 * G + by * u * 14 - oy;
       const len = 2 + (h3 * 4 | 0);
-      PB.fillStyle = (u > 0.3 && u < 0.5 && h2 < 0.35) ? C.foam : C.seaLt;
+      // read the wind on the water: dark ripples where a gust is, smooth water in a lull
+      const gw = gust((i * G + G / 2) * MPP, (j * G + G / 2) * MPP, T);
+      if (gw > 0.25){
+        PB.fillStyle = C.seaDk;
+        const nd = Math.round((gw - 0.25) * 22);
+        for (let q = 0; q < nd; q++) PB.fillRect(Math.round(i * G - ox + hash(i, j * 31 + q, 51) * G), Math.round(j * G - oy + hash(i, j * 31 + q, 52) * G), 2, 1);
+      } else if (gw < -0.35 && h1 < 0.6) continue;
+      PB.fillStyle = (u > 0.3 && u < 0.5 && (h2 < 0.35 || gw > 0.45)) ? C.foam : C.seaLt;
       for (let k = -len; k <= len; k++){
         const curl = Math.abs(k) / len;
         PB.fillRect(Math.round(px + nx * k - bx * curl * 1.5), Math.round(py + ny * k - by * curl * 1.5), 1, 1);
@@ -3224,6 +3300,25 @@ function helmMove(e){
   const r = helm.getBoundingClientRect();
   helmTarget = clamp(((e.clientX - r.left) / r.width - 0.5) * 2.3, -1, 1);
 }
+// manual trim: the sheet, from hauled in (0 degrees) to eased right out (85)
+let trimManual = false;
+try { trimManual = localStorage.getItem('libertalia-trim') === '1'; } catch (e){}
+const trimEl = el('trim'), trimKnob = el('trimKnob');
+let trimHeld = false;
+function setTrimUI(){
+  el('trimWrap').classList.toggle('hidden', !trimManual);
+  trimKnob.style.left = (clamp((ship.trimA || 30) / 85, 0, 1) * 100) + '%';
+}
+function trimMove(e){
+  const r = trimEl.getBoundingClientRect();
+  ship.trimA = clamp((e.clientX - r.left) / r.width, 0, 1) * 85;
+  trimKnob.style.left = (ship.trimA / 85 * 100) + '%';
+}
+trimEl.addEventListener('pointerdown', e => { trimEl.setPointerCapture(e.pointerId); trimHeld = true; trimMove(e); });
+trimEl.addEventListener('pointermove', e => { if (trimHeld) trimMove(e); });
+trimEl.addEventListener('pointerup', () => { trimHeld = false; });
+trimEl.addEventListener('pointercancel', () => { trimHeld = false; });
+trimEl.addEventListener('touchstart', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
 const sailsEl = el('sails');
 let sailHeld = false;
 function sailMove(e){
@@ -3243,8 +3338,12 @@ document.addEventListener('gesturechange', e => e.preventDefault());
 document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
 // if the page did get zoomed (an old tap, the browser), say how to get back
 if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (visualViewport.scale > 1.05 && started) toast('The page is zoomed in: pinch out to see all the controls.'); });
-fireBtn[0].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, -1); });
-fireBtn[1].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead) fire(ship, 1); });
+function fireTip(){
+  try { if (localStorage.getItem('libertalia-tipfire')) return; localStorage.setItem('libertalia-tipfire', '1'); } catch (e){}
+  toast('Time your broadside by the gauge on the button: gold band = her hull, top = her rigging, blue = short, into the water.');
+}
+fireBtn[0].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead){ fireTip(); fire(ship, -1); } });
+fireBtn[1].addEventListener('pointerdown', e => { e.preventDefault(); if (!paused && !dead){ fireTip(); fire(ship, 1); } });
 el('btnMap').addEventListener('click', () => { if (!paused) openMap(); });
 el('mapClose').addEventListener('click', closeMap);
 el('mapCentre').addEventListener('click', () => { mv.x = ship.x; mv.y = ship.y; });
@@ -3317,6 +3416,7 @@ addEventListener('keydown', e => {
   if (k === 'q' && !dead) fire(ship, -1);
   if (k === 'e' && !dead) fire(ship, 1);
   if (k === 'b' || k === 'enter') act();
+  if (trimManual && (k === 'z' || k === 'x')){ ship.trimA = clamp((ship.trimA || 30) + (k === 'x' ? 5 : -5), 0, 85); setTrimUI(); }
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 addEventListener('blur', () => keys.clear());
@@ -3532,6 +3632,7 @@ layout();
 const hasSave = load();
 if (hasSave){ el('btnStart').textContent = 'CONTINUE'; el('btnNew').classList.remove('hidden'); }
 setSail(ship.set);
+setTrimUI();
 discover();
 populate(true);
 el('btnStart').addEventListener('click', () => {
