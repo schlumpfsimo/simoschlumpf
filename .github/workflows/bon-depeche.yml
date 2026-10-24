@@ -1,0 +1,38 @@
+name: Bon – Dépêche drucken
+
+# Wird von der Bon-Post (Apps Script) zur eingestellten Zeit angestossen, siehe bon/bonpost/plan.gs.
+# Baut die Zeitung aus bon/depeche/ in Chrome mit frischen Daten und reicht sie bei der Bon-Post ein.
+on:
+  workflow_dispatch:
+    inputs:
+      halt:
+        description: 'Haltestelle für die Abfahrten'
+        required: false
+        default: 'Basel, Bahnhof SBB'
+      teile:
+        description: 'Teile, mit Komma getrennt (leer = alle)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bon-depeche
+  cancel-in-progress: false
+
+jobs:
+  drucken:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Chrome ist auf dem Runner schon installiert, es braucht nur die Steuerung
+      - run: npm install --no-save --no-package-lock --no-audit --no-fund playwright-core@1.48.2
+      - run: node .github/scripts/bon-depeche.mjs
+        env:
+          HALT: ${{ inputs.halt }}
+          TEILE: ${{ inputs.teile }}
