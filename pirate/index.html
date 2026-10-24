@@ -270,7 +270,7 @@
 // ---------------------------------------------------------------- constants
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
 const MPP = 0.6;              // metres per art pixel
-const KN = 0.5144 * 11;       // world metres per second per knot (time compressed)
+const KN = 0.5144 * 9;        // world metres per second per knot (time compressed)
 const WW = 16000, WH = 11000; // world size in metres
 const SX = 2 / 3, SY = 0.6875;  // the islands were laid out on a 24 x 16 km chart; the sea is now smaller
 const CELL = 250, GW = WW / CELL, GH = WH / CELL; // discovery and navigation grid
@@ -280,7 +280,7 @@ const CPX = 40;               // chart: metres per chart pixel
 const CW = WW / CPX, CH = WH / CPX;
 const SAIL_NAMES = ['Furled', 'Reefed', 'Fighting sail', 'Full sail'];
 const SAIL_AREA = [0, 0.42, 0.7, 1];
-const RELOAD = 3.2, BALL_SPEED = 450, GUN_RANGE = 200;
+const RELOAD = 4.5, BALL_SPEED = 120, GUN_RANGE = 200;
 const SAVE_KEY = 'libertalia-v3';
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -874,7 +874,7 @@ for (const k in TYPES){
   const t = TYPES[k];
   t.id = k;
   t.gunY = Array.from({ length: t.guns }, (_, i) => t.guns === 1 ? 0 : -0.28 + 0.56 * i / (t.guns - 1));
-  t.turn *= 1.75; // brisker helm: the game is about manoeuvre, not waiting
+  t.turn *= 1.35; // brisker helm: the game is about manoeuvre, not waiting
 }
 // shipwright upgrades: faster canvas, more guns a side, a reinforced hull. They belong to the ship.
 const UPG = {
@@ -1007,7 +1007,7 @@ const visible = s => Math.abs(s.x - ship.x) < 700 && Math.abs(s.y - ship.y) < 70
 const fireBtn = [document.getElementById('fireL'), document.getElementById('fireR')];
 function reloadTime(s){
   const hands = clamp(s.crew / s.t.crew, 0.25, 1);
-  return RELOAD / Math.sqrt(hands) * (s === ship ? 1 : 1.5);
+  return RELOAD / Math.sqrt(hands) * (s === ship ? 1 : 1.3);
 }
 function fire(s, side){ // -1 larboard, +1 starboard
   const idx = side < 0 ? 0 : 1;
@@ -1016,7 +1016,7 @@ function fire(s, side){ // -1 larboard, +1 starboard
     return;
   }
   s.reload[idx] = reloadTime(s);
-  const t = s.t, spread = s === ship ? 5 : 14; // imperial conscripts are poor gunners
+  const t = s.t, spread = s === ship ? 5 : 9;
   gunYOf(s).forEach((gy, k) => setTimeout(() => {
     // a ship that has struck her colours does not fire the guns she had already run out
     if (s.sinking || s.struck) return;
@@ -1027,7 +1027,7 @@ function fire(s, side){ // -1 larboard, +1 starboard
     const dx = rx * side * Math.cos(lay) - fx * side * Math.sin(lay), dy = ry * side * Math.cos(lay) - fy * side * Math.sin(lay);
     const life = GUN_RANGE / BALL_SPEED * (0.9 + Math.random() * 0.2);
     // the player's crew are better gunners than imperial conscripts
-    const dmg = t.cal * (s === ship ? 2.5 : 1);
+    const dmg = t.cal * (s === ship ? 2 : 1.4);
     stats.shots[s === ship ? 0 : 1]++;
     balls.push({ owner: s, dmg, x: mx, y: my, vx: dx * BALL_SPEED + fx * s.v * KN, vy: dy * BALL_SPEED + fy * s.v * KN, life, max: life });
     const w = s.wind, bx = -Math.sin(w.dir) * w.spd * 0.25, by = Math.cos(w.dir) * w.spd * 0.25;
@@ -1084,16 +1084,15 @@ function stepShip(s, dt, now = T){
   const inIrons = twa < t.noGo;
   if (inIrons) target = -0.5 * s.sail * (1 - twa / t.noGo);
   if (s.sinking) target = 0;
-  // ships gather way and lose it quickly: lively, not ponderous
-  const tau = target > s.v ? t.accel * 0.5 : (inIrons ? 5 : 3.5);
+  const tau = target > s.v ? t.accel : (inIrons ? 9 : 6);
   s.v += (target - s.v) * Math.min(1, dt / tau);
 
   // turning needs water over the rudder
-  const flow = clamp(0.15 + Math.abs(s.v) / 3, 0, 1);
+  const flow = clamp(0.06 + Math.abs(s.v) / 4, 0, 1);
   let rate = s.rudder * t.turn * DEG * flow * (1 - 0.18 * s.sail) * Math.sign(s.v || 1);
   // a ship caught in irons falls off the wind
   if (twa < t.noGo + 5 && Math.abs(s.v) < 1.5) rate += -Math.sign(rel || 1) * 7 * DEG * (1 - Math.abs(s.v) / 1.5) * Math.max(s.sail, 0.3);
-  s.turn += (rate - s.turn) * Math.min(1, dt / 0.25);
+  s.turn += (rate - s.turn) * Math.min(1, dt / 0.5);
   s.h = norm(s.h + s.turn * dt);
 
   // leeway: sideways drift, strongest close-hauled
@@ -1286,7 +1285,7 @@ function think(s, dt){
     want = sailToward(s, toP + Math.PI, dt);
     s.set = 3;
   } else if (s.mode === 'attack'){
-    if (d > 170){
+    if (d > 240){
       const lead = Math.atan2(p.x + Math.sin(p.h) * p.v * KN * 4 - s.x, -(p.y - Math.cos(p.h) * p.v * KN * 4 - s.y));
       want = sailToward(s, lead, dt);
       s.set = 3;
@@ -1482,7 +1481,7 @@ function hitShip(s, b){
   const k = rake ? 2 : 1;
   const dd = b.dmg * k * rnd(0.7, 1.3);
   s.hull -= dd; stats.dmg[who] += dd; if (rake) stats.rakes[who]++;
-  if (Math.random() < 0.4) s.crew = Math.max(0, s.crew - Math.round(irnd(1, 2) * k));
+  if (Math.random() < 0.55) s.crew = Math.max(0, s.crew - Math.round(irnd(1, 3) * k));
   if (s === ship && s.crew <= 0 && !dead){ lose('The last of your crew falls. The Empire takes your ship; friends in Libertalia buy you free.'); return; }
   if (Math.random() < 0.5) s.rigging = Math.max(0.2, s.rigging - 0.04 * k);
   if (b.owner === ship && rake && T > rakeToastT){ rakeToastT = T + 4; toast('Raked her, bow to stern!'); }
