@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BON · BILD</title>
-<meta name="description" content="Bild wählen, es wird sofort auf dem Bon-Drucker gedruckt und danach wieder gelöscht.">
+<meta name="description" content="Bild wählen, es geht über die Bon-Post an den Bondrucker.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
 <style>
@@ -25,9 +25,6 @@ header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px so
 .back:hover,.back:focus-visible{background:#000;color:#fff}
 .brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
 .wrap{max-width:640px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
-.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto;font-size:.78rem}
-.dot{width:8px;height:8px;display:inline-block;background:#999;border:1px solid #000;flex:none}
-.dot.on{background:var(--ok)}
 button{padding:5px 10px;border:1px solid #000;background:#000;color:#fff;text-transform:uppercase;font-size:.75rem;letter-spacing:.04em;cursor:pointer}
 button:hover{background:#fff;color:#000}
 button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;color:#fff}
@@ -57,32 +54,20 @@ details p{margin:8px 0}
 <header class="top">
   <div class="topbar">
     <a class="back" href="../">← Zurück</a>
-    <a class="brand" href="../">BON<span>Bild · direkt per USB</span></a>
-    <div class="bar">
-      <span class="dot" id="dot"></span>
-      <span id="state">Kein Drucker verbunden</span>
-      <button id="connectUsb">Drucker verbinden</button>
-      <button id="connectSerial" class="ghost" hidden>Seriell</button>
-    </div>
+    <a class="brand" href="../">BON<span>Bild · über die Bon-Post</span></a>
   </div>
 </header>
 <main class="wrap">
-
   <label class="drop" id="drop">
     <input type="file" id="file" accept="image/*" multiple>
     <strong id="dropTitle">Bild wählen</strong>
-    <span id="dropHint">hierher ziehen, tippen oder einfügen – wird gedruckt und gelöscht</span>
+    <span id="dropHint">tippen, hierher ziehen oder einfügen – wird sofort gedruckt</span>
     <canvas id="preview" hidden></canvas>
   </label>
   <p class="msg" id="msg" role="status" aria-live="polite"></p>
 
   <h2>Einstellungen</h2>
   <section class="opts">
-    <label>Papier</label>
-    <div class="seg" id="width">
-      <button data-w="576" aria-pressed="true">80 mm</button>
-      <button data-w="384" aria-pressed="false">58 mm</button>
-    </div>
     <label>Punktmuster</label>
     <div class="seg" id="dither">
       <button data-d="atk" aria-pressed="true">Klar</button>
@@ -96,31 +81,21 @@ details p{margin:8px 0}
       <button data-r="1" aria-pressed="true">drehen</button>
       <button data-r="0" aria-pressed="false">so lassen</button>
     </div>
-    <label>Schneiden</label>
-    <div class="seg" id="cut">
-      <button data-c="1" aria-pressed="true">ja</button>
-      <button data-c="0" aria-pressed="false">nein</button>
-    </div>
-    <label>Bildbefehl</label>
-    <div class="seg" id="mode">
-      <button data-m="raster" aria-pressed="true">Raster</button>
-      <button data-m="col" aria-pressed="false">Spalten</button>
-    </div>
-    <label>Test</label>
-    <div class="seg"><button id="testBtn" class="ghost">Testbon drucken</button></div>
   </section>
 
   <details>
     <summary>Hilfe</summary>
-    <p>Läuft in Chrome oder Edge am Computer und in Chrome auf Android (mit USB-OTG-Adapter). Safari und iPhone können nicht direkt auf USB-Geräte zugreifen.</p>
-    <p>Der Drucker muss ESC/POS verstehen (Epson TM, Xprinter, Munbyn, Rongta …). Das Bild verlässt das Gerät nie: Es wird im Browser umgerechnet, direkt an den Drucker geschickt und danach verworfen.</p>
-    <p>Windows: Wenn »Drucker verbinden« ihn nicht öffnen kann, hat der Windows-Druckertreiber ihn belegt. Dann mit <a href="https://zadig.akeo.ie/" target="_blank" rel="noopener">Zadig</a> den Treiber auf WinUSB umstellen, oder »Seriell« versuchen, falls der Drucker als COM-Port erscheint.</p>
-    <p>Zeichensalat statt Bild: Den anderen »Bildbefehl« wählen und den Testbon drucken. Er zeigt oben Text und darunter ein Schachbrett. Kommt der Text sauber und nur das Schachbrett falsch, liegt es am Bildbefehl.</p>
-    <p>Linux: Eventuell muss das Kernel-Modul <code>usblp</code> entladen werden.</p>
+    <p>Das Bild wird im Browser auf 576 Punkte (72 mm) umgerechnet und gerastert. Dann geht es als Bon an die Bon-Post, und der Mac druckt es innert einer Minute, wenn er wach ist. Geht von jedem Gerät aus, auch vom Handy.</p>
+    <p>Punktmuster: »Klar« für Fotos, »Weich« für feine Verläufe, »Schwarz-Weiss« für Logos, Text und Zeichnungen.</p>
   </details>
 </main>
 
 <script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;   // Druckbreite in Punkten: 72 mm bei 203 dpi
+
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d){ try { return localStorage.getItem('bon.' + k) ?? d; } catch { return d; } },
@@ -128,7 +103,7 @@ const store = {
 };
 
 // ---------------------------------------------------------------- Einstellungen
-const opts = { width: +store.get('width', 576), bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', cut: store.get('cut', '1') === '1', mode: store.get('mode', 'raster'), dither: store.get('dither', 'atk') };
+const opts = { bright: +store.get('bright', 15), rotate: store.get('rotate', '1') === '1', dither: store.get('dither', 'atk') };
 
 function seg(id, attr, current, apply){
   const box = $(id);
@@ -139,150 +114,19 @@ function seg(id, attr, current, apply){
   });
   mark();
 }
-seg('width', 'w', () => opts.width, v => { opts.width = +v; store.set('width', v); });
 seg('rotate', 'r', () => opts.rotate ? 1 : 0, v => { opts.rotate = v === '1'; store.set('rotate', v); });
 seg('dither', 'd', () => opts.dither, v => { opts.dither = v; store.set('dither', v); });
-seg('mode', 'm', () => opts.mode, v => { opts.mode = v; store.set('mode', v); });
-seg('cut', 'c', () => opts.cut ? 1 : 0, v => { opts.cut = v === '1'; store.set('cut', v); });
 $('bright').value = opts.bright;
 $('bright').addEventListener('input', e => { opts.bright = +e.target.value; store.set('bright', e.target.value); });
 
-// ---------------------------------------------------------------- Anzeige
 function say(text, kind = ''){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + kind; }
-function showState(){
-  $('dot').classList.toggle('on', !!printer);
-  $('state').textContent = printer ? printer.name : 'Kein Drucker verbunden';
-  $('connectUsb').textContent = printer ? 'Anderer Drucker' : 'Drucker verbinden';
-}
-
-// ---------------------------------------------------------------- Drucker: WebUSB oder Web Serial
-let printer = null;
-// Grosse Stücke ohne Pausen: Kommen die Daten langsamer als der Drucker druckt, hält er an und es gibt weisse Linien
-const CHUNK = 16384;
-const PUFFER = 128;   // Nullbytes vor jedem Druck, der Drucker ignoriert sie
-
-// Der Drucker wird nur während des Drucks belegt, damit der Mac (POS80-Warteschlange, Bon-Post) ihn weiter nutzen kann
-async function openUsb(device){
-  const claim = async () => {
-    if (!device.opened) await device.open();
-    if (device.configuration === null) await device.selectConfiguration(1);
-  };
-  await claim();
-  // Schnittstelle mit Bulk-OUT-Endpunkt suchen, Druckerklasse (7) bevorzugt
-  let pick = null;
-  for (const iface of device.configuration.interfaces) {
-    for (const alt of iface.alternates) {
-      const out = alt.endpoints.find(e => e.direction === 'out' && e.type === 'bulk');
-      if (!out) continue;
-      const cand = { iface: iface.interfaceNumber, alt: alt.alternateSetting, ep: out.endpointNumber, cls: alt.interfaceClass };
-      if (!pick || (cand.cls === 7 && pick.cls !== 7)) pick = cand;
-    }
-  }
-  await device.close();
-  if (!pick) throw new Error('Kein Druckausgang gefunden');
-  return {
-    name: device.productName || 'USB-Drucker',
-    async write(data){
-      await claim();
-      try {
-        await device.claimInterface(pick.iface);
-        // Hat vorher der Mac gedruckt (Bon-Post über die POS80-Warteschlange), zählen Mac und Drucker die USB-Pakete
-        // anders weiter als Chrome. Der Drucker verwirft dann das erste Paket mit dem Bildbefehl → Zeichensalat.
-        // Schnittstelle neu wählen und Endpunkt zurücksetzen bringt beide Seiten wieder in Takt.
-        await device.selectAlternateInterface(pick.iface, pick.alt).catch(() => {});
-        await device.clearHalt('out', pick.ep).catch(() => {});
-        data = join([new Uint8Array(PUFFER), data]);   // geht trotzdem ein Paket verloren, ist es nur Füllung
-        // Der Reihe nach senden und jede Antwort prüfen: Geht ein Stück verloren, verrutscht der Rest und wird zu Zeichensalat
-        let i = 0, stalls = 0;
-        while (i < data.length) {
-          let r;
-          try { r = await device.transferOut(pick.ep, data.subarray(i, i + CHUNK)); }
-          catch (e) { throw abbruch(i, e.message); }
-          if (r.status === 'stall') {
-            if (++stalls > 3) throw abbruch(i, 'Drucker blockiert');
-            await device.clearHalt('out', pick.ep);   // Stück wurde nicht angenommen: nochmals senden
-            continue;
-          }
-          if (r.status !== 'ok') throw abbruch(i, 'USB-Status ' + r.status);
-          i += r.bytesWritten;
-        }
-        await device.releaseInterface(pick.iface).catch(() => {});
-      } finally {
-        await device.close().catch(() => {});
-      }
-    },
-    is: d => d === device,
-  };
-}
-
-async function openSerial(port){
-  await port.open({ baudRate: 9600 });
-  const writer = port.writable.getWriter();
-  return {
-    name: 'Serieller Drucker',
-    async write(data){
-      await writer.write(data);
-    },
-    is: p => p === port,
-  };
-}
-
-async function connect(kind){
-  try {
-    if (kind === 'usb') {
-      const device = await navigator.usb.requestDevice({ filters: [] });
-      printer = await openUsb(device);
-    } else {
-      const port = await navigator.serial.requestPort();
-      printer = await openSerial(port);
-    }
-    showState();
-    say('Verbunden. Bild wählen.', 'ok');
-    if (queue.length) run();
-  } catch (e) {
-    if (e.name === 'NotFoundError') return; // Auswahl abgebrochen
-    say(usbError(e), 'err');
-  }
-}
-
-// Bricht ein Druck mittendrin ab, wartet der Drucker noch auf Bilddaten und liest den nächsten Druck falsch
-function abbruch(gesendet, grund){
-  const e = new Error(grund);
-  e.mitten = gesendet > 0;
-  return e;
-}
-
-function usbError(e){
-  if (e.mitten) return `Druck abgebrochen (${e.message}). Bitte Drucker aus- und einschalten, sonst kommt beim nächsten Druck Zeichensalat.`;
-  if (e.name === 'SecurityError' || /access|claim|Unable/i.test(e.message))
-    return 'Drucker konnte nicht geöffnet werden: Er ist wohl von einem Systemtreiber belegt (siehe Hilfe).';
-  return 'Fehler: ' + e.message;
-}
-
-if ('usb' in navigator) {
-  $('connectUsb').addEventListener('click', () => connect('usb'));
-  // Schon erlaubten Drucker beim Laden automatisch öffnen
-  navigator.usb.getDevices().then(async list => {
-    for (const d of list) { try { printer = await openUsb(d); break; } catch {} }
-    showState();
-  });
-  navigator.usb.addEventListener('disconnect', e => { if (printer?.is(e.device)) { printer = null; showState(); say('Drucker getrennt.'); } });
-  navigator.usb.addEventListener('connect', async e => { if (!printer) { try { printer = await openUsb(e.device); showState(); } catch {} } });
-} else {
-  $('connectUsb').disabled = true;
-  say('Dieser Browser kann nicht auf USB zugreifen. Bitte Chrome oder Edge verwenden.', 'err');
-}
-if ('serial' in navigator) {
-  $('connectSerial').hidden = false;
-  $('connectSerial').addEventListener('click', () => connect('serial'));
-}
 
 // ---------------------------------------------------------------- Bild -> 1-Bit-Raster
 async function rasterize(file){
   const orig = await createImageBitmap(file, { imageOrientation: 'from-image' });
   const turn = opts.rotate && orig.width > orig.height;
   const sw = turn ? orig.height : orig.width, sh = turn ? orig.width : orig.height;
-  const W = opts.width, H = Math.max(1, Math.round(sh * W / sw));
+  const W = BREITE, H = Math.max(1, Math.round(sh * W / sw));
   // Hochwertig verkleinern: Der Standard des Browsers verliert bei grossen Fotos feine Details
   const bmp = await createImageBitmap(orig, { resizeWidth: turn ? H : W, resizeHeight: turn ? W : H, resizeQuality: 'high' });
   orig.close();
@@ -362,64 +206,46 @@ function sharpen(lum, W, H, amount){
   return out;
 }
 
-// ESC/POS: Init, Bild, Vorschub, Schnitt.
-// »Raster« (GS v 0) ist der Standard; »Spalten« (ESC * 33, 24 Punkte hoch) als Ausweg für Drucker ohne GS v 0.
-function escpos({ W, H, bits }){
-  const bpr = W >> 3, parts = [Uint8Array.of(0x1b, 0x40)];
-  if (opts.mode === 'raster') {
-    // grosse Streifen: jeder neue Befehl kann den Drucker kurz anhalten
-    for (let y = 0; y < H; y += 960) {
-      const h = Math.min(960, H - y);
-      parts.push(Uint8Array.of(0x1d, 0x76, 0x30, 0, bpr & 255, bpr >> 8, h & 255, h >> 8));
-      parts.push(bits.subarray(y * bpr, (y + h) * bpr));
-    }
-  } else {
-    parts.push(Uint8Array.of(0x1b, 0x33, 24));   // Zeilenabstand = Streifenhöhe, keine Lücken
-    const dot = (x, y) => y < H && (bits[y * bpr + (x >> 3)] & (0x80 >> (x & 7)));
-    for (let y = 0; y < H; y += 24) {
-      const line = new Uint8Array(5 + W * 3 + 1);
-      line.set([0x1b, 0x2a, 33, W & 255, W >> 8]);
-      for (let x = 0; x < W; x++)
-        for (let k = 0; k < 3; k++) {
-          let v = 0;
-          for (let b = 0; b < 8; b++) if (dot(x, y + k * 8 + b)) v |= 0x80 >> b;
-          line[5 + x * 3 + k] = v;
-        }
-      line[line.length - 1] = 0x0a;
-      parts.push(line);
-    }
-    parts.push(Uint8Array.of(0x1b, 0x32));   // Zeilenabstand zurück
-  }
-  parts.push(Uint8Array.of(0x1b, 0x64, 6));   // 6 Zeilen Vorschub, damit der Schnitt etwas unter dem Bild liegt
-  if (opts.cut) parts.push(Uint8Array.of(0x1d, 0x56, 66, 0));
-  return join(parts);
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Der Mac rendert Bon-HTML mit Chrome auf 576 Punkte und macht es mit fester Schwelle schwarz-weiss.
+// Ein fertig gerastertes 1-Bit-PNG in genau dieser Breite kommt so Punkt für Punkt unverändert an.
+async function bonHtml(raster){
+  const mm = (raster.H * 72 / raster.W).toFixed(3);   // feste Höhe: Der Mac misst den Bon, bevor das Bild geladen ist
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
 }
 
-function join(parts){
-  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
-  let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  if (!('CompressionStream' in window)) return $('preview').toDataURL('image/png');
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
   return out;
 }
 
-// Testbon: Text, dann ein Schachbrett im gewählten Bildbefehl
-function testbon(){
-  const W = opts.width, H = 48, bpr = W >> 3, bits = new Uint8Array(bpr * H);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
-    if (((x >> 3) + (y >> 3)) & 1) bits[y * bpr + (x >> 3)] |= 0x80 >> (x & 7);
-  const text = new TextEncoder().encode(`\x1b@BON TEST\nBildbefehl: ${opts.mode === 'raster' ? 'Raster' : 'Spalten'}\n\n`);
-  return join([text, escpos({ W, H, bits })]);
-}
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
 
-// ---------------------------------------------------------------- Ablauf: wählen -> drucken -> löschen
+// ---------------------------------------------------------------- Ablauf: wählen -> senden -> Vorschau weg
 const queue = [];
 let busy = false;
 
 function add(files){
   for (const f of files) if (f && f.type.startsWith('image/')) queue.push(f);
   $('file').value = '';
-  if (!queue.length) return;
-  if (!printer) { say(`${queue.length} Bild(er) warten – bitte Drucker verbinden.`); return; }
-  run();
+  if (queue.length) run();
 }
 
 async function run(){
@@ -427,23 +253,30 @@ async function run(){
   busy = true;
   setPreview(true);
   try {
-    while (queue.length && printer) {
+    while (queue.length) {
       const file = queue.shift();
-      say('Drucke …');
-      let raster = await rasterize(file);
-      await printer.write(escpos(raster));
-      raster = null;
-      say(queue.length ? `Gedruckt. Noch ${queue.length} …` : 'Gedruckt und gelöscht.', 'ok');
+      say('Sende …');
+      const inhalt = await bonHtml(await rasterize(file));
+      // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+      const r = await fetch(BONPOST, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ key: KEY, inhalt, titel: 'Bild', quelle: 'website-bild' }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+      say(queue.length ? `Gesendet. Noch ${queue.length} …` : 'Gesendet. Der Bon kommt innert einer Minute.', 'ok');
     }
   } catch (e) {
-    say(usbError(e), 'err');
+    queue.length = 0;
+    say('Fehler: ' + e.message, 'err');
   } finally {
     busy = false;
     setTimeout(() => { if (!busy) setPreview(false); }, 1200);
   }
 }
 
-// Vorschau nur während des Drucks; danach Leinwand leeren
+// Vorschau nur während des Sendens; danach Leinwand leeren
 function setPreview(on){
   const c = $('preview');
   c.hidden = !on; $('dropTitle').hidden = on; $('dropHint').hidden = on;
@@ -451,21 +284,11 @@ function setPreview(on){
 }
 
 $('file').addEventListener('change', e => add(e.target.files));
-$('testBtn').addEventListener('click', async () => {
-  if (!printer) return say('Zuerst Drucker verbinden.', 'err');
-  if (busy) return;
-  busy = true;
-  try { say('Drucke Testbon …'); await printer.write(testbon()); say('Testbon gedruckt.', 'ok'); }
-  catch (e) { say(usbError(e), 'err'); }
-  finally { busy = false; }
-});
 const drop = $('drop');
 ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
 drop.addEventListener('drop', e => { e.preventDefault(); add(e.dataTransfer.files); });
 window.addEventListener('paste', e => add([...e.clipboardData.items].filter(i => i.kind === 'file').map(i => i.getAsFile())));
-
-showState();
 </script>
 </body>
 </html>
