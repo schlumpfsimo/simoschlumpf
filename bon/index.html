@@ -21,14 +21,11 @@ header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px so
 main{padding-top:14px;padding-bottom:40px}
 h2{font-size:1rem;margin:0 0 10px;text-transform:uppercase;border-top:1px solid #000;padding-top:6px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-a.card{display:flex;flex-direction:column;gap:6px;min-height:150px;border:1px solid #000;padding:12px;color:#000;text-decoration:none;background:#fff}
+a.card{display:flex;flex-direction:column;gap:6px;min-height:110px;border:1px solid #000;padding:12px;color:#000;text-decoration:none;background:#fff}
 a.card:hover,a.card:focus-visible{outline:2px solid #000;outline-offset:0}
 a.card:active{background:#000;color:#fff}
 .card .nr{font-size:.7rem;letter-spacing:.04em;color:var(--muted)}
 .card .name{font-weight:700;font-size:1.1rem;text-transform:uppercase;letter-spacing:.1em}
-.card .desc{font-size:.84rem}
-.card .tags{margin-top:auto;display:flex;flex-wrap:wrap;gap:4px}
-.chip{padding:1px 6px;font-size:.7rem;border:1px solid #000;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -43,12 +40,13 @@ a.card:active{background:#000;color:#fff}
   <div class="grid" id="apps"></div>
 </main>
 <script>
-// Neue App: Ordner bon/<pfad>/ anlegen und hier eine Zeile ergänzen. Reihenfolge = Reihenfolge der Kacheln.
+// Neue App: Ordner bon/<pfad>/ anlegen und hier eine Zeile ergänzen, vor «Namen».
+// Reihenfolge = Reihenfolge der Kacheln. Namen bleibt immer zuletzt.
 const APPS = [
-  { pfad: 'text', name: 'Text', desc: 'Text eingeben oder hineinkopieren, schön gesetzt, mit Vorschau.', tags: ['Bon-Post', 'Handy'] },
-  { pfad: 'bild', name: 'Bild', desc: 'Foto oder Grafik wählen, Vorschau prüfen, drucken.', tags: ['Bon-Post', 'Handy'] },
-  { pfad: 'namen', name: 'Namen', desc: 'Die Namen der Getöteten in Gaza, einen Abend lang, mit Kufiya-Muster.', tags: ['USB', 'Chrome am Mac'] },
-  { pfad: 'depeche', name: 'Dépêche', desc: 'Die Morgenzeitung: Wetter, Schlagzeilen, Basel, Abfahrten und Wikipedia, gesetzt wie eine Zeitung.', tags: ['Bon-Post', 'Handy'] },
+  { pfad: 'text', name: 'Text' },
+  { pfad: 'bild', name: 'Bild' },
+  { pfad: 'depeche', name: 'Dépêche' },
+  { pfad: 'namen', name: 'Namen' },
 ];
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -56,8 +54,6 @@ document.getElementById('apps').innerHTML = APPS.map((a, i) => `
   <a class="card" href="${esc(a.pfad)}/">
     <span class="nr">${String(i + 1).padStart(2, '0')}</span>
     <span class="name">${esc(a.name)}</span>
-    <span class="desc">${esc(a.desc)}</span>
-    <span class="tags">${a.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</span>
   </a>`).join('');
 document.getElementById('count').textContent = APPS.length + ' Apps';
 </script>
