@@ -185,6 +185,9 @@ function zahl(x){
 function menge([m, e]){
   if (!m) return e;
   let x = m * wahl.personen / BASIS;
+  if (e === 'kg' && x < 1) { x *= 1000; e = 'g'; }      // 0,4 kg liest sich schlechter als 400 g
+  if (e === 'l' && x < 1) { x *= 10; e = 'dl'; }
+  if (e === 'Zehe') x = Math.max(1, x);
   if (e === 'g') x = x < 20 ? Math.max(5, auf(x, 5)) : x < 300 ? auf(x, 10) : auf(x, 50);
   else if (e === 'kg' || e === 'l') x = Math.max(0.1, auf(x, 0.1));
   else if (PACKUNG.includes(e)) x = Math.max(1, Math.round(x));
