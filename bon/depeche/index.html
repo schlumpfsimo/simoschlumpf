@@ -60,6 +60,19 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
 .teile button::before{content:"";flex:none;width:12px;height:12px;border:1px solid #000;background:#fff}
 .teile button[aria-pressed="true"]::before{background:#000}
 .teile button:hover{background:#f0f0f0;color:#000}
+/* Zeitplan */
+.plan{display:flex;flex-direction:column;gap:6px;border:1px solid #000;padding:10px}
+.plan .zeile{display:flex;gap:8px;align-items:center}
+.plan input[type=time]{width:auto;flex:1;min-width:0}
+.schalter{margin:0;width:auto;flex:none;padding:10px 12px;font-size:.74rem;letter-spacing:.03em;text-transform:none;background:#fff;color:#000;display:flex;gap:8px;align-items:center}
+.schalter::before{content:"";flex:none;width:12px;height:12px;border:1px solid #000;background:#fff}
+.schalter[aria-pressed="true"]::before{background:#000}
+.schalter:hover{background:#f0f0f0;color:#000}
+.tage{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid #000}
+.tage button{margin:0;padding:10px 0;font-size:.74rem;letter-spacing:0;border:0;border-left:1px solid #000;background:#fff;color:#000}
+.tage button:first-child{border-left:0}
+.tage button[aria-pressed="true"]{background:#000;color:#fff}
+.plan .msg{text-align:left;margin:0}
 .quellen{margin:0;padding:0;list-style:none;font-size:.78rem;border-top:1px solid #000}
 .quellen li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #ddd}
 .quellen .ok{color:var(--ok)} .quellen .err{color:var(--err)} .quellen .warte{color:var(--muted)}
@@ -97,6 +110,17 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
     <p class="hint" id="haltHint">Tram, Bus oder Bahnhof, so wie im SBB-Fahrplan.</p>
     <span class="label" id="teileLabel">Was in die Zeitung kommt</span>
     <div class="teile" id="teile" role="group" aria-labelledby="teileLabel"></div>
+    <span class="label" id="planLabel">Automatisch drucken</span>
+    <div class="plan" role="group" aria-labelledby="planLabel">
+      <div class="zeile">
+        <button type="button" class="schalter" id="planAn" aria-pressed="false">Ein</button>
+        <input type="time" id="planZeit" value="07:00" step="60" aria-label="Uhrzeit">
+      </div>
+      <div class="tage" id="planTage"></div>
+      <button id="planSpeichern">Zeitplan speichern</button>
+      <p class="msg" id="planMsg" role="status" aria-live="polite"></p>
+      <p class="hint">Kurz vor der Zeit baut GitHub die Zeitung mit frischen Daten neu und schickt sie an die Bon-Post. Haltestelle und Teile von hier werden mitgespeichert.</p>
+    </div>
     <span class="label">Quellen</span>
     <ul class="quellen" id="quellen"></ul>
     <p class="hint">Alles öffentlich, ohne Anmeldung: Wetter von Open-Meteo, Rhein vom BAFU, Schlagzeilen aus dem Feed (SRF, NZZ, Tagesschau, Kanton Basel-Stadt …), Wikipedia, Fahrplan von opendata.ch, Kurse der EZB.</p>
@@ -127,14 +151,18 @@ const TEILE = [
   ['wetter', 'Wetter'], ['aufmacher', 'Aufmacher'], ['meldungen', 'Schweiz und Welt'], ['basel', 'Basel'],
   ['tag', 'An diesem Tag'], ['wissen', 'Schon gewusst?'], ['artikel', 'Artikel des Tages'], ['abfahrten', 'Abfahrten'], ['kurse', 'Devisen'],
 ];
-const an = Object.fromEntries(TEILE.map(([k]) => [k, store.get('teil.' + k, '1') === '1']));
+// Automatischer Druck (GitHub): ?auto=1&halt=…&teile=wetter,basel,…  Dann gelten nur die Angaben aus der Adresse.
+const ADRESSE = new URLSearchParams(location.search);
+const AUTO = ADRESSE.has('auto');
+const autoTeile = ADRESSE.get('teile') ? ADRESSE.get('teile').split(',') : null;
+const an = Object.fromEntries(TEILE.map(([k]) => [k, AUTO ? !autoTeile || autoTeile.includes(k) : store.get('teil.' + k, '1') === '1']));
 $('teile').innerHTML = TEILE.map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${an[k]}">${n}</button>`).join('');
 $('teile').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const k = b.dataset.k; an[k] = !an[k]; store.set('teil.' + k, an[k] ? '1' : '0');
   b.setAttribute('aria-pressed', String(an[k])); setzen();
 });
-$('halt').value = store.get('halt', 'Basel, Bahnhof SBB');
+$('halt').value = AUTO ? ADRESSE.get('halt') ?? 'Basel, Bahnhof SBB' : store.get('halt', 'Basel, Bahnhof SBB');
 
 // ---------------------------------------------------------------- Datum und Zahlen
 const teileVon = (d, o) => Object.fromEntries(new Intl.DateTimeFormat('de-CH', { timeZone: TZ, ...o }).formatToParts(d).map(p => [p.type, p.value]));
@@ -181,7 +209,8 @@ const QUELLEN = {
     return { temp: w('temperature').val, flow: w('flow')?.val, zeit: w('temperature').timestamp * 1000 };
   }],
   news: ['Schlagzeilen', () => holen('../../feed/data/news.json')],
-  wiki: ['Wikipedia', () => { const [y, m, t] = isoTag(new Date()).split('-'); return holen(`https://de.wikipedia.org/api/rest_v1/feed/featured/${y}/${m}/${t}`); }],
+  wiki: ['Wikipedia', () => { const [y, m, t] = isoTag(new Date()).split('-'); // Wikimedia drosselt Abrufe ohne Absender; der Browser darf den User-Agent nicht setzen, darum Api-User-Agent
+    return holen(`https://de.wikipedia.org/api/rest_v1/feed/featured/${y}/${m}/${t}`, { headers: { 'Api-User-Agent': 'Bon-Depeche/1.0 (https://www.simoschlumpf.ch/bon/)' } }); }],
   abfahrten: ['Abfahrten', async () => {
     const halt = $('halt').value.trim();
     if (!halt) return null;
@@ -690,33 +719,94 @@ $('halt').addEventListener('input', () => {
   warte = setTimeout(async () => { store.set('halt', $('halt').value.trim()); await laden('abfahrten'); neuSetzen(); }, 700);
 });
 
+// Zeitung mit frischen Daten setzen und bei der Bon-Post einreichen
+async function drucken(quelle){
+  // Abfahrten und Wetter veralten schnell: nach zwei Minuten vor dem Drucken neu holen
+  if (Date.now() - geholt > 2 * 6e4) { msg('Hole die neusten Daten …'); await laden(); }
+  await neuSetzen();
+  if (!raster) throw new Error($('mass').textContent || 'nichts zu drucken');
+  msg('Sende …');
+  const d = await bonpost({ inhalt: await bonHtml(raster), titel: 'Dépêche ' + isoTag(new Date()), quelle });
+  if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+  msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+}
+
+// text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
+async function bonpost(daten){
+  const r = await fetch(BONPOST, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ key: KEY, ...daten }) });
+  return r.json();
+}
+
 $('drucken').addEventListener('click', async () => {
   $('drucken').disabled = true;
-  try {
-    // Abfahrten und Wetter veralten schnell: nach zwei Minuten vor dem Drucken neu holen
-    if (Date.now() - geholt > 2 * 6e4) { msg('Hole die neusten Daten …'); await laden(); }
-    await neuSetzen();
-    if (!raster) throw new Error($('mass').textContent || 'nichts zu drucken');
-    msg('Sende …');
-    const inhalt = await bonHtml(raster);
-    // text/plain: einfache Anfrage ohne CORS-Preflight, Apps Script liest den Body trotzdem als JSON
-    const r = await fetch(BONPOST, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ key: KEY, inhalt, titel: 'Dépêche ' + isoTag(new Date()), quelle: 'website-depeche' }),
-    });
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
-    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
-  } catch (e) {
-    msg('Fehler: ' + e.message, 'err');
-  } finally {
-    $('drucken').disabled = false;
-  }
+  try { await drucken('website-depeche'); }
+  catch (e) { msg('Fehler: ' + e.message, 'err'); }
+  finally { $('drucken').disabled = false; }
 });
 
+// ---------------------------------------------------------------- Zeitplan (liegt in der Bon-Post)
+const TAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];   // 1 = Montag … 7 = Sonntag, wie in der Bon-Post
+let plan = { aktiv: false, zeit: '07:00', tage: [1, 2, 3, 4, 5, 6, 7] };
+const planMsg = (t, k = '') => { $('planMsg').textContent = t; $('planMsg').className = 'msg ' + k; };
+
+function planZeigen(){
+  $('planAn').setAttribute('aria-pressed', String(plan.aktiv));
+  $('planAn').textContent = plan.aktiv ? 'Ein' : 'Aus';
+  $('planZeit').value = plan.zeit;
+  $('planTage').innerHTML = TAGE.map((t, i) => `<button type="button" data-t="${i + 1}" aria-pressed="${plan.tage.includes(i + 1)}">${t}</button>`).join('');
+}
+function planText(p){
+  if (!p.aktiv || !p.tage.length) return 'Automatischer Druck ist aus.';
+  const tage = p.tage.length === 7 ? 'jeden Tag' : p.tage.map(t => TAGE[t - 1]).join(', ');
+  return `Gedruckt wird ${tage} um ${p.zeit.replace(':', '.')} Uhr.`;
+}
+$('planAn').addEventListener('click', () => { plan.aktiv = !plan.aktiv; planZeigen(); planMsg('Noch nicht gespeichert.'); });
+$('planZeit').addEventListener('input', () => { plan.zeit = $('planZeit').value || plan.zeit; planMsg('Noch nicht gespeichert.'); });
+$('planTage').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const t = +b.dataset.t;
+  plan.tage = plan.tage.includes(t) ? plan.tage.filter(x => x !== t) : [...plan.tage, t].sort();
+  planZeigen(); planMsg('Noch nicht gespeichert.');
+});
+$('planSpeichern').addEventListener('click', async () => {
+  if (!/^\d\d:\d\d$/.test(plan.zeit)) { planMsg('Uhrzeit fehlt.', 'err'); return; }
+  if (plan.aktiv && !plan.tage.length) { planMsg('Mindestens einen Tag wählen.', 'err'); return; }
+  $('planSpeichern').disabled = true; planMsg('Speichere …');
+  try {
+    const teile = TEILE.map(([k]) => k).filter(k => an[k]).join(',');
+    const d = await bonpost({ aktion: 'plan', plan: { ...plan, halt: $('halt').value.trim(), teile } });
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    plan = { ...plan, ...d.plan }; planZeigen();
+    planMsg('Gespeichert. ' + planText(plan), 'ok');
+  } catch (e) {
+    planMsg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('planSpeichern').disabled = false;
+  }
+});
+async function planLaden(){
+  planZeigen();
+  try {
+    const d = await bonpost({ aktion: 'plan-lesen' });
+    if (!d.ok || !d.plan) throw new Error(d.fehler);
+    if (d.plan.zeit) plan = { aktiv: !!d.plan.aktiv, zeit: d.plan.zeit, tage: d.plan.tage || [] };
+    planZeigen();
+    if (d.plan.fehler) planMsg(planText(plan) + ' Letzter Versuch ging schief: ' + d.plan.fehler, 'err');
+    else planMsg(planText(plan));
+  } catch {
+    planMsg('Die Bon-Post kennt den Zeitplan noch nicht.', 'err');
+  }
+}
+
 quellenZeigen();
-allesNeu();
+if (AUTO) {
+  // GitHub wartet auf data-fertig: «ok» oder die Fehlermeldung
+  allesNeu().then(() => drucken('auto-depeche'))
+    .then(() => { document.body.dataset.fertig = 'ok'; }, e => { document.body.dataset.fertig = 'Fehler: ' + e.message; });
+} else {
+  allesNeu();
+  planLaden();
+}
 </script>
 </body>
 </html>
