@@ -45,6 +45,7 @@ label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter
 input{font-family:var(--mono);font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%}
 input:focus{outline:2px solid #000;outline-offset:-1px}
 .hint{margin:0;font-size:.78rem;color:var(--muted)}
+.hint.ok{color:var(--ok)} .hint.err{color:var(--err)}
 button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
 button:hover{background:#fff;color:#000}
 button:disabled{opacity:.4;cursor:default}
@@ -72,6 +73,7 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
 .tage button{margin:0;padding:10px 0;font-size:.74rem;letter-spacing:0;border:0;border-left:1px solid #000;background:#fff;color:#000}
 .tage button:first-child{border-left:0}
 .tage button[aria-pressed="true"]{background:#000;color:#fff}
+.zonen{grid-template-columns:repeat(8,minmax(0,1fr))}
 .plan .msg{text-align:left;margin:0}
 .quellen{margin:0;padding:0;list-style:none;font-size:.78rem;border-top:1px solid #000}
 .quellen li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #ddd}
@@ -108,6 +110,10 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
     <label for="halt">Haltestelle für die Abfahrten</label>
     <input id="halt" autocomplete="off" enterkeyhint="done" placeholder="z. B. Basel, Bahnhof SBB">
     <p class="hint" id="haltHint">Tram, Bus oder Bahnhof, so wie im SBB-Fahrplan.</p>
+    <span class="label" id="zoneLabel">Abfuhrzone in Basel-Stadt</span>
+    <div class="tage zonen" id="zonen" role="group" aria-labelledby="zoneLabel"></div>
+    <button type="button" class="ghost" id="zoneOrt">Zone für meinen Standort finden</button>
+    <p class="hint" id="zoneHint"></p>
     <span class="label" id="teileLabel">Was in die Zeitung kommt</span>
     <div class="teile" id="teile" role="group" aria-labelledby="teileLabel"></div>
     <span class="label" id="planLabel">Automatisch drucken</span>
@@ -119,11 +125,11 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
       <div class="tage" id="planTage"></div>
       <button id="planSpeichern">Zeitplan speichern</button>
       <p class="msg" id="planMsg" role="status" aria-live="polite"></p>
-      <p class="hint">Kurz vor der Zeit baut GitHub die Zeitung mit frischen Daten neu und schickt sie an die Bon-Post. Haltestelle und Teile von hier werden mitgespeichert.</p>
+      <p class="hint">Kurz vor der Zeit baut GitHub die Zeitung mit frischen Daten neu und schickt sie an die Bon-Post. Haltestelle, Abfuhrzone und Teile von hier werden mitgespeichert.</p>
     </div>
     <span class="label">Quellen</span>
     <ul class="quellen" id="quellen"></ul>
-    <p class="hint">Alles öffentlich, ohne Anmeldung: Wetter von Open-Meteo, Rhein vom BAFU, Schlagzeilen aus dem Feed (SRF, NZZ, Tagesschau, Kanton Basel-Stadt …), Wikipedia, Fahrplan von opendata.ch, Kurse der EZB, Ölpreis von Yahoo Finance (alle drei Stunden über GitHub abgeholt).</p>
+    <p class="hint">Alles öffentlich, ohne Anmeldung: Wetter von Open-Meteo, Rhein vom BAFU, Schlagzeilen aus dem Feed (SRF, NZZ, Tagesschau, Kanton Basel-Stadt …), Wikipedia, Fahrplan von opendata.ch, Abfuhrtermine von data.bs.ch, Kurse der EZB, Ölpreis von Yahoo Finance (alle drei Stunden über GitHub abgeholt). Sonnenzeiten selbst berechnet.</p>
   </div>
 </main>
 
@@ -149,8 +155,8 @@ const store = {
 
 // ---------------------------------------------------------------- Teile der Zeitung
 const TEILE = [
-  ['wetter', 'Wetter'], ['aufmacher', 'Aufmacher'], ['meldungen', 'Schweiz und Welt'], ['basel', 'Basel'], ['kultur', 'Kultur in Basel'],
-  ['abfahrten', 'Abfahrten'], ['tag', 'An diesem Tag'], ['wissen', 'Schon gewusst?'], ['artikel', 'Artikel des Tages'], ['kurse', 'Devisen'], ['oel', 'Ölpreis'],
+  ['wetter', 'Wetter'], ['sonne', 'Sonne'], ['aufmacher', 'Aufmacher'], ['meldungen', 'Schweiz und Welt'], ['basel', 'Basel'], ['kultur', 'Kultur in Basel'],
+  ['abfahrten', 'Abfahrten'], ['abfuhr', 'Abfuhr'], ['tag', 'An diesem Tag'], ['wissen', 'Schon gewusst?'], ['artikel', 'Artikel des Tages'], ['kurse', 'Devisen'], ['oel', 'Ölpreis'],
 ];
 // Automatischer Druck (GitHub): ?auto=1&halt=…&teile=wetter,basel,…  Dann gelten nur die Angaben aus der Adresse.
 const ADRESSE = new URLSearchParams(location.search);
@@ -164,6 +170,11 @@ $('teile').addEventListener('click', e => {
   b.setAttribute('aria-pressed', String(an[k])); setzen();
 });
 $('halt').value = AUTO ? ADRESSE.get('halt') ?? 'Basel, Bahnhof SBB' : store.get('halt', 'Basel, Bahnhof SBB');
+// Abfuhrzone A–H. Die Bon-Post lässt im Zeitplan nur Haltestelle und Teile (a–z und Komma) durch,
+// darum reist die Zone als Teil «zoned» mit: ?teile=…,abfuhr,zoned. ?zone=D geht auch.
+const ZONEN = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+const zoneGueltig = z => ZONEN.includes(String(z || '').toUpperCase()) ? String(z).toUpperCase() : '';
+let zone = AUTO ? zoneGueltig(ADRESSE.get('zone') || (autoTeile || []).find(t => /^zone[a-h]$/.test(t))?.slice(4)) : zoneGueltig(store.get('zone', ''));
 
 // ---------------------------------------------------------------- Datum und Zahlen
 const teileVon = (d, o) => Object.fromEntries(new Intl.DateTimeFormat('de-CH', { timeZone: TZ, ...o }).formatToParts(d).map(p => [p.type, p.value]));
@@ -193,6 +204,10 @@ const holen = async (url, o = {}) => {
   return r.json();
 };
 
+// Abfuhrtermine Basel-Stadt (Opendatasoft). Leerzeichen als %20, nicht als «+»
+const ABFUHR = 'https://data.bs.ch/api/explore/v2.1/catalog/datasets/100096/records?';
+const odsq = o => Object.entries(o).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+
 const QUELLEN = {
   wetter: ['Wetter', async () => {
     const q = new URLSearchParams({
@@ -221,6 +236,12 @@ const QUELLEN = {
     const d = await holen('https://transport.opendata.ch/v1/stationboard?' + new URLSearchParams({ station: halt, limit: 12, datetime: `${z.year}-${z.month}-${z.day} ${z.hour}:${z.minute}` }));
     return { ...d, ab };
   }],
+  abfuhr: ['Abfuhr', async () => {
+    if (!zone) return null;
+    const heute = isoTag(new Date());
+    const d = await holen(ABFUHR + odsq({ select: 'termin,art', where: `zone="${zone}" and termin>="${heute}"`, order_by: 'termin', limit: 100 }));
+    return { zone, heute, termine: (d.results || []).filter(x => x.termin && x.art).map(x => ({ tag: String(x.termin).slice(0, 10), art: x.art })) };
+  }],
   kurse: ['Devisen', () => holen('https://api.frankfurter.dev/v1/latest?base=CHF&symbols=EUR,USD,GBP')],
   oel: ['Ölpreis', () => holen('maerkte.json')],   // legt .github/workflows/bon-maerkte.yml alle drei Stunden ab
 };
@@ -230,7 +251,7 @@ let geholt = 0;
 function quellenZeigen(){
   $('quellen').innerHTML = Object.entries(QUELLEN).map(([k, [name]]) => {
     const s = status[k] || 'warte';
-    const t = s === 'ok' ? 'da' : s === 'warte' ? 'lädt …' : 'nicht erreichbar';
+    const t = s === 'ok' ? (k === 'abfuhr' && !daten.abfuhr ? 'keine Zone gewählt' : 'da') : s === 'warte' ? 'lädt …' : 'nicht erreichbar';
     return `<li><span>${name}</span><span class="${s}">${t}</span></li>`;
   }).join('');
 }
@@ -267,6 +288,37 @@ function mond(d){
   if (ph < 0.03 || ph > 0.97) return 'Neumond';
   if (ph > 0.47 && ph < 0.53) return 'Vollmond';
   return `Mond ${licht} %, ${ph < 0.5 ? 'zunehmend' : 'abnehmend'}`;
+}
+
+// Sonnenauf- und -untergang nach der NOAA-Formel, ganz ohne Abruf. Ergebnis in Millisekunden (UTC).
+// Open-Meteo rechnet nach der Umstellung auf Winterzeit eine Stunde falsch, darum selbst rechnen.
+// zenit: 90.833° = Sonnenrand am Horizont (mit Lichtbrechung), 96° = Ende der bürgerlichen Dämmerung
+function sonnenzeit(iso, zenit, auf){
+  const [y, m, t] = iso.split('-').map(Number), mitternacht = Date.UTC(y, m - 1, t);
+  const rad = Math.PI / 180, sin = x => Math.sin(x * rad), cos = x => Math.cos(x * rad);
+  let min = 720;
+  for (let k = 0; k < 3; k++) {   // zweimal mit der gefundenen Zeit nachrechnen: auf wenige Sekunden genau
+    const T = ((mitternacht + min * 6e4) / 864e5 + 2440587.5 - 2451545) / 36525;
+    const L0 = ((280.46646 + T * (36000.76983 + T * 0.0003032)) % 360 + 360) % 360;
+    const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
+    const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
+    const C = sin(M) * (1.914602 - T * (0.004817 + 0.000014 * T)) + sin(2 * M) * (0.019993 - 0.000101 * T) + sin(3 * M) * 0.000289;
+    const om = 125.04 - 1934.136 * T, lam = L0 + C - 0.00569 - 0.00478 * sin(om);
+    const eps = 23 + (26 + (21.448 - T * (46.815 + T * (0.00059 - T * 0.001813))) / 60) / 60 + 0.00256 * cos(om);
+    const dekl = Math.asin(sin(eps) * sin(lam)) / rad, yy = Math.tan(eps / 2 * rad) ** 2;
+    const zeitgl = 4 / rad * (yy * sin(2 * L0) - 2 * e * sin(M) + 4 * e * yy * sin(M) * cos(2 * L0) - 0.5 * yy * yy * sin(4 * L0) - 1.25 * e * e * sin(2 * M));
+    const cosH = (cos(zenit) - sin(ORT.lat) * sin(dekl)) / (cos(ORT.lat) * cos(dekl));
+    if (Math.abs(cosH) > 1) return null;   // in Basel nie, aber sicher ist sicher
+    const H = Math.acos(cosH) / rad;
+    min = 720 - 4 * ORT.lon - zeitgl + (auf ? -4 * H : 4 * H);
+  }
+  return mitternacht + min * 6e4;
+}
+const plusTage = (iso, n) => { const [y, m, t] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, t + n)).toISOString().slice(0, 10); };
+const aufMinute = ms => new Date(Math.round(ms / 6e4) * 6e4);
+function sonne(iso){
+  const auf = sonnenzeit(iso, 90.833, true), unter = sonnenzeit(iso, 90.833, false);
+  return { auf, unter, hell: sonnenzeit(iso, 96, true), dunkel: sonnenzeit(iso, 96, false), laenge: (unter - auf) / 6e4 };
 }
 
 // Titel aus dem Feed: «Spitzmarke – Titel» (SRF) und Vorsätze wie «DIE NEUESTEN ENTWICKLUNGEN -» (NZZ)
@@ -446,7 +498,9 @@ function wetterTeil(jetzt){
   const zeilen = [
     `Regen ${d.precipitation_probability_max[0]} %` + (d.precipitation_sum[0] >= 0.1 ? ` · ${komma(d.precipitation_sum[0])} mm` : ''),
     `Wind ${Math.round(d.wind_speed_10m_max[0])} km/h aus ${RICHTUNG[Math.round(d.wind_direction_10m_dominant[0] / 45) % 8]}`,
-    `Sonne ${uhrLokal(d.sunrise[0])} – ${uhrLokal(d.sunset[0])}` + (d.uv_index_max[0] >= 3 ? ` · UV ${Math.round(d.uv_index_max[0])}` : ''),
+    // Steht die Rubrik «Sonne» in der Zeitung, braucht es hier nur noch den UV-Index
+    an.sonne ? (d.uv_index_max[0] >= 3 ? `UV-Index ${Math.round(d.uv_index_max[0])}` : '')
+      : `Sonne ${uhrLokal(d.sunrise[0])} – ${uhrLokal(d.sunset[0])}` + (d.uv_index_max[0] >= 3 ? ` · UV ${Math.round(d.uv_index_max[0])}` : ''),
     rh ? `Rhein ${komma(rh.temp)} °C` : '',
     mond(jetzt),
   ].filter(Boolean);
@@ -573,6 +627,59 @@ function abfahrtenTeil(){
     leer(3), naechste.map(zeile));
 }
 
+function sonneTeil(jetzt){
+  if (!an.sonne) return null;
+  const heute = isoTag(jetzt), s = sonne(heute), v = sonne(plusTage(heute, -1));
+  const lang = Math.round(s.laenge), diff = s.laenge - v.laenge;
+  const vergleich = Math.abs(diff) < 0.5 ? `${Math.round(Math.abs(diff) * 60)} s ${diff >= 0 ? 'länger' : 'kürzer'} als gestern`
+    : `${Math.round(Math.abs(diff))} min ${diff >= 0 ? 'länger' : 'kürzer'} als gestern`;
+  const bild = (g, x, bw) => ({ h: 70, ops: [{ art: 'icon', tag: 'horizont', x: x + bw / 2, y: 38, s: 70 }] });
+  const zeit = (name, ms, pfeil) => stapel(
+    absatz([T(name, F.sans(14, 700))], { lh: 17 }),
+    absatz([T(pfeil + ' ', F.sans(24, 700)), T(uhr(aufMinute(ms)), F.serif(34, 700))], { lh: 40 }),
+  );
+  const zeilen = [
+    `Tag ${Math.floor(lang / 60)} h ${lang % 60} min · ${vergleich}`,
+    s.hell && s.dunkel ? `Dämmerung: hell ab ${uhr(aufMinute(s.hell))}, dunkel ab ${uhr(aufMinute(s.dunkel))}` : '',
+  ].filter(Boolean);
+  const rechts = stapel(
+    spalten(zeit('Aufgang', s.auf, '↑'), zeit('Untergang', s.unter, '↓'), 16),
+    leer(3),
+    zeilen.map(z => absatz([T(z, F.sans(15, 500))], { lh: 19 })),
+  );
+  return stapel(rubrik('Sonne'), neben(bild, 78, rechts, 10));
+}
+
+// Abfuhr: was heute und morgen rausgestellt wird, dann je Art der nächste Termin
+const ABFUHR_NAME = { Kehrichtabfuhr: 'Kehricht', 'Grünabfuhr': 'Grüngut', Papierabfuhr: 'Papier', Grobsperrgut: 'Sperrgut', 'Unbrennbares': 'Unbrennbares', Metallabfuhr: 'Metall', 'Häckseldienst': 'Häckseldienst' };
+const ABFUHR_REIHE = Object.keys(ABFUHR_NAME);
+const WOCHENTAG = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+function abfuhrTeil(){
+  const d = daten.abfuhr;
+  if (!an.abfuhr || !d) return null;
+  const titel = rubrik('Abfuhr Zone ' + d.zone);
+  if (!d.termine.length) {
+    return stapel(titel, absatz([T(`Noch keine Abfuhrdaten für ${d.heute.slice(0, 4)}.`, F.serif(19, 500, true))], { lh: 24 }));
+  }
+  const morgen = plusTage(d.heute, 1);
+  const name = a => ABFUHR_NAME[a] || a;
+  const reihe = a => { const i = ABFUHR_REIHE.indexOf(a); return i < 0 ? 99 : i; };
+  const arten = tag => [...new Set(d.termine.filter(x => x.tag === tag).map(x => x.art))].sort((a, b) => reihe(a) - reihe(b));
+  const kurzDatum = iso => { const [y, m, t] = iso.split('-').map(Number); return `${WOCHENTAG[new Date(Date.UTC(y, m - 1, t)).getUTCDay()]} ${t}.${m}.`; };
+  const heute = arten(d.heute), dann = arten(morgen), schon = new Set([...heute, ...dann]);
+  // Je Art der nächste Termin nach morgen, nach Datum gruppiert
+  const naechste = {};
+  for (const x of d.termine) if (x.tag > morgen && !schon.has(x.art) && !Object.values(naechste).flat().includes(x.art)) (naechste[x.tag] ||= []).push(x.art);
+  const gross = (wann, a) => absatz([T(wann + ': ', F.serif(24, 700)), T(a.map(name).join(', '), F.serif(24, 500))], { lh: 29 });
+  const oben = [heute.length && gross('Heute', heute), dann.length && gross('Morgen', dann)].filter(Boolean);
+  const liste = Object.keys(naechste).sort().slice(0, 6).map(tag =>
+    haengend([T(kurzDatum(tag), F.serif(19, 700))], [T(naechste[tag].sort((a, b) => reihe(a) - reihe(b)).map(name).join(', '), F.serif(19, 500))], 112, { lh: 24 }));
+  return stapel(titel,
+    oben.length ? oben : absatz([T('Heute und morgen keine Abfuhr.', F.serif(19, 500, true))], { lh: 24 }),
+    liste.length && stapel(punkte(5, 6), liste),
+  );
+}
+
 function maerkteTeil(){
   const k = an.kurse && daten.kurse?.rates ? daten.kurse : null, o = an.oel ? daten.oel : null;
   if (!k && !o?.brent) return null;
@@ -625,7 +732,17 @@ function piktogramm(g, tag, nacht, cx, cy, s){
   };
   const himmel = (x, y, r) => nacht ? mond(x, y, r * 0.85) : sonne(x, y, r * 0.7);
   const r = s / 2;
-  if (tag === 'sonne') himmel(cx, cy, r * 0.62);
+  if (tag === 'horizont') {   // halbe Sonne über dem Horizont
+    const hy = cy + r * 0.25, sr = r * 0.42;
+    g.beginPath(); g.arc(cx, hy, sr, Math.PI, 2 * Math.PI); g.closePath(); g.fillStyle = '#fff'; g.fill(); g.stroke();
+    for (let k = 0; k <= 4; k++) {
+      const a = Math.PI + k * Math.PI / 4;
+      g.beginPath(); g.moveTo(cx + Math.cos(a) * sr * 1.4, hy + Math.sin(a) * sr * 1.4); g.lineTo(cx + Math.cos(a) * sr * 1.9, hy + Math.sin(a) * sr * 1.9); g.stroke();
+    }
+    g.beginPath(); g.moveTo(cx - r * 0.95, hy); g.lineTo(cx + r * 0.95, hy); g.stroke();
+    g.beginPath(); g.moveTo(cx - r * 0.6, hy + r * 0.28); g.lineTo(cx + r * 0.6, hy + r * 0.28); g.stroke();
+  }
+  else if (tag === 'sonne') himmel(cx, cy, r * 0.62);
   else if (tag === 'teils') { himmel(cx - r * 0.25, cy - r * 0.3, r * 0.5); wolke(cx + r * 0.12, cy + r * 0.22, r * 0.72); }
   else if (tag === 'nebel') {
     for (let k = 0; k < 4; k++) { const y = cy - r * 0.45 + k * r * 0.3, dx = k % 2 ? r * 0.15 : 0; g.beginPath(); g.moveTo(cx - r * 0.75 + dx, y); g.lineTo(cx + r * 0.75 - (k % 2 ? 0 : r * 0.15), y); g.stroke(); }
@@ -633,6 +750,7 @@ function piktogramm(g, tag, nacht, cx, cy, s){
   else {
     const fall = tag !== 'wolke', wy = fall ? cy - r * 0.2 : cy;
     wolke(cx, wy, r * 0.85);
+    g.fillStyle = '#000';   // wolke() lässt Weiss stehen, sonst wären Nieseltropfen und Blitz unsichtbar
     const unten = wy + r * 0.48;
     if (tag === 'regen') for (const dx of [-0.4, 0, 0.4]) { g.beginPath(); g.moveTo(cx + r * dx, unten + r * 0.12); g.lineTo(cx + r * (dx - 0.12), unten + r * 0.5); g.stroke(); }
     if (tag === 'niesel') for (const dx of [-0.4, 0, 0.4]) { g.beginPath(); g.arc(cx + r * dx, unten + r * 0.3, g.lineWidth * 0.7, 0, 2 * Math.PI); g.fill(); }
@@ -662,11 +780,13 @@ async function setzen(){
   const zeitung = stapel(
     zeitungskopf(jetzt),
     wetterTeil(jetzt),
+    sonneTeil(jetzt),
     aufmacherTeil(s.aufmacher),
     meldungenTeil(s),
     baselTeil(s),
     kulturTeil(s),
     abfahrtenTeil(),
+    abfuhrTeil(),
     tagTeil(jetzt),
     wissenTeil(),
     artikelTeil(),
@@ -746,6 +866,59 @@ $('halt').addEventListener('input', () => {
   warte = setTimeout(async () => { store.set('halt', $('halt').value.trim()); await laden('abfahrten'); neuSetzen(); }, 700);
 });
 
+// ---------------------------------------------------------------- Abfuhrzone
+const zoneMsg = (t, k = '') => { $('zoneHint').textContent = t; $('zoneHint').className = 'hint ' + k; };
+const zoneText = () => zone ? `Zone ${zone}. Die Termine kommen von data.bs.ch.` : 'Keine Zone gewählt: Die Abfuhr bleibt weg. Die Zone steht im Abfuhrkalender.';
+function zonenZeigen(){
+  $('zonen').innerHTML = ZONEN.map(z => `<button type="button" data-z="${z}" aria-pressed="${z === zone}">${z}</button>`).join('');
+}
+async function zoneSetzen(z){
+  zone = z; store.set('zone', z); zonenZeigen(); zoneMsg(zoneText());
+  await laden('abfuhr'); neuSetzen();
+}
+$('zonen').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  zoneSetzen(b.dataset.z === zone ? '' : b.dataset.z);   // nochmals antippen: keine Zone
+});
+
+// Punkt in Polygon (Strahl nach rechts zählen), Koordinaten wie in GeoJSON: [Länge, Breite]
+const imRing = ([x, y], ring) => {
+  let drin = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) drin = !drin;
+  }
+  return drin;
+};
+const imPolygon = (p, rings) => imRing(p, rings[0]) && !rings.slice(1).some(r => imRing(p, r));
+function imGebiet(p, form){
+  const geo = form?.geometry || form;   // data.bs.ch liefert ein GeoJSON-Feature
+  if (geo?.type === 'Polygon') return imPolygon(p, geo.coordinates);
+  if (geo?.type === 'MultiPolygon') return geo.coordinates.some(r => imPolygon(p, r));
+  return false;
+}
+$('zoneOrt').addEventListener('click', async () => {
+  if (!navigator.geolocation) { zoneMsg('Dieses Gerät kennt seinen Standort nicht.', 'err'); return; }
+  $('zoneOrt').disabled = true; zoneMsg('Suche den Standort …');
+  try {
+    const pos = await new Promise((ok, fail) => navigator.geolocation.getCurrentPosition(ok, fail, { enableHighAccuracy: false, timeout: 15000, maximumAge: 6e5 }));
+    zoneMsg('Suche die Zone …');
+    // Jeder Eintrag trägt die Form seiner Zone (etwa 11 kB, für alle Arten gleich): je Zone der neuste genügt.
+    // Die Daten reichen Jahre zurück, und ältere Zonen sind anders geschnitten.
+    const formen = await Promise.all(ZONEN.map(z => holen(ABFUHR + odsq({ select: 'zone,geo_shape', where: `zone="${z}"`, order_by: 'termin desc', limit: 1 })).then(d => d.results?.[0], () => null)));
+    const p = [pos.coords.longitude, pos.coords.latitude];
+    const treffer = formen.find(x => x && imGebiet(p, x.geo_shape));
+    if (treffer) { await zoneSetzen(treffer.zone); zoneMsg('Gefunden: ' + zoneText(), 'ok'); }
+    else zoneMsg(!formen.some(Boolean) ? 'data.bs.ch ist nicht erreichbar. Bitte die Zone von Hand wählen.'
+      : formen.every(Boolean) ? 'Dein Standort liegt in keiner Abfuhrzone von Basel-Stadt.' : 'Nicht alle Zonen geladen. Bitte nochmals versuchen.', 'err');
+  } catch (e) {
+    zoneMsg(e?.code === 1 ? 'Kein Zugriff auf den Standort. Bitte die Zone von Hand wählen.' : 'Ging nicht: ' + (e?.message || 'unbekannter Fehler'), 'err');
+  } finally {
+    $('zoneOrt').disabled = false;
+  }
+});
+zonenZeigen(); zoneMsg(zoneText());
+
 // Zeitung mit frischen Daten setzen und bei der Bon-Post einreichen
 async function drucken(quelle){
   // Abfahrten und Wetter veralten schnell: nach zwei Minuten vor dem Drucken neu holen
@@ -800,7 +973,7 @@ $('planSpeichern').addEventListener('click', async () => {
   if (plan.aktiv && !plan.tage.length) { planMsg('Mindestens einen Tag wählen.', 'err'); return; }
   $('planSpeichern').disabled = true; planMsg('Speichere …');
   try {
-    const teile = TEILE.map(([k]) => k).filter(k => an[k]).join(',');
+    const teile = [...TEILE.map(([k]) => k).filter(k => an[k]), an.abfuhr && zone && 'zone' + zone.toLowerCase()].filter(Boolean).join(',');
     const d = await bonpost({ aktion: 'plan', plan: { ...plan, halt: $('halt').value.trim(), teile } });
     if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
     plan = { ...plan, ...d.plan }; planZeigen();
