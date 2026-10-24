@@ -6,9 +6,8 @@
 //
 // Einbau (Anleitung in bon/NEUE-APP.md, Abschnitt «Zeitplan»):
 // 1. Diese Datei als plan.gs ins Bon-Post-Projekt legen.
-// 2. In doPost gleich nach der Prüfung, dass der Schlüssel SCHLUESSEL_WEB oder SCHLUESSEL ist:
-//      const plan = planAnfrage(daten); if (plan) return plan;
-//    (daten = das geparste JSON aus e.postData.contents)
+// 2. In doPost (Code.gs) gleich nach der Zeile mit schluesselOk_:
+//      const plan = planAnfrage(d); if (plan) return plan;
 // 3. Skripteigenschaft GITHUB_TOKEN setzen: Fine-grained Token, nur Repo schlumpfsimo/simoschlumpf,
 //    Berechtigung «Actions: Read and write».
 // 4. Einmal im Editor planEinrichten ausführen und den Zugriff erlauben.
