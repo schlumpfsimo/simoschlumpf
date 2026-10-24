@@ -592,25 +592,11 @@ function maerkteTeil(){
 }
 
 function fuss(jetzt){
-  return stapel(leer(18), (g, x, w) => ({ h: 34, ops: [{ art: 'muster', x, y: 0, w, h: 34 }] }), leer(8),
+  return stapel(leer(20), linie(1), linie(4, 3, 8),
     absatz([T('Dépêche du Matin', F.titel(26))], { lh: 30, align: 'center' }),
     absatz([T(`Nr. ${ausgabeNr(jetzt)} · gesetzt ${uhr(jetzt)} Uhr`, F.sans(13, 500))], { lh: 17, align: 'center' }),
     absatz([T('Open-Meteo · BAFU · SRF · NZZ · Tagesschau · Kanton Basel-Stadt · bz · Bajour · Wikipedia · opendata.ch · EZB · Yahoo Finance', F.sans(12, 500))], { lh: 16, align: 'center' }),
   );
-}
-
-// Abschlussmuster: Rauten im Band zwischen zwei Linien, abwechselnd voll und hohl, mit Punkten dazwischen
-function muster(g, x, y, w, h){
-  const n = Math.round(w / 34), schritt = w / n, mitte = y + h / 2, r = h / 2 - 7;
-  g.save(); g.fillStyle = '#000'; g.strokeStyle = '#000'; g.lineWidth = 3; g.lineJoin = 'miter';
-  g.fillRect(x, y, w, 3); g.fillRect(x, y + h - 3, w, 3);
-  for (let i = 0; i < n; i++) {
-    const cx = x + schritt * (i + 0.5);
-    g.beginPath(); g.moveTo(cx, mitte - r); g.lineTo(cx + r, mitte); g.lineTo(cx, mitte + r); g.lineTo(cx - r, mitte); g.closePath();
-    if (i % 2) g.stroke(); else g.fill();
-    if (i) { g.beginPath(); g.arc(x + schritt * i, mitte, 2.5, 0, 2 * Math.PI); g.fill(); }
-  }
-  g.restore();
 }
 
 // ---------------------------------------------------------------- Zeichnen
@@ -701,7 +687,6 @@ async function setzen(){
     if (o.art === 'rect') { g.fillStyle = '#000'; g.fillRect(Math.round(o.x), Math.round(o.y), Math.round(o.w), o.h); }
     else if (o.art === 'text') { g.fillStyle = o.farbe || '#000'; g.font = o.f; g.fillText(o.t, o.x, o.y); }
     else if (o.art === 'icon') piktogramm(g, o.tag, o.nacht, o.x, o.y, o.s);
-    else if (o.art === 'muster') muster(g, o.x, o.y, o.w, o.h);
   }
   // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
   const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
