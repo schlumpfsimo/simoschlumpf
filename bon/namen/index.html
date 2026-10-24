@@ -61,10 +61,6 @@ button.ghost:hover{background:#000;color:#fff}
   <button id="verbinden" class="ghost">Drucker verbinden</button>
 
   <h2>Abend</h2>
-  <div class="row">
-    <div><label for="start">Beginn</label><input id="start" type="time" value="18:30"></div>
-    <div><label for="ende">Ende</label><input id="ende" type="time" value="22:00"></div>
-  </div>
   <label>Dichte</label>
   <div class="seg" id="dichte"></div>
   <div class="row">
@@ -354,22 +350,12 @@ document.addEventListener('visibilitychange', () => { if (lauf && document.visib
 let dichte = store.get('dichte', 'mittel');
 if (!DICHTEN[dichte]) dichte = 'mittel';
 let naechster = +store.get('naechster', 0);
-$('start').value = store.get('start', '18:30');
-$('ende').value = store.get('ende', '22:00');
 $('rolle').value = store.get('rolle', '80');
 
-function zeitHeute(hhmm){
-  const [h, m] = hhmm.split(':').map(Number), d = new Date();
-  d.setHours(h || 0, m || 0, 0, 0);
-  return d.getTime();
-}
-// Ende vor Beginn heisst: Ende nach Mitternacht
-function zeiten(){
-  const s = zeitHeute($('start').value || '18:30');
-  let e = zeitHeute($('ende').value || '22:00');
-  if (e <= s) e += 864e5;
-  return { s, e };
-}
+// Festes Tempo: die ganze Liste in 3½ Stunden. Gestartet wird von Hand; nach einer Pause geht es im selben Tempo weiter.
+const DAUER = 3.5 * 3600;
+const tempo = () => NAMEN.length / DAUER;   // Namen pro Sekunde
+const uhrzeit = t => new Date(t).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
 function dichteKnoepfe(){
   const rolle = Math.max(1, +$('rolle').value || 80);
   $('dichte').innerHTML = Object.entries(DICHTEN).map(([k, d]) => {
@@ -381,7 +367,7 @@ $('dichte').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || lauf) return;
   dichte = b.dataset.k; store.set('dichte', dichte); dichteKnoepfe(); anzeigen();
 });
-for (const id of ['start', 'ende', 'rolle']) $(id).addEventListener('input', () => { store.set(id, $(id).value); dichteKnoepfe(); anzeigen(); });
+for (const id of ['rolle']) $(id).addEventListener('input', () => { store.set(id, $(id).value); dichteKnoepfe(); anzeigen(); });
 kopf = store.get('kopf', '1') === '1';
 function richtung(){ $('richtung').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === (kopf ? '1' : '0')))); }
 $('richtung').addEventListener('click', e => {
@@ -395,15 +381,14 @@ $('ab').addEventListener('change', () => {
 });
 
 function anzeigen(){
-  const N = NAMEN.length, rest = N - naechster, { s, e } = zeiten(), jetzt = Date.now();
-  const sek = (e - Math.max(s, jetzt)) / 1000, mm = MM_PRO_NAME[dichte] || 0;
-  const tempo = sek > 0 ? rest / sek : Infinity;
+  const N = NAMEN.length, rest = N - naechster, mm = MM_PRO_NAME[dichte] || 0, sek = rest / tempo();
   const zuletzt = naechster > 0 ? name(naechster - 1) : null;
   const rolle = Math.max(1, +$('rolle').value || 80) * 1000;
   const rows = [
     ['Gedruckt', `${zahl(naechster)} von ${zahl(N)}`],
     ['Noch', `${zahl(rest)} Namen`],
-    ['Nötig', isFinite(tempo) ? `${tempo.toFixed(1)} Namen/s · ${Math.round(tempo * mm)} mm/s` : 'Ende ist vorbei: Volltempo'],
+    ['Tempo', `${tempo().toFixed(1)} Namen/s · ${Math.round(tempo() * mm)} mm/s`],
+    ['Dauer', `noch ${Math.floor(sek / 3600)} h ${String(Math.round(sek % 3600 / 60)).padStart(2, '0')} min · fertig um ${uhrzeit(Date.now() + sek * 1000)}`],
     ['Papier', `${mm.toFixed(2)} mm/Name · noch ${Math.round(rest * mm / 1000)} m`],
     ['Rollenwechsel', mm ? `etwa alle ${zahl(rolle / mm)} Namen` : ''],
   ];
@@ -414,18 +399,15 @@ function anzeigen(){
 }
 
 // ---------------------------------------------------------------- Lauf
-// Takt: Nach jedem Stück wird das Tempo neu aus Rest und verbleibender Zeit berechnet. Wer zurückliegt, holt auf.
+// Takt: Jede Zeile hat ihren Sollzeitpunkt ab dem Start (oder Weiter). Hängt der Drucker kurz, wird aufgeholt.
 let lauf = false, halt = false;
 async function laufen(){
   lauf = true; halt = false; knoepfe();
   wach(true);
   try {
     await document.fonts.ready;
-    if (Date.now() < zeiten().s) {
-      say('Wartet auf ' + $('start').value + ' …');
-      while (!halt && Date.now() < zeiten().s) await warte(Math.min(1000, zeiten().s - Date.now()));
-    }
-    if (!halt) await senden(naechster === 0 ? join([INIT, bandRaster()]) : INIT);
+    const t0 = Date.now(), ab = naechster;
+    await senden(naechster === 0 ? join([INIT, bandRaster()]) : INIT);
     while (!halt && naechster < NAMEN.length) {
       const d = DICHTEN[dichte];
       const st = stueck(naechster, d);
@@ -433,12 +415,10 @@ async function laufen(){
       let y0 = 0;
       for (const sch of st.schnitte) {
         if (halt) break;
-        const n = sch.bis - naechster;
         await senden(raster(st.bits, st.H, y0, sch.y));
         y0 = sch.y;
-        const t0 = Date.now(), sek = (zeiten().e - t0) / 1000, rest = NAMEN.length - naechster;
         naechster = sch.bis; store.set('naechster', naechster);
-        if (sek > 0 && rest > 0) await warte(n * sek / rest * 1000 - (Date.now() - t0));
+        await warte(t0 + (naechster - ab) / tempo() * 1000 - Date.now());
         if (!document.hidden) anzeigen();
         say(`Läuft · ${zahl(naechster)} von ${zahl(NAMEN.length)}`);
       }
@@ -454,7 +434,7 @@ async function laufen(){
 }
 function knoepfe(){
   $('los').textContent = lauf ? 'Anhalten' : naechster > 0 ? 'Weiter' : 'Start';
-  for (const id of ['probe', 'tempo', 'reset', 'start', 'ende', 'rolle', 'ab']) $(id).disabled = lauf || test;
+  for (const id of ['probe', 'tempo', 'reset', 'rolle', 'ab']) $(id).disabled = lauf || test;
   $('los').disabled = test || !NAMEN.length;
   document.querySelectorAll('.seg button').forEach(b => b.disabled = lauf || test);
 }
@@ -504,8 +484,8 @@ $('tempo').addEventListener('click', () => testen(async () => {
     if (i >= NAMEN.length - 100) i = 0;
   }
   await senden(join([bandRaster(), SCHNITT]));
-  const ist = n / ((Date.now() - t0) / 1000), { s, e } = zeiten(), noetig = NAMEN.length / ((e - s) / 1000);
-  say(`${ist.toFixed(1)} Namen/s geschafft, nötig für den ganzen Abend: ${noetig.toFixed(1)}. ${ist >= noetig * 1.1 ? 'Reicht.' : 'Reicht nicht: kleinere Dichte oder mehr Zeit.'}`, ist >= noetig * 1.1 ? 'ok' : 'err');
+  const ist = n / ((Date.now() - t0) / 1000), noetig = tempo();
+  say(`${ist.toFixed(1)} Namen/s geschafft, nötig für den ganzen Abend: ${noetig.toFixed(1)}. ${ist >= noetig * 1.1 ? 'Reicht.' : 'Reicht nicht: kleinere Dichte wählen.'}`, ist >= noetig * 1.1 ? 'ok' : 'err');
 }));
 $('reset').addEventListener('click', () => {
   if (!confirm('Wirklich zurück auf Anfang? Die Reihenfolge wird neu gemischt.')) return;
