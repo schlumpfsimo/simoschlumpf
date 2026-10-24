@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · NAMEN</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EB%3C/text%3E%3C/svg%3E">
+<style>
+/* Namen der Getöteten in Gaza, fortlaufend per USB, Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+@font-face{font-family:"Naskh";src:url(naskh-arabic-700.woff2) format("woff2");font-weight:700;font-display:block}
+@font-face{font-family:"PlexCond";src:url(plex-condensed-600.woff2) format("woff2");font-weight:600;font-display:block}
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase;min-width:0}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+main{padding-top:14px;padding-bottom:40px;display:flex;flex-direction:column;gap:6px}
+h2{font-size:.76rem;text-transform:uppercase;letter-spacing:.1em;margin:22px 0 2px;border-bottom:1px solid #000;padding-bottom:4px}
+label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input{font:inherit;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%;min-width:0}
+input:focus{outline:2px solid #000;outline-offset:-1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.ghost{background:#fff;color:#000}
+button.ghost:hover{background:#000;color:#fff}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #000}
+.seg button{margin:0;border:0;border-left:1px solid #000;background:#fff;color:#000;padding:10px 4px;letter-spacing:.04em;display:flex;flex-direction:column;gap:2px;align-items:center}
+.seg.zwei{grid-template-columns:1fr 1fr}
+.seg button:first-child{border-left:0}
+.seg button small{font-size:.7rem;text-transform:none;letter-spacing:0;color:inherit;opacity:.75}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+.stat{border:1px solid #000;padding:10px;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:.85rem}
+.stat dt{color:var(--muted)} .stat dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.bar{height:8px;border:1px solid #000;margin-top:6px}
+.bar i{display:block;height:100%;background:#000;width:0}
+.usb{display:flex;align-items:center;gap:8px;font-size:.8rem;margin-top:4px}
+.dot{flex:none;width:10px;height:10px;border:1px solid #000}
+.dot.on{background:#000}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Namen · direkt per USB</span></a></div>
+</header>
+<main>
+  <div class="usb"><span class="dot" id="dot"></span><span id="usbState">Kein Drucker verbunden</span></div>
+  <button id="verbinden" class="ghost">Drucker verbinden</button>
+
+  <h2>Abend</h2>
+  <div class="row">
+    <div><label for="start">Beginn</label><input id="start" type="time" value="18:30"></div>
+    <div><label for="ende">Ende</label><input id="ende" type="time" value="22:00"></div>
+  </div>
+  <label>Dichte</label>
+  <div class="seg" id="dichte"></div>
+  <div class="row">
+    <div><label for="rolle">Rolle in Metern</label><input id="rolle" type="number" inputmode="decimal" min="1" step="1" value="80"></div>
+    <div><label for="ab">Weiter ab Nr.</label><input id="ab" type="number" inputmode="numeric" min="1" step="1" value="1"></div>
+  </div>
+
+  <label>Richtung</label>
+  <div class="seg zwei" id="richtung">
+    <button data-k="1">Auf dem Kopf<small>hängt hinten herunter</small></button>
+    <button data-k="0">Normal<small>kommt vorne heraus</small></button>
+  </div>
+
+  <dl class="stat" id="stat"></dl>
+  <div class="bar"><i id="balken"></i></div>
+
+  <button id="los">Start</button>
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  <p class="hint">Leertaste hält an und macht weiter. Chrome offen lassen, der Mac bleibt während des Laufs wach.</p>
+
+  <h2>Test</h2>
+  <button id="probe" class="ghost">Probe drucken</button>
+  <p class="hint">Je ein Stück in allen drei Dichten, darüber klein die Dichte. Der Stand zählt nicht.</p>
+  <button id="tempo" class="ghost">Tempotest (1 Minute)</button>
+  <p class="hint">Druckt eine Minute so schnell wie möglich in der gewählten Dichte und misst, ob der Drucker das nötige Tempo schafft.</p>
+  <button id="reset" class="ghost">Zurück auf Anfang</button>
+  <p class="hint">Neue Reihenfolge, Stand auf Nr. 1.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try { return localStorage.getItem('namen.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('namen.' + k, v); } catch {} }
+};
+const zahl = n => Math.round(n).toLocaleString('de-CH');
+const say = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+
+// ---------------------------------------------------------------- Namen, gemischt
+// Feste Reihenfolge pro Abend: Der Startwert bleibt gespeichert, damit nach Neuladen am selben Ort weitergeht
+let NAMEN = [], ORDER = [];
+function mischen(seed){
+  let s = seed >>> 0;
+  const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  ORDER = Array.from(NAMEN, (_, i) => i);
+  for (let i = ORDER.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [ORDER[i], ORDER[j]] = [ORDER[j], ORDER[i]]; }
+}
+const name = i => NAMEN[ORDER[i]];
+
+// ---------------------------------------------------------------- Gestaltung (576 Punkte = 72 mm, 8 Punkte = 1 mm)
+const W = 576, BAND = 40, RAND = 28, XL = RAND + 6, XR = W - RAND - 6;
+const DICHTEN = {
+  gross:  { name: 'Gross',  lat: 16, ar: 18, lh: 21 },
+  mittel: { name: 'Mittel', lat: 13, ar: 14, lh: 16 },
+  klein:  { name: 'Klein',  lat: 10, ar: 11, lh: 11, fliessen: true },
+};
+const ZEILEN = 12;   // so viele Zeilen werden auf einmal gesetzt
+const fontLat = d => `600 ${d.lat}px PlexCond`, fontAr = d => `700 ${d.ar}px Naskh`;
+
+// Olivenblatt-Kette vom Rand der Kufiya, waagrecht
+function blaetter(g, y, h){
+  const m = y + h / 2;
+  g.fillRect(0, m - 0.5, W, 1);
+  for (let x = 0; x < W; x += 12) for (const s of [-1, 1]) {
+    g.save(); g.translate(x + 6, m); g.rotate(s * -0.75);
+    g.beginPath(); g.ellipse(4, 0, 4.6, 2, 0, 0, 7); g.fill(); g.restore();
+  }
+}
+// Fischernetz aus der Mitte der Kufiya
+function netz(g, x, y, w, h, s, phase = 0){
+  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.lineWidth = 1.4;
+  const n = Math.max(w, h);
+  for (let i = -n - phase; i < n + Math.max(w, h) + s; i += s) {
+    g.beginPath(); g.moveTo(x, y + i); g.lineTo(x + n, y + i + n); g.moveTo(x, y + i + n); g.lineTo(x + n, y + i); g.stroke();
+  }
+  g.restore();
+}
+// Querband für Anfang und Ende: dicke Linie, Blätter, Netz, Blätter, dicke Linie
+function band(g, y){
+  g.fillRect(0, y, W, 3); blaetter(g, y + 4, 11); g.fillRect(0, y + 16, W, 1);
+  netz(g, 0, y + 18, W, 6, 6); g.fillRect(0, y + 25, W, 1); blaetter(g, y + 26, 11); g.fillRect(0, y + 37, W, 3);
+}
+// Kufiya-Rand links und rechts. abs verschiebt das Muster, damit es ohne Versatz weiterläuft.
+function raender(g, y0, y1, abs){
+  for (const rechts of [false, true]) {
+    g.save();
+    if (rechts) { g.translate(W, 0); g.scale(-1, 1); }
+    g.beginPath(); g.rect(0, y0, RAND, y1 - y0); g.clip();
+    g.fillRect(0, y0, 3, y1 - y0);                     // dicke Linie aussen
+    g.fillRect(10, y0, 1, y1 - y0);                    // Stiel der Blätter
+    const p = (abs + y0) % 12;
+    for (let y = y0 - p - 12; y < y1 + 12; y += 12) for (const s of [-1, 1]) {
+      g.save(); g.translate(10.5, y + 6); g.rotate(Math.PI / 2 + s * -0.75);
+      g.beginPath(); g.ellipse(4, 0, 4.6, 2, 0, 0, 7); g.fill(); g.restore();
+    }
+    g.fillRect(18, y0, 1, y1 - y0);
+    netz(g, 19, y0, 6, y1 - y0, 6, (abs + y0) % 6);
+    g.fillRect(25, y0, 1, y1 - y0);
+    g.fillRect(27, y0, 1, y1 - y0);
+    g.restore();
+  }
+}
+// Raute zwischen zwei Namen
+function raute(g, x, y, r){
+  g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath(); g.fill();
+}
+
+const mess = document.createElement('canvas').getContext('2d');
+function breite(t, f){ mess.font = f; return mess.measureText(t).width; }
+
+// Satz: Namen fliessen zeilenweise, Lateinisch mit Alter, dann Arabisch, getrennt durch eine Raute.
+// Ein Name bleibt auf einer Zeile, ausser er ist allein schon zu breit. Bei «fliessen» (Klein) darf er
+// zwischen Lateinisch und Arabisch umbrechen, nur nicht auf der letzten Zeile vor dem Band.
+const SEP = 12, LUFT = 5;
+function setzen(von, d, maxZeilen){
+  const zeilen = [];
+  let z = { teile: [], x: XL, bis: von }, i = von;
+  const neu = () => { zeilen.push(z); z = { teile: [], x: XL, bis: z.bis }; };
+  const frei = () => XR - z.x;
+  while (i < NAMEN.length && zeilen.length < maxZeilen) {
+    const [en, ar, alter] = name(i);
+    const lat = en.toUpperCase() + (alter ? ' ' + alter : ''), wl = breite(lat, fontLat(d)) + LUFT, wa = breite(ar, fontAr(d)) + LUFT;
+    const sep = z.teile.length ? SEP : 0;
+    const teilen = d.fliessen && zeilen.length < maxZeilen - 1 && sep + wl <= frei();
+    if (sep + wl + wa > frei() && z.teile.length && !teilen) { neu(); continue; }
+    if (sep) { z.teile.push({ raute: z.x + SEP / 2 - 1 }); z.x += SEP; }
+    if (wl + wa <= frei()) {
+      z.teile.push({ t: lat, x: z.x, f: fontLat(d) }, { t: ar, x: z.x + wl + wa - LUFT, f: fontAr(d), rtl: true });
+      z.x += wl + wa;
+    } else {
+      // Arabisch auf die nächste Zeile
+      z.teile.push({ t: lat, x: z.x, f: fontLat(d), max: XR - z.x });
+      neu();
+      z.teile.push({ t: ar, x: Math.min(XR, XL + wa - LUFT), f: fontAr(d), rtl: true, max: XR - XL });
+      z.x = XL + wa;
+    }
+    z.bis = ++i;
+  }
+  if (z.teile.length && zeilen.length < maxZeilen) zeilen.push(z);
+  return zeilen;
+}
+
+// Leinwand -> 1-Bit-Raster mit fester Schwelle wie auf dem Drucker: kein Grau
+function bits(g, H){
+  const px = g.getImageData(0, 0, W, H).data, bpr = W >> 3, out = new Uint8Array(bpr * H);
+  for (let j = 0, p = 0; j < W * H; j++, p += 4) if (px[p] < 160) out[(j / W | 0) * bpr + ((j % W) >> 3)] |= 0x80 >> (j & 7);
+  return out;
+}
+function leinwand(H){
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = g.strokeStyle = '#000'; g.textBaseline = 'alphabetic';
+  return g;
+}
+// Querband als eigenes Raster: am Anfang und am Schluss
+function querband(){ const g = leinwand(BAND); band(g, 0); return { bits: bits(g, BAND), H: BAND }; }
+
+// Ein Stück: ein paar Zeilen mit Rand, als 1-Bit-Raster.
+// schnitte: nach jeder Zeile die Bildhöhe und der nächste Name, damit zeilenweise im Takt gedruckt werden kann.
+function stueck(von, d, { etikett = '' } = {}){
+  const zeilen = setzen(von, d, ZEILEN);
+  const H = (etikett ? 18 : 0) + zeilen.length * d.lh;
+  const g = leinwand(H);
+  let y = 0;
+  const schnitte = [];
+  if (etikett) { g.font = '600 12px PlexCond'; g.direction = 'ltr'; g.textAlign = 'left'; g.fillText(etikett, XL, y + 13); y += 18; }
+  for (const z of zeilen) {
+    const base = y + Math.round(d.lh * 0.78);
+    for (const t of z.teile) {
+      if (t.raute != null) { raute(g, t.raute, base - Math.round(d.lat * 0.35), Math.max(2.4, d.lat * 0.24)); continue; }
+      g.font = t.f; g.direction = t.rtl ? 'rtl' : 'ltr'; g.textAlign = t.rtl ? 'right' : 'left';
+      t.max ? g.fillText(t.t, t.x, base, t.max) : g.fillText(t.t, t.x, base);
+    }
+    y += d.lh;
+    schnitte.push({ y, bis: z.bis });
+  }
+  return { bits: bits(g, H), H, schnitte, bis: zeilen.length ? zeilen[zeilen.length - 1].bis : von };
+}
+
+// Papier pro Name schätzen: Stichprobe setzen und messen
+const MM_PRO_NAME = {};
+function schaetzen(){
+  for (const [k, d] of Object.entries(DICHTEN)) {
+    let i = 0, h = 0;
+    while (i < Math.min(3000, NAMEN.length)) { const z = setzen(i, d, ZEILEN); i = z[z.length - 1].bis; h += z.length * d.lh; }
+    MM_PRO_NAME[k] = h / 8 / i;
+  }
+}
+
+// ---------------------------------------------------------------- ESC/POS
+// Auf dem Kopf: Das Papier läuft hinten über den Drucker und hängt herunter. Jede Zeile wird deshalb um 180° gedreht
+// gedruckt; der neueste Name ist oben beim Drucker.
+// Der Rand kommt erst hier dazu, gezählt in gedruckten Punktzeilen: So läuft er auch gedreht und nach Pausen nahtlos weiter.
+let kopf = true, gedruckt = 0, KACHEL = null;
+const REV = Uint8Array.from({ length: 256 }, (_, b) => { let r = 0; for (let k = 0; k < 8; k++) if (b & (1 << k)) r |= 0x80 >> k; return r; });
+function kachel(){
+  const P = 12, g = leinwand(P * 5);
+  raender(g, 0, P * 5, 0);
+  return bits(g, P * 5).subarray(P * 2 * (W >> 3), P * 3 * (W >> 3));   // eine Periode aus der Mitte
+}
+function raster(src, H, y0 = 0, y1 = H, rand = true){
+  KACHEL ??= kachel();
+  const bpr = W >> 3, h = y1 - y0, out = new Uint8Array(h * bpr), P = KACHEL.length / bpr;
+  for (let k = 0; k < h; k++) {
+    const o = k * bpr, q = rand ? ((gedruckt + k) % P) * bpr : -1;
+    if (kopf) { const r = (y1 - 1 - k) * bpr; for (let j = 0; j < bpr; j++) out[o + j] = REV[src[r + bpr - 1 - j]]; }
+    else out.set(src.subarray((y0 + k) * bpr, (y0 + k + 1) * bpr), o);
+    if (rand) for (let j = 0; j < bpr; j++) out[o + j] |= KACHEL[q + j];
+  }
+  gedruckt += h;
+  const parts = [];
+  for (let y = 0; y < h; y += 255) {
+    const n = Math.min(255, h - y);
+    parts.push(Uint8Array.of(0x1d, 0x76, 0x30, 0, bpr & 255, bpr >> 8, n & 255, n >> 8), out.subarray(y * bpr, (y + n) * bpr));
+  }
+  return join(parts);
+}
+const bandRaster = () => { const b = querband(); return raster(b.bits, b.H, 0, b.H, false); };
+const INIT = Uint8Array.of(0x1b, 0x40);
+const SCHNITT = Uint8Array.of(0x1b, 0x64, 6, 0x1d, 0x56, 66, 0);   // Vorschub, dann Schnitt
+function join(parts){
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+  return out;
+}
+
+// ---------------------------------------------------------------- Drucker per WebUSB
+// Anders als bei bon/bild bleibt der Drucker während des ganzen Laufs belegt: Tausende kleine Stücke hintereinander
+let device = null, ep = null, iface = null, offen = false;
+async function finde(d){
+  if (!d.opened) await d.open();
+  if (d.configuration === null) await d.selectConfiguration(1);
+  let pick = null;
+  for (const f of d.configuration.interfaces) for (const alt of f.alternates) {
+    const out = alt.endpoints.find(e => e.direction === 'out' && e.type === 'bulk');
+    if (!out) continue;
+    const c = { iface: f.interfaceNumber, alt: alt.alternateSetting, ep: out.endpointNumber, cls: alt.interfaceClass };
+    if (!pick || (c.cls === 7 && pick.cls !== 7)) pick = c;
+  }
+  await d.close();
+  if (!pick) throw new Error('Kein Druckausgang gefunden');
+  device = d; ep = pick; iface = pick.iface;
+}
+async function belegen(){
+  if (offen) return;
+  if (!device.opened) await device.open();
+  if (device.configuration === null) await device.selectConfiguration(1);
+  await device.claimInterface(iface);
+  if (ep.alt) await device.selectAlternateInterface(iface, ep.alt);
+  offen = true;
+}
+async function freigeben(){
+  if (!offen || !device) return;
+  offen = false;
+  await device.releaseInterface(iface).catch(() => {});
+  await device.close().catch(() => {});
+}
+async function senden(data){
+  if (!device) throw new Error('Kein Drucker verbunden');
+  await belegen();
+  let i = 0, stalls = 0;
+  while (i < data.length) {
+    const r = await device.transferOut(ep.ep, data.subarray(i, i + 16384));
+    if (r.status === 'stall') { if (++stalls > 3) throw new Error('Drucker blockiert'); await device.clearHalt('out', ep.ep); continue; }
+    if (r.status !== 'ok') throw new Error('USB-Status ' + r.status);
+    i += r.bytesWritten;
+  }
+}
+function usbAnzeige(){
+  $('dot').classList.toggle('on', !!device);
+  $('usbState').textContent = device ? (device.productName || 'USB-Drucker') + ' verbunden' : 'Kein Drucker verbunden';
+  $('verbinden').textContent = device ? 'Anderer Drucker' : 'Drucker verbinden';
+}
+if ('usb' in navigator) {
+  $('verbinden').addEventListener('click', async () => {
+    try { await freigeben(); await finde(await navigator.usb.requestDevice({ filters: [] })); usbAnzeige(); say('Drucker verbunden.', 'ok'); }
+    catch (e) { if (e.name !== 'NotFoundError') say('Drucker konnte nicht geöffnet werden: ' + e.message, 'err'); }
+  });
+  navigator.usb.getDevices().then(async list => { for (const d of list) { try { await finde(d); break; } catch {} } usbAnzeige(); });
+  navigator.usb.addEventListener('disconnect', e => { if (e.device === device) { device = null; offen = false; usbAnzeige(); if (lauf) say('Drucker getrennt. Wieder einstecken, dann Weiter.', 'err'); } });
+  navigator.usb.addEventListener('connect', async e => { if (!device) { try { await finde(e.device); usbAnzeige(); } catch {} } });
+} else {
+  $('verbinden').disabled = true;
+  say('Dieser Browser kann nicht auf USB zugreifen. Bitte Chrome am Mac verwenden.', 'err');
+}
+
+// ---------------------------------------------------------------- Warten ohne Drosselung
+// Timer in einem Worker: Chrome bremst Timer der Seite stark, sobald sie im Hintergrund ist
+const uhr = new Worker(URL.createObjectURL(new Blob(['onmessage=e=>setTimeout(()=>postMessage(e.data.id),e.data.ms)'], { type: 'text/javascript' })));
+const wartend = new Map(); let wid = 0;
+uhr.onmessage = e => { wartend.get(e.data)?.(); wartend.delete(e.data); };
+const warte = ms => new Promise(r => { const id = ++wid; wartend.set(id, r); uhr.postMessage({ id, ms: Math.max(0, ms) }); });
+
+let sperre = null;
+async function wach(an){
+  try {
+    if (an && !sperre && 'wakeLock' in navigator) { sperre = await navigator.wakeLock.request('screen'); sperre.addEventListener('release', () => { sperre = null; }); }
+    if (!an && sperre) { await sperre.release(); sperre = null; }
+  } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (lauf && document.visibilityState === 'visible') wach(true); });
+
+// ---------------------------------------------------------------- Einstellungen und Anzeige
+let dichte = store.get('dichte', 'mittel');
+if (!DICHTEN[dichte]) dichte = 'mittel';
+let naechster = +store.get('naechster', 0);
+$('start').value = store.get('start', '18:30');
+$('ende').value = store.get('ende', '22:00');
+$('rolle').value = store.get('rolle', '80');
+
+function zeitHeute(hhmm){
+  const [h, m] = hhmm.split(':').map(Number), d = new Date();
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d.getTime();
+}
+// Ende vor Beginn heisst: Ende nach Mitternacht
+function zeiten(){
+  const s = zeitHeute($('start').value || '18:30');
+  let e = zeitHeute($('ende').value || '22:00');
+  if (e <= s) e += 864e5;
+  return { s, e };
+}
+function dichteKnoepfe(){
+  const rolle = Math.max(1, +$('rolle').value || 80);
+  $('dichte').innerHTML = Object.entries(DICHTEN).map(([k, d]) => {
+    const m = MM_PRO_NAME[k] ? MM_PRO_NAME[k] * NAMEN.length / 1000 : 0;
+    return `<button data-k="${k}" aria-pressed="${k === dichte}">${d.name}<small>${m ? Math.round(m) + ' m · ' + Math.ceil(m / rolle) + ' Rolle' + (Math.ceil(m / rolle) > 1 ? 'n' : '') : ''}</small></button>`;
+  }).join('');
+}
+$('dichte').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || lauf) return;
+  dichte = b.dataset.k; store.set('dichte', dichte); dichteKnoepfe(); anzeigen();
+});
+for (const id of ['start', 'ende', 'rolle']) $(id).addEventListener('input', () => { store.set(id, $(id).value); dichteKnoepfe(); anzeigen(); });
+kopf = store.get('kopf', '1') === '1';
+function richtung(){ $('richtung').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === (kopf ? '1' : '0')))); }
+$('richtung').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || lauf || test) return;
+  kopf = b.dataset.k === '1'; store.set('kopf', b.dataset.k); richtung();
+});
+richtung();
+$('ab').addEventListener('change', () => {
+  const n = Math.max(1, Math.min(NAMEN.length, Math.round(+$('ab').value) || 1));
+  naechster = n - 1; store.set('naechster', naechster); anzeigen();
+});
+
+function anzeigen(){
+  const N = NAMEN.length, rest = N - naechster, { s, e } = zeiten(), jetzt = Date.now();
+  const sek = (e - Math.max(s, jetzt)) / 1000, mm = MM_PRO_NAME[dichte] || 0;
+  const tempo = sek > 0 ? rest / sek : Infinity;
+  const zuletzt = naechster > 0 ? name(naechster - 1) : null;
+  const rolle = Math.max(1, +$('rolle').value || 80) * 1000;
+  const rows = [
+    ['Gedruckt', `${zahl(naechster)} von ${zahl(N)}`],
+    ['Noch', `${zahl(rest)} Namen`],
+    ['Nötig', isFinite(tempo) ? `${tempo.toFixed(1)} Namen/s · ${Math.round(tempo * mm)} mm/s` : 'Ende ist vorbei: Volltempo'],
+    ['Papier', `${mm.toFixed(2)} mm/Name · noch ${Math.round(rest * mm / 1000)} m`],
+    ['Rollenwechsel', mm ? `etwa alle ${zahl(rolle / mm)} Namen` : ''],
+  ];
+  if (zuletzt) rows.push(['Zuletzt', `Nr. ${zahl(naechster)}: ${zuletzt[0]}`]);
+  $('stat').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  $('balken').style.width = (naechster / N * 100) + '%';
+  $('ab').value = naechster + 1;
+}
+
+// ---------------------------------------------------------------- Lauf
+// Takt: Nach jedem Stück wird das Tempo neu aus Rest und verbleibender Zeit berechnet. Wer zurückliegt, holt auf.
+let lauf = false, halt = false;
+async function laufen(){
+  lauf = true; halt = false; knoepfe();
+  wach(true);
+  try {
+    await document.fonts.ready;
+    if (Date.now() < zeiten().s) {
+      say('Wartet auf ' + $('start').value + ' …');
+      while (!halt && Date.now() < zeiten().s) await warte(Math.min(1000, zeiten().s - Date.now()));
+    }
+    if (!halt) await senden(naechster === 0 ? join([INIT, bandRaster()]) : INIT);
+    while (!halt && naechster < NAMEN.length) {
+      const d = DICHTEN[dichte];
+      const st = stueck(naechster, d);
+      // Stück zeilenweise abgeben: Jede Zeile kommt dann, wenn sie laut Takt dran ist
+      let y0 = 0;
+      for (const sch of st.schnitte) {
+        if (halt) break;
+        const n = sch.bis - naechster;
+        await senden(raster(st.bits, st.H, y0, sch.y));
+        y0 = sch.y;
+        const t0 = Date.now(), sek = (zeiten().e - t0) / 1000, rest = NAMEN.length - naechster;
+        naechster = sch.bis; store.set('naechster', naechster);
+        if (sek > 0 && rest > 0) await warte(n * sek / rest * 1000 - (Date.now() - t0));
+        if (!document.hidden) anzeigen();
+        say(`Läuft · ${zahl(naechster)} von ${zahl(NAMEN.length)}`);
+      }
+    }
+    if (naechster >= NAMEN.length) { await senden(join([bandRaster(), SCHNITT])); say('Fertig. Alle Namen gedruckt.', 'ok'); }
+    else say('Angehalten bei Nr. ' + zahl(naechster + 1) + '.');
+  } catch (e) {
+    say('Fehler: ' + e.message + '. Drucker prüfen, dann Weiter.', 'err');
+  } finally {
+    await freigeben();
+    lauf = false; wach(false); knoepfe(); anzeigen();
+  }
+}
+function knoepfe(){
+  $('los').textContent = lauf ? 'Anhalten' : naechster > 0 ? 'Weiter' : 'Start';
+  for (const id of ['probe', 'tempo', 'reset', 'start', 'ende', 'rolle', 'ab']) $(id).disabled = lauf || test;
+  $('los').disabled = test || !NAMEN.length;
+  document.querySelectorAll('.seg button').forEach(b => b.disabled = lauf || test);
+}
+$('los').addEventListener('click', () => {
+  if (lauf) { halt = true; say('Hält nach der laufenden Zeile an …'); return; }
+  if (!device) return say('Zuerst Drucker verbinden.', 'err');
+  laufen();
+});
+
+window.addEventListener('keydown', e => {
+  if (e.code !== 'Space' || /INPUT|BUTTON/.test(document.activeElement?.tagName)) return;
+  e.preventDefault(); $('los').click();
+});
+
+// ---------------------------------------------------------------- Test
+let test = false;
+async function testen(fn){
+  if (!device) return say('Zuerst Drucker verbinden.', 'err');
+  test = true; knoepfe();
+  try { await document.fonts.ready; await fn(); }
+  catch (e) { say('Fehler: ' + e.message, 'err'); }
+  finally { await freigeben(); test = false; knoepfe(); }
+}
+// zufällige Stelle der Liste, der Stand bleibt unberührt
+const irgendwo = () => Math.floor(Math.random() * (NAMEN.length - 2000));
+$('probe').addEventListener('click', () => testen(async () => {
+  say('Drucke Probe …');
+  const teile = [INIT, bandRaster()];
+  for (const [k, d] of Object.entries(DICHTEN)) {
+    const st = stueck(irgendwo(), d, { etikett: `PROBE ${d.name.toUpperCase()} · ${MM_PRO_NAME[k].toFixed(2)} MM PRO NAME · ${Math.round(MM_PRO_NAME[k] * NAMEN.length / 1000)} M` });
+    teile.push(raster(st.bits, st.H), bandRaster());
+  }
+  teile.push(SCHNITT);
+  await senden(join(teile));
+  say('Probe gedruckt.', 'ok');
+}));
+$('tempo').addEventListener('click', () => testen(async () => {
+  const d = DICHTEN[dichte], t0 = Date.now();
+  let i = irgendwo(), n = 0;
+  await senden(join([INIT, bandRaster()]));
+  say('Tempotest läuft …');
+  while (Date.now() - t0 < 60000) {
+    const st = stueck(i, d);
+    let y0 = 0;
+    for (const sch of st.schnitte) { await senden(raster(st.bits, st.H, y0, sch.y)); y0 = sch.y; }
+    n += st.bis - i; i = st.bis;
+    if (i >= NAMEN.length - 100) i = 0;
+  }
+  await senden(join([bandRaster(), SCHNITT]));
+  const ist = n / ((Date.now() - t0) / 1000), { s, e } = zeiten(), noetig = NAMEN.length / ((e - s) / 1000);
+  say(`${ist.toFixed(1)} Namen/s geschafft, nötig für den ganzen Abend: ${noetig.toFixed(1)}. ${ist >= noetig * 1.1 ? 'Reicht.' : 'Reicht nicht: kleinere Dichte oder mehr Zeit.'}`, ist >= noetig * 1.1 ? 'ok' : 'err');
+}));
+$('reset').addEventListener('click', () => {
+  if (!confirm('Wirklich zurück auf Anfang? Die Reihenfolge wird neu gemischt.')) return;
+  const seed = (Math.random() * 2 ** 32) >>> 0;
+  store.set('seed', seed); naechster = 0; store.set('naechster', 0);
+  mischen(seed); knoepfe(); anzeigen(); say('Zurück auf Anfang.', 'ok');
+});
+
+// ---------------------------------------------------------------- Laden
+(async () => {
+  say('Lade Namen …');
+  $('los').disabled = true;
+  try {
+    const [txt] = await Promise.all([
+      fetch('namen.tsv').then(r => { if (!r.ok) throw new Error('namen.tsv fehlt'); return r.text(); }),
+      document.fonts.load('700 14px Naskh', 'ب'), document.fonts.load('600 13px PlexCond', 'A'),
+    ]);
+    NAMEN = txt.split('\n').filter(Boolean).map(z => z.split('\t'));
+    let seed = store.get('seed', null);
+    if (seed === null) { seed = (Math.random() * 2 ** 32) >>> 0; store.set('seed', seed); }
+    mischen(+seed);
+    naechster = Math.min(naechster, NAMEN.length);
+    schaetzen(); dichteKnoepfe(); knoepfe(); anzeigen();
+    say(`${zahl(NAMEN.length)} Namen geladen.`);
+  } catch (e) {
+    say('Fehler beim Laden: ' + e.message, 'err');
+  }
+})();
+setInterval(() => { if (!lauf && !document.hidden) anzeigen(); }, 30000);
+</script>
+</body>
+</html>
