@@ -2622,9 +2622,12 @@ function towOut(){ const P = moored; if (!P || pl.coins < 6) return; callTow('ou
 // near a harbour a tug will take you in, or pull you off the ground
 function towOffer(){
   if (moored || tow || ship.securing || ship.hold) return null;
-  const P = nearestPort(), d = Math.hypot(P.cx - ship.x, P.cy - ship.y);
-  if (ship.aground) return d < 3000 ? { mode: 'off', P, fee: 15 } : null;
-  return d < 1500 ? { mode: 'in', P, fee: 8 } : null;
+  // only when you need one: aground, damaged in a crash, or close in under the shore
+  const P = nearestPort(), d = Math.hypot(P.cx - ship.x, P.cy - ship.y), far = Math.round(d / 250);
+  if (ship.aground) return { mode: 'off', P, fee: 15 + far };
+  if (ship.hull < ship.t.hull * 0.85) return { mode: 'in', P, fee: 10 + far };
+  if (depthFast(ship.x, ship.y) > -80) return { mode: 'in', P, fee: d < 1500 ? 8 : 10 + far };
+  return null;
 }
 function towBtnPress(){ const o = towOffer(); if (o && pl.coins >= o.fee) callTow(o.mode, o.P, o.fee); else if (o) toast(`Not enough coins for the tug: ${o.fee}.`); }
 function waitUntil(t1, P){
@@ -2982,7 +2985,7 @@ const GUIDE = [
     <li>Come alongside it <b>slowly</b>: furl the sails well out and glide in, <b>parallel</b> to the stone, a few metres off. With little sail up the wind blows her sideways, so use it.</li>
     <li>When the button says <b>LINES ASHORE</b>, press it: bow and stern lines go over the bollards and she is warped in snug.</li>
     <li>Touch the stone gently and the fenders take it. Hit it at more than two knots and the shipwright will be pleased to see you.</li>
-    <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, the harbour tug will <b>TOW</b> you out for a few coins. Close to a harbour, or stuck on the ground near one, the <b>TOW</b> button calls her out to fetch you.</li>
+    <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, the harbour tug will <b>TOW</b> you out for a few coins. Close in under the shore, aground, or damaged in a crash, the <b>TOW</b> button calls her out to fetch you.</li>
     <li>Mind the traffic: fishing boats go out at dawn and come back in the afternoon, lamp boats fish at night, coasters and big cargo ships lie at the mole, and the mail steamers keep their timetable whatever the wind.</li>
     <li><b>Reefs</b> break white just under the surface. They are marked on the chart once you have seen them.</li></ol>`],
   ['Anchoring and running aground', () => `
