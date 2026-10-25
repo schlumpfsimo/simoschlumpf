@@ -67,21 +67,23 @@
     #floats{ position:absolute; right:calc(10px + env(safe-area-inset-right)); top:calc(126px + env(safe-area-inset-top)); display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
     #floats .px{ font-size:10px; padding:5px 8px; }
     /* the deck: the bottom of the screen is where you work */
-    #deck{ position:absolute; left:0; right:0; bottom:0; height:var(--deck-h, 30%); background:#0e2236f2; border-top:3px solid #f6ecd6; box-shadow:0 -4px 0 #0008; display:flex; flex-direction:column; padding-bottom:env(safe-area-inset-bottom); }
-    #deckHead{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:5px 8px 3px; }
-    #deckHead .px{ min-width:64px; min-height:34px; font-size:11px; padding:4px 8px; }
+    #deck{ position:absolute; left:0; right:0; bottom:0; height:var(--deck-h, 22%); background:rgba(16,21,28,0.86); border-top:1px solid #d5dbe244; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); display:flex; flex-direction:column; padding-bottom:env(safe-area-inset-bottom); color:#d5dbe2; }
+    #deckHead{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 8px 0; }
+    #deck .px{ background:transparent; border:1px solid #d5dbe299; box-shadow:none; color:#d5dbe2; border-radius:3px; }
+    #deck .px:active{ transform:none; background:#ffffff1a; }
+    #deckHead .px{ min-width:58px; min-height:28px; font-size:10px; padding:3px 8px; }
     #stName{ text-align:center; display:flex; flex-direction:column; line-height:1.2; }
-    #stName b{ font-size:13px; color:#f0cf45; font-weight:normal; }
-    #stName small{ font-size:9px; opacity:.75; }
+    #stName b{ font-size:11px; color:#ffffff; font-weight:normal; letter-spacing:1px; }
+    #stName small{ font-size:8px; opacity:.55; }
     #deckBody{ position:relative; flex:1; min-height:0; }
     #deckCv{ position:absolute; left:0; top:0; width:100%; height:100%; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; }
     .stRow{ position:absolute; right:6px; top:2px; display:none; flex-direction:column; gap:5px; align-items:flex-end; }
     .stRow.on{ display:flex; }
-    .stRow .px{ font-size:10px; padding:5px 8px; min-width:84px; }
-    #rowHelm{ right:auto; left:52%; transform:translateX(-50%); top:8px; }
+    .stRow .px{ font-size:9px; padding:3px 7px; min-width:70px; }
+    #rowHelm{ right:auto; left:auto; right:30%; transform:none; top:2px; }
     #rowMain{ right:auto; left:6px; }
     #rowMain .px{ min-width:0; font-size:9px; }
-    #lashBtn.on, .stRow .px.on{ background:#7a4a24; border-color:#f0cf45; }
+    #deck .px.on{ background:#ffffff26; border-color:#ffffff; }
     #storm{
       position:absolute; right:calc(10px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top));
       background:#7a2416; border:3px solid #f0cf45; padding:4px 8px; box-shadow:3px 3px 0 #000a; pointer-events:none;
@@ -4147,7 +4149,7 @@ const viewH = () => {
 };
 const appW = () => Math.min(innerWidth, Math.round(viewH() * 0.62));
 function fitViewport(){
-  const R = document.documentElement.style, h = viewH(), dh = Math.max(200, Math.round(h * 0.3)), top = 92;
+  const R = document.documentElement.style, h = viewH(), dh = Math.max(150, Math.round(h * 0.22)), top = 92;
   R.setProperty('--app-h', h + 'px'); R.setProperty('--app-w', appW() + 'px'); R.setProperty('--deck-h', dh + 'px');
   // the ship sits in the middle of the water you can see, between the readout and the deck
   R.setProperty('--cam-off', (mapOpen ? 0 : Math.round((dh - top) / 2)) + 'px');
@@ -5852,36 +5854,33 @@ function dRing(cx, cy, r0, r1, c){ dctx.fillStyle = c; for (let j = -Math.ceil(r
 function dLine(x0, y0, x1, y1, c, w = 1){ const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0))); dctx.fillStyle = c; for (let k = 0; k <= n; k++){ const t = k / n; dctx.fillRect(Math.round(x0 + (x1 - x0) * t - (w - 1) / 2), Math.round(y0 + (y1 - y0) * t - (w - 1) / 2), w, w); } }
 function dText(t, x, y, c, align = 'left'){ const w = textWidth(t); drawText(dctx, t, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x, y, c); }
 // the deck itself under everything: teak planks, the caulking dark between them
-function drawPlanks(){
-  for (let y = 0; y < DK.h; y++){ dctx.fillStyle = (Math.floor(y / 5) % 2) ? '#a87a48' : '#b8885a'; dctx.fillRect(0, y, DK.w, 1); if (y % 5 === 4){ dctx.fillStyle = '#5c3e22'; dctx.fillRect(0, y, DK.w, 1); } }
-  for (let y = 0; y < DK.h; y += 5){ const o = (hash(y, 3, 9) * 60) | 0; for (let x = o; x < DK.w; x += 60){ dctx.fillStyle = '#5c3e22'; dctx.fillRect(x, y, 1, 4); } }
-  dctx.fillStyle = 'rgba(10,25,40,0.45)'; dctx.fillRect(0, 0, DK.w, DK.h);
-}
-// the wheel: eight spokes, a brass hub, the king spoke marked so you know where amidships is
+// the panel is plain dark glass: thin light lines, one accent, red and green only where something needs saying
+const NL = '#d5dbe2', ND = '#66717d', NA = '#ffffff', NW = '#e0705c', NG = '#8fcf8f', NY = '#e2c46c';
+function drawPlanks(){}
+// the wheel, as a drawing: rim, eight spokes, the king spoke marked so you know where amidships is
 function drawWheel(cx, cy, R){
   const a = wheelA;
-  dDisc(cx + 2, cy + 2, R + 1, 'rgba(0,0,0,0.35)');
+  dRing(cx, cy, R - 0.6, R + 0.4, NL);
   for (let k = 0; k < 8; k++){
-    const t = a + k * Math.PI / 4, ex = cx + Math.sin(t) * (R + 4), ey = cy - Math.cos(t) * (R + 4);
-    dLine(cx, cy, ex, ey, '#5a3a1c', 2);
-    dDisc(ex, ey, 1.6, k === 0 ? '#f0cf45' : '#8a5a2e');
+    const t = a + k * Math.PI / 4, ex = cx + Math.sin(t) * (R + 3), ey = cy - Math.cos(t) * (R + 3);
+    dLine(cx + Math.sin(t) * 3, cy - Math.cos(t) * 3, ex, ey, k === 0 ? NA : ND, 1);
+    if (k === 0) dDisc(ex, ey, 1.2, NA);
   }
-  dRing(cx, cy, R - 2.5, R, '#7a4a24'); dRing(cx, cy, R - 1, R - 0.4, '#b98a52');
-  dDisc(cx, cy, 4, '#c99a3a'); dDisc(cx - 1, cy - 1, 1.5, '#f6dc8a');
-  // the rudder angle, on a little arc above
-  const ra = ship.rudder * 35 * DEG;
-  for (let k = -35; k <= 35; k += 5){ const t = k * DEG; dpx(cx + Math.sin(t) * (R + 9), cy - R - 9 + (1 - Math.cos(t)) * (R + 9) * 0 - Math.cos(t) * 0, 1, 1, '#f6ecd6'); }
-  dpx(cx + Math.sin(ra) * (R + 9) - 1, cy - R - 10, 3, 3, '#e05a3a');
-  dText('RUDDER', cx, cy - R - 17, '#f6ecd6', 'center');
-  if (wheelLashed){ dLine(cx + Math.sin(a) * R, cy - Math.cos(a) * R, cx + R + 10, cy + R + 2, '#e0c890', 1); dText('LASHED', cx, cy + R + 7, '#f0cf45', 'center'); }
+  dRing(cx, cy, 2, 3, NL);
+  // the rudder angle on a short scale above
+  const ra = ship.rudder;
+  const sx = cx + R + 10;
+  dText('RUDDER', sx, cy - 10, ND); dpx(sx, cy - 2, 31, 1, ND); dpx(sx + 15, cy - 4, 1, 5, ND);
+  dpx(sx + 15 + ra * 15 - 1, cy - 4, 3, 5, Math.abs(ra) > 0.7 ? NW : NA);
+  if (wheelLashed) dText('LASHED', sx, cy + 6, NY);
 }
 function drawDeck(){
   if (!deckCv.width || DK.w !== Math.round(deckCv.getBoundingClientRect().width / 2)) deckLayout();
   dctx.clearRect(0, 0, DK.w, DK.h);
   drawPlanks();
   const S = STATIONS[crew.st];
-  if (crew.walk){ dText(`WALKING TO THE ${S.name}...`, DK.w / 2, DK.h / 2 - 3, '#f6ecd6', 'center'); return; }
-  if (S.id === 'helm'){ const R = Math.min(DK.h * 0.34, DK.w * 0.2); drawWheel(DK.w * 0.3, DK.h * 0.55, R); DK.wheel = { x: DK.w * 0.3, y: DK.h * 0.55, r: R }; }
+  if (crew.walk){ dText(`WALKING TO THE ${S.name}...`, DK.w / 2, DK.h / 2 - 3, ND, 'center'); return; }
+  if (S.id === 'helm'){ const R = Math.min(DK.h * 0.3, DK.w * 0.2), cy = DK.h * 0.52 + 2; drawWheel(DK.w * 0.27, cy, R); DK.wheel = { x: DK.w * 0.27, y: cy, r: R }; }
   if (typeof drawStation === 'function') drawStation(S.id);
 }
 function deckHUD(){
@@ -6026,32 +6025,35 @@ function drawRope(k, x, y0, y1, sel){
   const R = ROPES[k], s = ship, L = ropeLoad(k), v = ropeValue(k), off = Math.floor(ropeOff[k] || 0);
   const live = R.hal ? s.drop[R.hal] : R.sheet ? s.letGo[R.sheet] : (R.jib === s.jibSide && s.jibFree);
   const dim = R.need && !upOf(s, R.need);
-  dText(R.name, x, y0 - 1, sel ? '#f0cf45' : dim ? '#8a8a8a' : '#f6ecd6', 'center');
+  dText(R.name, x, y0 - 1, sel ? NA : dim ? ND : NL, 'center');
+  if (sel) dpx(x - textWidth(R.name) / 2, y0 + 5, textWidth(R.name), 1, NA);
   // the telltales on that sail, read for you: luffing wants the sheet hauled, stalled wants it eased
   const err = R.sheet === 'trimA' ? s.trimErr : R.sheet === 'trimS' ? s.trimErrS : R.jib === s.jibSide && !s.jibFree ? s.trimErrF : null;
   const upS = R.sheet === 'trimA' ? s.hM : R.sheet === 'trimS' ? s.hF : s.hJ;
-  if (err != null && upS > 0.3 && !(R.jib && s.aback)) dText(err > 5 ? 'HAUL' : err < -5 ? 'EASE' : 'GOOD', x, y0 + 7, err > 5 ? '#f0cf45' : err < -5 ? '#e05a3a' : '#7fc06a', 'center');
-  else if (R.jib === s.jibSide && s.aback && upS > 0.3) dText('ABACK', x, y0 + 7, '#e05a3a', 'center');
-  for (let y = y0 + 7; y < y1 - 9; y++){ const t = ((y + off) % 4 + 4) % 4; dpx(x - 1, y, 3, 1, t < 2 ? '#e8dcb6' : '#b9a878'); dpx(x - 1 + (t % 2), y, 1, 1, '#8a7a50'); }
-  // what it is doing: up so far, or hauled in so far, and the strain on it
-  dpx(x + 5, y0 + 7, 2, y1 - y0 - 16, '#0e2236'); const hh = Math.round((y1 - y0 - 16) * v); dpx(x + 5, y1 - 9 - hh, 2, hh, R.hal ? '#7fd6c8' : '#f6ecd6');
-  dpx(x - 7, y0 + 7, 2, y1 - y0 - 16, '#0e2236'); const lh = Math.round((y1 - y0 - 16) * clamp(L / 4, 0, 1)); dpx(x - 7, y1 - 9 - lh, 2, lh, L > 2.5 ? '#e05a3a' : L > 1.2 ? '#f0cf45' : '#7fc06a');
-  // the cleat: two horns on a block
-  dpx(x - 4, y1 - 7, 9, 3, live ? '#e05a3a' : '#c9b48a'); dpx(x - 1, y1 - 9, 3, 7, '#8a7a50');
-  dText(live ? 'FREE' : R.hal ? `${Math.round(v * 100)}%` : `${Math.round(v * 100)}`, x, y1 - 2, live ? '#e05a3a' : '#bfe6ff', 'center');
+  if (err != null && upS > 0.3 && !(R.jib && s.aback)) dText(err > 5 ? 'HAUL' : err < -5 ? 'EASE' : 'GOOD', x, y0 + 8, err > 5 ? NY : err < -5 ? NW : NG, 'center');
+  else if (R.jib === s.jibSide && s.aback && upS > 0.3) dText('ABACK', x, y0 + 8, NW, 'center');
+  // the line itself: a thin rule with marks that run as it moves
+  const ya = y0 + 15, yb = y1 - 9;
+  dpx(x, ya, 1, yb - ya, NL);
+  for (let y = ya; y < yb; y++) if ((((y + off) % 6) + 6) % 6 === 0) dpx(x - 1, y, 3, 1, NL);
+  // how far up or in (right), and the strain on it (left)
+  const hh = Math.round((yb - ya) * v), lh = Math.round((yb - ya) * clamp(L / 4, 0, 1));
+  dpx(x + 4, ya, 1, yb - ya, '#2a333d'); dpx(x + 4, yb - hh, 1, hh, NL);
+  dpx(x - 4, ya, 1, yb - ya, '#2a333d'); dpx(x - 4, yb - lh, 1, lh, L > 2.5 ? NW : L > 1.2 ? NY : NG);
+  // the cleat: an outline you tap
+  const cc = live ? NW : NL;
+  dpx(x - 4, y1 - 8, 9, 1, cc); dpx(x - 4, y1 - 6, 9, 1, cc); dpx(x - 4, y1 - 8, 1, 3, cc); dpx(x + 4, y1 - 8, 1, 3, cc);
+  dText(live ? 'FREE' : R.hal ? `${Math.round(v * 100)}%` : `${Math.round(v * 100)}`, x, y1 - 3, live ? NW : ND, 'center');
   return { k, x, y0, y1 };
 }
-// the winch at the mast: crank clockwise, tap to change gear
+// the winch: a circle you crank round clockwise, tap to change gear
 let deckWinchA = 0;
 function drawDeckWinch(cx, cy, R){
-  dDisc(cx + 2, cy + 2, R, 'rgba(0,0,0,0.35)');
-  for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++){
-    const d = Math.hypot(i, j); if (d > R) continue;
-    dpx(cx + i, cy + j, 1, 1, d > R - 1.5 ? '#5a3a1c' : d > R * 0.6 ? ((Math.floor(Math.atan2(j, i) * 4 / Math.PI + deckWinchA * 2) & 1) ? '#e0c890' : '#b8a070') : d > R * 0.25 ? (i + j < 0 ? '#e6b45a' : '#b9823a') : '#7a4a24');
-  }
+  dRing(cx, cy, R - 0.6, R + 0.4, NL); dRing(cx, cy, R * 0.45, R * 0.45 + 1, ND);
+  for (let k = 0; k < 8; k++){ const t = deckWinchA + k * Math.PI / 4; dpx(cx + Math.cos(t) * R * 0.72, cy + Math.sin(t) * R * 0.72, 1, 1, ND); }
   const ax = Math.cos(deckWinchA), ay = Math.sin(deckWinchA);
-  dLine(cx, cy, cx + ax * R, cy + ay * R, '#2a2a2e', 2); dDisc(cx + ax * R, cy + ay * R, 2, '#f0cf45');
-  dText(winchGear ? 'HIGH' : 'LOW', cx, cy + R + 4, '#bfe6ff', 'center');
+  dLine(cx, cy, cx + ax * R, cy + ay * R, NL, 1); dDisc(cx + ax * R, cy + ay * R, 1.6, NA);
+  dText(winchGear ? 'HIGH GEAR' : 'LOW GEAR', cx, cy + R + 4, ND, 'center');
 }
 function drawStation(id){
   const W = DK.w, H = DK.h, ks = (ST_ROPES[id] || []).filter(k => !ROPES[k].need || upOf(ship, ROPES[k].need) || k !== 'topHal' || true);
@@ -6059,24 +6061,24 @@ function drawStation(id){
   if (id === 'bow'){
     // the windlass: a long lever you pump up and down
     const cx = W * 0.32, cy = H * 0.55, A = ship.anchor;
-    dpx(cx - 14, cy - 6, 28, 12, '#5a3a1c'); dDisc(cx, cy, 7, '#2a2a2e'); dDisc(cx, cy, 4, '#6a655d');
+    dRing(cx, cy, 5, 6, NL); dpx(cx - 14, cy + 8, 29, 1, ND);
     const ang = (pumpDir > 0 ? -0.5 : 0.5) * Math.min(1, pumpAcc / 18) - 0.2;
-    dLine(cx, cy, cx + Math.cos(ang) * 30, cy + Math.sin(ang) * 30, '#8a5a2e', 3); dDisc(cx + Math.cos(ang) * 30, cy + Math.sin(ang) * 30, 3, '#f0cf45');
+    dLine(cx, cy, cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28, NL, 1); dDisc(cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28, 1.6, NA);
     DK.pump = { x: cx, y: cy, r: 44 };
-    dText(A ? (A.weigh ? 'PUMP THE LEVER: UP AND DOWN' : `AT ANCHOR, ${Math.round(RODE)} M OF CHAIN`) : ship.aground ? 'AGROUND: KEDGE OFF' : 'ANCHOR CATTED AND READY', cx, H - 8, '#f6ecd6', 'center');
-    if (A && A.weigh) dText(`${Math.round(clamp(A.prog || 0, 0, 1) * 100)}%`, cx, cy - 20, '#f0cf45', 'center');
+    dText(A ? (A.weigh ? 'PUMP THE LEVER UP AND DOWN' : `AT ANCHOR, ${Math.round(RODE)} M OF CHAIN`) : ship.aground ? 'AGROUND: KEDGE OFF' : 'ANCHOR READY', cx, H - 7, ND, 'center');
+    if (A && A.weigh) dText(`${Math.round(clamp(A.prog || 0, 0, 1) * 100)}%`, cx, cy - 18, NA, 'center');
     return;
   }
   const hasW = ST_WINCH[id], x0 = id === 'helm' ? W * 0.8 : hasW ? W * 0.36 : 8, x1 = W - 4;
-  if (hasW){ const R = Math.min(H * 0.3, W * 0.13); const cx = W * 0.17, cy = H * 0.58; drawDeckWinch(cx, cy, R); DK.winchW = { x: cx, y: cy, r: R }; }
+  if (hasW){ const R = Math.min(H * 0.3, W * 0.13); const cx = W * 0.17, cy = H * 0.46; drawDeckWinch(cx, cy, R); DK.winchW = { x: cx, y: cy, r: R }; }
   const n = ks.length, top = id === 'main' ? 22 : 10;
   ks.forEach((k, i) => { const x = x0 + (x1 - x0) * (i + 0.5) / n; DK.ropes.push(drawRope(k, x, top, H - 4, ropeSel[id] === k && hasW)); });
   if (id === 'main'){
     // the reef points along the boom
     const rx = x0 - 6, ry = 6;
-    dText('REEF', rx, ry - 1, '#f6ecd6');
-    for (let i = 0; i < 4; i++){ const px = rx + 24 + i * 10; dDisc(px, ry + 2, 3, i < ship.reefPts ? '#f0cf45' : '#6a5a3a'); }
-    dText(ship.reef ? `${ship.reef} IN` : '', rx + 66, ry - 1, '#f0cf45');
+    dText('REEF', rx, ry - 1, ND);
+    for (let i = 0; i < 4; i++){ const px = rx + 24 + i * 10; if (i < ship.reefPts) dDisc(px, ry + 2, 2, NA); else dRing(px, ry + 2, 1.5, 2.5, ND); }
+    dText(ship.reef ? `${ship.reef} IN` : '', rx + 66, ry - 1, NA);
     DK.reefs = { x: rx, y: ry - 4, w: 70, h: 12 };
   }
 }
