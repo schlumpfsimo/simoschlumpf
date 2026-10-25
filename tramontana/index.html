@@ -604,29 +604,38 @@ const GOODS = [
   { id: 'limoncello', name: 'Limoncello',  base: 30 },
   { id: 'ceramics',   name: 'Ceramics',    base: 34 },
   { id: 'coral',      name: 'Red coral',   base: 44 },
+  { id: 'salt',       name: 'Sea salt',    base: 8 },
+  { id: 'grain',      name: 'Grain',       base: 9 },
+  { id: 'timber',     name: 'Timber',      base: 14 },
+  { id: 'sulphur',    name: 'Sulphur',     base: 18 },
+  { id: 'figs',       name: 'Dried figs',  base: 12 },
+  { id: 'pasta',      name: 'Pasta',       base: 16 },
+  { id: 'cheese',     name: 'Cheese',      base: 22 },
+  { id: 'tunaoil',    name: 'Tuna in oil', base: 36 },
+  { id: 'coffee',     name: 'Coffee',      base: 40 },
 ];
 const GOOD = {}; for (const g of GOODS) GOOD[g.id] = g;
 // name, island (or the mainland and an x), angle in the island frame, which side the mole stands, what the town makes, what it wants
 const PORT_DEFS = [
-  ['Ravella',       null,            8700,  1, ['lemons', 'oil'],          ['capers', 'pumice', 'wine'],
+  ['Ravella',       null,            8700,  1, ['lemons', 'oil', 'pasta'],          ['grain', 'capers', 'pumice', 'wine', 'coffee'],
     'Home. A fishing harbour under the lemon terraces, the church dome green and gold above the roofs.'],
-  ['Positella',     null,            6050, -1, ['ceramics', 'limoncello'], ['anchovies', 'wine', 'capers', 'coral'],
+  ['Positella',     null,            6050, -1, ['ceramics', 'limoncello'], ['lemons', 'anchovies', 'wine', 'coral', 'timber'],
     'Pink and yellow houses stacked up the cliff like a heap of sugared almonds. Every staircase leads to the sea.'],
-  ['Cetrara',       null,           11900,  1, ['anchovies'],              ['lemons', 'oil', 'ceramics'],
+  ['Cetrara',       null,           11900,  1, ['anchovies', 'tunaoil', 'grain'],              ['salt', 'oil', 'lemons', 'ceramics'],
     'A town of fishermen and salted anchovies. The smell of the harbour reaches you before the bell does.'],
-  ['Sorrenta',      'Capo Minerva',    92,  1, ['limoncello', 'lemons'],   ['pumice', 'wine', 'anchovies'],
+  ['Sorrenta',      'Capo Minerva',    92,  1, ['limoncello', 'lemons', 'cheese', 'timber'],   ['pumice', 'wine', 'anchovies', 'grain'],
     'Orchards right down to the cliff edge. Somebody here distils every lemon on the coast.'],
-  ['Marina Grande', 'Isola Azzurra',  268,  1, ['lemons'],                 ['limoncello', 'wine', 'ceramics', 'coral'],
+  ['Marina Grande', 'Isola Azzurra',  268,  1, ['figs'],                 ['limoncello', 'wine', 'ceramics', 'coral', 'coffee', 'cheese', 'tunaoil'],
     'The island of the blue grotto. Fine villas, finer prices, and people who pay well for nice things.'],
-  ['Lipara',        'Lipara',          12, -1, ['pumice', 'capers'],       ['oil', 'ceramics', 'limoncello'],
+  ['Lipara',        'Lipara',          12, -1, ['pumice', 'capers', 'sulphur'],       ['oil', 'ceramics', 'limoncello', 'grain', 'timber'],
     'White pumice cliffs and a castle on the rock. The beaches here are made of glass and stone.'],
-  ['Malvasia',      'Salina',         196,  1, ['wine', 'capers'],         ['anchovies', 'oil', 'lemons'],
+  ['Malvasia',      'Salina',         196,  1, ['wine', 'capers', 'salt'],         ['anchovies', 'oil', 'lemons', 'grain', 'sulphur'],
     'Two green mountains and the vineyards between them. The sweet wine travels the whole sea.'],
-  ['Panarella',     'Panarella',      282, -1, ['capers'],                 ['wine', 'limoncello', 'ceramics'],
+  ['Panarella',     'Panarella',      282, -1, ['capers', 'figs'],                 ['wine', 'limoncello', 'ceramics', 'grain', 'cheese'],
     'The smallest harbour, all white walls and bougainvillea. Fashionable, and short of everything.'],
-  ['Ponzella',      'Ponzella',        96, -1, ['anchovies', 'wine'],      ['pumice', 'oil', 'lemons'],
+  ['Ponzella',      'Ponzella',        96, -1, ['anchovies', 'wine', 'timber'],      ['pumice', 'oil', 'lemons', 'salt', 'pasta'],
     'A crescent island far to the west, its harbour a horseshoe of fishermen\'s houses.'],
-  ['Cala Gavetta',  'La Maddalena',   262,  1, ['coral'],                  ['limoncello', 'oil', 'ceramics'],
+  ['Cala Gavetta',  'La Maddalena',   262,  1, ['coral', 'cheese'],                  ['limoncello', 'oil', 'ceramics', 'grain', 'wine', 'pasta'],
     'The far islands at last: granite worn into strange shapes, water like glass, and coral jewellers on every corner.'],
 ];
 function gradAt(x, y, e = 30){
@@ -893,15 +902,136 @@ for (const P of ports){
   }
 }
 // prices drift: each port remembers how much has been bought (+) or sold (-) lately, and forgets over a few days
-const market = ports.map(() => Object.fromEntries(GOODS.map(g => [g.id, 0])));
-function priceOf(P, gid, selling){
-  const g = GOOD[gid], f = P.make.includes(gid) ? 0.6 : P.want.includes(gid) ? 1.6 : 1.02;
-  const glut = market[P.id][gid];
-  const friend = 1 + Math.min(10, pl.friends[P.name] || 0) * 0.01 * (selling ? 1 : -1);
-  const v = g.base * f * clamp(1 + glut * 0.025, 0.55, 1.8) * friend;
-  return Math.max(1, Math.round(selling ? v * 0.9 : v));
+// ---------------------------------------------------------------- the economy
+// every harbour has warehouses: stock of each good goes up with what the town makes and down with what it uses, hour by hour.
+// workshops need their raw stuff: no lemons, no limoncello. the price is the stock: scarce is dear, a glut is cheap.
+// other traders work the same routes, so a good spread does not last; and things happen: feasts, failed harvests, ships landing cargo
+const RECIPES = { limoncello: { lemons: 1.4 }, pasta: { grain: 1 }, anchovies: { salt: 0.4 }, tunaoil: { oil: 0.5, salt: 0.3 } };
+// who buys: the workshops for their raw goods, otherwise the town
+const WORKS = { lemons: 'the distillery', grain: 'the pasta makers', salt: 'the salting house', oil: 'the tonnara' };
+const USERS = { grain: 'the bakers', salt: 'the fishermen', sulphur: 'the vintners', pumice: 'the builders', timber: 'the boatyard', lemons: 'the greengrocers',
+  oil: 'the kitchens', wine: 'the taverns', coffee: 'the Grand Café', ceramics: 'the new hotel', coral: 'the jewellers', cheese: 'the trattorie', capers: 'the cooks',
+  limoncello: 'the cafés', anchovies: 'the fishmongers', figs: 'the pastry shops', pasta: 'the trattorie', tunaoil: 'the grocers' };
+const econ = { st: [], ev: [], news: [], ctr: [], day: -1, acc: 0 };
+const GI = {}; GOODS.forEach((g, i) => GI[g.id] = i);
+// what each harbour makes and uses, per day, and the stock its warehouses think is normal
+// goods that come in from outside on the Napoli steamer, not made anywhere on this coast
+const IMPORTS = { Sorrenta: ['coffee'] };
+const makesHere = (P, gid) => P.make.includes(gid) || (IMPORTS[P.name] || []).includes(gid);
+function ecoInit(){
+  econ.st = ports.map(P => GOODS.map(g => {
+    const mk = makesHere(P, g.id), wt = P.want.includes(g.id), input = P.make.some(m => RECIPES[m] && RECIPES[m][g.id]);
+    const big = P.name === 'Marina Grande' ? 1.5 : 1, lux = g.id === 'coffee' || g.id === 'coral' ? 0.35 : 1;
+    const e = { prod: mk ? 1 : 0, cons: (mk ? 1.2 : wt ? 4 : input ? 0 : 0.5) * big * lux, tgt: mk ? 24 : wt || input ? 14 : 5 };
+    e.s = mk ? rnd(16, 34) : wt ? rnd(3, 14) : input ? rnd(5, 16) : rnd(2, 6);
+    return e;
+  }));
+  // what the coast makes of a good is a little more than it uses, the workshops' needs included; finished goods first, then what goes into them
+  const order = GOODS.map((g, gi) => gi).sort((a, b) => (RECIPES[GOODS[b].id] ? 1 : 0) - (RECIPES[GOODS[a].id] ? 1 : 0));
+  for (const gi of order){
+    const gid = GOODS[gi].id;
+    let use = 0, makers = 0;
+    econ.st.forEach((row, pid) => {
+      use += row[gi].cons;
+      for (const m of ports[pid].make){ const R = RECIPES[m]; if (R && R[gid]) use += row[GI[m]].prod * R[gid]; }
+      if (row[gi].prod) makers++;
+    });
+    econ.st.forEach(row => { if (row[gi].prod) row[gi].prod = use * 1.15 / makers; });
+  }
 }
-const sells = (P, gid) => P.make.includes(gid);
+ecoInit();
+const ecoMul = (pid, gi, kind) => { let m = 1; for (const E of econ.ev) if (E.pid === pid && E.g.includes(GOODS[gi].id) && E.kind === kind && T < E.t1) m *= E.mul; return m; };
+// one hour in the life of the coast
+function ecoHour(){
+  econ.st.forEach((row, pid) => {
+    const P = ports[pid];
+    row.forEach((e, gi) => {
+      const g = GOODS[gi];
+      if (e.prod && e.s < e.tgt * 3){
+        let k = e.prod / 24 * ecoMul(pid, gi, 'prod');
+        const R = RECIPES[g.id];
+        if (R) for (const inp in R){ const ie = row[GI[inp]]; k = Math.min(k, ie.s / R[inp]); }
+        if (R) for (const inp in R) row[GI[inp]].s -= k * R[inp];
+        e.s += k;
+      }
+      e.s = Math.max(0, e.s - e.cons / 24 * ecoMul(pid, gi, 'cons'));
+    });
+  });
+  // the other traders: where a good is cheap in one harbour and dear in another, someone carries it
+  for (let gi = 0; gi < GOODS.length; gi++){
+    if (Math.random() > 0.45) continue;
+    let lo = -1, hi = -1, pl0 = 1e9, ph = 0;
+    for (let pid = 0; pid < ports.length; pid++){
+      const p = ecoPrice(pid, gi, 0);
+      if (econ.st[pid][gi].s > 4 && p < pl0){ pl0 = p; lo = pid; }
+      if (p > ph){ ph = p; hi = pid; }
+    }
+    if (lo < 0 || hi === lo || ph < pl0 * 1.45) continue;
+    const n = Math.min(Math.round(rnd(2, 6)), Math.floor(econ.st[lo][gi].s - 3));
+    if (n < 1) continue;
+    econ.st[lo][gi].s -= n; econ.st[hi][gi].s += n;
+    if (n >= 5 && Math.random() < 0.06) ecoNews(`A ${pick(['tartana', 'brigantine', 'trabaccolo'])} from ${ports[lo].name} landed ${n} crates of ${GOODS[gi].name.toLowerCase()} in ${ports[hi].name}.`, hi);
+  }
+}
+// the price is what the warehouse holds against what it thinks it needs
+function ecoPrice(pid, gi, ds){
+  const e = econ.st[pid][gi], s = Math.max(0, e.s + ds), t = e.tgt;
+  return GOODS[gi].base * clamp(Math.pow((t + 4) / (s + 4), 0.75), 0.45, 2.8);
+}
+function priceOf(P, gid, selling){
+  const gi = GI[gid], friend = 1 + Math.min(10, pl.friends[P.name] || 0) * 0.01 * (selling ? 1 : -1);
+  const v = selling ? ecoPrice(P.id, gi, 0.5) * 0.88 : ecoPrice(P.id, gi, -0.5) * 1.04;
+  return Math.max(1, Math.round(v * friend));
+}
+const stockOf = (P, gid) => econ.st[P.id][GI[gid]].s;
+const sells = (P, gid) => stockOf(P, gid) >= 1;
+const stockWord = s => s >= 30 ? 'piles of it' : s >= 14 ? 'plenty' : s >= 6 ? 'some' : s >= 1 ? 'scarce' : 'none';
+function ecoNews(text, pid){ econ.news.unshift({ text, t: T, pid }); if (econ.news.length > 14) econ.news.length = 14; }
+const EVENTS = [
+  // what can happen, and what it does to the warehouses
+  P => { const g = pick(P.make); return g && { kind: 'prod', g: [g], mul: 0, days: rnd(2, 3.5), text: `${pick(['Hail on the terraces', 'A blight', 'Strikes in the workshops', 'A fire in the stores'])} at ${P.name}: no ${GOOD[g].name.toLowerCase()} for days.` }; },
+  P => { const g = pick(P.make); return g && { kind: 'prod', g: [g], mul: 2.5, days: rnd(2, 4), text: `A bumper year at ${P.name}: ${GOOD[g].name.toLowerCase()} by the cartload, and cheap.` }; },
+  P => ({ kind: 'cons', g: ['wine', 'limoncello', 'pasta', 'cheese'], mul: 4, days: rnd(1, 2), text: `The feast of the patron saint at ${P.name}: they will eat and drink the town dry.` }),
+  P => ({ kind: 'cons', g: ['pumice', 'timber', 'ceramics'], mul: 4, days: rnd(3, 5), text: `${P.name} is building ${pick(['a new hotel', 'a church', 'a sea wall', 'villas for the rich'])}. Builders want pumice, timber and tiles.` }),
+  P => { const g = pick(['coffee', 'grain', 'grain', 'timber', 'salt']); const n = irnd(20, 32); econ.st[P.id][GI[g]].s += n; return { kind: 'none', g: [g], mul: 1, days: 0, text: `The steamer from Napoli landed ${n} crates of ${GOOD[g].name.toLowerCase()} at ${P.name}.` }; },
+  P => ({ kind: 'cons', g: ['oil', 'salt'], mul: 3, days: rnd(2, 3), text: `The tuna are running off ${P.name}: the tonnara wants oil and salt for the tins.` }),
+];
+// each new day: perhaps something happens; merchants short of something post a contract with the harbour masters
+function ecoDay(d){
+  econ.ev = econ.ev.filter(E => T < E.t1);
+  if (Math.random() < 0.7){
+    const P = pick(ports), E = pick(EVENTS)(P);
+    if (E){ E.pid = P.id; E.t1 = T + E.days * DAY; if (E.kind !== 'none') econ.ev.push(E); ecoNews(E.text, P.id); }
+  }
+  econ.ctr = econ.ctr.filter(c => c.due > T && !c.taken);
+  econ.st.forEach((row, pid) => row.forEach((e, gi) => {
+    const use = e.cons * ecoMul(pid, gi, 'cons') + (ports[pid].make.some(m => RECIPES[m] && RECIPES[m][GOODS[gi].id]) ? 6 : 0);
+    if (use < 1 || e.s > e.tgt * 0.4 || econ.ctr.some(c => c.to === pid && c.good === GOODS[gi].id) || econ.ctr.filter(c => c.to === pid).length >= 2 || Math.random() > 0.5 || econ.ctr.length > 8) return;
+    const n = clamp(Math.round(e.tgt - e.s), 4, 12), unit = Math.round(ecoPrice(pid, gi, n / 2) * 1.3);
+    econ.ctr.push({ id: (d * 100 + pid * 7 + gi) | 0, kind: 'contract', to: pid, good: GOODS[gi].id, n, unit, due: T + rnd(2.5, 4) * DAY, who: (ports[pid].make.some(m => RECIPES[m] && RECIPES[m][GOODS[gi].id]) && WORKS[GOODS[gi].id]) || USERS[GOODS[gi].id] || 'the merchants', day: d });
+  }));
+}
+function ecoStep(dt){
+  econ.acc += dt;
+  while (econ.acc >= HOUR){ econ.acc -= HOUR; ecoHour(); }
+  const d = dayOf(T);
+  if (d !== econ.day){ econ.day = d; ecoDay(d); }
+}
+// what you know of prices elsewhere: what you saw last time you were there
+function notePrices(P){
+  pl.known[P.id] = { t: T, p: Object.fromEntries(GOODS.map(g => [g.id, [stockOf(P, g.id) >= 1 ? priceOf(P, g.id, false) : 0, priceOf(P, g.id, true)]])) };
+}
+function bestElsewhere(P, gid){
+  let best = null;
+  for (const id in pl.known){
+    if (+id === P.id) continue;
+    const K = pl.known[id], v = K.p[gid];
+    if (v && (!best || v[1] > best.v)) best = { v: v[1], P: ports[id], age: (T - K.t) / DAY };
+  }
+  return best;
+}
+const ageStr = a => a < 0.5 ? 'today' : a < 1.5 ? 'yesterday' : `${Math.round(a)} days ago`;
+const ctrText = c => `Wanted by ${c.who} of <b>${ports[c.to].name}</b>: ${c.n} crates of ${GOOD[c.good].name.toLowerCase()} at <b>${c.unit}</b> a crate, ${c.n * c.unit} in all. By day ${dayOf(c.due)}, ${clockStr(c.due)}.`;
 
 // ---------------------------------------------------------------- weather
 // each day has a character: a sea breeze day, a Maestrale, a Tramontana, a Scirocco, a calm, or a Libeccio gale.
@@ -1652,7 +1782,7 @@ function makeShip(type, x, y, h, role){
 const outH = P => Math.atan2(-P.tx, P.ty); // lying alongside, bow toward the harbour mouth
 const ship = makeShip('schooner', home.mx, home.my, outH(home), 'player');
 const pl = {
-  coins: 150, cargo: {}, parcels: [], catch: [], found: {}, visited: {}, seen: {}, friends: {}, dest: -1,
+  coins: 150, cargo: {}, paid: {}, known: {}, parcels: [], catch: [], found: {}, visited: {}, seen: {}, friends: {}, dest: -1,
   stats: { dist: 0, best: 0, storms: 0, nights: 0, trades: 0, gybes: 0, crash: 0, surf: 0 }, tips: {},
 };
 const cargoN = () => Object.values(pl.cargo).reduce((a, b) => a + b, 0) + pl.parcels.filter(q => q.kind === 'parcel').length;
@@ -1662,8 +1792,6 @@ let ai = [], critters = [];
 let T = 10.5 * HOUR;
 let parts = [], discT = 0, saveT = 0, shake = 0, spawnT = 0, lifeT = 0;
 let started = false, paused = false, moored = null;
-const reqs = ports.map(() => []);
-let reqDay = ports.map(() => -1);
 
 function load(){
   try {
@@ -1674,12 +1802,14 @@ function load(){
       up: s.up || {}, paint: s.paint || 'navy', tanbark: !!s.tanbark, trimA: s.trimA || 30 });
     Object.assign(pl, s.pl || {});
     pl.stats = Object.assign({ dist: 0, best: 0, storms: 0, nights: 0, trades: 0, gybes: 0, crash: 0, surf: 0 }, pl.stats);
-    pl.tips = pl.tips || {}; pl.catch = pl.catch || []; pl.found = pl.found || {};
+    pl.tips = pl.tips || {}; pl.catch = pl.catch || []; pl.found = pl.found || {}; pl.known = pl.known || {}; pl.paid = pl.paid || {};
     const f = atob(s.fog);
     for (const id of s.disc || []) if (isles[id]) isles[id].disc = true;
-    (s.market || []).forEach((m, i) => { if (market[i]) Object.assign(market[i], m); });
-    (s.reqs || []).forEach((q, i) => { if (reqs[i]) reqs[i] = q; });
-    if (s.reqDay) reqDay = s.reqDay;
+    if (s.econ && s.econ.st && s.econ.st.length === ports.length && s.econ.st[0].length === GOODS.length){
+      Object.assign(econ, s.econ);
+      econ.st = s.econ.st.map((row, pid) => row.map((v, gi) => Object.assign(econ.st[pid][gi], { s: v })));
+    }
+    pl.parcels = pl.parcels.filter(q => q.kind === 'contract' || q.kind === 'parcel' || q.kind === 'order');
     T = s.t || T;
     if (s.moored != null && ports[s.moored]){ moored = ports[s.moored]; ship.berth = s.berth || null; }
     else if (ship.hull < 1) ship.hull = 0;
@@ -1692,7 +1822,7 @@ function save(){
     for (let i = 0; i < fog.length; i++) f += String.fromCharCode(fog[i]);
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       x: ship.x, y: ship.y, h: ship.h, set: ship.set, hull: ship.hull, anchor: ship.anchor && !ship.anchor.weigh ? { x: ship.anchor.x, y: ship.anchor.y } : null, aground: ship.aground, rig: ship.rig, foul: ship.foul, up: ship.up, paint: ship.paint, tanbark: ship.tanbark, trimA: ship.trimA,
-      pl, market, reqs, reqDay, fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T, wseed: WSEED, moored: moored ? moored.id : null, berth: ship.berth,
+      pl, econ: Object.assign({}, econ, { st: econ.st.map(row => row.map(e => Math.round(e.s * 10) / 10)) }), fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T, wseed: WSEED, moored: moored ? moored.id : null, berth: ship.berth,
     }));
   } catch (e){}
 }
@@ -2799,43 +2929,41 @@ function closePanel(){ pEl('panel').classList.add('hidden'); paused = false; pan
 const rows = r => `<table>${r.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</table>`;
 const pct = v => Math.round(clamp(v, 0, 1) * 100) + '%';
 
-// ---------------------------------------------------------------- townsfolk and their errands
-const FOLK = ['Nonna Lucia', 'Peppino', 'Carmela', 'Don Ciro', 'Assunta', 'Tonino', 'Rosaria', 'Gennaro', 'Filomena', 'Salvatore',
-  'Teresa', 'Enzo', 'Graziella', 'Pasquale', 'Marisa', 'Vittorio', 'Concetta', 'Aldo', 'Lina', 'Franco', 'Maestro Biagio', 'Zia Nunzia'];
-const ITEMS = ['a basket of figs for her sister', 'a mended fishing net', 'a letter, sealed with wax', 'a box of lace', 'a mandolin',
-  'a wedding cake (carefully!)', 'seeds for the terraces', 'a crate of blood oranges', 'a painting of the harbour', 'a sack of almonds',
-  'hand-made sandals', 'a cage of very loud canaries', 'the parish register', 'a new fishing lamp', 'a jar of honey', 'a hat, much admired'];
-function genReqs(P){
-  const d = dayOf(T);
-  if (reqDay[P.id] === d) return;
-  reqDay[P.id] = d;
-  reqs[P.id] = reqs[P.id].filter(q => q.day > d - 3);
-  for (let k = 0; k < 6 && reqs[P.id].length < 2; k++){
-    const Q = pick(ports.filter(q => q !== P));
-    const km = Math.hypot(Q.bx - P.bx, Q.by - P.by) / 1000;
-    if (Math.random() < 0.55) reqs[P.id].push({ kind: 'parcel', from: P.id, to: Q.id, who: pick(FOLK), what: pick(ITEMS), reward: Math.round(16 + km * 7), day: d });
-    else {
-      const g = pick(Q.want), n = irnd(2, 5);
-      reqs[P.id].push({ kind: 'order', from: P.id, to: Q.id, who: pick(FOLK), good: g, n, reward: Math.round(GOOD[g].base * n * 0.5 + 12 + km * 4), day: d });
-    }
-  }
-}
-const reqText = q => q.kind === 'parcel'
+// ---------------------------------------------------------------- contracts: what a merchant short of something will pay to have it brought
+const reqText = q => q.kind === 'contract' ? ctrText(q) : q.kind === 'parcel'
   ? `<b>${q.who}</b> asks you to carry ${q.what} to <b>${ports[q.to].name}</b>. Pays ${q.reward}.`
   : `<b>${q.who}</b> in <b>${ports[q.to].name}</b> is short of ${GOOD[q.good].name.toLowerCase()}: bring ${q.n} crates. Market price and ${q.reward} on top.`;
-// arriving: hand over anything meant for this harbour
+// arriving: hand over anything meant for this harbour; contracts that ran out of time are gone
 function deliver(P){
   for (const q of pl.parcels.slice()){
+    if (q.kind === 'contract' && q.due < T){
+      pl.parcels.splice(pl.parcels.indexOf(q), 1);
+      pl.friends[ports[q.to].name] = Math.max(0, (pl.friends[ports[q.to].name] || 0) - 1);
+      toast(`Too late: ${q.who} of ${ports[q.to].name} found their ${GOOD[q.good].name.toLowerCase()} elsewhere.`);
+      continue;
+    }
     if (q.to !== P.id) continue;
-    if (q.kind === 'order' && (pl.cargo[q.good] || 0) < q.n){ toast(`${q.who} is waiting for ${q.n} crates of ${GOOD[q.good].name.toLowerCase()}.`); continue; }
-    let pay = q.reward;
-    if (q.kind === 'order'){ pay += priceOf(P, q.good, true) * q.n; pl.cargo[q.good] -= q.n; if (!pl.cargo[q.good]) delete pl.cargo[q.good]; }
+    if ((q.kind === 'order' || q.kind === 'contract') && (pl.cargo[q.good] || 0) < q.n){ toast(`Still owed to ${q.who}: ${q.n} crates of ${GOOD[q.good].name.toLowerCase()}. You have ${pl.cargo[q.good] || 0}.`); continue; }
+    let pay = q.kind === 'contract' ? q.unit * q.n : q.reward;
+    if (q.kind === 'order') pay += priceOf(P, q.good, true) * q.n;
+    if (q.kind !== 'parcel'){
+      takeCargo(q.good, q.n);
+      econ.st[P.id][GI[q.good]].s += q.n;
+    }
     pl.coins += pay;
     pl.friends[P.name] = (pl.friends[P.name] || 0) + 1;
     pl.parcels.splice(pl.parcels.indexOf(q), 1);
-    toast(q.kind === 'parcel' ? `${q.who}'s ${q.what.replace(/^an? /, '').replace(/,.*$/, '')} arrives safely. +${pay}` : `${q.who} is delighted. +${pay}`);
+    pl.stats.contracts = (pl.stats.contracts || 0) + (q.kind === 'contract' ? 1 : 0);
+    toast(q.kind === 'parcel' ? `${q.who}'s ${q.what.replace(/^an? /, '').replace(/,.*$/, '')} arrives safely. +${pay}` : `Delivered to ${q.who}: ${q.n} crates of ${GOOD[q.good].name.toLowerCase()}. Paid ${pay}.`);
     sfx.coins();
   }
+}
+// cargo out of the hold, and what it cost you with it
+function takeCargo(g, n){
+  const have = pl.cargo[g] || 0, k = Math.min(n, have);
+  if (have) pl.paid[g] = (pl.paid[g] || 0) * (have - k) / have;
+  pl.cargo[g] = have - k;
+  if (!pl.cargo[g]){ delete pl.cargo[g]; delete pl.paid[g]; }
 }
 
 // ---------------------------------------------------------------- harbours
@@ -2884,7 +3012,7 @@ function moor(P){
   const first = !pl.visited[P.name];
   if (first) pl.visited[P.name] = dayOf(T);
   deliver(P);
-  genReqs(P);
+  notePrices(P);
   sfx.bell();
   if (pendingRescue === P){ pendingRescue = null; rescueBill(P); save(); return; }
   harbour(P, 'market', first);
@@ -2934,14 +3062,16 @@ function waitUntil(t1, P){
   const t0 = T;
   const S = nextStorm(t0, (t1 - t0) / HOUR);
   T = t1;
-  for (const m of market) for (const k in m) m[k] *= Math.exp(-(t1 - t0) / (1.5 * DAY));
+  // the coast goes on trading while you wait
+  for (let h = 0; h < Math.min(120, (t1 - t0) / HOUR); h++){ T = t0 + h * HOUR; ecoHour(); if (dayOf(T) !== econ.day){ econ.day = dayOf(T); ecoDay(econ.day); } }
+  T = t1;
   for (const q of ai) q.gone = true;
   ai.length = 0; critters.length = 0; parts.length = 0; ship.wake.length = 0;
   for (const F of fleet) F.ship = null;
   for (const S of steamers) S.ship = null;
   ship.wind = windAt(ship.x, ship.y, T);
   if (S && S.t1 <= t1 && S.t1 > t0){ pl.stats.storms++; toast('The gale blew itself out while you sat snug in harbour.'); }
-  genReqs(P);
+  notePrices(P);
   sfx.bell();
   harbour(P, 'master');
 }
@@ -2972,17 +3102,23 @@ function harbour(P, tab = harbourTab, postcard = false){
   let body = `<div class="tabs">${tabs}</div><p>Coins <b>${pl.coins}</b> &middot; hold ${hold}${hearts}</p>`;
   if (postcard) body += `<div class="postcard"><b>${P.name}</b><br>${P.blurb}</div>`;
   if (tab === 'market'){
+    // the goods of this harbour: what the warehouses hold, the price to buy and to sell, and the best you know of elsewhere
     body += '<table>';
     for (const g of GOODS){
-      const have = pl.cargo[g.id] || 0, can = sells(P, g.id);
-      if (!can && !have && !P.want.includes(g.id)) continue;
-      const tag = P.make.includes(g.id) ? ' <span class="make">local</span>' : P.want.includes(g.id) ? ' <span class="want">wanted</span>' : '';
-      const buy = can ? `<button class="px sm" data-a="buy" data-v="${g.id}">BUY ${priceOf(P, g.id, false)}</button><button class="px sm" data-a="buy5" data-v="${g.id}">+5</button>` : '';
-      const sell = `<button class="px sm" data-a="sell" data-v="${g.id}" ${have ? '' : 'disabled'}>SELL ${priceOf(P, g.id, true)}</button>${have > 1 ? `<button class="px sm" data-a="sellall" data-v="${g.id}">ALL</button>` : ''}`;
-      body += `<tr class="mk"><td>${g.name}${tag}${have ? `<br><small>${have} aboard</small>` : ''}</td><td>${buy}<br>${sell}</td></tr>`;
+      const have = pl.cargo[g.id] || 0, st = stockOf(P, g.id), e = econ.st[P.id][GI[g.id]];
+      if (st < 1 && !have && e.cons < 1 && !P.want.includes(g.id)) continue;
+      const tag = (IMPORTS[P.name] || []).includes(g.id) ? ' <span class="make">landed here</span>' : P.make.includes(g.id) ? ' <span class="make">made here</span>' : P.want.includes(g.id) || e.tgt >= 14 ? ' <span class="want">wanted</span>' : '';
+      const B = bestElsewhere(P, g.id), avg = have ? Math.round(pl.paid[g.id] / have) : 0;
+      const info = [`${stockWord(st)} in the warehouses`];
+      if (have) info.push(`${have} aboard, paid ${avg} each`);
+      if (B) info.push(`sells for ${B.v} at ${B.P.name}, ${ageStr(B.age)}`);
+      const buy = st >= 1 ? `<button class="px sm" data-a="buy" data-v="${g.id}">BUY ${priceOf(P, g.id, false)}</button><button class="px sm" data-a="buy5" data-v="${g.id}">+5</button>` : '<small>none to buy</small>';
+      const sp = priceOf(P, g.id, true);
+      const sell = `<button class="px sm" data-a="sell" data-v="${g.id}" ${have ? '' : 'disabled'}>SELL ${sp}</button>${have > 1 ? `<button class="px sm" data-a="sellall" data-v="${g.id}">ALL</button>` : ''}`;
+      body += `<tr class="mk"><td>${g.name}${tag}<br><small>${info.join(' &middot; ')}</small></td><td>${buy}<br>${sell}</td></tr>`;
     }
-    const elsewhere = ports.filter(Q => Q !== P && (pl.visited[Q.name] || known(Q)));
-    if (elsewhere.length) body += '</table><h3>Wanted elsewhere</h3><table>' + elsewhere.map(Q => `<tr><td>${Q.name}</td><td><small>${Q.want.map(k => GOOD[k].name.toLowerCase()).join(', ')}</small></td></tr>`).join('');
+    const elsewhere = ports.filter(Q => Q !== P);
+    body += '</table><h3>Up and down the coast</h3><table>' + elsewhere.map(Q => `<tr><td>${Q.name}${pl.known[Q.id] ? `<br><small>prices seen ${ageStr((T - pl.known[Q.id].t) / DAY)}</small>` : ''}</td><td><small>makes ${Q.make.map(k => GOOD[k].name.toLowerCase()).join(', ')}<br>needs ${Q.want.map(k => GOOD[k].name.toLowerCase()).join(', ')}</small></td></tr>`).join('');
     body += '</table>';
     if (pl.catch.length){
       const tot = pl.catch.reduce((a, q) => a + fishPrice(P, q), 0);
@@ -2994,9 +3130,9 @@ function harbour(P, tab = harbourTab, postcard = false){
       const G = GEAR[k], have = upOf(ship, k), locked = G.need && !upOf(ship, G.need);
       body += `<div class="req">${G.name}<br><small>${G.what}</small><br>` + (have ? '<small>aboard</small>' : locked ? `<small>needs the ${GEAR[G.need].name.toLowerCase()}</small>` : `<button class="px sm" data-a="gear" data-v="${k}" ${pl.coins >= G.cost ? '' : 'disabled'}>BUY ${G.cost}</button>`) + '</div>';
     }
-    body += '<p class="help">Local goods are cheap here. Wanted goods fetch a good price. Prices move as you buy and sell, and settle again over a few days.</p>';
+    body += '<p class="help">Prices follow the warehouses: what is plentiful is cheap, what is scarce is dear, and every crate you buy or sell moves them. Workshops need their raw goods: limoncello needs lemons, pasta grain, salted anchovies salt. Other traders work these waters too, so a good price does not last for ever. Prices elsewhere are what you saw when you were last there.</p>';
   } else if (tab === 'yard'){
-    const hullCost = Math.ceil((ship.t.hull - ship.hull) * 1.4), rigCost = Math.ceil((1 - ship.rig) * 160), foulCost = Math.ceil(ship.foul * 400);
+    const wood = clamp(ecoPrice(P.id, GI.timber, 0) / GOOD.timber.base, 0.7, 1.8), hullCost = Math.ceil((ship.t.hull - ship.hull) * 1.4 * wood), rigCost = Math.ceil((1 - ship.rig) * 160), foulCost = Math.ceil(ship.foul * 400);
     body += rows([['Hull', pct(ship.hull / ship.t.hull)], ['Sails and rigging', pct(ship.rig)], ['Weed on the bottom', ship.foul > 0.01 ? `${Math.round(ship.foul * 100)}% slower` : 'clean']]);
     const rep = [];
     if (hullCost > 0) rep.push(`<button class="px sm" data-a="rep" data-v="hull" ${pl.coins >= hullCost ? '' : 'disabled'}>MEND HULL ${hullCost}</button>`);
@@ -3019,14 +3155,18 @@ function harbour(P, tab = harbourTab, postcard = false){
     body += `<p><button class="px sm" data-a="wait" data-v="3">WAIT 3 HOURS</button> <button class="px sm" data-a="wait" data-v="morning">SLEEP TILL MORNING</button>` +
       (S ? ` <button class="px sm" data-a="wait" data-v="storm">WAIT OUT THE GALE</button>` : '') + '</p>';
     if (S) body += `<p class="help">A Libeccio gale is due ${S.t0 <= T ? '<b>now</b>' : `day ${dayOf(S.t0)} around ${clockStr(S.t0)}`}. Better to be in harbour.</p>`;
-    body += '<h3>Errands</h3>';
+    // the harbour master hears everything: what has happened along the coast, and who needs what
+    const news = econ.news.filter(n => T - n.t < 3 * DAY).slice(0, 6);
+    body += '<h3>News along the coast</h3>' + (news.length ? news.map(n => `<div class="req">${n.text}<br><small>${ageStr((T - n.t) / DAY)}</small></div>`).join('') : '<p class="help">Nothing much happening. Fair winds.</p>');
+    body += '<h3>Contracts</h3>';
+    const open = econ.ctr.filter(c => !c.taken && c.due > T).sort((a, b) => Math.hypot(ports[a.to].cx - P.cx, ports[a.to].cy - P.cy) - Math.hypot(ports[b.to].cx - P.cx, ports[b.to].cy - P.cy));
+    if (open.length) for (const c of open){
+      const here = c.to === P.id, have = pl.cargo[c.good] || 0;
+      body += `<div class="req">${ctrText(c)}${have ? `<br><small>you have ${have} aboard</small>` : ''}<br>${here && have >= c.n ? `<button class="px sm" data-a="fill" data-v="${c.id}">DELIVER NOW</button>` : `<button class="px sm" data-a="take" data-v="${c.id}">TAKE IT ON</button>`}</div>`;
+    } else body += '<p class="help">Nobody is short of anything just now. Contracts come up when a town runs low.</p>';
     const mine = pl.parcels;
-    if (reqs[P.id].length) for (let i = 0; i < reqs[P.id].length; i++){
-      const q = reqs[P.id][i];
-      body += `<div class="req">${reqText(q)}<br><button class="px sm" data-a="take" data-v="${i}">ACCEPT</button></div>`;
-    } else body += '<p class="help">Nobody needs anything carried today. Come back tomorrow.</p>';
     if (mine.length){
-      body += '<h3>Aboard</h3>' + mine.map(q => `<div class="req">${reqText(q)}</div>`).join('');
+      body += '<h3>Taken on</h3>' + mine.map(q => `<div class="req">${reqText(q)}</div>`).join('');
     }
     body += `<h3>Forecast</h3><table>${fc.map(([a, b, c], i) => `<tr><td>${a}</td><td>${b}${i && fc[i - 1][2] === c ? '' : `<br><small>${c}</small>`}</td></tr>`).join('')}</table>`;
   }
@@ -3035,22 +3175,28 @@ function harbour(P, tab = harbourTab, postcard = false){
     if (a === 'buy' || a === 'buy5'){
       for (let k = 0; k < (a === 'buy5' ? 5 : 1); k++){
         const pr = priceOf(P, v, false);
-        if (pl.coins < pr || cargoN() >= holdOf()) break;
-        pl.coins -= pr; pl.cargo[v] = (pl.cargo[v] || 0) + 1; market[P.id][v] += 1;
+        if (pl.coins < pr || cargoN() >= holdOf() || stockOf(P, v) < 1) break;
+        pl.coins -= pr; pl.cargo[v] = (pl.cargo[v] || 0) + 1; pl.paid[v] = (pl.paid[v] || 0) + pr; econ.st[P.id][GI[v]].s -= 1;
       }
       if (cargoN() >= holdOf()) toast('The hold is full.');
+      else if (stockOf(P, v) < 1) toast(`That was the last of the ${GOOD[v].name.toLowerCase()} in ${P.name}.`);
       sfx.coins();
     }
     if (a === 'sell' || a === 'sellall'){
-      const n = a === 'sellall' ? (pl.cargo[v] || 0) : 1;
-      for (let k = 0; k < n && pl.cargo[v] > 0; k++){
-        pl.coins += priceOf(P, v, true); pl.cargo[v]--; market[P.id][v] -= 1; pl.stats.trades++;
-      }
-      if (!pl.cargo[v]) delete pl.cargo[v];
+      const n = a === 'sellall' ? (pl.cargo[v] || 0) : 1, have = pl.cargo[v] || 0, cost = have ? pl.paid[v] / have : 0;
+      let got = 0, k = 0;
+      for (; k < n && pl.cargo[v] > 0; k++){ const pr = priceOf(P, v, true); got += pr; pl.coins += pr; takeCargo(v, 1); econ.st[P.id][GI[v]].s += 1; pl.stats.trades++; }
+      const prof = Math.round(got - cost * k);
+      if (k) toast(`Sold ${k} ${k > 1 ? 'crates' : 'crate'} for ${got}: ${prof >= 0 ? `${prof} profit` : `a loss of ${-prof}`}.`);
+      pl.stats.profit = (pl.stats.profit || 0) + prof;
       sfx.coins();
     }
+    if (a === 'fill'){
+      const c = econ.ctr.find(q => q.id === +v);
+      if (c && (pl.cargo[c.good] || 0) >= c.n){ c.taken = true; pl.parcels.push(c); deliver(P); }
+    }
     if (a === 'rep'){
-      const cost = v === 'hull' ? Math.ceil((ship.t.hull - ship.hull) * 1.4) : v === 'rig' ? Math.ceil((1 - ship.rig) * 160) : Math.ceil(ship.foul * 400);
+      const cost = v === 'hull' ? Math.ceil((ship.t.hull - ship.hull) * 1.4 * clamp(ecoPrice(P.id, GI.timber, 0) / GOOD.timber.base, 0.7, 1.8)) : v === 'rig' ? Math.ceil((1 - ship.rig) * 160) : Math.ceil(ship.foul * 400);
       if (pl.coins < cost) return;
       pl.coins -= cost;
       if (v === 'hull') ship.hull = ship.t.hull; else if (v === 'rig') ship.rig = 1; else ship.foul = 0;
@@ -3083,12 +3229,11 @@ function harbour(P, tab = harbourTab, postcard = false){
       return;
     }
     if (a === 'take'){
-      const q = reqs[P.id][+v];
-      if (!q) return;
-      if (pl.parcels.length >= 4){ toast('You have enough errands for now.'); return; }
-      if (q.kind === 'parcel' && cargoN() >= holdOf()){ toast('No room in the hold.'); return; }
-      reqs[P.id].splice(+v, 1); pl.parcels.push(q); sfx.tap();
-      toast(q.kind === 'parcel' ? `Stowed: ${q.what}. For ${ports[q.to].name}.` : `Noted: ${q.n} crates of ${GOOD[q.good].name.toLowerCase()} for ${ports[q.to].name}.`);
+      const c = econ.ctr.find(q => q.id === +v);
+      if (!c || c.taken) return;
+      if (pl.parcels.length >= 4){ toast('You have enough contracts for now.'); return; }
+      c.taken = true; pl.parcels.push(c); sfx.tap();
+      toast(`Agreed: ${c.n} crates of ${GOOD[c.good].name.toLowerCase()} for ${ports[c.to].name}, by day ${dayOf(c.due)}.`);
     }
     harbour(P, harbourTab);
   });
@@ -3226,7 +3371,7 @@ function rescue(){
 function logbook(){
   const s = pl.stats;
   let body = rows([['Days', dayOf(T)], ['Sailed', `${(s.dist / 1852).toFixed(1)} nm`], ['Best speed', `${s.best.toFixed(1)} kn`],
-    ['Gales weathered', s.storms], ['Gybes', `${s.gybes} neat, ${s.crash} crash`], ['Crates sold', s.trades], ['Fish landed', s.fish || 0],
+    ['Gales weathered', s.storms], ['Gybes', `${s.gybes} neat, ${s.crash} crash`], ['Crates sold', s.trades], ['Trading profit', s.profit || 0], ['Contracts filled', s.contracts || 0], ['Fish landed', s.fish || 0],
     ...(s.bestFish ? [['Best fish', `${FISH[s.bestFish.sp].name}, ${s.bestFish.kg} kg`]] : []), ['Coins', pl.coins]]);
   body += '<h3>Harbours</h3><table class="log">';
   for (const P of ports){
@@ -3244,7 +3389,7 @@ function logbook(){
   for (const k in FISH){ const d = pl.seen['c_' + k]; body += `<tr><td class="${d ? '' : 'unk'}">${d ? FISH[k].name : '???'}</td><td>${d ? `day ${d}` : ''}</td></tr>`; }
   body += '</table>';
   const jobs = pl.parcels;
-  if (jobs.length) body += '<h3>Errands</h3>' + jobs.map(q => `<div class="req">${reqText(q)}</div>`).join('');
+  if (jobs.length) body += '<h3>Contracts</h3>' + jobs.map(q => `<div class="req">${reqText(q)}</div>`).join('');
   const cargo = Object.keys(pl.cargo);
   body += '<h3>In the hold</h3><p>' + (cargo.length ? cargo.map(k => `${pl.cargo[k]} ${GOOD[k].name.toLowerCase()}`).join(', ') : 'Nothing but the smell of lemons.') + '</p>';
   panel('Logbook', body, [['CLOSE', () => { sfx.tap(); closePanel(); }, true]]);
@@ -3511,7 +3656,7 @@ function update(dt){
   compact(parts, p => p.life > 0);
   if (parts.length > 700) parts.splice(0, parts.length - 700);
   shake = Math.max(0, shake - dt * 3);
-  for (const m of market) for (const k in m) m[k] *= Math.exp(-dt / (1.5 * DAY));
+  ecoStep(dt);
 
   // storm warnings: the barometer gives you twice the time
   const lead = upOf(ship, 'glass') ? 16 : 8;
@@ -5595,7 +5740,7 @@ const sfx = (() => {
 layout();
 const hasSave = load();
 if (hasSave){ el('btnStart').textContent = 'CONTINUE'; el('btnNew').classList.remove('hidden'); }
-else { moored = home; pl.visited[home.name] = 1; genReqs(home); }
+else { moored = home; pl.visited[home.name] = 1; notePrices(home); }
 setSail(ship.set);
 setTrimUI();
 setVaneUI();
@@ -5683,7 +5828,7 @@ function frame(now){
 requestAnimationFrame(frame);
 window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
-  get trimManual(){ return trimManual; }, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
+  get trimManual(){ return trimManual; }, econ, ecoPrice, GI, GOODS, ecoHour, ecoDay, priceOf, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
 </script>
 </body>
