@@ -1537,6 +1537,8 @@ const toastEl = document.getElementById('toast');
 const toastQ = [];
 let toastT = 0;
 function toast(msg){ if (!toastQ.includes(msg) && toastEl.textContent !== msg) toastQ.push(msg); }
+// news that cannot wait goes straight up
+function toastNow(msg){ toastQ.unshift(msg); toastT = 0; }
 // a tip shown only the first time it applies
 function tip(key, msg){ if (pl.tips[key]) return; pl.tips[key] = 1; toast(msg); }
 function updToast(dt){
@@ -1822,12 +1824,54 @@ function collide(a, b){
   if (!a.kin) a.v = vax * fax + vay * fay;
   if (!b.kin) b.v = vbx * fbx + vby * fby;
   for (const [s, o] of [[a, b], [b, a]]) if (s !== ship && !s.kin){ s.bumpT = 4; s.bumpAway = Math.atan2(s.x - o.x, -(s.y - o.y)); }
+  // the blow: the energy of the closing speed, shared by weight. The lighter hull takes more of it, a stem driven into
+  // a ship's side breaks her planks rather than its own, and big ships hardly notice what breaks a small one
   const impact = -vrel;
-  if (impact > 2 && (a === ship || b === ship)){
-    ship.hull = Math.max(0, ship.hull - (impact - 2) * 3);
-    sfx.crunch(0.5); shake = Math.min(2, shake + impact * 0.2);
-    if (T > bumpToastT){ bumpToastT = T + 6; toast(a.t.L > 30 || b.t.L > 30 ? 'Crash! You hit a big ship.' : 'Bump! Mind the other boats.'); }
+  if (impact < 0.8 || a.sinking || b.sinking) return;
+  // one blow, not the grinding that follows it
+  if ((a.hitWith === b || b.hitWith === a) && T - Math.max(a.hitAt || 0, b.hitAt || 0) < 1.5) return;
+  a.hitWith = b; b.hitWith = a; a.hitAt = b.hitAt = T;
+  const ra = a.t.L * a.t.B * a.t.B, rb = b.t.L * b.t.B * b.t.B, mu = ra * rb / (ra + rb);
+  const E = 0.5 * mu * (impact - 0.8) * (impact - 0.8);
+  const endOn = (s, px, py) => clamp(Math.abs((px - s.x) * Math.sin(s.h) - (py - s.y) * Math.cos(s.h)) / (s.t.L / 2), 0, 1);
+  const ka = 1.3 - 0.8 * endOn(a, cp[0], cp[1]), kb = 1.3 - 0.8 * endOn(b, cp[2], cp[3]);
+  const fa = 0.1 * E / ra * ka, fb = 0.1 * E / rb * kb;
+  const kinA = a.kin && a.mode !== 'moored', kinB = b.kin && b.mode !== 'moored', modeA = a.mode, modeB = b.mode;
+  const da = Math.min(a.hull, fa * a.t.hull), db = Math.min(b.hull, fb * b.t.hull);
+  for (const [s, dmg] of [[a, da], [b, db]]){
+    if (s === ship){ s.hull = Math.max(0, s.hull - dmg); continue; }
+    s.hull = Math.max(s.role === 'steamer' ? s.t.hull * 0.2 : 0, s.hull - dmg);
+    if (s.hull <= 0) sinkBoat(s);
   }
+  // splinters fly where they met
+  const mx = (cp[0] + cp[2]) / 2, my = (cp[1] + cp[3]) / 2, n = Math.min(30, (da + db) * 0.8 + 2);
+  if (visible(a)) for (let i = 0; i < n; i++) puff('splinter', mx, my, rnd(-8, 8), rnd(-8, 8), rnd(0.8, 2), 0.4, 0, 1);
+  if (a !== ship && b !== ship) return;
+  const me = a === ship ? a : b, them = a === ship ? b : a, mine = a === ship ? da : db, theirs = a === ship ? db : da;
+  const sev = mine / me.t.hull;
+  sfx.crunch(clamp(0.3 + sev * 3 + theirs / 60, 0.3, 1)); shake = Math.min(2.5, shake + impact * 0.25 + sev * 6);
+  // who ran into whom: whoever was closing faster pays for the other's planks
+  const mvx = Math.sin(me.h) * me.v, mvy = -Math.cos(me.h) * me.v, tvx = Math.sin(them.h) * them.v, tvy = -Math.cos(them.h) * them.v;
+  const ux = them.x - me.x, uy = them.y - me.y, ul = Math.hypot(ux, uy) || 1;
+  const mineClose = (mvx * ux + mvy * uy) / ul, theirClose = -(tvx * ux + tvy * uy) / ul;
+  const themKin = a === ship ? kinB : kinA, themMode = a === ship ? modeB : modeA;
+  const fault = mineClose >= theirClose && !themKin || themMode === 'moored' || themMode === 'fish';
+  let msg = them.t.L > 30 ? `Crash! You hit the ${them.name || TYPES[them.t.id].name.toLowerCase()}.` : `Crash! You rammed a ${TYPES[them.t.id].name.toLowerCase()}.`;
+  if (sev > 0.25) msg += ' Your planks are stove in!';
+  else if (sev > 0.08) msg += ' Your bow is damaged.';
+  if (them.sinking) msg += ' She is going down, her crew swimming for it.';
+  else if (theirs > them.t.hull * 0.3) msg += ' She is badly holed.';
+  if (fault && theirs > 1){
+    const fee = Math.min(pl.coins, Math.round(theirs * 1.5 + (them.sinking ? 25 : 0)));
+    if (fee > 0){ pl.coins -= fee; msg += ` You pay her owner ${fee} coins.`; }
+  }
+  if (T > bumpToastT || sev > 0.1 || them.sinking){ bumpToastT = T + 4; toastNow(msg); }
+}
+// a holed boat settles and goes down; her crew row away in the dinghy, her owner gets another in a day or two
+function sinkBoat(s){
+  if (s.sinking) return;
+  Object.assign(s, { sinking: 0.001, mode: 'sink', kin: true, path: null, goal: null });
+  if (s.F){ s.F.lostUntil = T + 2 * DAY; }
 }
 
 // ---------------------------------------------------------------- other boats: fishermen and coasters going about their day
@@ -2113,7 +2157,7 @@ function traffic(){
     if (dp > 2900){ if (s && dist(s, ship) > 2500){ s.gone = true; F.ship = null; } continue; }
     const want = homeAt(F, T);
     if (!s){
-      if (dp > 2400) continue;
+      if (dp > 2400 || (F.lostUntil && T < F.lostUntil)) continue;
       if (want){
         // just coming in? then she is still out there, sailing for the mouth
         if (T - arrivedAt(F, T) < 0.8 * HOUR && dp > 250){
@@ -2735,6 +2779,12 @@ function update(dt){
 
   // other boats
   for (const s of ai){
+    if (s.sinking){
+      s.sinking += dt / 9; s.v *= 0.96;
+      if (visible(s) && Math.random() < dt * 10) puff('foam', s.x + rnd(-1, 1) * s.t.B, s.y + rnd(-1, 1) * s.t.L * 0.4, 0, 0, 1.6, 0.8, 1.2, 0.9);
+      if (s.sinking >= 1) s.gone = true;
+      continue;
+    }
     if (s.mode === 'steam'){ steamStep(s); continue; }
     if (s.mode === 'moored'){ s.v = 0; continue; }
     if (s.mode === 'tow'){ kinStep(s, dt); continue; }
@@ -2756,7 +2806,7 @@ function update(dt){
   }
   compact(ai, s => !s.gone);
   allShips.length = 0; allShips.push(ship);
-  for (const q of ai) allShips.push(q);
+  for (const q of ai) if (!q.sinking) allShips.push(q);
   for (let i = 0; i < allShips.length; i++) for (let j = i + 1; j < allShips.length; j++){
     const a = allShips[i], b = allShips[j];
     if (Math.abs(a.x - b.x) < (a.t.L + b.t.L) * 0.6 && Math.abs(a.y - b.y) < (a.t.L + b.t.L) * 0.6) collide(a, b);
@@ -2777,7 +2827,7 @@ function update(dt){
   // particles
   for (const p of parts){
     p.x += p.vx * dt; p.y += p.vy * dt;
-    const k = Math.pow(p.kind === 'smoke' || p.kind === 'coal' ? 0.9 : 0.4, dt);
+    const k = Math.pow(p.kind === 'smoke' || p.kind === 'coal' ? 0.9 : p.kind === 'splinter' ? 0.25 : 0.4, dt);
     p.vx *= k; p.vy *= k;
     p.r += p.grow * dt; p.life -= dt;
   }
@@ -3397,7 +3447,7 @@ function shipSprite(s){
 }
 function drawShip(s){
   if (!onScreen(s.x, s.y, SPS)) return;
-  const e = shipSprite(s), n = e.n;
+  const e = shipSprite(s), n = e.n, sink = s.sinking || 0;
   const bx = Math.floor(s.x / MPP - ox) - n / 2 - FX, by = Math.floor(s.y / MPP - oy) - n / 2 - FY;
   for (let y = 0; y < n; y++){
     const yy = by + y;
@@ -3406,6 +3456,7 @@ function drawShip(s){
       const xx = bx + x;
       if (xx < 0 || xx >= FW) continue;
       const i = y * n + x, v = e.q[i];
+      if (sink && bay(xx + FX, yy + FY) < sink * 1.1) continue;
       if (v){ FB[yy * FW + xx] = v; continue; }
       const a = e.sh[i];
       if (a && a / 255 > bay(xx + FX, yy + FY)) FB[yy * FW + xx] = U.shadow;
@@ -3524,6 +3575,7 @@ function render(){
   for (const p of parts){
     const al = p.a * (p.life / p.max);
     if (p.kind === 'foam') disc(p.x, p.y, p.r, U.foam, al);
+    else if (p.kind === 'splinter') plot(Math.floor(p.x / MPP - ox), Math.floor(p.y / MPP - oy), al > 0.5 ? U.teak : U.wood, 1);
     else if (p.kind === 'splash') ring(p.x, p.y, p.r, U.white, al);
   }
   for (const c of critters) if (c.k !== 'shear') drawCritter(c);
@@ -4521,7 +4573,7 @@ const sfx = (() => {
   S.init = () => {
     if (ac) return;
     try {
-      ac = new (window.AudioContext || window.webkitAudioContext)();
+      ac = window.__ac = new (window.AudioContext || window.webkitAudioContext)();
       master = ac.createGain(); master.connect(ac.destination);
       fxBus = ac.createGain(); fxBus.connect(master);
       musicBus = ac.createGain();
@@ -4678,6 +4730,8 @@ const sfx = (() => {
     if (luff){ flapT -= dt; if (flapT <= 0){ flapT = rnd(0.12, 0.25); burst(0.09, 'bandpass', rnd(250, 450), 0.1, { q: 1.2 }); } }
     music();
   };
+  S.suspend = () => { if (ac && ac.state === 'running') ac.suspend().catch(() => {}); };
+  S.resume = () => { if (ac && ac.state === 'suspended') ac.resume().then(() => { musicAt = 0; }).catch(() => {}); };
   S.cycle = () => {
     S.mode = (S.mode + 1) % 3;
     try { localStorage.setItem('tramontana-snd', S.mode); } catch (e){}
@@ -4714,7 +4768,16 @@ el('btnNew').addEventListener('click', () => {
   try { localStorage.removeItem(SAVE_KEY); } catch (e){}
   location.reload();
 });
-addEventListener('visibilitychange', () => { if (document.hidden && started) save(); });
+// leaving the app pauses everything: the clock stops and the sea falls silent until you come back
+function away(hidden){
+  if (hidden){ if (started) save(); keys.clear(); helmHeld = false; trimHeld = false; sfx.suspend(); }
+  else { last = performance.now(); sfx.resume(); }
+}
+document.addEventListener('visibilitychange', () => away(document.hidden));
+addEventListener('pagehide', () => away(true));
+// some phones keep the sound suspended until the next touch
+document.addEventListener('pointerdown', () => { if (!document.hidden) sfx.resume(); });
+addEventListener('pageshow', () => { if (!document.hidden) away(false); });
 
 let last = performance.now(), rafIv = 16.7, rafPrev = 0, skipNext = false;
 // performance graph: open the page with #debug in the address
@@ -4731,6 +4794,7 @@ function weatherFx(dt){
 }
 function frame(now){
   requestAnimationFrame(frame);
+  if (document.hidden){ last = now; return; }
   const iv = rafPrev ? now - rafPrev : 16.7;
   rafPrev = now;
   rafIv = rafIv * 0.9 + Math.min(iv, 50) * 0.1;
@@ -4765,7 +4829,7 @@ function frame(now){
   }
 }
 requestAnimationFrame(frame);
-window.__game = { bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
+window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
   get trimManual(){ return trimManual; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
