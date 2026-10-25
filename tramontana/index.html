@@ -359,6 +359,9 @@ const C = {
   roof:'#c9673e', roofDk:'#9c4829', roofLt:'#e08d5e', roofMid:'#b0552f', pave:'#d6cbb2', paveDk:'#b9ad94',
   wall1:'#f6ead0', wall2:'#f4c7a9', wall3:'#f2d47e', wall4:'#e9aa6e', wall5:'#ffffff', wall6:'#d8e6ea',
   wallSh1:'#d9c9a8', wallSh2:'#d6a688', wallSh3:'#d2b25e', wallSh4:'#c78a52', wallSh5:'#dcdcd4', wallSh6:'#b4c4ca',
+  wall7:'#f2b5ad', wallSh7:'#d08d86', wall8:'#cfe4c8', wallSh8:'#a6c39f', wall9:'#f8e3a6', wallSh9:'#d9c07c', wall10:'#e9c3d6', wallSh10:'#c79db2',
+  cotto:'#cf8458', cottoDk:'#ad6643', bloom:'#c93d82', bloomLt:'#ec6fae', shutter:'#3d8a5c', shutterB:'#4a7fa8', winDk:'#3a3340', iron2:'#4a4446',
+  slab1:'#c4b9a6', slab2:'#b2a794', slab3:'#cfc5b2', joint:'#8f8676', plane:'#5f9a3e', planeDk:'#3f6f28', planeLt:'#86b85a',
   domeG:'#2f8f6e', domeY:'#ecc63e', domeB:'#2f6fa8', stone:'#c0b59e', stoneDk:'#938a7a', stoneLt:'#dcd3be',
   woodDk:'#3f2614', wood:'#7a4a24', varnish:'#b9773a', teak:'#cc9c60', teakLt:'#e0b880',
   sail:'#f6efdc', sailSh:'#d6caab', tan:'#b9653c', tanSh:'#904b2b',
@@ -811,17 +814,17 @@ function drawPOI(Q){
 
 // towns, seen from above: flat roof terraces, terracotta hip roofs and white vaults, packed up the slope behind the quay.
 // a piazza with the church behind it, market stalls on the quay, cafés, a beach of umbrellas, people about
-const WALLS = ['wall1', 'wall2', 'wall3', 'wall4', 'wall5', 'wall6'];
+const WALLS = ['wall1', 'wall2', 'wall3', 'wall4', 'wall5', 'wall5', 'wall6', 'wall7', 'wall8', 'wall9', 'wall10', 'wall1'];
 for (const P of ports){
   const r = rng(P.id * 977 + 13);
-  P.houses = []; P.lights = []; P.lamps = []; P.stalls = []; P.cafes = []; P.umbrellas = []; P.walkers = [];
+  P.houses = []; P.lights = []; P.lamps = []; P.stalls = []; P.cafes = []; P.umbrellas = []; P.walkers = []; P.trees = [];
   const onLand = (x, y, lo, hi) => { const d = depthAt(x, y, false); return d > lo && d < hi && TSRC === P.isle; };
   const loc = (x, y) => { const dx = x - P.bx, dy = y - P.by; return [dx * P.tx + dy * P.ty, dx * P.nx + dy * P.ny]; };
   P.loc = loc;
-  const inPiazza = (u, v) => u > -26 && u < 32 && v < -11 && v > -44;
+  const inPiazza = (u, v) => u > -20 && u < 26 && v < -11 && v > -38;
   // the church first, at the head of the piazza
   {
-    const [x, y] = P.W(4, -60);
+    const [x, y] = P.W(3, -54);
     P.church = { gx: Math.round(x / MPP) - 8, gy: Math.round(y / MPP) - 18, w: 16, h: 34, dome: r() < 0.5 ? 'domeG' : 'domeB', side: r() < 0.5 ? -1 : 1 };
   }
   const C0 = P.church;
@@ -830,43 +833,69 @@ for (const P of ports){
     for (const o of P.houses) if (gx < o.gx + o.w + pad && gx + w + pad > o.gx && gy < o.gy + o.h + pad && gy + h + pad > o.gy) return true;
     return false;
   };
-  // rows climbing the slope; narrow alleys between houses, stairs between rows
-  const rowsN = P.isle ? 14 : 19;
-  let v = -16;
+  const house = (gx, gy, w, h, tall) => {
+    const small = w < 18 && h < 18;
+    const roof = r() < (tall ? 0.5 : 0.42) ? 'flat' : !small || r() < 0.8 ? 'hip' : 'vault';
+    const o = { gx, gy, w, h, roof, wall: WALLS[(r() * WALLS.length) | 0], ht: tall ? 12 + r() * 8 : 5 + r() * 9, seed: (r() * 1e6) | 0,
+      bloom: r() < 0.3, shut: r() < 0.7 ? 'shutter' : 'shutterB' };
+    P.houses.push(o);
+    // windows glowing at night, on the side toward the sea
+    if (r() < 0.65) P.lights.push([(gx + 1 + r() * (w - 2)) * MPP, (gy + h + 1.5) * MPP]);
+    return o;
+  };
+  // the waterfront: tall houses wall to wall along the back of the quay, the piazza opening between them
+  for (let u = -86; u < 94;){
+    const wm = 7 + r() * 6, dm = 10 + r() * 3;
+    const uu = u; u += wm + (r() < 0.16 ? 2 + r() * 1.5 : 0.2);
+    if (inPiazza(uu + wm / 2, -16) || uu + wm > -20 && uu < 26) continue;
+    const [x, y] = P.W(uu + wm / 2, -12 - dm / 2);
+    if (!onLand(x, y, 3, 270)) continue;
+    const w = Math.round(wm / MPP), h = Math.round(dm / MPP), gx = Math.round(x / MPP - w / 2), gy = Math.round(y / MPP - h / 2);
+    if (hits(gx, gy, w, h, 0)) continue;
+    house(gx, gy, w, h, true);
+  }
+  // rows climbing the slope behind: shoulder to shoulder, an alley now and then, steps between the rows
+  const rowsN = P.isle ? 13 : 17;
+  let v = -26;
   for (let row = 0; row < rowsN; row++){
-    const depthM = 7 + r() * 6;
-    const half = (P.isle ? 115 : 150) * Math.pow(1 - row / rowsN, 0.5) * (0.8 + r() * 0.35);
-    let u = -half + r() * 8;
+    const depthM = 7 + r() * 5;
+    const half = (P.isle ? 112 : 146) * Math.pow(1 - row / rowsN, 0.5) * (0.8 + r() * 0.35);
+    let u = -half + r() * 6;
     while (u < half){
-      const wm = 6 + r() * 9;
+      const wm = 6 + r() * 8;
       const [x, y] = P.W(u + wm / 2, v - depthM / 2);
-      const uu = u; u += wm + (r() < 0.12 ? 3 + r() * 7 : 0.8 + r() * 1.2);
-      if (r() < 0.03 + row / rowsN * 0.22) continue;
+      const uu = u; u += wm + (r() < 0.14 ? 2 + r() * 3 : 0.15 + r() * 0.5);
+      if (r() < 0.03 + row / rowsN * 0.25) continue;
       if (inPiazza(uu + wm / 2, v - depthM / 2)) continue;
       if (!onLand(x, y, 5, 270)) continue;
       const w = Math.round(wm / MPP), h = Math.round(depthM / MPP);
       const gx = Math.round(x / MPP - w / 2), gy = Math.round(y / MPP - h / 2);
-      if (hits(gx, gy, w, h, 1)) continue;
-      const roof = r() < 0.42 ? 'flat' : r() < 0.7 ? 'hip' : 'vault';
-      P.houses.push({ gx, gy, w, h, roof, wall: WALLS[(r() * WALLS.length) | 0], ht: 5 + r() * 9, seed: (r() * 1e6) | 0 });
-      // windows glowing at night, on the side toward the sea
-      if (r() < 0.6) P.lights.push([(gx + 1 + r() * (w - 2)) * MPP, (gy + h + 0.5) * MPP]);
+      if (hits(gx, gy, w, h, 0)) continue;
+      house(gx, gy, w, h, false);
     }
-    v -= depthM + 1.2 + r() * 2.2;
+    v -= depthM + 1.4 + r() * 1.6;
   }
-  // fill the gaps: the town is denser near the water and the piazza, thinning uphill
-  for (let k = 0; k < 2600; k++){
-    const u = (r() - 0.5) * (P.isle ? 230 : 300), vv = -14 - Math.pow(r(), 1.5) * (P.isle ? 170 : 220);
-    if (r() > Math.exp((vv + 14) / 120) * (1 - Math.abs(u) / 170)) continue;
+  // and fill the gaps nearer the water, where the town is densest
+  for (let k = 0; k < 1500; k++){
+    const u = (r() - 0.5) * (P.isle ? 220 : 290), vv = -24 - Math.pow(r(), 1.6) * (P.isle ? 150 : 200);
+    if (r() > Math.exp((vv + 24) / 110) * (1 - Math.abs(u) / 160)) continue;
     if (inPiazza(u, vv)) continue;
-    const wm = 6 + r() * 8, dm = 6 + r() * 7;
+    const wm = 6 + r() * 7, dm = 6 + r() * 6;
     const [x, y] = P.W(u, vv);
     if (!onLand(x, y, 5, 270)) continue;
     const w = Math.round(wm / MPP), h = Math.round(dm / MPP), gx = Math.round(x / MPP - w / 2), gy = Math.round(y / MPP - h / 2);
-    if (hits(gx, gy, w, h, 1)) continue;
-    const roof = r() < 0.42 ? 'flat' : r() < 0.7 ? 'hip' : 'vault';
-    P.houses.push({ gx, gy, w, h, roof, wall: WALLS[(r() * WALLS.length) | 0], ht: 5 + r() * 9, seed: (r() * 1e6) | 0 });
-    if (r() < 0.6) P.lights.push([(gx + 1 + r() * (w - 2)) * MPP, (gy + h + 0.5) * MPP]);
+    if (hits(gx, gy, w, h, 0)) continue;
+    house(gx, gy, w, h, false);
+  }
+  // trees: plane trees shading the back of the quay, palms and a pair of pines in the piazza, lemon trees in the gardens
+  for (let u = -80; u < 90; u += 10 + r() * 4){ if (u > -24 && u < 30) continue; const [x, y] = P.W(u, -9); P.trees.push({ x, y, k: r() < 0.25 ? 'palm' : 'plane', r: 2.4 + r() * 0.8 }); }
+  for (const [u, vv, k] of [[-17, -15, 'palm'], [23, -15, 'palm'], [-17, -34, 'plane'], [23, -34, 'plane'], [-8, -24, 'plane'], [14, -24, 'plane']]){ const [x, y] = P.W(u, vv); P.trees.push({ x, y, k, r: k === 'palm' ? 2.6 : 3 }); }
+  for (let k = 0; k < 400 && P.trees.length < 60; k++){
+    const u = (r() - 0.5) * 240, vv = -20 - r() * 160, [x, y] = P.W(u, vv);
+    if (!onLand(x, y, 5, 270) || inPiazza(u, vv)) continue;
+    const gx = Math.round(x / MPP), gy = Math.round(y / MPP);
+    if (hits(gx - 3, gy - 3, 6, 6, 1)) continue;
+    P.trees.push({ x, y, k: r() < 0.6 ? 'lemon' : r() < 0.6 ? 'plane' : 'cypress', r: 1.6 + r() * 1.2 });
   }
   // stalls along the back of the quay: striped awnings over crates of lemons, fish and greens
   const STRIPES = [['red', 'white'], ['green', 'white'], ['domeB', 'white'], ['gold', 'roofDk']];
@@ -875,8 +904,8 @@ for (const P of ports){
     P.stalls.push({ gx: Math.round(x / MPP) - 3, gy: Math.round(y / MPP) - 2, st: STRIPES[(r() * STRIPES.length) | 0], goods: ['lemon', 'foam', 'mq2', 'roofLt', 'gold'][(r() * 5) | 0] });
   }
   // café tables at the edge of the piazza and along the quay
-  for (let k = 0; k < 9; k++){
-    const u = -24 + r() * 52, vv = -14 - r() * 6;
+  for (let k = 0; k < 12; k++){
+    const u = k < 6 ? -18 + r() * 42 : (r() < 0.5 ? -70 + r() * 45 : 32 + r() * 50), vv = k < 6 ? -14 - r() * 6 : -9.5 - r() * 1;
     const [x, y] = P.W(u, vv);
     P.cafes.push({ gx: Math.round(x / MPP), gy: Math.round(y / MPP), col: ['white', 'red', 'gold', 'domeB'][(r() * 4) | 0] });
   }
@@ -1379,7 +1408,7 @@ function drawStructures(g, P, x0, y0, gx0, gy0){
         const [, v] = P.loc(x, y);
         const vis = along > 4 && along < 56;
         if (v > S.r - 1.1) c = vis && Math.floor(along / 2) % 2 ? C.lemon : C.stoneDk;
-        else { const row = Math.floor((v + 20) / 1.5), sl = ((along + (row % 2) * 0.9) % 1.8 + 1.8) % 1.8; c = sl < 0.6 || ((v + 20) % 1.5 + 1.5) % 1.5 < 0.6 ? C.stone : hash(Math.floor(along / 1.8), row, 61) < 0.08 ? C.pave : C.stoneLt; }
+        else { const row = Math.floor((v + 20) / 1.8), sl = ((along + (row % 2) * 1.2) % 2.4 + 2.4) % 2.4, hb = hash(Math.floor((along + (row % 2) * 1.2) / 2.4), row, 61); c = sl < 0.6 || ((v + 20) % 1.8 + 1.8) % 1.8 < 0.6 ? C.joint : hb < 0.33 ? C.slab1 : hb < 0.66 ? C.slab2 : C.slab3; }
       } else if (S.kind === 'mole'){
         const outer = side !== inner;
         if (!outer){
@@ -1409,40 +1438,102 @@ function drawStructures(g, P, x0, y0, gx0, gy0){
 function drawHouse(g, hs, x, y){
   const { w, h } = hs, R = rng(hs.seed);
   const sx = Math.round(hs.ht * 0.33), sy = Math.round(hs.ht * 0.28);
-  g.fillStyle = SHADE; g.fillRect(x + sx, y - sy, w, h);
-  g.fillRect(x + w, y - sy, sx, h);
+  // the front of the house shows below its roof, as you look down at it slanting: plaster, windows, shutters, a door
+  const fh = clamp(Math.round(hs.ht * 0.2), 2, 4);
+  g.fillStyle = SHADE; g.fillRect(x + sx, y - sy, w, h + fh); g.fillRect(x + w, y - sy, sx, h + fh);
   const wall = C[hs.wall], wsh = C[hs.wall.replace('wall', 'wallSh')];
+  g.fillStyle = wall; g.fillRect(x, y + h, w, fh);
+  g.fillStyle = wsh; g.fillRect(x + w - 1, y + h, 1, fh);
+  for (let i = 1 + (R() * 2 | 0); i < w - 1; i += 3){
+    for (let j = 0; j < fh - 1; j += 2){
+      px1(g, x + i, y + h + j, C.winDk);
+      if (R() < 0.5){ px1(g, x + i - 1, y + h + j, C[hs.shut]); if (i + 1 < w - 1) px1(g, x + i + 1, y + h + j, C[hs.shut]); }
+    }
+  }
+  if (w > 5){ const dx = x + 2 + (R() * (w - 4) | 0); px1(g, dx, y + h + fh - 1, C.wood); }
+  g.fillStyle = wsh; g.fillRect(x, y + h + fh - 1, w, 1);
   if (hs.roof === 'hip'){
-    // four slopes: lit to the south and west, in shade to the north and east; a ridge along the long side
+    // terracotta: four slopes lit to the south and west, rows of tiles down each slope, a pale ridge
+    const along = w >= h;
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){
       const dl = i, dr = w - 1 - i, dt = j, db = h - 1 - j, m = Math.min(dl, dr, dt, db);
-      let c = m === db ? C.roofLt : m === dt ? C.roofDk : m === dl ? C.roof : C.roofMid;
-      if ((w >= h && Math.abs(dt - db) < 1 && dl > (h >> 1) - 1 && dr > (h >> 1) - 1) || (h > w && Math.abs(dl - dr) < 1 && dt > (w >> 1) - 1 && db > (w >> 1) - 1)) c = C.roofDk;
-      else if ((m === db || m === dt) && j % 2 === 1 && (i + j) % 3 === 0) c = m === db ? C.roof : C.roofDk;
+      const face = m === db ? 'S' : m === dt ? 'N' : m === dl ? 'W' : 'E';
+      const ridge = along ? Math.abs(dt - db) < 1 && dl > (h >> 1) - 1 && dr > (h >> 1) - 1 : Math.abs(dl - dr) < 1 && dt > (w >> 1) - 1 && db > (w >> 1) - 1;
+      const stripe = face === 'S' || face === 'N' ? i % 2 : j % 2;
+      let c = face === 'S' ? (stripe ? C.roofLt : C.roof) : face === 'W' ? (stripe ? C.roof : C.roofMid) : face === 'N' ? (stripe ? C.roofMid : C.roofDk) : (stripe ? C.roofDk : C.roofMid);
+      if (ridge) c = C.roofLt;
+      else if (m === 0) c = face === 'S' || face === 'W' ? C.roofMid : C.roofDk;
+      if (!ridge && m > 0 && hash(i, j, hs.seed) < 0.05) c = C.roofDk;
       px1(g, x + i, y + j, c);
     }
   } else if (hs.roof === 'vault'){
-    // white barrel vaults side by side, shaded across each curve
-    const along = w >= h, n = along ? w : h;
-    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){
-      const k = (along ? j : i) % 4;
-      px1(g, x + i, y + j, k === 0 ? wsh : k === 3 ? C.white : wall);
-    }
-    g.fillStyle = wsh; g.fillRect(x, y + h - 1, w, 1); g.fillRect(x + w - 1, y, 1, h);
-    void n;
-  } else {
-    // a flat roof terrace: parapet, and whatever people keep up there
+    // the white cupolas of the coast: one dome on a square house, a pair on a long one
     g.fillStyle = wall; g.fillRect(x, y, w, h);
-    g.fillStyle = wsh; g.fillRect(x, y, w, 1); g.fillRect(x, y, 1, h); g.fillRect(x, y + h - 1, w, 1); g.fillRect(x + w - 1, y, 1, h);
-    if (R() < 0.35 && w > 6 && h > 5){
-      // pergola under a vine
-      const pw = 3 + (R() * (w - 6) | 0), ph = 2 + (R() * (h - 5) | 0), px_ = x + 1 + (R() * (w - pw - 2) | 0), py_ = y + 1 + (R() * (h - ph - 2) | 0);
-      for (let j = 0; j < ph; j++) for (let i = 0; i < pw; i++) px1(g, px_ + i, py_ + j, (i + j) % 3 ? C.mq2 : C.mq3);
+    g.fillStyle = wsh; g.fillRect(x + w - 1, y, 1, h); g.fillRect(x, y, w, 1);
+    const two = w > h * 1.5 || h > w * 1.5, n = two ? 2 : 1;
+    for (let k = 0; k < n; k++){
+      const cw = w > h ? w / n : w, ch = w > h ? h : h / n, cx = x + (w > h ? cw * (k + 0.5) : w / 2), cy = y + (w > h ? h / 2 : ch * (k + 0.5)), rr = Math.min(cw, ch) / 2 - 0.6;
+      for (let j = -Math.ceil(rr); j <= Math.ceil(rr); j++) for (let i = -Math.ceil(rr); i <= Math.ceil(rr); i++){
+        const d = Math.hypot(i + 0.5, j + 0.5) / rr;
+        if (d > 1) continue;
+        // lit from the south-west: bright on that side, a soft shade to the north-east
+        const lit = (-(i + 0.5) + (j + 0.5)) / rr;
+        px1(g, Math.floor(cx + i), Math.floor(cy + j), d > 0.84 ? C.stoneDk : lit > 0.4 ? C.white : lit < -0.5 ? C.stone : lit < -0.1 ? C.wallSh5 : C.wall5);
+      }
     }
-    if (R() < 0.45){ const tx = x + 1 + (R() * (w - 3) | 0), ty = y + 1 + (R() * (h - 3) | 0); g.fillStyle = SHADE; g.fillRect(tx + 1, ty - 1, 2, 2); g.fillStyle = C.grey; g.fillRect(tx, ty, 2, 2); px1(g, tx, ty, C.stone); }
-    if (R() < 0.5){ const cx = x + 1 + (R() * (w - 2) | 0); px1(g, cx, y + 1, C.stoneDk); px1(g, cx + 1, y, SHADE); }
-    if (R() < 0.3 && w > 6){ const ly = y + 1 + (R() * (h - 2) | 0); for (let i = 1; i < w - 1; i += 1) if (R() < 0.6) px1(g, x + i, ly, [C.white, C.red, C.domeB, C.gold][(R() * 4) | 0]); }
-    for (const [cx, cy] of [[x + 1, y + 1], [x + w - 2, y + h - 2]]) if (R() < 0.5) px1(g, cx, cy, C.mq2);
+  } else {
+    // a roof terrace: the parapet in the house colour, a floor of cotto tiles or lime, and life up there
+    const cotto = R() < 0.72;
+    for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) px1(g, x + i, y + j, cotto ? (((i >> 1) + (j >> 1)) % 2 ? C.cotto : C.cottoDk) : hash(i, j, hs.seed) < 0.12 ? C.wallSh5 : C.wall5);
+    g.fillStyle = wall; g.fillRect(x, y + h - 1, w, 1); g.fillRect(x, y, 1, h);
+    g.fillStyle = wsh; g.fillRect(x, y, w, 1); g.fillRect(x + w - 1, y, 1, h);
+    if (R() < 0.4 && w > 6 && h > 5){
+      // a pergola under a vine
+      const pw = 3 + (R() * (w - 5) | 0), ph = 2 + (R() * (h - 4) | 0), px_ = x + 1 + (R() * Math.max(1, w - pw - 2) | 0), py_ = y + 1 + (R() * Math.max(1, h - ph - 2) | 0);
+      for (let j = 0; j < ph; j++) for (let i = 0; i < pw; i++) px1(g, px_ + i, py_ + j, (i % 2 && j % 2) ? C.woodDk : hash(i, j, hs.seed + 3) < 0.55 ? C.mq2 : C.mq1);
+    } else if (R() < 0.45 && w > 4 && h > 4){
+      // a table under a parasol
+      const tx = x + 2 + (R() * (w - 4) | 0), ty = y + 2 + (R() * (h - 4) | 0), pc = [C.white, C.red, C.gold, C.domeB, C.green][(R() * 5) | 0];
+      g.fillStyle = SHADE; g.fillRect(tx, ty - 1, 3, 3); g.fillStyle = pc; g.fillRect(tx - 1, ty - 1, 3, 3); px1(g, tx, ty, C.white);
+    }
+    // pots of geraniums and lemons along the parapet
+    for (let i = 1; i < w - 1; i++) if (R() < 0.3) px1(g, x + i, y + 1, R() < 0.3 ? C.red : R() < 0.3 ? C.lemon : C.mq3);
+    // washing on a line, a water tank, a chimney
+    if (R() < 0.3 && w > 6){ const ly = y + 2 + (R() * (h - 3) | 0); for (let i = 2; i < w - 2; i++) if (R() < 0.7) px1(g, x + i, ly, [C.white, C.white, C.red, C.domeB, C.gold, C.wall7][(R() * 6) | 0]); }
+    if (R() < 0.35){ const tx = x + 1 + (R() * (w - 3) | 0), ty = y + 1 + (R() * (h - 3) | 0); g.fillStyle = SHADE; g.fillRect(tx + 1, ty - 1, 2, 2); g.fillStyle = C.grey; g.fillRect(tx, ty, 2, 2); px1(g, tx, ty, C.stone); }
+  }
+  // bougainvillea tumbling over a corner and down the front
+  if (hs.bloom){
+    const left = R() < 0.5, bx = left ? x : x + w - 3;
+    for (let j = -1; j < 3 + fh; j++) for (let i = 0; i < 4; i++){ const hh = hash(i, j, hs.seed + 7); if (hh < 0.55 - Math.abs(j - 1.5) * 0.08) px1(g, bx + i, y + h - 3 + j, hh < 0.2 ? C.bloomLt : hh < 0.45 ? C.bloom : C.mq3); }
+  }
+}
+// a tree in town: plane trees and lemons are round crowns, cypresses tall and dark, palms a star of fronds
+function drawTownTree(g, T_, x, y){
+  const r = T_.r / MPP;
+  g.fillStyle = 'rgba(20,30,20,0.42)';
+  const hgt = T_.k === 'cypress' ? 6 : T_.k === 'palm' ? 5 : 3;
+  for (let j = -Math.ceil(r); j <= Math.ceil(r); j++){ const ww = Math.round(Math.sqrt(Math.max(0, r * r - j * j))); g.fillRect(x - ww + hgt, y + j - hgt, ww * 2 + 1, 1); }
+  if (T_.k === 'palm'){
+    for (let a = 0; a < 8; a++){
+      const t = a * TAU / 8 + 0.3;
+      for (let k = 1; k <= r + 1; k++) px1(g, Math.round(x + Math.cos(t) * k), Math.round(y + Math.sin(t) * k + (k > r - 1 ? 1 : 0)), k > r - 0.5 ? C.planeDk : a % 2 ? C.plane : C.planeLt);
+    }
+    px1(g, x, y, C.wood);
+    return;
+  }
+  if (T_.k === 'cypress'){
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) px1(g, x + i, y + j, (i + j) > 0 ? C.pineDk : C.pine);
+    px1(g, x - 1, y - 1, C.pineLt);
+    return;
+  }
+  for (let j = -Math.ceil(r); j <= Math.ceil(r); j++) for (let i = -Math.ceil(r); i <= Math.ceil(r); i++){
+    const d = Math.hypot(i, j) / r + (hash(i, j, (x * 7 + y) | 0) - 0.5) * 0.35;
+    if (d > 1) continue;
+    const lit = (-i + j) / r;
+    let c = d > 0.8 ? C.planeDk : lit > 0.3 ? C.planeLt : lit < -0.4 ? C.planeDk : C.plane;
+    if (T_.k === 'lemon' && hash(i, j, 77) < 0.12 && d < 0.8) c = C.lemon;
+    px1(g, x + i, y + j, c);
   }
 }
 function drawChurch(g, P, x, y){
@@ -1481,16 +1572,16 @@ function drawHarbour(g, P, x0, y0, gx0, gy0){
   const inT = (x, y, m = 14) => x > -m && y > -m && x < TILE + m && y < TILE + m;
   drawStructures(g, P, x0, y0, gx0, gy0);
   // paving around the houses: the alleys and stairs between them
-  g.fillStyle = C.pave;
-  for (const hs of P.houses){ const x = hs.gx - gx0, y = hs.gy - gy0; if (inT(x, y, 24)) g.fillRect(x - 2, y - 2, hs.w + 4, hs.h + 4); }
+  // the stepped alleys between the houses: grey stone, a pale edge where the steps catch the light
+  for (const hs of P.houses){ const x = hs.gx - gx0, y = hs.gy - gy0; if (!inT(x, y, 24)) continue; g.fillStyle = C.stone; g.fillRect(x - 1, y - 1, hs.w + 2, hs.h + 6); g.fillStyle = C.stoneLt; g.fillRect(x - 1, y + hs.h + 5, hs.w + 2, 1); }
   // the piazza: herringbone paving and a fountain
-  const pts = [[-26, -11], [32, -11], [32, -44], [-26, -44]].map(([u, v]) => P.W(u, v));
+  const pts = [[-20, -11], [26, -11], [26, -38], [-20, -38]].map(([u, v]) => P.W(u, v));
   const mnx = Math.floor(Math.min(...pts.map(p => p[0])) / MPP) - gx0, mxx = Math.ceil(Math.max(...pts.map(p => p[0])) / MPP) - gx0;
   const mny = Math.floor(Math.min(...pts.map(p => p[1])) / MPP) - gy0, mxy = Math.ceil(Math.max(...pts.map(p => p[1])) / MPP) - gy0;
   for (let py = Math.max(0, mny); py < Math.min(TILE, mxy); py++) for (let qx = Math.max(0, mnx); qx < Math.min(TILE, mxx); qx++){
     const [u, v] = P.loc((qx + gx0 + 0.5) * MPP, (py + gy0 + 0.5) * MPP);
-    if (u < -26 || u > 32 || v > -11 || v < -44) continue;
-    const fr = Math.hypot(u - 3, v + 27);
+    if (u < -20 || u > 26 || v > -11 || v < -38) continue;
+    const fr = Math.hypot(u - 3, v + 24);
     let c = (Math.floor(u / 1.1) + Math.floor(v / 0.55)) % 4 === 0 ? C.pave : (Math.floor(u / 0.55) + Math.floor(v / 1.1)) % 5 === 0 ? C.paveDk : C.stoneLt;
     if (fr < 3.2) c = fr < 2.2 ? (fr < 0.6 ? C.white : C.w4) : C.stoneDk;
     else if (fr < 6 && fr > 5.4) c = C.paveDk;
@@ -1505,6 +1596,7 @@ function drawHarbour(g, P, x0, y0, gx0, gy0){
     drawHouse(g, hs, hs.gx - gx0, hs.gy - gy0);
   }
   if (!churchDone && inT(P.church.gx - gx0, cy - gy0, 40)) drawChurch(g, P, P.church.gx - gx0, cy - gy0);
+  for (const T_ of P.trees){ const x = Math.round(T_.x / MPP) - gx0, y = Math.round(T_.y / MPP) - gy0; if (inT(x, y, 10)) drawTownTree(g, T_, x, y); }
   // market stalls: striped awnings, crates in front
   for (const st of P.stalls){
     const x = st.gx - gx0, y = st.gy - gy0;
@@ -4299,7 +4391,8 @@ const spriteCache = new Map();
 function shipSprite(s){
   const t = s.t, L = t.L;
   const awa = s.aw.awa / DEG, luff = s.sail > 0.02 && (awa < t.noGo - 6 || (s.trimErr || 0) > 8);
-  const h = Math.round(norm(s.h) / (3 * DEG)) * 3 * DEG;
+  // her own ship turns in single degrees, so a slow turn is smooth; the others in threes
+  const hq = s === ship ? 1 : 3, h = Math.round(norm(s.h) / (hq * DEG)) * hq * DEG;
   const sun = sunVec();
   const key = [t.id, s.paint, s.tanbark ? 1 : 0, s.col, s.trim, Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 6), Math.round(s.sail * 10), s.set,
     Math.round(clamp(s.trimA, 2, 85) / 5), luff ? Math.floor(T * 4) % 3 : -1, Math.floor(T * 2.5) % 2, Math.round(wrap(s.aw.toward - s.h) / (15 * DEG)),
