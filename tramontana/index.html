@@ -2132,15 +2132,18 @@ function kedgeOff(){
   s.kedge = { t0: T, ax: s.x + Math.sin(a) * 55, ay: s.y - Math.cos(a) * 55, a };
   setSail(0);
   sfx.chain(false);
-  toast('The anchor goes out in the dinghy. Now the windlass...');
+  toast(atSt('bow') ? 'The anchor goes out in the dinghy. Then pump the windlass to haul her off.' : 'The anchor goes out in the dinghy. Go to the BOW and pump the windlass to haul her off.');
 }
 function kedgeStep(dt){
   const s = ship, K = s.kedge, p = (T - K.t0);
   if (p < 3) return;  // rowing the anchor out
+  // each stroke of the windlass hauls her a little way towards the kedge
+  if (!((K.work || 0) > 0)) return;
+  const k = Math.min(dt, K.work); K.work -= k;
   if (Math.random() < dt * 3) sfx.creak();
   const dx = K.ax - s.x, dy = K.ay - s.y, d = Math.hypot(dx, dy);
-  s.x += dx / d * 1.1 * dt; s.y += dy / d * 1.1 * dt;
-  s.heel *= 1 - dt * 0.3;
+  s.x += dx / d * 4.3 * k; s.y += dy / d * 4.3 * k;
+  s.heel *= 1 - k * 0.3;
   const ok = hullPoints(s).every(([x, y]) => depthFastN(x, y) < -2.2);
   if (ok || d < 8){
     s.aground = null; s.kedge = null; s.v = 0; s.heel = 0;
@@ -3977,7 +3980,7 @@ const actBtn = el('actBtn');
 function sailHint(rel, twa){
   const t = ship.t;
   if (moored) return '';
-  if (ship.aground) return ship.kedge ? 'Winching her off on the anchor line...' : 'Aground! KEDGE OFF with the anchor, or set sail if the wind blows off the shore.';
+  if (ship.aground) return ship.kedge ? 'Kedging: pump the windlass at the BOW to haul her off.' : 'Aground! KEDGE OFF with the anchor, or set sail if the wind blows off the shore.';
   if (ship.anchor) return ship.anchor.drag ? 'The anchor is dragging!' : 'At anchor, swinging to the wind.';
   if (ship.sail < 0.05) return Math.abs(ship.v) > 0.5 ? 'Sails down, gliding.' : 'Sails down: go forward and haul up the halyards.';
   if (ship.jibFree && ship.hJ > 0.3) return 'The jib is flying free: haul the sheet on the new side (JIB).';
@@ -6035,6 +6038,8 @@ function shakeOut(){
 // the windlass: every stroke of the lever brings in a fathom of chain
 let pumpDir = 0, pumpAcc = 0;
 function pumpStroke(){
+  const K = ship.kedge;
+  if (K){ if (T - K.t0 >= 3){ K.work = (K.work || 0) + 0.7; sfx.chain(true); buzz(15); } return; }
   const A = ship.anchor;
   if (!A){ return; }
   if (!A.weigh){ A.weigh = T; toastNow('Weighing: pump the windlass.'); }
@@ -6086,7 +6091,9 @@ function drawStation(id){
     const ang = (pumpDir > 0 ? -0.5 : 0.5) * Math.min(1, pumpAcc / 18) - 0.2;
     dLine(cx, cy, cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28, NL, 1); dDisc(cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28, 1.6, NA);
     DK.pump = { x: cx, y: cy, r: 44 };
-    dText(A ? (A.weigh ? 'PUMP THE LEVER UP AND DOWN' : `AT ANCHOR, ${Math.round(RODE)} M OF CHAIN`) : ship.aground ? 'AGROUND: KEDGE OFF' : 'ANCHOR READY', cx, H - 7, ND, 'center');
+    const K = ship.kedge;
+    dText(A ? (A.weigh ? 'PUMP THE LEVER UP AND DOWN' : `AT ANCHOR, ${Math.round(RODE)} M OF CHAIN`) : K ? (T - K.t0 < 3 ? 'THE DINGHY ROWS THE ANCHOR OUT' : 'PUMP TO HAUL HER OFF') : ship.aground ? 'AGROUND: KEDGE OFF' : 'ANCHOR READY', cx, H - 7, ND, 'center');
+    if (K && T - K.t0 >= 3) dText(`${Math.round(Math.hypot(K.ax - ship.x, K.ay - ship.y))} M TO THE KEDGE`, cx, cy - 18, NA, 'center');
     if (A && A.weigh) dText(`${Math.round(clamp(A.prog || 0, 0, 1) * 100)}%`, cx, cy - 18, NA, 'center');
     return;
   }
