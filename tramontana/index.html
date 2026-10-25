@@ -909,52 +909,137 @@ for (const k in TONES) TONES[k] = TONES[k].map(c => U[c]);
 function tone(set, lam, b){ return set[clamp(Math.floor((lam - 0.5) * 5 + 1.6 + b - 0.5), 0, 3)]; }
 // colour of one pixel: depth d, height h, gradient gx gy, which land, dither b
 // slow noise for the terrain, looked up once per 4-pixel grid node rather than per pixel
-const NZ = { bn: 0, n90: 0, n60: 0, n120: 0, n520: 0 };
+const NZ = { bn: 0, n90: 0, n60: 0, n120: 0, n520: 0, gul: 0, sea: 0, crop: 0 };
+// colour ramps, dark to light: a material lit by the sun from the south-west, picked with ordered dithering
+function mkRamp(hex, n = 6, lo = 0.6, hi = 1.16){
+  const [r, g, b] = rgb(hex);
+  return Array.from({ length: n }, (_, i) => { const k = lo + (hi - lo) * i / (n - 1); return (255 << 24 | Math.min(255, b * k | 0) << 16 | Math.min(255, g * k | 0) << 8 | Math.min(255, r * k | 0)) >>> 0; });
+}
+const RP = {
+  oak: mkRamp('#4a7430', 7, 0.5, 1.18), shrub: mkRamp('#7c9c48'), earth: mkRamp('#b69a6c'), grass: mkRamp('#b0a866'), wall: mkRamp('#d8d0b8', 5, 0.7, 1.08),
+  lemon: mkRamp('#468a30', 6, 0.6, 1.2), vine: mkRamp('#78a040'), olive: mkRamp('#8e9e6a'), lime: mkRamp('#c8c0ac', 7, 0.5, 1.12),
+  ash: mkRamp('#6e665e', 6, 0.55, 1.2), lava: mkRamp('#3e3936'), rock: mkRamp('#8c8476', 6, 0.5, 1.15), pine: mkRamp('#2f5426', 5, 0.6, 1.2),
+  road: mkRamp('#c6baa2', 4, 0.85, 1.06), pergola: mkRamp('#2f4a2a', 4, 0.7, 1.1),
+};
+const pickR = (R, v, b) => R[clamp(Math.floor(v * (R.length - 1) + b), 0, R.length - 1)];
+// cellular noise: the nearest of a jittered grid of points, for tree crowns and boulders
+const WY = { d: 0, dx: 0, dy: 0, id: 0 };
+function worley(x, y, c, seed){
+  const gx = Math.floor(x / c), gy = Math.floor(y / c);
+  let bd = 1e9, bx = 0, by = 0, bid = 0;
+  for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++){
+    const cx = gx + i, cy = gy + j, h1 = hash(cx, cy, seed);
+    const px = (cx + 0.15 + 0.7 * h1) * c, py = (cy + 0.15 + 0.7 * hash(cx, cy, seed + 1)) * c;
+    const dx = x - px, dy = y - py, dd = dx * dx + dy * dy;
+    if (dd < bd){ bd = dd; bx = dx; by = dy; bid = h1; }
+  }
+  WY.d = Math.sqrt(bd) / c; WY.dx = bx / c; WY.dy = by / c; WY.id = bid;
+  return WY;
+}
+// a round crown: bright on the sunny side, dark at the rim; 'gap' when between crowns
+function crown(x, y, cell, seed, fill){
+  const w = worley(x, y, cell, seed), rad = fill * (0.8 + 0.4 * w.id);
+  if (w.d > rad) return -1;
+  const q = w.d / rad;
+  return 0.55 + (-w.dx * LX * 0.9 - w.dy * LY * 0.9) / rad * 0.55 - q * q * 0.35;
+}
 function terrainCol(d, h, gx, gy, src, x, y, b){
   const j = b - 0.5;
   if (d < 0.6){
+    // the sea floor shows through the shallows: sand bright, rocks and seagrass meadows dark
     const dd = d + j * 5;
     if (dd < -125) return 0;
+    const grass = d < -5 && d > -75 && NZ.sea + vnoise(x / 4, y / 4, 55) * 0.22 > 0.3 + j * 0.2;
     if (dd < -80) return U.w1;
-    if (dd < -45) return U.w2;
-    if (dd < -20) return U.w3;
+    if (dd < -45) return grass ? U.w1 : U.w2;
+    if (dd < -20) return grass ? U.w2 : U.w3;
     const dl = d + j * 1.6;
-    if (dl < -7) return U.w4;
-    if (dl < -1.5) return U.w5;
+    if (dl < -7){ if (grass) return U.w2; return U.w4; }
+    if (dl < -1.5){ const r = d > -6 ? crown(x, y, 2.4, 91, 0.4) : -1; return r > 0 ? U.w3 : U.w5; }
     return U.surf;
   }
   const s = Math.hypot(gx, gy);
   const lam = (-gx * LX - gy * LY + LZ) / Math.sqrt(gx * gx + gy * gy + 1);
-  if (src && src.struct){
-    // quays and moles: dressed stone, block joints
-    const bx = Math.floor(x / 2.4), by = Math.floor(y / 1.8);
-    return d < 2.2 ? U.stoneDk : hash(bx, by, 61) < 0.18 ? U.stone : U.stoneLt;
-  }
+  let L = clamp((lam - 0.3) / 0.75, 0, 1);
+  if (src && src.struct) return hash(Math.floor(x / 2.4), Math.floor(y / 1.8), 61) < 0.18 ? U.stone : U.stoneLt;
   const volc = src && src.volcano;
+  // valleys hold the shade and the water: darker, greener, a stream at the bottom
+  const valley = src === null ? clamp((NZ.gul - 0.78 + vnoise(x / 22, y / 22, 56) * 0.07) / 0.2, 0, 1) : 0;
+  L -= valley * 0.25;
   const bn = NZ.bn;
   if (bn > 0.42 && s < 1.2 && d < 4 + (bn - 0.42) * 30 + j * 2)
     return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.12 ? (volc ? U.ash3 : U.pebbleDk) : (volc ? U.ash2 : (hash(x / 90 | 0, 0, 4) < 0.5 ? U.pebble : U.sand));
-  if (d < 3.2 + j * 2){
-    const beach = bn > 0.35 && s < 0.6;
-    if (beach) return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.12 ? (volc ? U.ash3 : U.pebbleDk) : (volc ? U.ash2 : (hash(x / 90 | 0, 0, 4) < 0.5 ? U.pebble : U.sand));
-    return d < 1.6 ? U.rockWDk : U.rockW;
+  if (d < 2 + j * 1.2){
+    if (bn > 0.35 && s < 0.6) return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.12 ? U.pebbleDk : U.pebble;
+    // boulders at the foot of the cliffs, wet and dark near the water
+    const r = crown(x, y, 1.5, 81, 0.5);
+    if (r < 0) return d < 1.4 ? U.rockWDk : U.black;
+    return pickR(volc ? RP.lava : RP.rock, clamp(r * (d < 1.4 ? 0.6 : 1), 0, 1), b);
   }
-  if (volc && h > 40 + NZ.n90 * 25) return tone(TONES.ash, lam, b);
+  if (src === null && valley > 0.9 && s < 1.4 && h > 4 && h < 330 && hash(x / 1.2 | 0, y / 1.2 | 0, 88) < 0.9){ if (Math.abs(NZ.gul - 0.99) < 0.0035) return U.w3; }
+  if (volc && h > 30 + NZ.n90 * 25){
+    // ash slopes scored by gullies running down from the crater
+    const ux = gx / (s || 1), uy = gy / (s || 1), across = x * -uy + y * ux, along = x * ux + y * uy;
+    const st = vnoise(across / 2.2, along / 12, 15);
+    if (h > I_PEAK(src) * 0.8) return pickR(RP.lava, clamp(L - Math.max(0, st) * 0.6, 0, 1), b);
+    return pickR(RP.ash, clamp(L - Math.max(0, st - 0.1) * 0.7 + 0.05, 0, 1), b);
+  }
+  // the coast road, cut into the slope along a contour, a parapet on its seaward side
+  if (src === null && s < 2.8 && h > 25){
+    const H = 62 + NZ.n120 * 14, dist = (h - H) / Math.max(0.3, s);
+    if (Math.abs(dist) < 2.1) return pickR(RP.road, clamp(0.6 + (hash(x / 0.9 | 0, y / 0.9 | 0, 87) - 0.5) * 0.4, 0, 1), b);
+    if (dist < -2.1 && dist > -2.9) return pickR(RP.wall, 0.95, b);
+    if (dist < -2.9 && dist > -3.8) return pickR(RP.oak, 0.05, b);
+  }
+  // cliffs: bare limestone streaked by rain, a few bushes clinging in the cracks
   const cliff = 2.1 - clamp((30 - d) / 30, 0, 1) * 1.1;
-  if (s > cliff + j * 0.4 + NZ.n60 * 0.35 || h > 480 + NZ.n120 * 60)
-    return vnoise(x / 14, y / 14, 13) > 0.35 ? tone(TONES.mq, lam - 0.2, b) : tone(TONES.lime, lam, b);
-  // terraces of lemons and vines, following the contours
-  const terr = h > 20 && h < 340 && s < 1.8 && NZ.n520 + (src && src.port ? 0.25 : 0) + (src === null ? 0.15 : 0) > 0.05;
-  if (terr){
-    const hb = (h + vnoise(x / 30, y / 30, 42) * 2) % 8;
-    if (hb < 1.1) return U.terWall;
-    const hh = hash(x / 1.8 | 0, y / 1.8 | 0, 43);
-    if (hh < 0.07) return U.lemon;
-    if (hh < 0.3) return U.mq3;
-    return tone(TONES.ter, lam, b);
+  if (s > cliff + j * 0.4 + NZ.n60 * 0.35 || h > 500 + NZ.n120 * 60){
+    const ux = gx / (s || 1), uy = gy / (s || 1), across = x * -uy + y * ux, along = x * ux + y * uy;
+    const st = vnoise(across / 1.6, along / 9, 16);
+    const tuft = crown(x, y, 2.2, 17, 0.32);
+    if (tuft > 0 && vnoise(x / 20, y / 20, 18) > 0.1) return pickR(RP.shrub, clamp(tuft * L * 1.3, 0, 1), b);
+    return pickR(RP.lime, clamp(L - Math.max(0, st - 0.15) * 0.9 + vnoise(x / 6, y / 6, 19) * 0.08, 0, 1), b);
   }
-  return tone(TONES.mq, lam + vnoise(x / 40, y / 40, 44) * 0.08, b);
+  // terraces: stone walls along the contours; lemons under their dark pergolas, vines in rows, olives on dry earth
+  const terr = h > 18 && h < 360 && s < 1.9 && NZ.n520 + (src && src.port ? 0.25 : 0) + (src === null ? 0.15 : 0) > 0.05 && valley < 0.45 + j * 0.3;
+  if (terr){
+    const hb = (h + vnoise(x / 30, y / 30, 42) * 1.5) / 6.5, k = Math.floor(hb), f = hb - k, sl = Math.max(0.35, s);
+    // the wall is under a metre thick whatever the slope; its shadow falls on the terrace below
+    if (f * 6.5 / sl < 0.7) return pickR(RP.wall, clamp(L + 0.2, 0, 1), b);
+    if ((1 - f) * 6.5 / sl < 0.6) return pickR(RP.earth, 0.05, b);
+    const crop = hash(k, Math.floor(NZ.crop * 3 + 6), 45);
+    if (crop < 0.55){
+      // lemon groves: dense small crowns under black netting on chestnut poles, fruit catching the light
+      const r = crown(x, y, 2.3, 46, 0.6);
+      if (r < 0) return pickR(RP.pergola, 0.5, b);
+      if (r > 0.75 && hash(x / 0.6 | 0, y / 0.6 | 0, 47) < 0.18) return U.lemon;
+      return pickR(RP.lemon, clamp(r * (0.6 + L * 0.6), 0, 1), b);
+    }
+    if (crop < 0.68){
+      // vineyards: rows of single plants following the terrace, dry earth between
+      const rowf = f * 6.5 / sl / 1.6, row = Math.floor(rowf);
+      if (rowf - row < 0.55 && hash(x / 0.9 | 0, y / 0.9 | 0, 48) < 0.75) return pickR(RP.vine, clamp(L * 0.9 + 0.1 + (hash(x / 0.6 | 0, y / 0.6 | 0, 48) - 0.5) * 0.3, 0, 1), b);
+      return pickR(RP.earth, clamp(L * 0.85, 0, 1), b);
+    }
+    const r = crown(x, y, 4.2, 49, 0.32);
+    if (r > 0) return pickR(RP.olive, clamp(r * (0.5 + L * 0.7), 0, 1), b);
+    return pickR(r > -1 && hash(x / 2 | 0, y / 2 | 0, 50) < 0.1 ? RP.grass : RP.earth, clamp(L * 0.9 + 0.1, 0, 1), b);
+  }
+  // high up: dry grass and scrub with rock showing through
+  if (h > 380 + NZ.n60 * 60){
+    const r = crown(x, y, 3.2, 51, 0.3 + valley * 0.2);
+    if (r > 0) return pickR(RP.shrub, clamp(r * L * 1.2, 0, 1), b);
+    if (NZ.n90 > 0.35) return pickR(RP.lime, clamp(L, 0, 1), b);
+    return pickR(RP.grass, clamp(L * 0.9 + 0.05, 0, 1), b);
+  }
+  // woods and maquis: a canopy of rounded crowns, thinner on the dry sunny slopes
+  const dry = clamp((lam - 0.75) * 2.5 + NZ.n90 * 0.5 - valley, 0, 1);
+  const r = crown(x, y, 2.6 + valley, 52, 0.62 - dry * 0.3);
+  if (r > 0) return pickR(valley > 0.3 || NZ.n60 > 0.25 ? RP.oak : RP.shrub, clamp(r * (0.45 + L * 0.75), 0, 1), b);
+  // in the gaps: the shade under the trees, or bare earth where it is dry
+  return dry > 0.4 ? pickR(RP.earth, clamp(L * 0.8, 0, 1), b) : pickR(RP.oak, 0.02 + dry * 0.2, b);
 }
+const I_PEAK = I => I.peak || 300;
 const tiles = new Map();
 // small pixel stamps: umbrella pine, olive, cypress
 const PINE = ['  dmmd  ', ' dmllmd ', 'dmllllmd', 'dmmllmmd', ' dmmmmd ', '  dddd  '];
@@ -1218,7 +1303,7 @@ function bakeTile(tx, ty){
   let any = false;
   // exact depth and height every 4 pixels, interpolated in between
   const S4 = 4, GN = TILE / S4 + 3, grid = new Float32Array(GN * GN), hgt = new Float32Array(GN * GN), srcs = new Array(GN * GN);
-  const nzB = new Float32Array(GN * GN), nz90 = new Float32Array(GN * GN), nz60 = new Float32Array(GN * GN), nz120 = new Float32Array(GN * GN), nz520 = new Float32Array(GN * GN);
+  const nzG = new Float32Array(GN * GN), nzC = new Float32Array(GN * GN), nzS = new Float32Array(GN * GN), nzB = new Float32Array(GN * GN), nz90 = new Float32Array(GN * GN), nz60 = new Float32Array(GN * GN), nz120 = new Float32Array(GN * GN), nz520 = new Float32Array(GN * GN);
   let deep = true;
   for (let j = 0; j < GN; j++) for (let i = 0; i < GN; i++){
     const x = x0 + (i - 1) * S4 * MPP, y = y0 + (j - 1) * S4 * MPP;
@@ -1226,7 +1311,8 @@ function bakeTile(tx, ty){
     srcs[j * GN + i] = TSRC;
     hgt[j * GN + i] = heightOf(d, TSRC, x, y);
     const q = j * GN + i;
-    if (d > -2){ nzB[q] = vnoise(x / 260, y / 260, 31); nz90[q] = vnoise(x / 90, y / 90, 9); nz60[q] = vnoise(x / 60, y / 60, 12); nz120[q] = vnoise(x / 120, y / 120, 10); nz520[q] = vnoise(x / 520, y / 520, 41); }
+    if (d > -2){ nzB[q] = vnoise(x / 260, y / 260, 31); nz90[q] = vnoise(x / 90, y / 90, 9); nz60[q] = vnoise(x / 60, y / 60, 12); nz120[q] = vnoise(x / 120, y / 120, 10); nz520[q] = vnoise(x / 520, y / 520, 41); nzG[q] = 1 - Math.abs(vnoise(x / 260, y / 640, 8)); nzC[q] = vnoise(x / 110, y / 160, 44) + vnoise(x / 37, y / 37, 46) * 0.25; }
+    else if (d > -140) nzS[q] = vnoise(x / 40, y / 40, 53) + vnoise(x / 13, y / 13, 54) * 0.35;
     if (d > -160) deep = false;
   }
   if (deep && !nearP.length) return null;
@@ -1243,7 +1329,8 @@ function bakeTile(tx, ty){
       const gyA = (hgt[o + GN] - hgt[o - GN]) / step, gyB = (hgt[o + GN + 1] - hgt[o - GN + 1]) / step, gyC = (hgt[o + 2 * GN] - hgt[o]) / step, gyD = (hgt[o + 2 * GN + 1] - hgt[o + 1]) / step;
       const gx = lerp(lerp(gxA, gxB, fx), lerp(gxC, gxD, fx), fy), gy = lerp(lerp(gyA, gyB, fx), lerp(gyC, gyD, fx), fy);
       const on = o + (fy > 0.5 ? GN : 0) + (fx > 0.5 ? 1 : 0), src = srcs[on];
-      if (d >= 0.6){ NZ.bn = nzB[on]; NZ.n90 = nz90[on]; NZ.n60 = nz60[on]; NZ.n120 = nz120[on]; NZ.n520 = nz520[on]; }
+      if (d >= 0.6){ NZ.bn = nzB[on]; NZ.n90 = nz90[on]; NZ.n60 = nz60[on]; NZ.n120 = nz120[on]; NZ.n520 = nz520[on]; NZ.gul = lerp(lerp(nzG[o], nzG[o + 1], fx), lerp(nzG[o + GN], nzG[o + GN + 1], fx), fy); NZ.crop = lerp(lerp(nzC[o], nzC[o + 1], fx), lerp(nzC[o + GN], nzC[o + GN + 1], fx), fy); }
+      else NZ.sea = lerp(lerp(nzS[o], nzS[o + 1], fx), lerp(nzS[o + GN], nzS[o + GN + 1], fx), fy);
       const c = terrainCol(d, h, gx, gy, src, x, y, BAYER[(py & 3) * 4 + (qx & 3)]);
       if (c){ px[py * TILE + qx] = c; any = true; }
     }
@@ -1263,9 +1350,7 @@ function bakeTile(tx, ty){
       if (d < 8 || h > 430 || (src && (src.volcano || src.rock))) continue;
       if (inTown(x, y)) continue;
       const bx = Math.round(x / MPP) - gx0, by = Math.round(y / MPP) - gy0;
-      if (hh < 0.09){ g.fillStyle = 'rgba(15,35,20,0.35)'; g.fillRect(bx + 2, by + 3, 7, 4); stamp(g, PINE, bx, by, pineC); }
-      else if (hh < 0.2 && h < 260) stamp(g, OLIVE, bx, by, oliveC);
-      else if (hh < 0.23) stamp(g, CYPRESS, bx, by, cypC);
+      if (hh < 0.035 && h < 300){ g.fillStyle = 'rgba(15,35,20,0.4)'; g.fillRect(bx + 3, by - 2, 8, 5); stamp(g, PINE, bx, by, pineC); }
     }
   }
   // harbours and towns, pixel by pixel
@@ -1452,6 +1537,8 @@ const toastEl = document.getElementById('toast');
 const toastQ = [];
 let toastT = 0;
 function toast(msg){ if (!toastQ.includes(msg) && toastEl.textContent !== msg) toastQ.push(msg); }
+// news that cannot wait goes straight up
+function toastNow(msg){ toastQ.unshift(msg); toastT = 0; }
 // a tip shown only the first time it applies
 function tip(key, msg){ if (pl.tips[key]) return; pl.tips[key] = 1; toast(msg); }
 function updToast(dt){
@@ -1737,12 +1824,54 @@ function collide(a, b){
   if (!a.kin) a.v = vax * fax + vay * fay;
   if (!b.kin) b.v = vbx * fbx + vby * fby;
   for (const [s, o] of [[a, b], [b, a]]) if (s !== ship && !s.kin){ s.bumpT = 4; s.bumpAway = Math.atan2(s.x - o.x, -(s.y - o.y)); }
+  // the blow: the energy of the closing speed, shared by weight. The lighter hull takes more of it, a stem driven into
+  // a ship's side breaks her planks rather than its own, and big ships hardly notice what breaks a small one
   const impact = -vrel;
-  if (impact > 2 && (a === ship || b === ship)){
-    ship.hull = Math.max(0, ship.hull - (impact - 2) * 3);
-    sfx.crunch(0.5); shake = Math.min(2, shake + impact * 0.2);
-    if (T > bumpToastT){ bumpToastT = T + 6; toast(a.t.L > 30 || b.t.L > 30 ? 'Crash! You hit a big ship.' : 'Bump! Mind the other boats.'); }
+  if (impact < 0.8 || a.sinking || b.sinking) return;
+  // one blow, not the grinding that follows it
+  if ((a.hitWith === b || b.hitWith === a) && T - Math.max(a.hitAt || 0, b.hitAt || 0) < 1.5) return;
+  a.hitWith = b; b.hitWith = a; a.hitAt = b.hitAt = T;
+  const ra = a.t.L * a.t.B * a.t.B, rb = b.t.L * b.t.B * b.t.B, mu = ra * rb / (ra + rb);
+  const E = 0.5 * mu * (impact - 0.8) * (impact - 0.8);
+  const endOn = (s, px, py) => clamp(Math.abs((px - s.x) * Math.sin(s.h) - (py - s.y) * Math.cos(s.h)) / (s.t.L / 2), 0, 1);
+  const ka = 1.3 - 0.8 * endOn(a, cp[0], cp[1]), kb = 1.3 - 0.8 * endOn(b, cp[2], cp[3]);
+  const fa = 0.1 * E / ra * ka, fb = 0.1 * E / rb * kb;
+  const kinA = a.kin && a.mode !== 'moored', kinB = b.kin && b.mode !== 'moored', modeA = a.mode, modeB = b.mode;
+  const da = Math.min(a.hull, fa * a.t.hull), db = Math.min(b.hull, fb * b.t.hull);
+  for (const [s, dmg] of [[a, da], [b, db]]){
+    if (s === ship){ s.hull = Math.max(0, s.hull - dmg); continue; }
+    s.hull = Math.max(s.role === 'steamer' ? s.t.hull * 0.2 : 0, s.hull - dmg);
+    if (s.hull <= 0) sinkBoat(s);
   }
+  // splinters fly where they met
+  const mx = (cp[0] + cp[2]) / 2, my = (cp[1] + cp[3]) / 2, n = Math.min(30, (da + db) * 0.8 + 2);
+  if (visible(a)) for (let i = 0; i < n; i++) puff('splinter', mx, my, rnd(-8, 8), rnd(-8, 8), rnd(0.8, 2), 0.4, 0, 1);
+  if (a !== ship && b !== ship) return;
+  const me = a === ship ? a : b, them = a === ship ? b : a, mine = a === ship ? da : db, theirs = a === ship ? db : da;
+  const sev = mine / me.t.hull;
+  sfx.crunch(clamp(0.3 + sev * 3 + theirs / 60, 0.3, 1)); shake = Math.min(2.5, shake + impact * 0.25 + sev * 6);
+  // who ran into whom: whoever was closing faster pays for the other's planks
+  const mvx = Math.sin(me.h) * me.v, mvy = -Math.cos(me.h) * me.v, tvx = Math.sin(them.h) * them.v, tvy = -Math.cos(them.h) * them.v;
+  const ux = them.x - me.x, uy = them.y - me.y, ul = Math.hypot(ux, uy) || 1;
+  const mineClose = (mvx * ux + mvy * uy) / ul, theirClose = -(tvx * ux + tvy * uy) / ul;
+  const themKin = a === ship ? kinB : kinA, themMode = a === ship ? modeB : modeA;
+  const fault = mineClose >= theirClose && !themKin || themMode === 'moored' || themMode === 'fish';
+  let msg = them.t.L > 30 ? `Crash! You hit the ${them.name || TYPES[them.t.id].name.toLowerCase()}.` : `Crash! You rammed a ${TYPES[them.t.id].name.toLowerCase()}.`;
+  if (sev > 0.25) msg += ' Your planks are stove in!';
+  else if (sev > 0.08) msg += ' Your bow is damaged.';
+  if (them.sinking) msg += ' She is going down, her crew swimming for it.';
+  else if (theirs > them.t.hull * 0.3) msg += ' She is badly holed.';
+  if (fault && theirs > 1){
+    const fee = Math.min(pl.coins, Math.round(theirs * 1.5 + (them.sinking ? 25 : 0)));
+    if (fee > 0){ pl.coins -= fee; msg += ` You pay her owner ${fee} coins.`; }
+  }
+  if (T > bumpToastT || sev > 0.1 || them.sinking){ bumpToastT = T + 4; toastNow(msg); }
+}
+// a holed boat settles and goes down; her crew row away in the dinghy, her owner gets another in a day or two
+function sinkBoat(s){
+  if (s.sinking) return;
+  Object.assign(s, { sinking: 0.001, mode: 'sink', kin: true, path: null, goal: null });
+  if (s.F){ s.F.lostUntil = T + 2 * DAY; }
 }
 
 // ---------------------------------------------------------------- other boats: fishermen and coasters going about their day
@@ -2011,7 +2140,7 @@ function steamStep(s){
   else { steamAt(S, T + 3, sp1); const a = Math.atan2(sp1[0] - ox_, -(sp1[1] - oy_)); if (Math.hypot(sp1[0] - ox_, sp1[1] - oy_) > 1) s.h += wrap(a - s.h) * 0.08; }
   s.turn = 0;
   wakeTrail(s, 1 / 60);
-  if (s.v > 0.5 || Math.random() < 0.3) if (visible(s) && Math.random() < 0.35){
+  if (visible(s) && Math.random() < (s.v > 0.5 ? 0.35 : 0.03)){
     const fx = Math.sin(s.h), fy = -Math.cos(s.h), w = s.wind;
     puff('coal', s.x + fx * s.t.L * 0.04, s.y + fy * s.t.L * 0.04, -Math.sin(w.dir) * w.spd * 0.8 - fx * s.v * 2, Math.cos(w.dir) * w.spd * 0.8 - fy * s.v * 2, rnd(5, 9), 1.6, 1.6, 0.8);
   }
@@ -2028,7 +2157,7 @@ function traffic(){
     if (dp > 2900){ if (s && dist(s, ship) > 2500){ s.gone = true; F.ship = null; } continue; }
     const want = homeAt(F, T);
     if (!s){
-      if (dp > 2400) continue;
+      if (dp > 2400 || (F.lostUntil && T < F.lostUntil)) continue;
       if (want){
         // just coming in? then she is still out there, sailing for the mouth
         if (T - arrivedAt(F, T) < 0.8 * HOUR && dp > 250){
@@ -2564,7 +2693,6 @@ const GUIDE = [
     <ol><li>The <b>CHART</b> shows where you have been, the wind, and the dashed course she will sail if nothing changes.</li>
     <li>Tap a <b>harbour</b> to steer for it: the HUD shows its distance and bearing.</li>
     <li>Tap a point on the dashes and <b>SAIL ON</b> to let the hours pass. The SHIP tab watches her go. Anything worth knowing brings you back to the helm.</li>
-    <li>On a quiet sea, with nobody at the helm, time runs faster by itself.</li>
     <li>The <b>LOG</b> keeps your harbours, the creatures you have met, and your errands.</li></ol>`],
   ['Settings', () => `
     <p>Sound: <b>${['music and sea', 'sea only', 'off'][sfx.mode]}</b></p>
@@ -2651,6 +2779,12 @@ function update(dt){
 
   // other boats
   for (const s of ai){
+    if (s.sinking){
+      s.sinking += dt / 9; s.v *= 0.96;
+      if (visible(s) && Math.random() < dt * 10) puff('foam', s.x + rnd(-1, 1) * s.t.B, s.y + rnd(-1, 1) * s.t.L * 0.4, 0, 0, 1.6, 0.8, 1.2, 0.9);
+      if (s.sinking >= 1) s.gone = true;
+      continue;
+    }
     if (s.mode === 'steam'){ steamStep(s); continue; }
     if (s.mode === 'moored'){ s.v = 0; continue; }
     if (s.mode === 'tow'){ kinStep(s, dt); continue; }
@@ -2672,7 +2806,7 @@ function update(dt){
   }
   compact(ai, s => !s.gone);
   allShips.length = 0; allShips.push(ship);
-  for (const q of ai) allShips.push(q);
+  for (const q of ai) if (!q.sinking) allShips.push(q);
   for (let i = 0; i < allShips.length; i++) for (let j = i + 1; j < allShips.length; j++){
     const a = allShips[i], b = allShips[j];
     if (Math.abs(a.x - b.x) < (a.t.L + b.t.L) * 0.6 && Math.abs(a.y - b.y) < (a.t.L + b.t.L) * 0.6) collide(a, b);
@@ -2693,7 +2827,7 @@ function update(dt){
   // particles
   for (const p of parts){
     p.x += p.vx * dt; p.y += p.vy * dt;
-    const k = Math.pow(p.kind === 'smoke' || p.kind === 'coal' ? 0.9 : 0.4, dt);
+    const k = Math.pow(p.kind === 'smoke' || p.kind === 'coal' ? 0.9 : p.kind === 'splinter' ? 0.25 : 0.4, dt);
     p.vx *= k; p.vy *= k;
     p.r += p.grow * dt; p.life -= dt;
   }
@@ -3313,7 +3447,7 @@ function shipSprite(s){
 }
 function drawShip(s){
   if (!onScreen(s.x, s.y, SPS)) return;
-  const e = shipSprite(s), n = e.n;
+  const e = shipSprite(s), n = e.n, sink = s.sinking || 0;
   const bx = Math.floor(s.x / MPP - ox) - n / 2 - FX, by = Math.floor(s.y / MPP - oy) - n / 2 - FY;
   for (let y = 0; y < n; y++){
     const yy = by + y;
@@ -3322,6 +3456,7 @@ function drawShip(s){
       const xx = bx + x;
       if (xx < 0 || xx >= FW) continue;
       const i = y * n + x, v = e.q[i];
+      if (sink && bay(xx + FX, yy + FY) < sink * 1.1) continue;
       if (v){ FB[yy * FW + xx] = v; continue; }
       const a = e.sh[i];
       if (a && a / 255 > bay(xx + FX, yy + FY)) FB[yy * FW + xx] = U.shadow;
@@ -3440,6 +3575,7 @@ function render(){
   for (const p of parts){
     const al = p.a * (p.life / p.max);
     if (p.kind === 'foam') disc(p.x, p.y, p.r, U.foam, al);
+    else if (p.kind === 'splinter') plot(Math.floor(p.x / MPP - ox), Math.floor(p.y / MPP - oy), al > 0.5 ? U.teak : U.wood, 1);
     else if (p.kind === 'splash') ring(p.x, p.y, p.r, U.white, al);
   }
   for (const c of critters) if (c.k !== 'shear') drawCritter(c);
@@ -3723,7 +3859,6 @@ function drawCompass(){
   const g = PBc;
   g.buf.fill(0);
   const r = 13, cx = PBc.w >> 1, cy = 21;
-  if (timeScale > 1.4){ const tt = `x${Math.round(timeScale)}`; drawText(g, tt, cx - textWidth(tt) / 2, cy + r + 2, C.foam, 1, C.navy); }
   g.fillStyle = 'rgba(17,40,63,0.8)';
   for (let y = -r; y <= r; y++){ const w = Math.round(Math.sqrt(r * r - y * y)); g.fillRect(cx - w, cy + y, w * 2 + 1, 1); }
   for (let a = 0; a < 16; a++){
@@ -4438,7 +4573,7 @@ const sfx = (() => {
   S.init = () => {
     if (ac) return;
     try {
-      ac = new (window.AudioContext || window.webkitAudioContext)();
+      ac = window.__ac = new (window.AudioContext || window.webkitAudioContext)();
       master = ac.createGain(); master.connect(ac.destination);
       fxBus = ac.createGain(); fxBus.connect(master);
       musicBus = ac.createGain();
@@ -4595,6 +4730,8 @@ const sfx = (() => {
     if (luff){ flapT -= dt; if (flapT <= 0){ flapT = rnd(0.12, 0.25); burst(0.09, 'bandpass', rnd(250, 450), 0.1, { q: 1.2 }); } }
     music();
   };
+  S.suspend = () => { if (ac && ac.state === 'running') ac.suspend().catch(() => {}); };
+  S.resume = () => { if (ac && ac.state === 'suspended') ac.resume().then(() => { musicAt = 0; }).catch(() => {}); };
   S.cycle = () => {
     S.mode = (S.mode + 1) % 3;
     try { localStorage.setItem('tramontana-snd', S.mode); } catch (e){}
@@ -4631,9 +4768,18 @@ el('btnNew').addEventListener('click', () => {
   try { localStorage.removeItem(SAVE_KEY); } catch (e){}
   location.reload();
 });
-addEventListener('visibilitychange', () => { if (document.hidden && started) save(); });
+// leaving the app pauses everything: the clock stops and the sea falls silent until you come back
+function away(hidden){
+  if (hidden){ if (started) save(); keys.clear(); helmHeld = false; trimHeld = false; sfx.suspend(); }
+  else { last = performance.now(); sfx.resume(); }
+}
+document.addEventListener('visibilitychange', () => away(document.hidden));
+addEventListener('pagehide', () => away(true));
+// some phones keep the sound suspended until the next touch
+document.addEventListener('pointerdown', () => { if (!document.hidden) sfx.resume(); });
+addEventListener('pageshow', () => { if (!document.hidden) away(false); });
 
-let last = performance.now(), timeScale = 1, rafIv = 16.7, rafPrev = 0, skipNext = false;
+let last = performance.now(), rafIv = 16.7, rafPrev = 0, skipNext = false;
 // performance graph: open the page with #debug in the address
 const dbg = { on: /debug/.test(location.hash), el: null, iv: [], work: [], t: 0 };
 if (dbg.on){
@@ -4648,6 +4794,7 @@ function weatherFx(dt){
 }
 function frame(now){
   requestAnimationFrame(frame);
+  if (document.hidden){ last = now; return; }
   const iv = rafPrev ? now - rafPrev : 16.7;
   rafPrev = now;
   rafIv = rafIv * 0.9 + Math.min(iv, 50) * 0.1;
@@ -4666,12 +4813,7 @@ function frame(now){
     else renderMap();
   } else {
     if (started && !paused){
-      // the clock runs faster on a quiet sea, and drops back the moment you take the helm or come near a harbour
-      const quiet = !moored && !helmHeld && !keys.size && !trimHeld && !nearPort && !ai.some(q => dist(q, ship) < 300) &&
-        !ports.some(P => Math.hypot(P.cx - ship.x, P.cy - ship.y) < 500) && depthFast(ship.x + Math.sin(ship.h) * 200, ship.y - Math.cos(ship.h) * 200) < -5 && ship.wind.spd < 26;
-      timeScale += ((quiet ? 3 : 1) - timeScale) * Math.min(1, dt * (quiet ? 0.6 : 4));
-      const n = Math.ceil(timeScale - 0.05);
-      for (let i = 0; i < n; i++) update(dt * timeScale / n);
+      update(dt);
     }
     else if (!started) T += dt * 0.3;
     render();
@@ -4687,7 +4829,7 @@ function frame(now){
   }
 }
 requestAnimationFrame(frame);
-window.__game = { bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
+window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
   get trimManual(){ return trimManual; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
