@@ -104,6 +104,12 @@
     #trimF.aback #trimFKnob{ border-color:#d0402e; }
     #trimWrap.auto #trim,#trimWrap.auto #trimF{ opacity:.55; }
     #heaveBtn{ font-size:10px; padding:4px 8px; }
+    #winchRow{ display:flex; gap:8px; align-items:center; }
+    #winch{ width:60px; height:60px; image-rendering:pixelated; image-rendering:crisp-edges; border:3px solid #f6ecd6; border-radius:50%; box-shadow:3px 3px 0 #000a; background:#11283fcc; touch-action:none; cursor:grab; }
+    .wlab{ display:flex; flex-direction:column; gap:2px; font-size:10px; text-shadow:1px 1px 0 #000; }
+    .wlab small{ font-size:8px; opacity:.7; }
+    #winchSel{ color:#f0cf45; }
+    #trim.sel,#trimF.sel{ border-color:#f0cf45; }
     .labs{ display:flex; justify-content:space-between; font-size:10px; opacity:.85; text-shadow:1px 1px 0 #000; }
 
     #sails{
@@ -221,6 +227,10 @@
   <div id="toast"></div>
   <button class="px hidden" id="actBtn">-</button>
   <div id="left">
+    <div id="winchRow" class="hidden">
+      <canvas id="winch" width="40" height="40"></canvas>
+      <div class="wlab"><span id="winchSel">MAIN</span><span id="winchGear">LOW GEAR</span><small>crank clockwise<br>tap: change gear</small></div>
+    </div>
     <div id="trimRow">
       <canvas id="tell" width="20" height="17"></canvas>
       <div id="trimWrap">
@@ -280,7 +290,7 @@
       Sheets: the JIB and MAIN sliders above it. Watch the telltales.<br>
       Sails: lever bottom right. Reef when she heels too far.<br>
       Come into harbour slowly. Furl the sails early, come alongside the yellow kerb, lines ashore.<br>
-      Keys: A/D helm, W/S sails, Z/X main, Q/E jib, H heave to, V vane, N anchor, F lines, Enter lines ashore, M chart.</p>
+      Keys: A/D helm, W/S sails, Z/Q crank main/jib in, X/E ease, G winch gear, H heave to, V vane, N anchor, F lines, Enter lines ashore, M chart.</p>
     <button class="px" id="btnStart">SET SAIL</button>
     <button class="px hidden" id="btnNew">NEW VOYAGE</button>
   </div>
@@ -3577,6 +3587,7 @@ const GUIDE = [
     <li>The <b>windward</b> one (top) lifting and fluttering: the sail is <b>luffing</b>. Pull the sheet <b>in</b>.</li>
     <li>The <b>leeward</b> one (bottom) drooping and curling: the sail has <b>stalled</b>. Let the sheet <b>out</b>.</li>
     <li>Every time you change course, or a gust swings the wind, check them again. The jib sets a little tighter than the main.</li>
+    <li>Easing a sheet is quick: slide it out. Hauling one in takes the <b>winch</b>: drag round it clockwise to crank. It works on the sheet you touched last. Tap it to change gear: <b>high</b> gear hauls fast but jams when the wind is strong, <b>low</b> gear is slow but always turns.</li>
     <li>The two also <b>steer</b> her. Trimmed right they balance. Ease the main and she bears away from the wind; let the jib luff and she comes up toward it.</li></ol>
     <p class="help">Prefer not to? Settings, AUTO TRIM: both sheets follow by themselves, a little slowly, and she will not ease in the gusts for you.</p>`],
   ['Heel, gusts and reefing', () => `
@@ -5619,8 +5630,48 @@ function helmMove(e){
 const trimEl = el('trim'), trimKnob = el('trimKnob');
 let trimHeld = false;
 const trimFEl = el('trimF'), trimFKnob = el('trimFKnob');
+// the sheet winch: easing a sheet is quick, hauling it in takes cranking. high gear is fast but jams under load, low gear always turns
+const winchCv = el('winch'), winchCtx = winchCv.getContext('2d');
+let winchSel = 'main', winchGear = 0, winchAng = 0, winchHeld = false, winchA0 = 0, winchMoved = 0, winchT0 = 0, winchClick = 0, winchJamT = 0;
+const winchLoad = () => { const a = ship.aw.spd || ship.wind.spd; return a * a * ship.sail * (winchSel === 'main' ? 0.55 : 0.45) / 30; };
+function winchTurn(dA){
+  if (dA <= 0){ winchClick += -dA; if (winchClick > 0.6){ winchClick = 0; sfx.ratchet(); } return; }
+  const L = winchLoad();
+  if (winchGear && L > 4){ if (T > winchJamT){ winchJamT = T + 4; toast('Too heavy for high gear. Tap the winch for low gear.'); } return; }
+  const k = (winchGear ? 24 : 8) / (1 + L * (winchGear ? 0.35 : 0.1));
+  const key = winchSel === 'main' ? 'trimA' : 'trimF';
+  ship[key] = Math.max(0, ship[key] - dA / TAU * k);
+  winchAng += dA; winchClick += dA;
+  if (winchClick > 0.5){ winchClick = 0; sfx.ratchet(); }
+  setTrimUI(); drawWinch();
+}
+function drawWinch(){
+  const g = winchCtx, c = 20;
+  g.clearRect(0, 0, 40, 40);
+  // the bronze drum with the sheet wound round it, the handle on top
+  for (let j = -15; j <= 15; j++) for (let i = -15; i <= 15; i++){
+    const d = Math.hypot(i + 0.5, j + 0.5);
+    if (d > 15) continue;
+    g.fillStyle = d > 13.5 ? '#5a3a1c' : d > 9 ? ((Math.floor(Math.atan2(j, i) * 4 / Math.PI + winchAng * 2) & 1) ? '#e0c890' : '#b8a070') : d > 4 ? (i + j < 0 ? '#e6b45a' : '#b9823a') : '#7a4a24';
+    g.fillRect(c + i, c + j, 1, 1);
+  }
+  const ax = Math.cos(winchAng), ay = Math.sin(winchAng);
+  g.fillStyle = '#2a2a2e';
+  for (let k = 0; k <= 15; k++) g.fillRect(Math.round(c + ax * k) - 1, Math.round(c + ay * k) - 1, 2, 2);
+  g.fillStyle = '#f0cf45'; g.fillRect(Math.round(c + ax * 15) - 2, Math.round(c + ay * 15) - 2, 4, 4);
+  el('winchSel').textContent = (winchSel === 'main' ? 'MAIN' : 'JIB') + ' SHEET';
+  el('winchGear').textContent = winchGear ? 'HIGH GEAR' : 'LOW GEAR';
+  trimEl.classList.toggle('sel', winchSel === 'main'); trimFEl.classList.toggle('sel', winchSel === 'jib');
+}
+const winchAt = e => { const r = winchCv.getBoundingClientRect(); return Math.atan2(e.clientY - r.top - r.height / 2, e.clientX - r.left - r.width / 2); };
+winchCv.addEventListener('pointerdown', e => { winchCv.setPointerCapture(e.pointerId); winchHeld = true; winchA0 = winchAt(e); winchMoved = 0; winchT0 = performance.now(); });
+winchCv.addEventListener('pointermove', e => { if (!winchHeld) return; const a = winchAt(e), d = wrap(a - winchA0); winchA0 = a; winchMoved += Math.abs(d); winchTurn(d); });
+winchCv.addEventListener('pointerup', () => { if (winchHeld && winchMoved < 0.3 && performance.now() - winchT0 < 400){ winchGear = 1 - winchGear; sfx.tap(); drawWinch(); } winchHeld = false; });
+winchCv.addEventListener('pointercancel', () => { winchHeld = false; });
+drawWinch();
 function setTrimUI(){
   el('trimWrap').classList.toggle('auto', !trimManual);
+  el('winchRow').classList.toggle('hidden', !trimManual);
   el('trimLab').textContent = trimManual ? 'SHEETS' : 'AUTO TRIM';
   trimKnob.style.left = (clamp(ship.trimA / 85, 0, 1) * 100) + '%';
   trimFKnob.style.left = (clamp(ship.trimF / 85, 0, 1) * 100) + '%';
@@ -5629,11 +5680,14 @@ function setTrimUI(){
 function trimMove(e, jib){
   if (!trimManual){ if (!pl.tips.autotrim){ tip('autotrim', 'The sheets are on AUTO. INFO, SETTINGS to trim them yourself.'); } return; }
   const r = (jib ? trimFEl : trimEl).getBoundingClientRect(), v = clamp((e.clientX - r.left) / r.width, 0, 1) * 85;
-  if (jib) ship.trimF = v; else ship.trimA = v;
+  // easing is quick: the line surges round the drum. hauling in is the winch's job
+  const key = jib ? 'trimF' : 'trimA';
+  if (v < ship[key] - 1) tip('winch', 'To haul a sheet in, crank the winch: drag round it clockwise. Sliding only eases it out.');
+  ship[key] = Math.max(ship[key], v);
   setTrimUI();
 }
 for (const [E, jib] of [[trimEl, false], [trimFEl, true]]){
-  E.addEventListener('pointerdown', e => { E.setPointerCapture(e.pointerId); trimHeld = true; trimMove(e, jib); });
+  E.addEventListener('pointerdown', e => { E.setPointerCapture(e.pointerId); trimHeld = true; winchSel = jib ? 'jib' : 'main'; drawWinch(); trimMove(e, jib); });
   E.addEventListener('pointermove', e => { if (trimHeld) trimMove(e, jib); });
   E.addEventListener('pointerup', () => { trimHeld = false; });
   E.addEventListener('pointercancel', () => { trimHeld = false; });
@@ -5737,8 +5791,11 @@ addEventListener('keydown', e => {
   if (k === 'v') toggleVane();
   if (k === 'n') anchorBtnPress();
   if (k === 'f') linesBtnPress();
-  if (trimManual && (k === 'z' || k === 'x')){ ship.trimA = clamp(ship.trimA + (k === 'x' ? 3 : -3), 0, 85); setTrimUI(); }
-  if (trimManual && (k === 'q' || k === 'e')){ ship.trimF = clamp(ship.trimF + (k === 'e' ? 3 : -3), 0, 85); setTrimUI(); }
+  // Z and Q crank the winch on the main and jib sheets; X and E ease them
+  if (trimManual && (k === 'z' || k === 'q')){ winchSel = k === 'z' ? 'main' : 'jib'; winchTurn(0.7); }
+  if (trimManual && k === 'x'){ ship.trimA = clamp(ship.trimA + 3, 0, 85); setTrimUI(); }
+  if (trimManual && k === 'e'){ ship.trimF = clamp(ship.trimF + 3, 0, 85); setTrimUI(); }
+  if (trimManual && k === 'g'){ winchGear = 1 - winchGear; drawWinch(); }
   if (k === 'h') heaveTo();
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -5814,6 +5871,8 @@ const sfx = (() => {
     o.start(t); o.stop(t + dur + 0.05);
   };
   S.crunch = (v = 1) => { burst(1, 'lowpass', 700, 0.7 * v, { f1: 90 }); creakNow(0.25 * v, 70); };
+  // the pawl of the winch clicking round
+  S.ratchet = () => { burst(0.02, 'bandpass', 3800, 0.06, { q: 6 }); tone(1900, 1500, 0.03, 0.025, { type: 'square' }); };
   S.tap = () => { tone(520, 300, 0.07, 0.12, { type: 'triangle' }); burst(0.04, 'bandpass', 2200, 0.05, { q: 3 }); };
   S.sail = up => { burst(0.55, 'bandpass', up ? 900 : 700, 0.16, { f1: up ? 1600 : 400, attack: 0.08, q: 0.9 }); creakNow(0.06, up ? 140 : 110); };
   S.paper = () => { burst(0.3, 'bandpass', 3000, 0.08, { f1: 1500, attack: 0.03 }); burst(0.18, 'highpass', 4000, 0.04, { delay: 0.12 }); };
@@ -6036,7 +6095,7 @@ function frame(now){
 requestAnimationFrame(frame);
 window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
-  get trimManual(){ return trimManual; }, set trimManual(v){ trimManual = v; }, helm: v => { helmHeld = v != null; helmTarget = v || 0; }, heaveTo, econ, ecoPrice, GI, GOODS, ecoHour, ecoDay, priceOf, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
+  get trimManual(){ return trimManual; }, set trimManual(v){ trimManual = v; }, setTrimUI, get winchGear(){ return winchGear; }, helm: v => { helmHeld = v != null; helmTarget = v || 0; }, heaveTo, econ, ecoPrice, GI, GOODS, ecoHour, ecoDay, priceOf, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
 </script>
 </body>
