@@ -121,7 +121,7 @@
       position:absolute; right:4px; width:44px; height:28px; background:#f6ecd6; border:3px solid #7a4a24;
       box-shadow:2px 2px 0 #000a; transition:top .12s steps(3);
     }
-    #vaneBtn,#anchorBtn{ font-size:10px; padding:4px 8px; }
+    #vaneBtn,#anchorBtn,#towBtn{ font-size:10px; padding:4px 8px; }
     #anchorBtn.on{ background:#7a4a24; border-color:#f0cf45; }
     #vaneBtn.on{ background:#2f7a6a; border-color:#7fd6c8; }
 
@@ -229,6 +229,7 @@
     </div>
   </div>
   <div id="right">
+    <button class="px hidden" id="towBtn">TOW IN</button>
     <button class="px" id="anchorBtn">ANCHOR</button>
     <button class="px hidden" id="vaneBtn">VANE OFF</button>
     <div id="sails">
@@ -1453,6 +1454,7 @@ const RIGS = {
   brig: { masts: [{ y: -0.22, sq: 1, w: 1 }, { y: 0.08, boom: 0.42, gaff: 0.3 }], sprit: 9 },
   barq: { masts: [{ y: -0.28, sq: 1, w: 1.05 }, { y: -0.02, boom: 0.28, gaff: 0.22 }, { y: 0.22, boom: 0.34, gaff: 0.25 }], sprit: 11 },
   steam: { masts: [{ y: -0.32, bare: 1 }, { y: 0.3, bare: 1 }], sprit: 0 },
+  tug: { masts: [{ y: -0.22, bare: 1 }], sprit: 0 },
 };
 const TYPES = {
   schooner: { id: 'schooner', name: 'Schooner',    L: 26, B: 6.2, polar: POLAR,  noGo: 40, cap: 11,  accel: 5,  turn: 40, hull: 100, rig: 'schooner' },
@@ -1461,6 +1463,7 @@ const TYPES = {
   brig:     { id: 'brig',     name: 'Brigantine',  L: 32, B: 8,   polar: SQP,    noGo: 56, cap: 9,   accel: 8,  turn: 20, hull: 220, rig: 'brig' },
   barq:     { id: 'barq',     name: 'Barquentine', L: 42, B: 9.5, polar: SQP,    noGo: 56, cap: 10,  accel: 10, turn: 16, hull: 300, rig: 'barq' },
   steamer:  { id: 'steamer',  name: 'Steamer',     L: 52, B: 8.6, polar: SQP,    noGo: 0,  cap: 10,  accel: 12, turn: 14, hull: 500, rig: 'steam' },
+  tug:      { id: 'tug',      name: 'Tug',         L: 14, B: 4.4, polar: SQP,    noGo: 0,  cap: 8,   accel: 4,  turn: 40, hull: 140, rig: 'tug' },
 };
 // the shipwright's work belongs to the boat
 const UPG = {
@@ -1472,6 +1475,8 @@ const UPG = {
   glass:    { name: 'Barometer',        max: 1, cost: [160],           what: 'Warns of gales twice as early and forecasts a day further.' },
 };
 const PAINTS = { white: ['hullW', 'White'], navy: ['hullN', 'Navy blue'], green: ['hullG', 'Racing green'], red: ['hullR', 'Pompeii red'], black: ['hullB', 'Black'] };
+// how badly holed: 0 sound, 1 scraped, 2 holed, 3 stove in
+const dmgOf = s => { const f = 1 - s.hull / s.t.hull; return f < 0.12 ? 0 : f < 0.35 ? 1 : f < 0.65 ? 2 : 3; };
 const upOf = (s, k) => (s.up && s.up[k]) || 0;
 const holdOf = () => 16 + 8 * upOf(ship, 'hold');
 
@@ -1520,6 +1525,7 @@ function load(){
     if (s.reqDay) reqDay = s.reqDay;
     T = s.t || T;
     if (s.moored != null && ports[s.moored]){ moored = ports[s.moored]; ship.berth = s.berth || null; }
+    else if (ship.hull < 1) ship.hull = 0;
     return true;
   } catch (e){ return false; }
 }
@@ -1602,7 +1608,7 @@ function groundCheck(s){
     if (s === ship && T > groundToastT){
       groundToastT = T + 3;
       toast(src && src.r && !src.cx ? 'Reef! The keel grinds over rock.' : 'Aground! The timbers groan.');
-      sfx.crunch(Math.min(1, v / 6)); shake = Math.min(2, 0.4 + v * 0.25);
+      sfx.crunch(Math.min(1, v / 6)); shake = Math.min(0.9, 0.3 + v * 0.1);
     }
   }
   s.v *= 0.3;
@@ -1615,7 +1621,7 @@ function runAground(s, src, v){
   s.hull = Math.max(0, s.hull - dmg);
   s.aground = { beach, t0: T, list: (Math.random() < 0.5 ? -1 : 1) * (beach ? 5 : 9) };
   s.v = 0; s.turn = 0; s.lat = 0; s.rudder = 0;
-  sfx.crunch(clamp(0.3 + v / 6, 0.3, 1)); shake = Math.min(2.5, 0.6 + v * 0.3);
+  sfx.crunch(clamp(0.3 + v / 6, 0.3, 1)); shake = Math.min(1, 0.4 + v * 0.1);
   warp = false;
   toastNow(reef ? 'Reef! She is hard on the rocks.' : beach ? 'She runs up the beach and sticks fast.' : 'Aground on the rocks! The timbers groan.');
   tip('kedge', 'To get her off: KEDGE OFF, rowing the anchor out to deep water and winching her to it. Or set sail, if the wind blows off the shore.');
@@ -1756,7 +1762,7 @@ function structCollide(s){
       if (s.ghost){ s.grounded = true; continue; }
       if (vn > 2.2){
         s.hull = Math.max(0, s.hull - (vn - 2.2) * 6);
-        if (s === ship && T > bumpQuayT){ bumpQuayT = T + 3; toast('Crunch! Too fast against the stone.'); sfx.crunch(Math.min(1, vn / 5)); shake = Math.min(2, vn * 0.4); tip('slow', 'Furl the sails a good way out and glide in. Touch the quay under 2 knots.'); }
+        if (s === ship && T > bumpQuayT){ bumpQuayT = T + 3; toast('Crunch! Too fast against the stone.'); sfx.crunch(Math.min(1, vn / 5)); shake = Math.min(0.8, vn * 0.2); tip('slow', 'Furl the sails a good way out and glide in. Touch the quay under 2 knots.'); }
       } else if (vn > 0.3 && s === ship && T > bumpQuayT){ bumpQuayT = T + 2; sfx.fender(); }
       // a blow off the bow swings her
       const off = (cp[0] - s.x) * -ny + (cp[1] - s.y) * nx;
@@ -1935,8 +1941,63 @@ function segClosest(A, B, o){
 }
 const massOf = s => s.kin ? 1e9 : s.t.L * s.t.B * s.t.B;
 let bumpToastT = 0;
+// before a crash: the other boat sees you coming and sounds the danger signal, five short blasts, and tries to turn away;
+// the last seconds before they meet draw out, so you see it happen
+let warnT = 0, slowUntil = 0, slowK = 1, crashT = -99, crashInfo = null;
+function warnStep(){
+  if (moored || ship.securing || tow || ship.hold) return;
+  const vx = Math.sin(ship.h) * ship.v * KN, vy = -Math.cos(ship.h) * ship.v * KN;
+  for (const o of ai){
+    if (o.sinking || o.isTug) continue;
+    const rx = o.x - ship.x, ry = o.y - ship.y;
+    if (Math.abs(rx) > 600 || Math.abs(ry) > 600) continue;
+    const wx = Math.sin(o.h) * o.v * KN - vx, wy = -Math.cos(o.h) * o.v * KN - vy, w2 = wx * wx + wy * wy;
+    // a gentle nudge alongside in harbour is no danger; a boat lying at her moorings only shouts if you come in hard
+    const closing = Math.sqrt(w2) / KN;
+    if (closing < 1.2 || o.mode === 'moored' && closing < 2.5) continue;
+    const tc = -(rx * wx + ry * wy) / w2;
+    if (tc <= 0 || tc > 10) continue;
+    const R = (ship.t.B + o.t.B) * 0.5 + Math.min(ship.t.L, o.t.L) * 0.35 + 4;
+    if (Math.hypot(rx + wx * tc, ry + wy * tc) > R) continue;
+    // fast enough to hurt: let the moment stretch
+    if (tc < 1.6 && Math.sqrt(w2) / KN > 1.5) slowUntil = Math.max(slowUntil, T + tc + 0.8);
+    if (o.warnAt && T - o.warnAt < 15) continue;
+    o.warnAt = o.warnMark = T;
+    const big = o.t.L > 30;
+    sfx.blasts(big ? 2 : o.t.L > 12 ? 1 : 0);
+    toastNow(big ? `${o.name || 'The ' + o.t.name.toLowerCase()} blows five short blasts: you are standing into danger!` : `A ${o.t.name.toLowerCase()} sounds her horn at you. Bear away!`);
+    if (!o.kin){ o.bumpT = 4; o.bumpAway = Math.atan2(o.x - ship.x, -(o.y - ship.y)) + (wx * ry - wy * rx > 0 ? 0.6 : -0.6); }
+    tip('cpa', 'A horn means she thinks you will hit her. Turn away, or spill the wind from your sails to slow down.');
+  }
+}
+// after a real crash: how she is, how the other boat is, and what to do about it
+function crashPanel(){
+  const c = crashInfo, o = c.them;
+  crashInfo = null;
+  const P = nearestPort(), far = Math.hypot(P.cx - ship.x, P.cy - ship.y), fee = Math.round(10 + far / 250);
+  const nm = o.name || `the ${o.t.name.toLowerCase()}`, hp = ship.hull / ship.t.hull;
+  const mine = hp > 0.85 ? 'Scraped paint and a split rubbing strake. Nothing that lets water in.' : hp > 0.6 ? 'Planks sprung along the bow. She weeps a little; the pump keeps up.' : hp > 0.3 ? 'She is holed above the waterline and takes water when she heels.' : 'Her planks are stove in. The pump can hardly keep up.';
+  const theirs = o.sinking ? `${nm[0].toUpperCase() + nm.slice(1)} is going down. Her crew are in the water.` : o.hull < o.t.hull * 0.5 ? `${nm[0].toUpperCase() + nm.slice(1)} is badly holed, but stays afloat.` : `${nm[0].toUpperCase() + nm.slice(1)} got off lightly.`;
+  const btns = [];
+  if (o.sinking && !o.saved){
+    btns.push(['PICK UP HER CREW', () => {
+      o.saved = true; closePanel();
+      const back = Math.floor(c.fee / 2);
+      pl.coins += back;
+      const home = o.F ? o.F.P : P;
+      pl.friends[home.name] = (pl.friends[home.name] || 0) + 1;
+      sfx.rope();
+      toastNow(`You heave to and haul her crew aboard, wet and cursing, and set them ashore in ${home.name}.${back ? ` Her owner hands back ${back} coins.` : ''}`);
+    }, true]);
+  }
+  if (hp < 0.85) btns.push([`SIGNAL FOR A TOW ${fee}`, () => { if (pl.coins >= fee) callTow('in', P, fee); else toast(`Not enough coins for the tug: ${fee}.`); }]);
+  btns.push(['SAIL ON', closePanel, !btns.length]);
+  panel('Collision', `<p>${mine}</p><p>${theirs}</p>${c.fee ? `<p>You paid her owner ${c.fee} coins.</p>` : c.fault ? '' : '<p>She was in the wrong: nothing to pay.</p>'}
+    <p class="help">Hull ${pct(hp)} &middot; rig ${pct(ship.rig)}. The shipwright in any harbour mends her.${hp < 0.85 ? ` A tug from ${P.name} will tow you to the quay.` : ''}</p>`, btns);
+}
 function collide(a, b){
   if (a.kin && b.kin) return;
+  if (a.isTug && b === ship || b.isTug && a === ship) return;
   if ((a === ship && (moored || ship.securing)) || (b === ship && (moored || ship.securing))) return;
   segClosest(hullSeg(a, segA), hullSeg(b, segB), cp);
   let nx = cp[2] - cp[0], ny = cp[3] - cp[1], d = Math.hypot(nx, ny);
@@ -1950,7 +2011,8 @@ function collide(a, b){
   const fax = Math.sin(a.h), fay = -Math.cos(a.h), fbx = Math.sin(b.h), fby = -Math.cos(b.h);
   const vrel = (fbx * b.v - fax * a.v) * nx + (fby * b.v - fay * a.v) * ny;
   if (vrel >= -0.05) return;
-  const J = -1.2 * vrel / (1 / ma + 1 / mb);
+  // wood on wood: they hardly bounce, they grind and lean on each other
+  const J = -0.55 * vrel / (1 / ma + 1 / mb);
   const vax = fax * a.v - nx * J / ma, vay = fay * a.v - ny * J / ma, vbx = fbx * b.v + nx * J / mb, vby = fby * b.v + ny * J / mb;
   if (!a.kin) a.v = vax * fax + vay * fay;
   if (!b.kin) b.v = vbx * fbx + vby * fby;
@@ -1971,7 +2033,7 @@ function collide(a, b){
   const da = Math.min(a.hull, fa * a.t.hull), db = Math.min(b.hull, fb * b.t.hull);
   for (const [s, dmg] of [[a, da], [b, db]]){
     if (s === ship){ s.hull = Math.max(0, s.hull - dmg); continue; }
-    s.hull = Math.max(s.role === 'steamer' ? s.t.hull * 0.2 : 0, s.hull - dmg);
+    s.hull = Math.max(s.role === 'steamer' || s.isTug ? s.t.hull * 0.2 : 0, s.hull - dmg);
     if (s.hull <= 0) sinkBoat(s);
   }
   // splinters fly where they met
@@ -1980,7 +2042,8 @@ function collide(a, b){
   if (a !== ship && b !== ship) return;
   const me = a === ship ? a : b, them = a === ship ? b : a, mine = a === ship ? da : db, theirs = a === ship ? db : da;
   const sev = mine / me.t.hull;
-  sfx.crunch(clamp(0.3 + sev * 3 + theirs / 60, 0.3, 1)); shake = Math.min(2.5, shake + impact * 0.25 + sev * 6);
+  sfx.crunch(clamp(0.3 + sev * 3 + theirs / 60, 0.3, 1)); shake = Math.min(0.7, shake + impact * 0.06 + sev * 2);
+  slowUntil = Math.max(slowUntil, T + 1.2);
   // who ran into whom: whoever was closing faster pays for the other's planks
   const mvx = Math.sin(me.h) * me.v, mvy = -Math.cos(me.h) * me.v, tvx = Math.sin(them.h) * them.v, tvy = -Math.cos(them.h) * them.v;
   const ux = them.x - me.x, uy = them.y - me.y, ul = Math.hypot(ux, uy) || 1;
@@ -1992,11 +2055,18 @@ function collide(a, b){
   else if (sev > 0.08) msg += ' Your bow is damaged.';
   if (them.sinking) msg += ' She is going down, her crew swimming for it.';
   else if (theirs > them.t.hull * 0.3) msg += ' She is badly holed.';
+  let paid = 0;
   if (fault && theirs > 1){
     const fee = Math.min(pl.coins, Math.round(theirs * 1.5 + (them.sinking ? 25 : 0)));
-    if (fee > 0){ pl.coins -= fee; msg += ` You pay her owner ${fee} coins.`; }
+    if (fee > 0){ pl.coins -= fee; paid = fee; msg += ` You pay her owner ${fee} coins.`; }
   }
   if (T > bumpToastT || sev > 0.1 || them.sinking){ bumpToastT = T + 4; toastNow(msg); }
+  // a real crash: once the noise has died away, what now?
+  if (sev > 0.06 || them.sinking || theirs > them.t.hull * 0.3){
+    const prev = crashInfo && crashInfo.them === them ? crashInfo.fee : 0;
+    crashInfo = { them, fault, fee: prev + paid };
+    crashT = T;
+  }
 }
 // a holed boat settles and goes down; her crew row away in the dinghy, her owner gets another in a day or two
 function sinkBoat(s){
@@ -2533,7 +2603,9 @@ function moor(P){
   deliver(P);
   genReqs(P);
   sfx.bell();
+  if (pendingRescue === P){ pendingRescue = null; rescueBill(P); save(); return; }
   harbour(P, 'market', first);
+  if (towFee){ toast(`Towed in to the quay: ${towFee} coins.`); towFee = 0; }
   save();
 }
 function castOff(){
@@ -2546,20 +2618,15 @@ function castOff(){
   save();
   tip('castoff', 'Lines in, pushed off. Raise the sails with the lever: she is slow to start, one pair of hands.');
 }
-// when the wind pins her to the quay, a fisherman tows her out past the mole for a few coins
-function towOut(){
-  const P = moored;
-  if (!P || pl.coins < 6) return;
-  pl.coins -= 6;
-  closePanel();
-  moored = null; ship.berth = null;
-  const h = Math.atan2(P.hx - P.ix, -(P.hy - P.iy));
-  Object.assign(ship, { x: P.hx, y: P.hy, h, v: 1.5, lat: 0, turn: 0, anchor: null });
-  ship.wake.length = 0;
-  toast(`A fisherman from ${P.name} tows you out past the mole. Six coins well spent.`);
-  sfx.rope();
-  save();
+function towOut(){ const P = moored; if (!P || pl.coins < 6) return; callTow('out', P, 6); }
+// near a harbour a tug will take you in, or pull you off the ground
+function towOffer(){
+  if (moored || tow || ship.securing || ship.hold) return null;
+  const P = nearestPort(), d = Math.hypot(P.cx - ship.x, P.cy - ship.y);
+  if (ship.aground) return d < 3000 ? { mode: 'off', P, fee: 15 } : null;
+  return d < 1500 ? { mode: 'in', P, fee: 8 } : null;
 }
+function towBtnPress(){ const o = towOffer(); if (o && pl.coins >= o.fee) callTow(o.mode, o.P, o.fee); else if (o) toast(`Not enough coins for the tug: ${o.fee}.`); }
 function waitUntil(t1, P){
   const t0 = T;
   const S = nextStorm(t0, (t1 - t0) / HOUR);
@@ -2702,26 +2769,134 @@ function harbour(P, tab = harbourTab, postcard = false){
   });
 }
 
-// when the hull gives out: somebody always comes
-function rescue(){
-  let P = ports[0], bd = 1e9;
-  for (const Q of ports){ const d = Math.hypot(Q.cx - ship.x, Q.cy - ship.y); if (d < bd){ bd = d; P = Q; } }
+
+// ---------------------------------------------------------------- the tug
+// a little steam tug puts out from the nearest harbour, comes up under your bow, passes a line and tows you where you need to go
+let tow = null;
+const nearestPort = () => { let P = ports[0], bd = 1e9; for (const Q of ports){ const d = Math.hypot(Q.cx - ship.x, Q.cy - ship.y); if (d < bd){ bd = d; P = Q; } } return P; };
+const inBasin = (P, x, y) => Math.hypot(P.cx - x, P.cy - y) < 260;
+const VIS_OUT = [[-52, 40], [-60, 110], [-90, 170], [-112, 218]];
+// a way across the water from a to b: through the harbour mouth if either end is inside one
+function waterway(ax, ay, bx, by){
+  const P = ports.find(Q => inBasin(Q, ax, ay)), Q = ports.find(R => inBasin(R, bx, by));
+  if (P && P === Q) return [[bx, by]];
+  const pts = [];
+  let sx = ax, sy = ay;
+  if (P){ for (const p of toWorld(P, [[-20, 110], [-46, 152], [-112, 218]])) pts.push(p); [sx, sy] = P.W(-112, 218); }
+  const ex = Q ? Q.hx : bx, ey = Q ? Q.hy : by;
+  for (const p of seaPath(sx, sy, ex, ey).slice(1)) pts.push(p);
+  if (Q) for (const p of toWorld(Q, [[-46, 152], [-30, 124]])) pts.push(p);
+  pts.push([bx, by]);
+  return pts;
+}
+// mode: 'in' (to the visitors' berth), 'out' (from it, past the mole), 'off' (off the ground), 'rescue' (sinking: home to the shipwright)
+function callTow(mode, P, fee){
+  if (tow || pl.coins < Math.min(fee, 1) && mode !== 'rescue') return;
+  closePanel();
+  const near = Math.hypot(P.cx - ship.x, P.cy - ship.y);
+  // she puts out from the harbour; if that is far off she is already on her way when you see her
+  let sx, sy;
+  if (mode === 'out' || near < 1600){ sx = P.cx; sy = P.cy; }
+  else { const a = Math.atan2(P.hx - ship.x, -(P.hy - ship.y)); sx = ship.x + Math.sin(a) * 900; sy = ship.y - Math.cos(a) * 900; if (depthFast(sx, sy) > -20){ sx = P.hx; sy = P.hy; } }
+  const tug = makeShip('tug', sx, sy, Math.atan2(ship.x - sx, -(ship.y - sy)), 'tug');
+  Object.assign(tug, { col: 'hullB', kin: true, mode: 'tow', vt: 6, vtSea: 6, wind: windAt(sx, sy, T), isTug: true });
+  tug.path = waterway(sx, sy, ship.x, ship.y);
+  ai.push(tug);
+  tow = { mode, P, tug, phase: 'come', fee, t0: T };
+  setSail(0);
+  vaneOn = false; setVaneUI();
+  if (mode === 'out'){ ship.hold = true; moored = null; }
+  if (mode === 'rescue') ship.hold = true;
+  toastNow(mode === 'out' ? `A tug comes alongside in ${P.name}.` : `A tug puts out from ${P.name}. Hold on.`);
+  sfx.horn();
+}
+function towStep(dt){
+  const T_ = tow, tug = T_.tug, s = ship;
+  const fx = Math.sin(s.h), fy = -Math.cos(s.h), bowX = s.x + fx * s.t.L * 0.45, bowY = s.y + fy * s.t.L * 0.45;
+  if (T_.phase === 'come'){
+    // keep steering for a point just ahead of her bow; the last stretch she eases in under the bow
+    const tx = bowX + fx * 18, ty = bowY + fy * 18, hh = s.h;
+    if (!T_.glide){
+      const last = tug.path[tug.path.length - 1];
+      if (!last || Math.hypot(last[0] - tx, last[1] - ty) > 6){ if (tug.path.length <= 1) tug.path = [[tx, ty]]; else tug.path[tug.path.length - 1] = [tx, ty]; }
+      if (Math.hypot(tug.x - tx, tug.y - ty) < 70 || tug.path.length === 1 && Math.hypot(tug.x - tx, tug.y - ty) < 120) T_.glide = { t0: T, x0: tug.x, y0: tug.y, h0: tug.h, v0: tug.v };
+    }
+    if (T_.glide){
+      const G = T_.glide, p = clamp((T - G.t0) / 6, 0, 1), e = sm(p);
+      tug.path = null;
+      tug.x = lerp(G.x0, tx, e); tug.y = lerp(G.y0, ty, e); tug.h = norm(G.h0 + wrap(hh - G.h0) * e);
+      tug.v = G.v0 * (1 - e) + 0.3;
+      wakeTrail(tug, dt);
+      if (p >= 1){
+        T_.phase = 'hook'; T_.t1 = T; tug.path = []; tug.v = 0;
+        sfx.rope(); toast('The tug passes her line. Made fast!');
+      }
+    }
+    return;
+  }
+  if (T_.phase === 'hook'){
+    if (T - T_.t1 < 1.6) return;
+    // where to: the way she will lead you
+    let path, end;
+    if (T_.mode === 'out'){ path = toWorld(T_.P, VIS_OUT); end = 'release'; }
+    else if (T_.mode === 'off'){ const a = deepDir(s.x, s.y); path = [[s.x + Math.sin(a) * 90, s.y - Math.cos(a) * 90]]; end = 'release'; }
+    else { const [x, y] = T_.P.W(-52, 40); path = waterway(tug.x, tug.y, x, y); end = 'berth'; }
+    Object.assign(tug, { path, vtSea: T_.mode === 'off' ? 1.5 : 5, finalH: null });
+    tug.onDone = () => { T_.phase = end; };
+    T_.phase = 'tow'; s.hold = false; s.aground = null; s.kedge = null; s.anchor = null;
+    if (moored) moored = null;
+    return;
+  }
+  if (T_.phase === 'tow'){
+    // she follows on the line: drawn after the tug's stern, her head pulled round toward it
+    const sx = tug.x - Math.sin(tug.h) * tug.t.L * 0.5, sy = tug.y + Math.cos(tug.h) * tug.t.L * 0.5;
+    const dx = sx - bowX, dy = sy - bowY, d = Math.hypot(dx, dy), LINE = 26;
+    if (d > LINE){ s.x += dx / d * (d - LINE); s.y += dy / d * (d - LINE); }
+    const want = Math.atan2(sx - s.x, -(sy - s.y));
+    s.h = norm(s.h + clamp(wrap(want - s.h), -0.5, 0.5) * dt * 1.2);
+    s.v = tug.v; s.turn = 0; s.heel *= 0.97; s.sail = Math.max(0, s.sail - dt * 0.3);
+    s.windT -= dt;
+    if (s.windT <= 0){ s.wind = windAt(s.x, s.y, T); s.windT = 0.25; s.aw.toward = Math.atan2(-Math.sin(s.wind.dir), -Math.cos(s.wind.dir)); s.aw.rel = wrap(s.aw.toward + Math.PI - s.h); s.aw.awa = Math.abs(s.aw.rel); }
+    wakeTrail(s, dt);
+    return;
+  }
+  // arrived: let go, and the tug goes home
+  const P = T_.P;
+  if (T_.phase === 'berth'){
+    const [x, y, h] = berthPos(P.visitor, 0.5, s.t.B, -1);
+    s.berth = { pid: P.id, f: 0.5, dir: -1 };
+    s.securing = { P, t0: T, x0: s.x, y0: s.y, h0: s.h, x, y, h };
+    T_.after = T_.mode === 'rescue' ? 'rescue' : 'paid';
+  } else { s.v = Math.min(s.v, 1.5); toast('The tug casts off your line. She is yours again.'); }
+  const fee = T_.mode === 'rescue' ? 0 : Math.min(pl.coins, T_.fee);
+  pl.coins -= fee;
+  if (fee && T_.phase === 'release') toast(`Towage: ${fee} coins.`);
+  tug.path = waterway(tug.x, tug.y, P.cx, P.cy); tug.vtSea = 6; tug.onDone = q => { q.gone = true; };
+  pendingRescue = T_.mode === 'rescue' ? P : null;
+  towFee = T_.phase === 'berth' && T_.mode !== 'rescue' ? fee : 0;
+  tow = null;
+  sfx.rope();
+}
+let pendingRescue = null, towFee = 0;
+// after the tow brings a sinking ship in: the bill, and what went over the side
+function rescueBill(P){
   const fee = Math.min(pl.coins, 40 + Math.floor(pl.coins * 0.2));
   pl.coins -= fee;
   let lost = 0;
   for (const k in pl.cargo){ const n = Math.ceil(pl.cargo[k] / 2); lost += n; pl.cargo[k] -= n; if (!pl.cargo[k]) delete pl.cargo[k]; }
-  ship.hull = 35; ship.rig = Math.max(ship.rig, 0.4);
-  moored = P;
-  ship.berth = { pid: P.id, f: 0.5, dir: -1 };
-  const [bx, by, bh] = berthPos(P.visitor, 0.5, ship.t.B, -1);
-  Object.assign(ship, { v: 0, turn: 0, rudder: 0, sail: 0, x: bx, y: by, h: bh, heel: 0, securing: null, aground: null, kedge: null, anchor: null });
-  setSail(0);
-  warp = false;
+  ship.hull = Math.max(ship.hull, 35); ship.rig = Math.max(ship.rig, 0.4);
+  panel('Towed in', `<p>The tug brings her in to ${P.name}, low in the water, the pumps going.</p>
+    <p>Towage and salvage: ${fee} coins.${lost ? ` ${lost} crates went over the side to lighten her.` : ''}</p><p class="help">The shipwright can mend her properly.</p>`,
+    [['TO THE SHIPWRIGHT', () => harbour(P, 'yard'), true]]);
+}
+// when the hull gives out: send up a flare and wait. Somebody always comes.
+function rescue(){
+  if (tow) return;
+  ship.hull = 0.5; ship.v = 0; ship.hold = true; setSail(0); warp = false;
   if (mapOpen) closeMap();
-  panel('Taking water', `<p>She is low in the water and the pumps cannot keep up. A fishing boat from ${P.name} takes you in tow.</p>
-    <p>Towage: ${fee} coins.${lost ? ` ${lost} crates went over the side to lighten her.` : ''}</p><p class="help">The shipwright can mend her properly.</p>`,
-    [['TO THE HARBOUR', () => harbour(P, 'yard'), true]]);
-  save();
+  const P = nearestPort();
+  panel('Taking water', `<p>She is low in the water and the pumps cannot keep up.</p><p>You send up a flare. In ${P.name} they will see it.</p>`,
+    [['SIGNAL FOR A TOW', () => callTow('rescue', P, 0), true]]);
 }
 
 // ---------------------------------------------------------------- logbook
@@ -2807,7 +2982,7 @@ const GUIDE = [
     <li>Come alongside it <b>slowly</b>: furl the sails well out and glide in, <b>parallel</b> to the stone, a few metres off. With little sail up the wind blows her sideways, so use it.</li>
     <li>When the button says <b>LINES ASHORE</b>, press it: bow and stern lines go over the bollards and she is warped in snug.</li>
     <li>Touch the stone gently and the fenders take it. Hit it at more than two knots and the shipwright will be pleased to see you.</li>
-    <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, a fisherman will <b>TOW</b> you out for a few coins.</li>
+    <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, the harbour tug will <b>TOW</b> you out for a few coins. Close to a harbour, or stuck on the ground near one, the <b>TOW</b> button calls her out to fetch you.</li>
     <li>Mind the traffic: fishing boats go out at dawn and come back in the afternoon, lamp boats fish at night, coasters and big cargo ships lie at the mole, and the mail steamers keep their timetable whatever the wind.</li>
     <li><b>Reefs</b> break white just under the surface. They are marked on the chart once you have seen them.</li></ol>`],
   ['Anchoring and running aground', () => `
@@ -2908,13 +3083,16 @@ function update(dt){
   ship.rudder += clamp(want - ship.rudder, -dt * (helmHeld ? 12 : 3), dt * (helmHeld ? 12 : 3));
   ship.grounded = false;
   if (ship.securing) securingStep();
+  else if (tow && tow.phase !== 'come' && tow.phase !== 'hook') towStep(dt);
+  else if (ship.hold){ ship.v *= Math.pow(0.6, dt); ship.turn = 0; ship.lat = 0; ship.heel *= 0.97; if (tow) towStep(dt); }
+  else if (tow && (ship.aground || moored)){ towStep(dt); if (ship.aground) groundedStep(dt); }
   else if (ship.kedge){ kedgeStep(dt); if (ship.aground) groundedStep(dt); }
   else if (ship.aground) groundedStep(dt);
-  else if (!moored){ stepShip(ship, dt); if (ship.anchor) anchorStep(ship, dt); }
+  else if (!moored){ stepShip(ship, dt); if (ship.anchor) anchorStep(ship, dt); if (tow) towStep(dt); }
   if (warp) warpWatch(dt);
   const lt = track[track.length - 1];
   if (!lt || Math.hypot(lt[0] - ship.x, lt[1] - ship.y) > 120){ track.push([ship.x, ship.y]); if (track.length > 4000) track.shift(); }
-  if (ship.hull <= 0 && !moored){ rescue(); return; }
+  if (ship.hull <= 0 && !moored && !tow && !ship.hold){ rescue(); return; }
 
   // other boats
   for (const s of ai){
@@ -2926,7 +3104,21 @@ function update(dt){
     }
     if (s.mode === 'steam'){ steamStep(s); continue; }
     if (s.mode === 'moored'){ s.v = 0; continue; }
-    if (s.mode === 'tow'){ kinStep(s, dt); continue; }
+    if (s.mode === 'tow'){
+      // a tug goes dead slow inside the moles, where there is no room to swing
+      if (s.isTug){
+        s.vt = ports.some(Q => inBasin(Q, s.x, s.y)) ? Math.min(s.vtSea, 2) : s.vtSea;
+        // and does not circle back for a mark she has already passed
+        if (s.path && s.path.length > 1){ const dx = s.path[0][0] - s.x, dy = s.path[0][1] - s.y; if (Math.hypot(dx, dy) < 30 && dx * Math.sin(s.h) - dy * Math.cos(s.h) < 0) s.path.shift(); }
+      }
+      kinStep(s, dt);
+      // the tug's funnel puffs harder when she has a ship on the line
+      if (s.isTug && visible(s) && Math.random() < dt * (tow && tow.tug === s && tow.phase === 'tow' ? 9 : 4)){
+        const fx = Math.sin(s.h), fy = -Math.cos(s.h), w = s.wind;
+        puff('coal', s.x + fx * s.t.L * 0.06, s.y + fy * s.t.L * 0.06, -Math.sin(w.dir) * w.spd * 0.8 - fx * s.v, Math.cos(w.dir) * w.spd * 0.8 - fy * s.v, rnd(2.5, 4), 1, 1.2, 0.8);
+      }
+      continue;
+    }
     s.acc = (s.acc || 0) + dt;
     const far = dist(s, ship) > 1500;
     if (far && s.acc < 0.25) continue;
@@ -2952,6 +3144,9 @@ function update(dt){
   }
   spawnT -= dt;
   if (spawnT <= 0){ spawnT = 0.5; traffic(); }
+  warnT -= dt;
+  if (warnT <= 0){ warnT = 0.25; warnStep(); }
+  if (crashInfo && T - crashT > 1.4 && !paused && !tow && ship.hull > 0) crashPanel();
   lifeStep(dt);
 
   // smoke from the volcanoes, drifting downwind
@@ -3007,7 +3202,7 @@ function update(dt){
 
   // coming alongside the visitors' berth
   dock = null;
-  if (!moored && !ship.securing && !ship.aground && !ship.anchor) for (const P of ports) if (Math.abs(P.cx - ship.x) < 320 && Math.abs(P.cy - ship.y) < 320){ dock = dockCheck(P); break; }
+  if (!moored && !ship.securing && !ship.aground && !ship.anchor && !tow && !ship.hold) for (const P of ports) if (Math.abs(P.cx - ship.x) < 320 && Math.abs(P.cy - ship.y) < 320){ dock = dockCheck(P); break; }
   nearPort = dock ? dock.P : null;
   if (dock && dock.near){
     actBtn.textContent = dock.ok ? 'LINES ASHORE' : dock.why;
@@ -3062,10 +3257,14 @@ function updHud(){
   const W = weatherAt(T);
   setText(hudEl.spdN, Math.max(0, ship.v).toFixed(1));
   const ab = el('anchorBtn');
-  ab.classList.toggle('hidden', !!moored || !!ship.securing);
+  ab.classList.toggle('hidden', !!moored || !!ship.securing || !!tow || !!ship.hold);
+  const tb = el('towBtn'), to = towOffer();
+  tb.classList.toggle('hidden', !to && !tow);
+  tb.classList.toggle('on', !!tow);
+  setText(tb, tow ? (tow.phase === 'come' ? 'TUG COMING' : tow.phase === 'hook' ? 'LINE ACROSS' : 'UNDER TOW') : to ? `${to.mode === 'off' ? 'TOW OFF' : 'TOW IN'} ${to.fee}` : '');
   ab.classList.toggle('on', !!ship.anchor || !!ship.aground);
   setText(ab, ship.aground ? (ship.kedge ? 'KEDGING...' : 'KEDGE OFF') : ship.anchor ? (ship.anchor.weigh ? 'WEIGHING...' : 'WEIGH ANCHOR') : 'ANCHOR');
-  setText(hudEl.pos, ship.aground ? (ship.aground.beach ? 'Aground on the beach' : 'Aground on the rocks') : ship.anchor ? 'At anchor' : moored ? `Moored in ${moored.name}` : `${pointOfSail(twa, ship.v)}${twa < 174 && twa > ship.t.noGo ? (rel > 0 ? ', starboard tack' : ', port tack') : ''}`);
+  setText(hudEl.pos, tow && tow.phase === 'tow' ? `Under tow to ${tow.mode === 'off' || tow.mode === 'out' ? 'open water' : tow.P.name}` : ship.hold ? 'Waiting for the tug' : ship.aground ? (ship.aground.beach ? 'Aground on the beach' : 'Aground on the rocks') : ship.anchor ? 'At anchor' : moored ? `Moored in ${moored.name}` : `${pointOfSail(twa, ship.v)}${twa < 174 && twa > ship.t.noGo ? (rel > 0 ? ', starboard tack' : ', port tack') : ''}`);
   setText(hudEl.wind, `Wind ${compassName(ship.wind.dir)} ${Math.round(ship.wind.spd)} kn  sea ${ship.sea.toFixed(1)} m`);
   setText(hudEl.heel, `${SAIL_NAMES[ship.set]}  heel ${Math.round(ship.heel)}°${ship.rig < 0.75 ? '  sails torn' : ''}`);
   setText(hudEl.clock, `Day ${dayOf(T)} ${clockStr(T)}  ${KIND_NAME[W.kind]}`);
@@ -3358,6 +3557,15 @@ function drawRig(g, s, shadow){
         g.moveTo(bx * 0.15 + px * 0.6, my + (by - my) * 0.15 + py * 0.6); g.lineTo(bx * 0.85 + px * 0.6, my + (by - my) * 0.85 + py * 0.6);
         g.stroke();
       }
+      // a torn sail: the canvas split and flogging, the deck showing through
+      if (s.rig < 0.8){
+        g.strokeStyle = C.teak; g.lineWidth = s.rig < 0.5 ? 1.1 : 0.7;
+        const k = 0.35 + (mi * 0.27 + s.seed) % 0.3;
+        g.beginPath(); g.moveTo(bx * k + px * belly * 0.6, my + (by - my) * k + py * belly * 0.6);
+        g.lineTo((bx * k + gx * k) / 2 + px * belly, my + ((by - my) * k + (gy - my) * k) / 2 + py * belly + Math.sin(T * 14 + s.seed) * 0.4);
+        g.lineTo(gx * (k + 0.2) + px * belly * 0.5, my + (gy - my) * (k + 0.2) + py * belly * 0.5); g.stroke();
+        g.strokeStyle = ss; g.lineWidth = 0.4;
+      }
       // topsail: a pale wedge above the gaff
       if (s.set === 4){
         g.fillStyle = C.white;
@@ -3425,6 +3633,17 @@ function drawShipBody(g, s){
     for (const y of [-0.06, 0.1]) for (const sd of [-1, 1]){ g.fillRect(sd * B * 0.42 - 0.6, y * L, 1.2, L * 0.07); }
     g.fillStyle = C.gold; g.beginPath(); g.ellipse(0, L * 0.04, B * 0.17, B * 0.2, 0, 0, TAU); g.fill();
     g.fillStyle = C.black; g.beginPath(); g.ellipse(0, L * 0.04, B * 0.11, B * 0.13, 0, 0, TAU); g.fill();
+  } else if (t.id === 'tug'){
+    // a stubby black tug: a thick rubbing fender all round, the wheelhouse forward, the tall funnel, the towing hook aft
+    hullPath(g, L, B * 1.05); g.fillStyle = C.woodDk; g.fill();
+    inset(0.86, 0.94, C.hullB);
+    inset(0.7, 0.88, C.teak);
+    g.fillStyle = C.wallSh5; g.fillRect(-B * 0.3, -L * 0.3, B * 0.6, L * 0.3);
+    g.fillStyle = C.white; g.fillRect(-B * 0.27, -L * 0.29, B * 0.54, L * 0.27);
+    g.fillStyle = C.navy; g.fillRect(-B * 0.27, -L * 0.29, B * 0.54, 0.5);
+    g.fillStyle = C.red; g.beginPath(); g.ellipse(0, L * 0.06, B * 0.2, B * 0.22, 0, 0, TAU); g.fill();
+    g.fillStyle = C.black; g.beginPath(); g.ellipse(0, L * 0.06, B * 0.12, B * 0.14, 0, 0, TAU); g.fill();
+    g.fillStyle = C.gold; g.fillRect(-0.6, L * 0.3, 1.2, 1.2);
   } else if (t.id === 'brig' || t.id === 'barq'){
     // a working ship: black topsides with a white band, hatches, a deckhouse, the ship's boat on chocks
     hullPath(g, L, B); g.fillStyle = C.hullB; g.fill();
@@ -3443,6 +3662,17 @@ function drawShipBody(g, s){
     g.fillStyle = C.varnish; g.fillRect(-B * 0.2, -L * 0.13, B * 0.4, L * 0.15);
     g.fillStyle = C.sail; g.fillRect(-B * 0.1, -L * 0.09, B * 0.2, L * 0.06);
     g.fillStyle = C.woodDk; g.fillRect(-B * 0.15, L * 0.3, B * 0.3, L * 0.09);
+  }
+  // damage: stove planks along her sides, a split rail, fresh wood where the paint is gone
+  const dk = dmgOf(s);
+  if (dk){
+    const r = rng((s.seed * 1000 | 0) + 7);
+    for (let i = 0; i < dk * 2; i++){
+      const sd = r() < 0.5 ? -1 : 1, y = (r() * 0.8 - 0.4) * L, w = 1 + r() * (0.6 + dk * 0.5), hl = 1.4 + r() * (1 + dk * 1.2);
+      const x = sd * B * (0.5 - 0.06 * (1 - Math.abs(y) / L * 2)) * (Math.abs(y) > L * 0.3 ? 0.6 : 1);
+      g.fillStyle = C.wood; g.fillRect(x - w / 2 - 0.3, y - hl / 2 - 0.3, w + 0.6, hl + 0.6);
+      g.fillStyle = C.black; g.fillRect(x - w / 2, y - hl / 2, w, hl);
+    }
   }
   g.strokeStyle = C.woodDk; g.lineWidth = 0.6;
   if (rig.sprit){ g.beginPath(); g.moveTo(0, -L / 2); g.lineTo(0, -L / 2 - rig.sprit); g.stroke(); }
@@ -3549,7 +3779,7 @@ function shipSprite(s){
   const sun = sunVec();
   const key = [t.id, s.paint, s.tanbark ? 1 : 0, s.col, s.trim, Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 6), Math.round(s.sail * 10), s.set,
     Math.round(clamp(s.trimA, 2, 85) / 5), luff ? Math.floor(T * 4) % 3 : -1, Math.floor(T * 2.5) % 2, Math.round(wrap(s.aw.toward - s.h) / (15 * DEG)),
-    sun ? sun.q : -1, Math.round(Math.min(40, s.heel || 0) / 8)].join('|');
+    sun ? sun.q : -1, Math.round(Math.min(40, s.heel || 0) / 8), dmgOf(s), s.rig < 0.8 ? (s.rig < 0.5 ? 2 : 1) : 0].join('|');
   let e = spriteCache.get(key);
   if (e){ spriteCache.delete(key); spriteCache.set(key, e); return e; }
   const span = L + RIGS[t.rig].sprit * 2 + t.B * 2 + 14;
@@ -3569,7 +3799,7 @@ function shipSprite(s){
   drawRig(c, s, false);
   const rig = RIGS[t.rig], top = rig.masts[rig.masts.length - 1].y * L;
   if (t.id === 'schooner') drawFlag(c, 0, top, s.aw.toward - s.h, 3.2, C.red, C.white);
-  else if (t.id === 'steamer') drawFlag(c, 0, L * 0.5, s.aw.toward - s.h, 3, C.red, C.white);
+  else if (t.id === 'steamer' || t.id === 'tug') drawFlag(c, 0, L * 0.5, s.aw.toward - s.h, t.id === 'tug' ? 1.8 : 3, C.red, C.white);
   else drawFlag(c, 0, top, s.aw.toward - s.h, t.L > 20 ? 3 : 1.8, C.gold, t.L > 20 ? C.red : null);
   c.setTransform(1, 0, 0, 1, 0, 0);
   // only the colours this boat is made of, so soft edges snap cleanly
@@ -3813,6 +4043,20 @@ function drawPeople(){
 // mooring lines from her bow and stern to the bollards; the visitors' berth marked out when you are near
 function drawLines(){
   const g = PB;
+  // the towline from the tug's hook to your bow: thrown across, then hauled taut
+  if (tow && (tow.phase === 'hook' || tow.phase === 'tow')){
+    const tg = tow.tug, fx = Math.sin(ship.h), fy = -Math.cos(ship.h), bx = ship.x + fx * ship.t.L * 0.45, by = ship.y + fy * ship.t.L * 0.45;
+    const hx = tg.x - Math.sin(tg.h) * tg.t.L * 0.4, hy = tg.y + Math.cos(tg.h) * tg.t.L * 0.4;
+    const p = tow.phase === 'hook' ? clamp((T - tow.t1) / 1.2, 0, 1) : 1;
+    pline(g, hx / MPP - ox, hy / MPP - oy, lerp(hx, bx, p) / MPP - ox, lerp(hy, by, p) / MPP - oy, C.teakLt);
+  }
+  // the boat that sounded the danger signal: a blinking mark over her
+  for (const o of ai){
+    if (!o.warnMark || T - o.warnMark > 4 || Math.floor((T - o.warnMark) * 4) % 2) continue;
+    const sx = Math.round(o.x / MPP - ox), sy = Math.round(o.y / MPP - oy) - Math.round(o.t.L * 0.5 / MPP) - 10;
+    g.fillStyle = C.navy; g.fillRect(sx - 2, sy - 1, 5, 11);
+    g.fillStyle = C.red; g.fillRect(sx - 1, sy, 3, 6); g.fillRect(sx - 1, sy + 7, 3, 2);
+  }
   const A = ship.anchor || ship.kedge;
   if (A){
     const ax = A.x != null ? A.x : A.ax, ay = A.y != null ? A.y : A.ay;
@@ -4098,7 +4342,7 @@ function drawSideSchooner(c, s, wl){
     for (const dx of [-7 * k, -3 * k, 3 * k]) line(mx + dx, base, sx, sy, C.woodDk, 0.6);
     for (let y = base - 4; y > sy + 6; y -= 3 * k + 1){ const q = (base - y) / (base - sy); line(mx - 7 * k * (1 - q) - q * H * rake, y, mx + 3 * k * (1 - q) - q * H * rake, y, C.wood, 0.5); }
   }
-  const sailShape = (pts, shade) => {
+  const sailShape = (pts, shade, tear) => {
     const path = () => {
       c.beginPath(); c.moveTo(pts[0][0], pts[0][1]);
       for (let i = 1; i < pts.length; i++){ const p = pts[i]; if (p.length > 2) c.quadraticCurveTo(p[2], p[3], p[0], p[1]); else c.lineTo(p[0], p[1]); }
@@ -4114,6 +4358,30 @@ function drawSideSchooner(c, s, wl){
     if (shade){ c.fillStyle = ss; c.fillRect(shade[0], y0 - 2, shade[1], y1 - y0 + 4); }
     c.restore();
     path(); c.strokeStyle = ss; c.lineWidth = 0.9; c.stroke();
+    // torn canvas: a ragged split across the cloths, the loose flap hanging and flogging below it
+    if (tear && s.rig < 0.8){
+      const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), w = x1 - x0, h = y1 - y0;
+      const r = rng((s.seed * 100 | 0) + tear), n = s.rig < 0.5 ? 2 : 1;
+      c.save(); path(); c.clip();
+      for (let j = 0; j < n; j++){
+        const ax = x0 + w * (0.15 + r() * 0.25), ay = y0 + h * (0.3 + j * 0.25 + r() * 0.1), bx = ax + w * (0.4 + r() * 0.2), by = ay + h * (r() * 0.16 - 0.08);
+        const top = [], bot = [];
+        for (let q = 0; q <= 8; q++){
+          const t = q / 8, x = lerp(ax, bx, t), y = lerp(ay, by, t), o = Math.sin(t * Math.PI) * (2.5 + r() * 1.5) * k;
+          top.push([x, y - o * 0.6 - (q % 2) * k]); bot.push([x, y + o + (q % 3) * 0.7 * k]);
+        }
+        // the gap, dark inside where the cloth is torn away
+        c.fillStyle = C.woodDk;
+        c.beginPath(); top.forEach(([x, y], q) => q ? c.lineTo(x, y) : c.moveTo(x, y)); for (let q = 8; q >= 0; q--) c.lineTo(bot[q][0], bot[q][1]); c.closePath(); c.fill();
+        // the flap: a loose triangle of canvas hanging out of the tear, swinging in the wind
+        const mx = lerp(ax, bx, 0.45), my = lerp(ay, by, 0.45), sw = Math.sin(T * 9 + j * 2 + s.seed) * 2 * k;
+        c.fillStyle = ss;
+        c.beginPath(); c.moveTo(mx - w * 0.12, my); c.lineTo(mx + w * 0.1, my + k); c.lineTo(mx + sw, my + (5 + 2 * j) * k); c.closePath(); c.fill();
+        c.strokeStyle = C.woodDk; c.lineWidth = 0.6; c.stroke();
+      }
+      c.restore();
+    }
   };
   // the gaff sails; reefing lowers the gaff, storm canvas leaves only a scrap of main
   const gaffSail = (mx, base, H, boomEnd, gl, ang, luffF, reefs, furled) => {
@@ -4129,7 +4397,7 @@ function drawSideSchooner(c, s, wl){
     }
     const gx = tx - Math.cos(ang) * gl, gy = ty - Math.sin(ang) * gl;
     const shape = [[mx, by], [be[0], be[1]], [gx + flut(3), gy, be[0] - 6 * k + flut(2), (be[1] + gy) / 2], [tx, ty]];
-    sailShape(shape, [be[0] - 2, (mx - be[0]) * 0.22]);
+    sailShape(shape, [be[0] - 2, (mx - be[0]) * 0.22], Math.round(mx));
     // reef points along the reefed foot
     if (reefs) for (let r = 0; r < reefs; r++){ const y = by - (3 + r * 4) * k; for (let x = mx - 3; x > be[0] + 3; x -= 3) line(x, y, x, y + 1.5, C.woodDk, 0.6); }
     line(mx, by, be[0], be[1], C.woodDk, 1.6 * k + 0.6);
@@ -4186,6 +4454,17 @@ function drawSideSchooner(c, s, wl){
   for (let y = wl - fb - 6; y < wl; y += 2.5) line(X(-0.1), y, X(1.1), y - 1, s.paint === 'white' ? C.sailSh : C.black, 0.25);
   c.strokeStyle = C.gold; c.lineWidth = 0.7;
   c.beginPath(); c.moveTo(X(0.02), sheer(0.02) + 2.5); for (let u = 0.1; u <= 0.96; u += 0.1) c.lineTo(X(u), sheer(u) + 2.5); c.stroke();
+  // damage: stove planks with the bare wood showing round them, scraped paint, a sprung strake
+  const dk = dmgOf(s);
+  if (dk){
+    const r = rng((s.seed * 1000 | 0) + 3);
+    for (let i = 0; i < dk * 2 + 1; i++){
+      const u = 0.3 + r() * 0.65, y = sheer(u) + 3 + r() * (fb - 3), w = (3 + r() * 3 + dk * 1.5) * k, h = (1.6 + r() * 1.5 + dk * 0.6) * k;
+      c.fillStyle = C.wood; c.fillRect(X(u) - w / 2 - 1, y - h / 2 - 1, w + 2, h + 2);
+      if (i < dk * 2 - 1 || dk >= 2){ c.fillStyle = C.black; c.beginPath(); c.moveTo(X(u) - w / 2, y); c.lineTo(X(u) - w / 4, y - h / 2); c.lineTo(X(u) + w / 2, y - h / 3); c.lineTo(X(u) + w / 3, y + h / 2); c.lineTo(X(u) - w / 3, y + h / 3); c.closePath(); c.fill(); }
+    }
+    if (dk >= 2) line(X(0.55), sheer(0.55) + fb * 0.5, X(0.85), sheer(0.85) + fb * 0.45, C.wood, 0.8);
+  }
   c.restore();
   c.strokeStyle = C.varnish; c.lineWidth = 1.6;
   c.beginPath(); c.moveTo(X(0) - 3 * k, sheer(0)); for (let u = 0.1; u <= 1.001; u += 0.1) c.lineTo(X(u), sheer(u)); c.stroke();
@@ -4352,7 +4631,9 @@ function renderSide(){
   sdc.setTransform(1, 0, 0, 1, 0, 0);
   sdc.clearRect(0, 0, SW, SH);
   const pitch = Math.sin(T * 0.9 + 1) * 0.02 * (0.5 + sea) + ship.slam * 0.03 * Math.sin(T * 3), heave = Math.sin(T * 1.1) * (1 + sea * 1.5);
-  sdc.translate(SW / 2, wl + heave); sdc.rotate(-pitch); sdc.translate(-SW / 2, -wl);
+  // holed, she sits lower and lists toward the damage
+  const settle = Math.max(0, 0.6 - ship.hull / ship.t.hull) * 10;
+  sdc.translate(SW / 2, wl + heave + settle); sdc.rotate(-pitch + settle * 0.008); sdc.translate(-SW / 2, -wl);
   const geo = drawSideSchooner(sdc, ship, wl);
   const shipPx = crisp(sdc, SW, SH);
   if (tint[0] < 0.985 || tint[2] < 0.985 || tint[0] > 1.015){
@@ -4428,7 +4709,7 @@ function project(){
   pick_ = null;
 }
 function startWarp(){
-  if (!pick_) return;
+  if (!pick_ || tow || ship.hold) return;
   warp = true; warpTo = pick_.t; warpT = 0;
   ship.rudder = 0; ship.grounded = false;
   if (vaneOn) vaneA = wrap(ship.wind.dir - ship.h);
@@ -4635,6 +4916,7 @@ el('btnInfo').addEventListener('click', () => { if (!paused){ sfx.tap(); guide(0
 el('btnLog').addEventListener('click', () => { if (!paused){ sfx.paper(); logbook(); } });
 el('vaneBtn').addEventListener('click', toggleVane);
 el('anchorBtn').addEventListener('click', anchorBtnPress);
+el('towBtn').addEventListener('click', towBtnPress);
 el('mapClose').addEventListener('click', closeMap);
 el('mapCentre').addEventListener('click', () => { mv.x = ship.x; mv.y = ship.y; });
 el('mapGo').addEventListener('click', startWarp);
@@ -4799,6 +5081,11 @@ const sfx = (() => {
   // the anchor chain: running out fast, or clanking in on the windlass
   S.chain = up => { for (let i = 0; i < (up ? 10 : 16); i++){ burst(0.05, 'bandpass', rnd(1800, 3200), 0.08, { delay: i * (up ? 0.35 : 0.07), q: 4 }); tone(rnd(600, 900), 400, 0.06, 0.03, { delay: i * (up ? 0.35 : 0.07), type: 'square' }); } if (!up) burst(0.8, 'lowpass', 500, 0.25, { delay: 1.1, f1: 120 }); };
   S.fender = () => { tone(140, 110, 0.25, 0.12, { type: 'triangle' }); creakNow(0.12, 80); };
+  // the danger signal, five short blasts: a ship's steam whistle, a coaster's horn, a fisherman's tin trumpet
+  S.blasts = (size = 1) => {
+    const fs = size === 2 ? [110, 165] : size === 1 ? [233, 311] : [440];
+    for (let i = 0; i < 5; i++) for (const f of fs) tone(f, f * 0.985, 0.26, size === 2 ? 0.09 : 0.06, { type: size === 0 ? 'square' : 'sawtooth', attack: 0.03, delay: i * 0.42 });
+  };
   S.horn = () => { for (const f of [146, 220]) tone(f, f * 0.99, 2.2, 0.09, { type: 'sawtooth', attack: 0.15 }); };
   S.thunder = d => { burst(3.5, 'lowpass', 300, 0.55, { f1: 60, delay: d, attack: 0.05 }); burst(1.2, 'lowpass', 900, 0.25, { f1: 120, delay: d }); };
   // church bells strike the hour across the water
@@ -4977,7 +5264,9 @@ function frame(now){
     else renderMap();
   } else {
     if (started && !paused){
-      update(dt);
+      // time draws out for the moment of a crash, then eases back
+      slowK += ((T < slowUntil ? 0.35 : 1) - slowK) * Math.min(1, dt * 4);
+      update(dt * slowK);
     }
     else if (!started) T += dt * 0.3;
     render();
@@ -4995,7 +5284,7 @@ function frame(now){
 requestAnimationFrame(frame);
 window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
-  get trimManual(){ return trimManual; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
+  get trimManual(){ return trimManual; }, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
 </script>
 </body>
