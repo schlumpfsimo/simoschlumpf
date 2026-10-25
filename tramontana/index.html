@@ -121,7 +121,8 @@
       position:absolute; right:4px; width:44px; height:28px; background:#f6ecd6; border:3px solid #7a4a24;
       box-shadow:2px 2px 0 #000a; transition:top .12s steps(3);
     }
-    #vaneBtn,#anchorBtn,#towBtn{ font-size:10px; padding:4px 8px; }
+    #vaneBtn,#anchorBtn,#towBtn,#fishBtn{ font-size:10px; padding:4px 8px; }
+    #fishBtn.hot{ background:#b8472e; border-color:#f0cf45; }
     #anchorBtn.on{ background:#7a4a24; border-color:#f0cf45; }
     #vaneBtn.on{ background:#2f7a6a; border-color:#7fd6c8; }
 
@@ -229,6 +230,7 @@
     </div>
   </div>
   <div id="right">
+    <button class="px hidden" id="fishBtn">LINES OUT</button>
     <button class="px hidden" id="towBtn">TOW IN</button>
     <button class="px" id="anchorBtn">ANCHOR</button>
     <button class="px hidden" id="vaneBtn">VANE OFF</button>
@@ -1495,7 +1497,7 @@ function makeShip(type, x, y, h, role){
 const outH = P => Math.atan2(-P.tx, P.ty); // lying alongside, bow toward the harbour mouth
 const ship = makeShip('schooner', home.mx, home.my, outH(home), 'player');
 const pl = {
-  coins: 150, cargo: {}, parcels: [], visited: {}, seen: {}, friends: {}, dest: -1,
+  coins: 150, cargo: {}, parcels: [], catch: [], visited: {}, seen: {}, friends: {}, dest: -1,
   stats: { dist: 0, best: 0, storms: 0, nights: 0, trades: 0, gybes: 0, crash: 0, surf: 0 }, tips: {},
 };
 const cargoN = () => Object.values(pl.cargo).reduce((a, b) => a + b, 0) + pl.parcels.filter(q => q.kind === 'parcel').length;
@@ -1516,7 +1518,7 @@ function load(){
       up: s.up || {}, paint: s.paint || 'navy', tanbark: !!s.tanbark, trimA: s.trimA || 30 });
     Object.assign(pl, s.pl || {});
     pl.stats = Object.assign({ dist: 0, best: 0, storms: 0, nights: 0, trades: 0, gybes: 0, crash: 0, surf: 0 }, pl.stats);
-    pl.tips = pl.tips || {};
+    pl.tips = pl.tips || {}; pl.catch = pl.catch || [];
     const f = atob(s.fog);
     for (let i = 0; i < f.length && i < fog.length; i++) fog[i] = f.charCodeAt(i);
     for (const id of s.disc || []) if (isles[id]) isles[id].disc = true;
@@ -2393,15 +2395,18 @@ function traffic(){
     }
   }
   // passing ships out at sea, small and large
-  if (ai.filter(q => q.role === 'local').length < 3 && Math.random() < 0.3) spawnBoat();
+  if (ai.filter(q => q.role === 'local').length < 7 && Math.random() < 0.5) spawnBoat();
 }
 const HULLS = ['hullN', 'red', 'green', 'domeB', 'hullW', 'gold'];
 function spawnBoat(){
   for (let k = 0; k < 20; k++){
     const a = rnd(0, TAU), d = rnd(1000, 1800), x = ship.x + Math.sin(a) * d, y = ship.y - Math.cos(a) * d;
     if (x < 300 || y < 300 || x > WW - 300 || y > WH - 300 || depthFast(x, y) > -40) continue;
-    const r = Math.random(), type = r < 0.35 ? 'gozzo' : r < 0.6 ? 'tartana' : r < 0.82 ? 'brig' : 'barq';
+    // fishermen out on the grounds, lying to their nets or trolling, then traders bound across
+    const fisher = Math.random() < 0.3 && depthFast(x, y) > -900;
+    const r = Math.random(), type = fisher ? 'gozzo' : r < 0.3 ? 'gozzo' : r < 0.58 ? 'tartana' : r < 0.82 ? 'brig' : 'barq';
     const s = makeShip(type, x, y, rnd(0, TAU), 'local');
+    if (fisher){ s.col = pick(HULLS); s.trim = pick(['white', 'red', 'gold']); s.mode = 'fish'; s.set = 0; s.wind = windAt(x, y, T); ai.push(s); return; }
     s.col = type === 'brig' || type === 'barq' ? 'hullB' : pick(HULLS); s.trim = pick(['white', 'red', 'gold']); s.set = 3; s.sail = 0.85; s.v = 3; s.mode = 'sail';
     s.wind = windAt(x, y, T);
     // bound across the sea for some harbour, giving it a wide berth
@@ -2424,8 +2429,11 @@ const LIFE = {
   jelly:    { name: 'Jellyfish',           p: 0.002,  n: [8, 14] },
   sword:    { name: 'Swordfish',           p: 0.0006, n: [1, 1] },
   mobula:   { name: 'Devil rays',          p: 0.0008, n: [2, 4] },
-  tuna:     { name: 'Bluefin tuna',        p: 0.0009, n: [6, 10] },
-  shear:    { name: 'Shearwaters',         p: 0.0025, n: [5, 9] },
+  tuna:     { name: 'Bluefin tuna',        p: 0.0022, n: [6, 12] },
+  shear:    { name: 'Shearwaters',         p: 0.0035, n: [5, 9] },
+  sardines: { name: 'Sardine shoal',       p: 0.0045, n: [16, 26] },
+  bonito:   { name: 'Bonito',              p: 0.003,  n: [4, 8] },
+  dorado:   { name: 'Dorado',              p: 0.002,  n: [2, 4] },
 };
 const LIFE_ORDER = Object.keys(LIFE);
 function landNear(x, y, r){ for (let a = 0; a < 8; a++) if (land(x + Math.cos(a * TAU / 8) * r, y + Math.sin(a * TAU / 8) * r)) return true; return depthFast(x, y) > 0; }
@@ -2444,17 +2452,20 @@ function lifeOK(k, x, y){
     case 'sword': return off;
     case 'mobula': return day && sea < 1 && off;
     case 'tuna': return !landNear(x, y, 1000);
-    case 'shear': return (h > 5 && h < 8.5) || (h > 17.5 && h < 21);
+    case 'shear': return (h > 5 && h < 8.5) || (h > 17.5 && h < 21) || Math.random() < 0.3;
+    case 'sardines': return !landNear(x, y, 120);
+    case 'bonito': return !landNear(x, y, 300);
+    case 'dorado': return day && !landNear(x, y, 700);
   }
   return false;
 }
 function lifeStep(dt){
   lifeT -= dt;
-  if (lifeT <= 0 && critters.length < 3){
-    lifeT = 1;
+  if (lifeT <= 0 && critters.length < 6){
+    lifeT = 0.7;
     for (const k of LIFE_ORDER){
       const L = LIFE[k];
-      if (Math.random() > L.p * (pl.seen[k] ? 1 : 1.6)) continue;
+      if (Math.random() > L.p * (pl.seen[k] ? 1.5 : 2.2)) continue;
       const a = ship.h + rnd(-1.2, 1.2), d = rnd(140, 330), x = ship.x + Math.sin(a) * d, y = ship.y - Math.cos(a) * d;
       if (depthFast(x, y) > -15 || !lifeOK(k, x, y)) continue;
       const n = irnd(L.n[0], L.n[1]);
@@ -2466,7 +2477,7 @@ function lifeStep(dt){
   }
   for (const c of critters){
     const age = T - c.t0;
-    const sp = { dolphin: 5, stenella: 6, turtle: 0.4, sunfish: 0.2, flyfish: 0, whale: 1.6, seal: 0.5, jelly: 0, sword: 3, mobula: 1.2, tuna: 3, shear: 9 }[c.k];
+    const sp = { dolphin: 5, stenella: 6, turtle: 0.4, sunfish: 0.2, flyfish: 0, whale: 1.6, seal: 0.5, jelly: 0, sword: 3, mobula: 1.2, tuna: 3, shear: 9, sardines: 0.3, bonito: 3.5, dorado: 2.5 }[c.k];
     // dolphins come to play in the bow wave
     if ((c.k === 'dolphin' || c.k === 'stenella') && ship.v > 2.5 && dist(c, ship) < 400){
       const bx = ship.x + Math.sin(ship.h) * 30, by = ship.y - Math.cos(ship.h) * 30;
@@ -2485,6 +2496,122 @@ function lifeStep(dt){
     if (age > c.life || dist(c, ship) > 900) c.gone = true;
   }
   compact(critters, c => !c.gone);
+}
+
+// ---------------------------------------------------------------- fishing: lures trailed astern under sail
+// what bites where: coins per kilo at the fish market, the gear it needs, the most she may make through the water while you play it
+const FISH = {
+  mackerel: { name: 'Mackerel',     kg: [0.4, 1.4], price: 7,   gear: 1, maxV: 9,   fight: 3,  where: 'coast' },
+  bonito:   { name: 'Bonito',       kg: [2, 7],     price: 4.5,   gear: 1, maxV: 8,   fight: 5,  where: 'open' },
+  dorado:   { name: 'Dorado',       kg: [3, 14],    price: 4.5,   gear: 1, maxV: 7,   fight: 7,  where: 'open' },
+  amber:    { name: 'Amberjack',    kg: [6, 28],    price: 4,   gear: 1, maxV: 6,   fight: 9,  where: 'rocks' },
+  tuna:     { name: 'Bluefin tuna', kg: [40, 190],  price: 1.8, gear: 2, maxV: 4.5, fight: 22, where: 'deep' },
+  sword:    { name: 'Swordfish',    kg: [30, 130],  price: 2.2, gear: 2, maxV: 4.5, fight: 18, where: 'deep' },
+};
+// fish you can see bring the bites: a boil of tuna, birds diving over a shoal
+const DRAWS = { tuna: { tuna: 10 }, sword: { sword: 10 }, bonito: { bonito: 8 }, dorado: { dorado: 8 }, sardines: { bonito: 4, amber: 4, mackerel: 4, tuna: 2 }, shear: { bonito: 3, tuna: 2 }, flyfish: { dorado: 4 } };
+const GEAR = {
+  lines:  { name: 'Trolling lines',           cost: 80,  what: 'Two lines with feathered lures, trailed astern under sail. Mackerel, bonito, dorado, amberjack.' },
+  bigrod: { name: 'Big-game rod and harness', cost: 320, need: 'lines', what: 'Heavy line for bluefin tuna and swordfish, far offshore. Slow her down to fight them.' },
+  icebox: { name: 'Ice box',                  cost: 140, what: 'Keeps the catch fresh twice as long, and room for six more fish.' },
+};
+const fishing = { out: false, bite: null, fight: null, fastT: 0 };
+const catchCap = () => 4 + 6 * upOf(ship, 'icebox');
+const freshOf = q => clamp(1 - (T - q.t) / (DAY * (1 + upOf(ship, 'icebox'))), 0.3, 1);
+const fishPrice = (P, q) => Math.max(1, Math.round(q.kg * FISH[q.sp].price * freshOf(q) * (P.make.includes('anchovies') ? 0.85 : 1)));
+function fishWhere(x, y){
+  const d = -depthFast(x, y), rocks = isles.some(I => (I.rock || I.r < 400) && Math.hypot(I.cx - x, I.cy - y) < 700);
+  return { coast: d < 500 ? 3 : 0.3, open: d > 500 ? 2 : 0.4, rocks: rocks || d < 200 ? 2 : 0, deep: d > 1100 ? 2 : 0 };
+}
+function linesBtnPress(){
+  if (!upOf(ship, 'lines') || moored) return;
+  const F = fishing;
+  if (F.bite){ strike(); return; }
+  if (F.fight){ F.fight.prog += 0.05; F.fight.ten += 0.09 + F.fight.run * 0.25; sfx.reel(); return; }
+  F.out = !F.out;
+  sfx.tap();
+  if (F.out){ toast('Lines out. Keep her between 2 and 8 knots.'); tip('fish', 'Watch for birds diving and fish breaking the surface: sail through them. When a fish bites, STRIKE quickly.'); }
+}
+function strike(){
+  const F = fishing, b = F.bite;
+  F.bite = null;
+  const sp = FISH[b.sp];
+  F.fight = { sp: b.sp, kg: b.kg, prog: 0, ten: 0.2, run: 0, runT: 2, dur: sp.fight * Math.sqrt(b.kg / ((sp.kg[0] + sp.kg[1]) / 2)), a: rnd(-0.5, 0.5) };
+  sfx.reel(); toastNow(b.kg > 25 ? 'Hooked! Something big. Ease her down and play it.' : 'Hooked!');
+}
+function fishStep(dt){
+  const F = fishing;
+  if (!F.out) return;
+  // no lines out in harbour, at anchor, aground or under tow
+  if (moored || ship.securing || ship.anchor || ship.aground || tow || ship.hold || ports.some(Q => inBasin(Q, ship.x, ship.y))){
+    if (F.fight) toast('You cut the line.');
+    F.out = false; F.bite = null; F.fight = null;
+    return;
+  }
+  const v = ship.v;
+  if (F.fight){
+    const f = F.fight, sp = FISH[f.sp];
+    // big fish make runs; the line takes the strain, more so if she is going too fast
+    f.runT -= dt;
+    if (f.runT <= 0){ f.run = f.run ? 0 : Math.random() < Math.min(0.8, f.kg / 60) ? 1 : 0; f.runT = f.run ? rnd(1.5, 3.5) : rnd(2, 5); if (f.run) sfx.reel(); }
+    const over = Math.max(0, v - sp.maxV);
+    f.ten += (over > 0.2 ? over * 0.035 + 0.02 : -0.25) * dt + (f.run * 0.05 + (v < 1 ? 0.12 : 0)) * dt;
+    f.ten = clamp(f.ten, 0, 1.2);
+    f.prog += dt / f.dur * (f.run ? 0.15 : 1) * (v > 1 ? 1 : 0.5);
+    f.a += Math.sin(T * 1.3) * dt * 0.4;
+    if (over > 0.2 && f.ten > 0.4 && T > (F.warnT || 0)){ F.warnT = T + 4; toast(`Ease her! The line is singing. Under ${sp.maxV} knots.`); }
+    if (f.ten >= 1){
+      F.fight = null; sfx.crunch(0.25);
+      toastNow(f.kg > 25 ? `Snap! The line parts. The ${sp.name.toLowerCase()} is gone.` : 'The line parts. Gone.');
+      return;
+    }
+    if (f.prog >= 1){
+      F.fight = null;
+      if (pl.catch.length >= catchCap()){ toastNow(`A ${f.kg.toFixed(f.kg < 10 ? 1 : 0)} kg ${sp.name.toLowerCase()}, but the ice box is full. You let it go.`); return; }
+      pl.catch.push({ sp: f.sp, kg: Math.round(f.kg * 10) / 10, t: T });
+      pl.stats.fish = (pl.stats.fish || 0) + 1;
+      const best = pl.stats.bestFish;
+      if (!best || f.kg > best.kg) pl.stats.bestFish = { sp: f.sp, kg: Math.round(f.kg * 10) / 10 };
+      if (!pl.seen['c_' + f.sp]) pl.seen['c_' + f.sp] = dayOf(T);
+      sfx.chime();
+      toastNow(`You land a ${f.kg.toFixed(f.kg < 10 ? 1 : 0)} kg ${sp.name.toLowerCase()}!${f.kg > 100 ? ' What a fish!' : ''}`);
+      if (pl.catch.length >= catchCap()){ F.out = false; toast('The ice box is full. Lines in: sell the catch in harbour.'); }
+      for (let i = 0; i < 8; i++) puff('foam', ship.x - Math.sin(ship.h) * ship.t.L * 0.5 + rnd(-2, 2), ship.y + Math.cos(ship.h) * ship.t.L * 0.5 + rnd(-2, 2), rnd(-3, 3), rnd(-3, 3), 0.8, 0.6, 0.5, 0.8);
+      return;
+    }
+    return;
+  }
+  if (F.bite){
+    if (T - F.bite.t0 > 2.4){ F.bite = null; toast('It spat the hook. Too slow!'); }
+    return;
+  }
+  if (v > 8.5){ F.fastT += dt; if (F.fastT > 6){ F.fastT = -60; toast('Too fast: the lures skip along the surface.'); } return; }
+  if (v < 1.8) return;
+  // what is about: the water she is in, and any fish or birds close by
+  const W = fishWhere(ship.x, ship.y), boost = {};
+  let near = 0;
+  for (const c of critters){
+    const dr = DRAWS[c.k];
+    if (!dr || Math.hypot(c.x - ship.x, c.y - ship.y) > 220) continue;
+    for (const k in dr){ boost[k] = (boost[k] || 0) + dr[k]; near = 1; }
+  }
+  const night = hourOf(T) < 6 || hourOf(T) > 20;
+  const weights = [];
+  for (const k in FISH){
+    const sp = FISH[k];
+    if (sp.gear > 1 && !upOf(ship, 'bigrod')) continue;
+    let w = (W[sp.where] || 0) * (sp.gear > 1 ? 0.25 : 1) + (boost[k] || 0);
+    if (k === 'sword') w *= night ? 2 : 0.4;
+    if (w > 0) weights.push([k, w]);
+  }
+  const tot = weights.reduce((a, b) => a + b[1], 0);
+  if (!tot || Math.random() > dt * (near ? 1 / 14 : 1 / 140) * Math.min(2, tot / 3)) return;
+  let r = Math.random() * tot, sp = weights[0][0];
+  for (const [k, w] of weights){ r -= w; if (r <= 0){ sp = k; break; } }
+  const S = FISH[sp], kg = S.kg[0] + (S.kg[1] - S.kg[0]) * Math.pow(Math.random(), 1.8);
+  F.bite = { sp, kg, t0: T };
+  sfx.reel();
+  toastNow('Fish on! STRIKE!');
 }
 
 // ---------------------------------------------------------------- panels
@@ -2628,6 +2755,8 @@ function towOffer(){
   // a harbour tug works her own stretch of coast, not the open sea
   if (d > TUG_RANGE) return null;
   if (ship.aground) return { mode: 'off', P, fee: 15 + far };
+  // close off a harbour mouth the tug will take you in, if you would rather not thread the moles yourself
+  if (d < 1300) return { mode: 'in', P, fee: 8 };
   if (ship.hull < ship.t.hull * 0.85) return { mode: 'in', P, fee: 10 + far };
   if (depthFast(ship.x, ship.y) > -80) return { mode: 'in', P, fee: d < 1500 ? 8 : 10 + far };
   return null;
@@ -2698,7 +2827,18 @@ function harbour(P, tab = harbourTab, postcard = false){
     }
     const elsewhere = ports.filter(Q => Q !== P && (pl.visited[Q.name] || known(Q)));
     if (elsewhere.length) body += '</table><h3>Wanted elsewhere</h3><table>' + elsewhere.map(Q => `<tr><td>${Q.name}</td><td><small>${Q.want.map(k => GOOD[k].name.toLowerCase()).join(', ')}</small></td></tr>`).join('');
-    body += '</table><p class="help">Local goods are cheap here. Wanted goods fetch a good price. Prices move as you buy and sell, and settle again over a few days.</p>';
+    body += '</table>';
+    if (pl.catch.length){
+      const tot = pl.catch.reduce((a, q) => a + fishPrice(P, q), 0);
+      body += `<h3>Your catch</h3><table>` + pl.catch.map((q, i) => `<tr class="mk"><td>${FISH[q.sp].name}, ${q.kg} kg<br><small>${freshOf(q) > 0.8 ? 'fresh' : freshOf(q) > 0.5 ? 'a day old' : 'past its best'}</small></td><td><button class="px sm" data-a="sellfish" data-v="${i}">SELL ${fishPrice(P, q)}</button></td></tr>`).join('') +
+        `</table><p><button class="px sm" data-a="sellfish" data-v="all">SELL THE CATCH ${tot}</button></p>`;
+    }
+    body += '<h3>Chandler</h3>';
+    for (const k in GEAR){
+      const G = GEAR[k], have = upOf(ship, k), locked = G.need && !upOf(ship, G.need);
+      body += `<div class="req">${G.name}<br><small>${G.what}</small><br>` + (have ? '<small>aboard</small>' : locked ? `<small>needs the ${GEAR[G.need].name.toLowerCase()}</small>` : `<button class="px sm" data-a="gear" data-v="${k}" ${pl.coins >= G.cost ? '' : 'disabled'}>BUY ${G.cost}</button>`) + '</div>';
+    }
+    body += '<p class="help">Local goods are cheap here. Wanted goods fetch a good price. Prices move as you buy and sell, and settle again over a few days.</p>';
   } else if (tab === 'yard'){
     const hullCost = Math.ceil((ship.t.hull - ship.hull) * 1.4), rigCost = Math.ceil((1 - ship.rig) * 160), foulCost = Math.ceil(ship.foul * 400);
     body += rows([['Hull', pct(ship.hull / ship.t.hull)], ['Sails and rigging', pct(ship.rig)], ['Weed on the bottom', ship.foul > 0.01 ? `${Math.round(ship.foul * 100)}% slower` : 'clean']]);
@@ -2766,6 +2906,17 @@ function harbour(P, tab = harbourTab, postcard = false){
       pl.coins -= c; ship.up[v] = lvl + 1;
       toast(`${UPG[v].name}: ${UPG[v].what}`);
       sfx.hammer(); setSail(ship.set); setVaneUI();
+    }
+    if (a === 'sellfish'){
+      const sel = v === 'all' ? pl.catch.slice() : [pl.catch[+v]].filter(Boolean);
+      for (const q of sel){ pl.coins += fishPrice(P, q); pl.catch.splice(pl.catch.indexOf(q), 1); }
+      if (sel.length){ sfx.coins(); toast(sel.length > 1 ? 'The fishmonger takes the lot.' : 'Sold to the fishmonger.'); }
+    }
+    if (a === 'gear'){
+      const G = GEAR[v];
+      if (!G || upOf(ship, v) || pl.coins < G.cost || G.need && !upOf(ship, G.need)) return;
+      pl.coins -= G.cost; ship.up[v] = 1; sfx.coins();
+      toast(v === 'lines' ? 'Trolling lines aboard. Out at sea, put the LINES OUT (or press F).' : `${G.name} aboard.`);
     }
     if (a === 'paint' && pl.coins >= 40){ pl.coins -= 40; ship.paint = v; sfx.hammer(); }
     if (a === 'tan' && pl.coins >= 60){ pl.coins -= 60; ship.tanbark = !ship.tanbark; sfx.hammer(); }
@@ -2919,7 +3070,8 @@ function rescue(){
 function logbook(){
   const s = pl.stats;
   let body = rows([['Days', dayOf(T)], ['Sailed', `${(s.dist / 1852).toFixed(1)} nm`], ['Best speed', `${s.best.toFixed(1)} kn`],
-    ['Gales weathered', s.storms], ['Gybes', `${s.gybes} neat, ${s.crash} crash`], ['Crates sold', s.trades], ['Coins', pl.coins]]);
+    ['Gales weathered', s.storms], ['Gybes', `${s.gybes} neat, ${s.crash} crash`], ['Crates sold', s.trades], ['Fish landed', s.fish || 0],
+    ...(s.bestFish ? [['Best fish', `${FISH[s.bestFish.sp].name}, ${s.bestFish.kg} kg`]] : []), ['Coins', pl.coins]]);
   body += '<h3>Harbours</h3><table class="log">';
   for (const P of ports){
     const v = pl.visited[P.name];
@@ -2930,6 +3082,8 @@ function logbook(){
     const d = pl.seen[k];
     body += `<tr><td class="${d ? '' : 'unk'}">${d ? LIFE[k].name : '???'}</td><td>${d ? `day ${d}` : ''}</td></tr>`;
   }
+  body += '</table><h3>Caught</h3><table class="log">';
+  for (const k in FISH){ const d = pl.seen['c_' + k]; body += `<tr><td class="${d ? '' : 'unk'}">${d ? FISH[k].name : '???'}</td><td>${d ? `day ${d}` : ''}</td></tr>`; }
   body += '</table>';
   const jobs = pl.parcels;
   if (jobs.length) body += '<h3>Errands</h3>' + jobs.map(q => `<div class="req">${reqText(q)}</div>`).join('');
@@ -2998,7 +3152,7 @@ const GUIDE = [
     <li>Come alongside it <b>slowly</b>: furl the sails well out and glide in, <b>parallel</b> to the stone, a few metres off. With little sail up the wind blows her sideways, so use it.</li>
     <li>When the button says <b>LINES ASHORE</b>, press it: bow and stern lines go over the bollards and she is warped in snug.</li>
     <li>Touch the stone gently and the fenders take it. Hit it at more than two knots and the shipwright will be pleased to see you.</li>
-    <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, the harbour tug will <b>TOW</b> you out for a few coins. Close in under the shore, aground, or damaged in a crash, the <b>TOW</b> button calls her out to fetch you.</li>
+    <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, the harbour tug will <b>TOW</b> you out for a few coins. Close off a harbour, close in under the shore, aground, or damaged in a crash, the <b>TOW</b> button calls her out to fetch you.</li>
     <li>Mind the traffic: fishing boats go out at dawn and come back in the afternoon, lamp boats fish at night, coasters and big cargo ships lie at the mole, and the mail steamers keep their timetable whatever the wind.</li>
     <li><b>Reefs</b> break white just under the surface. They are marked on the chart once you have seen them.</li></ol>`],
   ['Anchoring and running aground', () => `
@@ -3175,6 +3329,7 @@ function update(dt){
   if (spawnT <= 0){ spawnT = 0.5; traffic(); }
   warnT -= dt;
   if (warnT <= 0){ warnT = 0.25; warnStep(); }
+  fishStep(dt);
   if (crashInfo && T - crashT > 1.4 && !paused && !tow && ship.hull > 0) crashPanel();
   lifeStep(dt);
 
@@ -3287,6 +3442,11 @@ function updHud(){
   setText(hudEl.spdN, Math.max(0, ship.v).toFixed(1));
   const ab = el('anchorBtn');
   ab.classList.toggle('hidden', !!moored || !!ship.securing || !!tow || !!ship.hold);
+  const fb = el('fishBtn'), F = fishing;
+  fb.classList.toggle('hidden', !upOf(ship, 'lines') || !!moored || !!tow || !!ship.securing);
+  fb.classList.toggle('on', F.out);
+  fb.classList.toggle('hot', !!F.bite || !!(F.fight && F.fight.ten > 0.7));
+  setText(fb, F.bite ? 'STRIKE!' : F.fight ? `REEL ${Math.round(F.fight.prog * 100)}%${F.fight.ten > 0.7 ? ' !!' : F.fight.ten > 0.45 ? ' !' : ''}` : F.out ? 'LINES IN' : 'LINES OUT');
   const tb = el('towBtn'), to = towOffer();
   tb.classList.toggle('hidden', !to && (!tow || tow.mode === 'rescue'));
   tb.classList.toggle('on', !!tow);
@@ -3869,12 +4029,14 @@ function drawShip(s){
 }
 
 // ---- creatures
+let FC_ = null;
+const FC = () => FC_ || (FC_ = { tunaB: u32('#26385e'), silver: u32('#c4d2d8'), gold: u32('#e0c64a'), green: u32('#3f9a72') });
 function drawCritter(c){
   const age = T - c.t0, fade = clamp(Math.min(age / 2, (c.life - age) / 3), 0, 1);
   const fx = Math.sin(c.h), fy = -Math.cos(c.h), rx = -fy, ry = fx;
   for (let i = 0; i < c.m.length; i++){
     const m = c.m[i];
-    const spread = c.k === 'jelly' ? 26 : c.k === 'tuna' ? 14 : c.k === 'shear' ? 16 : 7;
+    const spread = c.k === 'jelly' ? 26 : c.k === 'tuna' ? 16 : c.k === 'shear' ? 16 : c.k === 'sardines' ? 9 : c.k === 'bonito' ? 12 : 7;
     const x = c.x + (m.ox * rx + m.oy * fx) * spread, y = c.y + (m.ox * ry + m.oy * fy) * spread;
     const ph = (T * 0.55 * m.sp + m.ph) % 1;
     switch (c.k){
@@ -3930,9 +4092,29 @@ function drawCritter(c){
         disc(x + rx * flapW, y + ry * flapW, 0.4, U.iron, fade * 0.8); disc(x - rx * flapW, y - ry * flapW, 0.4, U.iron, fade * 0.8);
         break;
       }
-      case 'tuna':
-        if (hash(i, Math.floor(T * 6), 9) < 0.35){ plot(Math.floor(x / MPP - ox), Math.floor(y / MPP - oy), U.white, fade); plot(Math.floor(x / MPP - ox) + 1, Math.floor(y / MPP - oy), U.foam, fade); }
+      case 'tuna': case 'bonito': {
+        // a boil: fish slashing through the surface, a back showing, a splash, a ring spreading
+        const big = c.k === 'tuna', p = (T * (big ? 0.35 : 0.6) * m.sp + m.ph) % 1;
+        if (p < 0.1){ bodyLine(x, y, c.h + m.ox, big ? 2.6 : 1.4, FC().tunaB, fade); bodyLine(x + rx * 0.5, y + ry * 0.5, c.h + m.ox, big ? 1.8 : 1, FC().silver, fade); }
+        else if (p < 0.16) disc(x, y, big ? 1.4 : 0.8, U.white, fade);
+        else if (p < 0.3) ring(x, y, 1 + (p - 0.16) * (big ? 22 : 14), U.foam, 0.7 * fade);
+        else if (hash(i, Math.floor(T * 6), 9) < 0.12) plot(Math.floor(x / MPP - ox), Math.floor(y / MPP - oy), U.foam, fade);
         break;
+      }
+      case 'sardines': {
+        // a dark shimmering patch just under the surface; silver flashes as the shoal turns
+        const sx = Math.floor(x / MPP - ox), sy = Math.floor(y / MPP - oy), fl = hash(i, Math.floor(T * 5), 4);
+        plot(sx, sy, U.seaDk, 0.8 * fade); plot(sx + 1, sy, U.seaDk, 0.6 * fade);
+        if (fl < 0.15) plot(sx, sy - 1, FC().silver, fade);
+        else if (fl > 0.97) plot(sx, sy, U.white, fade);
+        break;
+      }
+      case 'dorado': {
+        // gold and green just under the surface, a flash when one turns
+        const p = (T * 0.5 * m.sp + m.ph) % 1;
+        bodyLine(x, y, c.h + Math.sin(T * 3 + m.ph * 6) * 0.3, 1.6, p < 0.15 ? FC().gold : FC().green, 0.8 * fade);
+        break;
+      }
       case 'shear': {
         const fl = Math.sin(T * 8 + m.ph * 9) > 0 ? 1 : 0;
         const sx = Math.floor(x / MPP - ox), sy = Math.floor(y / MPP - oy);
@@ -4078,6 +4260,19 @@ function drawLines(){
     const hx = tg.x - Math.sin(tg.h) * tg.t.L * 0.4, hy = tg.y + Math.cos(tg.h) * tg.t.L * 0.4;
     const p = tow.phase === 'hook' ? clamp((T - tow.t1) / 1.2, 0, 1) : 1;
     pline(g, hx / MPP - ox, hy / MPP - oy, lerp(hx, bx, p) / MPP - ox, lerp(hy, by, p) / MPP - oy, C.teakLt);
+  }
+  // the trolling lines astern, lures skipping in the wake; with a fish on, one line taut and the fish fighting at its end
+  if (fishing.out && !moored){
+    const fx = Math.sin(ship.h), fy = -Math.cos(ship.h), rx = -fy, ry = fx, L = ship.t.L;
+    for (const sd of [-1, 1]){
+      const ax = ship.x - fx * L * 0.42 + rx * sd * ship.t.B * 0.45, ay = ship.y - fy * L * 0.42 + ry * sd * ship.t.B * 0.45;
+      const f = fishing.fight, on = f && sd === 1;
+      const len = on ? 40 * (1 - f.prog * 0.75) : 34, a = on ? f.a + Math.sin(T * 2.3) * 0.25 : sd * 0.12;
+      const ex = ax - (fx * Math.cos(a) - rx * Math.sin(a)) * len, ey = ay - (fy * Math.cos(a) - ry * Math.sin(a)) * len;
+      pline(g, ax / MPP - ox, ay / MPP - oy, ex / MPP - ox, ey / MPP - oy, on ? C.white : C.sailSh);
+      if (on && Math.random() < 0.3) puff('foam', ex + rnd(-1, 1), ey + rnd(-1, 1), rnd(-2, 2), rnd(-2, 2), 0.6 + f.kg / 200, 0.6, 0.5, 0.9);
+      else if (!on && Math.random() < 0.05) puff('foam', ex, ey, 0, 0, 0.4, 0.3, 0.4, 0.7);
+    }
   }
   // the boat that sounded the danger signal: a blinking mark over her
   for (const o of ai){
@@ -4946,6 +5141,7 @@ el('btnLog').addEventListener('click', () => { if (!paused){ sfx.paper(); logboo
 el('vaneBtn').addEventListener('click', toggleVane);
 el('anchorBtn').addEventListener('click', anchorBtnPress);
 el('towBtn').addEventListener('click', towBtnPress);
+el('fishBtn').addEventListener('click', linesBtnPress);
 el('mapClose').addEventListener('click', closeMap);
 el('mapCentre').addEventListener('click', () => { mv.x = ship.x; mv.y = ship.y; });
 el('mapGo').addEventListener('click', startWarp);
@@ -5018,6 +5214,7 @@ addEventListener('keydown', e => {
   if (k === 'enter' || k === 'b') act();
   if (k === 'v') toggleVane();
   if (k === 'n') anchorBtnPress();
+  if (k === 'f') linesBtnPress();
   if (trimManual && (k === 'z' || k === 'x')){ ship.trimA = clamp(ship.trimA + (k === 'x' ? 3 : -3), 0, 85); setTrimUI(); }
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -5115,6 +5312,8 @@ const sfx = (() => {
     const fs = size === 2 ? [110, 165] : size === 1 ? [233, 311] : [440];
     for (let i = 0; i < 5; i++) for (const f of fs) tone(f, f * 0.985, 0.26, size === 2 ? 0.09 : 0.06, { type: size === 0 ? 'square' : 'sawtooth', attack: 0.03, delay: i * 0.42 });
   };
+  // the reel's ratchet screaming as line runs out
+  S.reel = () => { for (let i = 0; i < 10; i++) burst(0.025, 'bandpass', 3400, 0.05, { delay: i * 0.035, q: 4 }); };
   S.horn = () => { for (const f of [146, 220]) tone(f, f * 0.99, 2.2, 0.09, { type: 'sawtooth', attack: 0.15 }); };
   S.thunder = d => { burst(3.5, 'lowpass', 300, 0.55, { f1: 60, delay: d, attack: 0.05 }); burst(1.2, 'lowpass', 900, 0.25, { f1: 120, delay: d }); };
   // church bells strike the hour across the water
@@ -5313,7 +5512,7 @@ function frame(now){
 requestAnimationFrame(frame);
 window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
-  get trimManual(){ return trimManual; }, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
+  get trimManual(){ return trimManual; }, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
 </script>
 </body>
