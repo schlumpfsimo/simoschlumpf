@@ -1990,10 +1990,10 @@ function crashPanel(){
       toastNow(`You heave to and haul her crew aboard, wet and cursing, and set them ashore in ${home.name}.${back ? ` Her owner hands back ${back} coins.` : ''}`);
     }, true]);
   }
-  if (hp < 0.85) btns.push([`SIGNAL FOR A TOW ${fee}`, () => { if (pl.coins >= fee) callTow('in', P, fee); else toast(`Not enough coins for the tug: ${fee}.`); }]);
+  if (hp < 0.85 && far < TUG_RANGE) btns.push([`SIGNAL FOR A TOW ${fee}`, () => { if (pl.coins >= fee) callTow('in', P, fee); else toast(`Not enough coins for the tug: ${fee}.`); }]);
   btns.push(['SAIL ON', closePanel, !btns.length]);
   panel('Collision', `<p>${mine}</p><p>${theirs}</p>${c.fee ? `<p>You paid her owner ${c.fee} coins.</p>` : c.fault ? '' : '<p>She was in the wrong: nothing to pay.</p>'}
-    <p class="help">Hull ${pct(hp)} &middot; rig ${pct(ship.rig)}. The shipwright in any harbour mends her.${hp < 0.85 ? ` A tug from ${P.name} will tow you to the quay.` : ''}</p>`, btns);
+    <p class="help">Hull ${pct(hp)} &middot; rig ${pct(ship.rig)}. The shipwright in any harbour mends her.${hp < 0.85 ? far < TUG_RANGE ? ` A tug from ${P.name} will tow you to the quay.` : ` You are too far out for a harbour tug: nurse her in under reefed sail.` : ''}</p>`, btns);
 }
 function collide(a, b){
   if (a.kin && b.kin) return;
@@ -2620,16 +2620,31 @@ function castOff(){
 }
 function towOut(){ const P = moored; if (!P || pl.coins < 6) return; callTow('out', P, 6); }
 // near a harbour a tug will take you in, or pull you off the ground
+const TUG_RANGE = 2000;
 function towOffer(){
   if (moored || tow || ship.securing || ship.hold) return null;
   // only when you need one: aground, damaged in a crash, or close in under the shore
   const P = nearestPort(), d = Math.hypot(P.cx - ship.x, P.cy - ship.y), far = Math.round(d / 250);
+  // a harbour tug works her own stretch of coast, not the open sea
+  if (d > TUG_RANGE) return null;
   if (ship.aground) return { mode: 'off', P, fee: 15 + far };
   if (ship.hull < ship.t.hull * 0.85) return { mode: 'in', P, fee: 10 + far };
   if (depthFast(ship.x, ship.y) > -80) return { mode: 'in', P, fee: d < 1500 ? 8 : 10 + far };
   return null;
 }
-function towBtnPress(){ const o = towOffer(); if (o && pl.coins >= o.fee) callTow(o.mode, o.P, o.fee); else if (o) toast(`Not enough coins for the tug: ${o.fee}.`); }
+// changed your mind: the tug turns round and goes home
+function cancelTow(){
+  const T_ = tow;
+  if (!T_ || T_.mode === 'rescue') return;
+  const tug = T_.tug, P = T_.P, towing = T_.phase === 'tow';
+  tow = null; ship.hold = false;
+  tug.path = waterway(tug.x, tug.y, P.cx, P.cy); tug.vtSea = 6; tug.finalH = null; tug.onDone = q => { q.gone = true; };
+  if (towing){ sfx.rope(); ship.v = Math.min(ship.v, 1.5); }
+  // still at the quay: make fast again
+  if (T_.mode === 'out' && !towing){ moor(P); return; }
+  toast(towing ? 'You cast off the towline. The tug heads home.' : 'You wave the tug off. She turns for home.');
+}
+function towBtnPress(){ if (tow){ cancelTow(); return; } const o = towOffer(); if (o && pl.coins >= o.fee) callTow(o.mode, o.P, o.fee); else if (o) toast(`Not enough coins for the tug: ${o.fee}.`); }
 function waitUntil(t1, P){
   const t0 = T;
   const S = nextStorm(t0, (t1 - t0) / HOUR);
@@ -2797,10 +2812,8 @@ function callTow(mode, P, fee){
   if (tow || pl.coins < Math.min(fee, 1) && mode !== 'rescue') return;
   closePanel();
   const near = Math.hypot(P.cx - ship.x, P.cy - ship.y);
-  // she puts out from the harbour; if that is far off she is already on her way when you see her
-  let sx, sy;
-  if (mode === 'out' || near < 1600){ sx = P.cx; sy = P.cy; }
-  else { const a = Math.atan2(P.hx - ship.x, -(P.hy - ship.y)); sx = ship.x + Math.sin(a) * 900; sy = ship.y - Math.cos(a) * 900; if (depthFast(sx, sy) > -20){ sx = P.hx; sy = P.hy; } }
+  // she always puts out from the harbour itself
+  const sx = P.cx, sy = P.cy;
   const tug = makeShip('tug', sx, sy, Math.atan2(ship.x - sx, -(ship.y - sy)), 'tug');
   Object.assign(tug, { col: 'hullB', kin: true, mode: 'tow', vt: 6, vtSea: 6, wind: windAt(sx, sy, T), isTug: true });
   tug.path = waterway(sx, sy, ship.x, ship.y);
@@ -2810,7 +2823,7 @@ function callTow(mode, P, fee){
   vaneOn = false; setVaneUI();
   if (mode === 'out'){ ship.hold = true; moored = null; }
   if (mode === 'rescue') ship.hold = true;
-  toastNow(mode === 'out' ? `A tug comes alongside in ${P.name}.` : `A tug puts out from ${P.name}. Hold on.`);
+  toastNow(mode === 'out' ? `A tug comes alongside in ${P.name}.` : near > 1600 ? `A tug puts out from ${P.name}, ${(near / 1000).toFixed(1)} km off. Hold on.` : `A tug puts out from ${P.name}. Hold on.`);
   sfx.horn();
 }
 function towStep(dt){
@@ -3111,6 +3124,19 @@ function update(dt){
       // a tug goes dead slow inside the moles, where there is no room to swing
       if (s.isTug){
         s.vt = ports.some(Q => inBasin(Q, s.x, s.y)) ? Math.min(s.vtSea, 2) : s.vtSea;
+        // out of sight she makes her way along the route without fuss; you see her come over the horizon
+        if (tow && tow.tug === s && tow.phase === 'come' && !tow.glide && s.path && s.path.length && dist(s, ship) > 900 && !visible(s)){
+          let step = 30 * KN * dt;
+          while (step > 0 && s.path.length > 1){
+            const [wx, wy] = s.path[0], dx = wx - s.x, dy = wy - s.y, d = Math.hypot(dx, dy);
+            if (d <= step){ s.x = wx; s.y = wy; step -= d; s.path.shift(); continue; }
+            s.x += dx / d * step; s.y += dy / d * step; s.h = Math.atan2(dx, -dy); step = 0;
+          }
+          s.v = s.vtSea;
+          continue;
+        }
+        // near enough is good enough for her last mark: no circling round it
+        if (s.path && s.path.length === 1 && s.finalH == null && Math.hypot(s.path[0][0] - s.x, s.path[0][1] - s.y) < 15){ s.path.length = 0; const f = s.onDone; s.onDone = null; if (f) f(s); continue; }
         // and does not circle back for a mark she has already passed
         if (s.path && s.path.length > 1){ const dx = s.path[0][0] - s.x, dy = s.path[0][1] - s.y; if (Math.hypot(dx, dy) < 30 && dx * Math.sin(s.h) - dy * Math.cos(s.h) < 0) s.path.shift(); }
       }
@@ -3262,9 +3288,9 @@ function updHud(){
   const ab = el('anchorBtn');
   ab.classList.toggle('hidden', !!moored || !!ship.securing || !!tow || !!ship.hold);
   const tb = el('towBtn'), to = towOffer();
-  tb.classList.toggle('hidden', !to && !tow);
+  tb.classList.toggle('hidden', !to && (!tow || tow.mode === 'rescue'));
   tb.classList.toggle('on', !!tow);
-  setText(tb, tow ? (tow.phase === 'come' ? 'TUG COMING' : tow.phase === 'hook' ? 'LINE ACROSS' : 'UNDER TOW') : to ? `${to.mode === 'off' ? 'TOW OFF' : 'TOW IN'} ${to.fee}` : '');
+  setText(tb, tow ? (tow.phase === 'tow' ? 'CAST OFF TOW' : 'CANCEL TUG') : to ? `${to.mode === 'off' ? 'TOW OFF' : 'TOW IN'} ${to.fee}` : '');
   ab.classList.toggle('on', !!ship.anchor || !!ship.aground);
   setText(ab, ship.aground ? (ship.kedge ? 'KEDGING...' : 'KEDGE OFF') : ship.anchor ? (ship.anchor.weigh ? 'WEIGHING...' : 'WEIGH ANCHOR') : 'ANCHOR');
   setText(hudEl.pos, tow && tow.phase === 'tow' ? `Under tow to ${tow.mode === 'off' || tow.mode === 'out' ? 'open water' : tow.P.name}` : ship.hold ? 'Waiting for the tug' : ship.aground ? (ship.aground.beach ? 'Aground on the beach' : 'Aground on the rocks') : ship.anchor ? 'At anchor' : moored ? `Moored in ${moored.name}` : `${pointOfSail(twa, ship.v)}${twa < 174 && twa > ship.t.noGo ? (rel > 0 ? ', starboard tack' : ', port tack') : ''}`);
