@@ -268,8 +268,8 @@
     <p class="help">Helm: drag bottom left, let go to hold course.<br>
       Sheet: the slider above it. Watch the telltales.<br>
       Sails: lever bottom right. Reef when she heels too far.<br>
-      Come into harbour slowly. Furl the sails early.<br>
-      Keys: A/D helm, W/S sails, Z/X sheet, V vane, Enter moor, M chart.</p>
+      Come into harbour slowly. Furl the sails early, come alongside the yellow kerb, lines ashore.<br>
+      Keys: A/D helm, W/S sails, Z/X sheet, V vane, Enter lines ashore, M chart.</p>
     <button class="px" id="btnStart">SET SAIL</button>
     <button class="px hidden" id="btnNew">NEW VOYAGE</button>
   </div>
@@ -351,7 +351,7 @@ const C = {
   ter1:'#79a23e', ter2:'#5d8830', terWall:'#ddd3b8', lemon:'#f4d63e',
   pine:'#2e5226', pineLt:'#467535', pineDk:'#1f3a1a', olive:'#93a468', oliveDk:'#6e7f4c',
   ash1:'#857a70', ash2:'#665d55', ash3:'#4a433d', ash4:'#36302c', lava:'#c2462a',
-  roof:'#c9673e', roofDk:'#9c4829', roofLt:'#e08d5e',
+  roof:'#c9673e', roofDk:'#9c4829', roofLt:'#e08d5e', roofMid:'#b0552f', pave:'#d6cbb2', paveDk:'#b9ad94',
   wall1:'#f6ead0', wall2:'#f4c7a9', wall3:'#f2d47e', wall4:'#e9aa6e', wall5:'#ffffff', wall6:'#d8e6ea',
   wallSh1:'#d9c9a8', wallSh2:'#d6a688', wallSh3:'#d2b25e', wallSh4:'#c78a52', wallSh5:'#dcdcd4', wallSh6:'#b4c4ca',
   domeG:'#2f8f6e', domeY:'#ecc63e', domeB:'#2f6fa8', stone:'#c0b59e', stoneDk:'#938a7a', stoneLt:'#dcd3be',
@@ -493,41 +493,50 @@ function reefDepth(R, x, y){
   return -0.9 - Math.max(0, q - 0.35) * Math.max(0, q - 0.35) * 110;
 }
 
-// harbours: a quay along the shore, a stone mole that hooks round to shelter the basin, a light on its head
+// harbours: a paved quay along the shore, a rubble mole hooking round the basin, a wooden jetty for the fishing boats.
+// they are exact shapes (segments with a width), so a hull can lie right against the stone
 const ports = [];
-function moleDepth(P, x, y){
+function segDist(x, y, ax, ay, bx, by){
+  const dx = bx - ax, dy = by - ay, t = clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+  return Math.hypot(x - ax - dx * t, y - ay - dy * t);
+}
+function structDepth(P, x, y){
   let d = -1e9;
-  for (const [ax, ay, bx, by, r] of P.moles){
-    const dx = bx - ax, dy = by - ay, t = clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy), 0, 1);
-    const e = (r - Math.hypot(x - ax - dx * t, y - ay - dy * t)) * 2.5;
+  for (const S of P.struct){
+    const e = (S.r - segDist(x, y, S.ax, S.ay, S.bx, S.by)) * (S.kind === 'mole' ? 2.5 : 20);
     if (e > d) d = e;
   }
   return d;
 }
 let TSRC = null; // which land a depth sample belongs to: null mainland, an isle, a port or a reef
-function depthAt(x, y){
+function depthAt(x, y, built = true){
   let d = coastY(x) - y, src = null;
   for (const I of isles) if (near(I, x, y)){ const e = isleDepth(I, x, y); if (e > d){ d = e; src = I; } }
-  for (const P of ports) if (Math.abs(x - P.bx) < 190 && Math.abs(y - P.by) < 190){ const e = moleDepth(P, x, y); if (e > d){ d = e; src = P; } }
   for (const R of REEFS) if (Math.abs(x - R.x) < R.r * 1.5 && Math.abs(y - R.y) < R.r * 1.5){ const e = reefDepth(R, x, y); if (e > d){ d = e; src = R; } }
+  if (built) for (const P of ports) if (Math.abs(x - P.bx) < 260 && Math.abs(y - P.by) < 260){ const e = structDepth(P, x, y); if (e > d){ d = e; src = P; } }
   TSRC = src;
   return d;
 }
-// depth sampled every 8 m in lazily filled 256 m blocks, bilinear in between
+// depth sampled every 8 m in lazily filled 256 m blocks, bilinear in between; one cache with the harbour works, one without
 const DC = 8, DB = 32, DW = DB + 1;
-const dblocks = new Map();
-function depthFast(x, y){
-  const gx = x / DC, gy = y / DC, bx = Math.floor(gx / DB), by = Math.floor(gy / DB);
-  const k = by * 4096 + bx;
-  let b = dblocks.get(k);
-  if (!b){
-    b = new Float32Array(DW * DW);
-    for (let j = 0; j < DW; j++) for (let i = 0; i < DW; i++) b[j * DW + i] = depthAt((bx * DB + i) * DC, (by * DB + j) * DC);
-    dblocks.set(k, b);
-  }
-  const lx = gx - bx * DB, ly = gy - by * DB, i = Math.min(DB - 1, lx | 0), j = Math.min(DB - 1, ly | 0), fx = lx - i, fy = ly - j, o = j * DW + i;
-  return lerp(lerp(b[o], b[o + 1], fx), lerp(b[o + DW], b[o + DW + 1], fx), fy);
+function depthCache(built){
+  const blocks = new Map();
+  const f = (x, y) => {
+    const gx = x / DC, gy = y / DC, bx = Math.floor(gx / DB), by = Math.floor(gy / DB);
+    const k = by * 4096 + bx;
+    let b = blocks.get(k);
+    if (!b){
+      b = new Float32Array(DW * DW);
+      for (let j = 0; j < DW; j++) for (let i = 0; i < DW; i++) b[j * DW + i] = depthAt((bx * DB + i) * DC, (by * DB + j) * DC, built);
+      blocks.set(k, b);
+    }
+    const lx = gx - bx * DB, ly = gy - by * DB, i = Math.min(DB - 1, lx | 0), j = Math.min(DB - 1, ly | 0), fx = lx - i, fy = ly - j, o = j * DW + i;
+    return lerp(lerp(b[o], b[o + 1], fx), lerp(b[o + DW], b[o + DW + 1], fx), fy);
+  };
+  f.blocks = blocks;
+  return f;
 }
+const depthFast = depthCache(true), depthFastN = depthCache(false);
 const land = (x, y) => depthFast(x, y) > 0;
 // fill the depth cache around a point a block or two at a time, nearest first, so no frame has to do it all at once
 let warmR = 0, warmK = 0, warmCX = -1, warmCY = -1;
@@ -544,7 +553,7 @@ function warmDepth(x, y, budget){
     else if (k < side * 2 - 1){ bx = cx + warmR; by = cy - warmR + (k - side + 1); }
     else if (k < side * 3 - 2){ bx = cx + warmR - (k - side * 2 + 2); by = cy + warmR; }
     else { bx = cx - warmR; by = cy + warmR - (k - side * 3 + 3); }
-    if (bx < 0 || by < 0 || bx * DB * DC > WW || by * DB * DC > WH || dblocks.has(by * 4096 + bx)) continue;
+    if (bx < 0 || by < 0 || bx * DB * DC > WW || by * DB * DC > WH || depthFast.blocks.has(by * 4096 + bx)) continue;
     depthFast((bx + 0.5) * DB * DC, (by + 0.5) * DB * DC);
     budget--;
   }
@@ -595,61 +604,133 @@ PORT_DEFS.forEach(([name, isleName, a, side, make, want, blurb], id) => {
   // seaward normal, measured over a wide stretch of shore so a single rock does not tilt the harbour
   const [gx, gy] = gradAt(bx, by, 60);
   const nx = -gx, ny = -gy, tx = -ny * side, ty = nx * side;
+  // the harbour frame: u along the shore, v out to sea
   const W = (u, v) => [bx + tx * u + nx * v, by + ty * u + ny * v];
   const P = { id, name, isle: I, bx, by, nx, ny, tx, ty, W, make, want, blurb, home: id === 0 };
-  P.moles = [[...W(-46, 2), ...W(52, 2), 8], [...W(62, -10), ...W(62, 98), 5.5], [...W(62, 98), ...W(-6, 120), 5.5]];
-  [P.cx, P.cy] = W(18, 52);      // basin
-  [P.mx, P.my] = W(10, 26);      // where she lies alongside
-  [P.hx, P.hy] = W(-95, 175);    // outside the entrance
-  [P.lx, P.ly] = W(-6, 120);     // light on the mole head
-  [P.tx0, P.ty0] = W(0, -70);    // the town
+  const S = (kind, u0, v0, u1, v1, r) => { const [ax, ay] = W(u0, v0), [bx2, by2] = W(u1, v1); return { kind, ax, ay, bx: bx2, by: by2, r, u0, v0, u1, v1 }; };
+  P.struct = [S('quay', -82, 0, 88, 0, 11), S('mole', 96, -14, 96, 152, 7), S('mole', 96, 152, -14, 180, 7), S('jetty', -6, 8, -6, 58, 1.8)];
+  [P.cx, P.cy] = W(10, 92);      // the basin
+  [P.ix, P.iy] = W(-45, 150);    // just inside the mouth
+  [P.hx, P.hy] = W(-112, 218);   // outside the mouth
+  [P.lx, P.ly] = W(-14, 180);    // the green light on the mole head
+  [P.tx0, P.ty0] = W(0, -80);    // the town
+  // berths: a line along the water side of the stone and the way out from it. the visitors' berth is yours.
+  const BERTH = (u0, v0, u1, v1, ou, ov) => { const [ax, ay] = W(u0, v0), [bx2, by2] = W(u1, v1); return { ax, ay, bx: bx2, by: by2, ox: tx * ou + nx * ov, oy: ty * ou + ny * ov, len: Math.hypot(bx2 - ax, by2 - ay) }; };
+  P.visitor = BERTH(-78, 11, -26, 11, 0, 1);
+  P.berthSteam = BERTH(27, 11, 86, 11, 0, 1);
+  P.berthSmall = BERTH(5, 11, 25, 11, 0, 1);
+  P.berthCargo = BERTH(89, 26, 89, 132, -1, 0);
+  P.slips = [];
+  for (const v of [20, 32, 44]) for (const sd of [-1, 1]) P.slips.push({ u: -6 + sd * 4.4, v });
+  // where she lies when secured: alongside the visitors' berth, bow toward the mouth
+  const L0 = 26, B0 = 6.2;
+  [P.mx, P.my] = W(-52, 11 + B0 / 2 + 0.5);
   if (I) I.port = P;
   ports.push(P);
 });
 const home = ports[0];
+// a point and heading on a berth: f along it (0..1), ship beam B, facing toward its start (-1) or end (+1)
+function berthPos(Bt, f, B, dir){
+  const x = lerp(Bt.ax, Bt.bx, f) + Bt.ox * (B / 2 + 0.5), y = lerp(Bt.ay, Bt.by, f) + Bt.oy * (B / 2 + 0.5);
+  const dx = (Bt.bx - Bt.ax) * dir, dy = (Bt.by - Bt.ay) * dir;
+  return [x, y, Math.atan2(dx, -dy)];
+}
 
 // standalone lighthouses on capes: island and angle
 const LIGHTS = [['Capo Minerva', 180], ['Isola Azzurra', 180], ['Lipara', 160], ['Strombolo', 30], ['Salina', 330], ['Ponzella', 200], ['Licosa', 0]]
   .map(([n, a], i) => { const I = isles.find(q => q.name === n), [x, y] = islePoint(I, a * DEG, -14); return { x, y, id: i, isle: I }; });
 
-// towns: houses snapped to the art pixel grid, climbing the slope behind the quay
-const WALLS = [['wall1', 'wallSh1'], ['wall2', 'wallSh2'], ['wall3', 'wallSh3'], ['wall4', 'wallSh4'], ['wall5', 'wallSh5'], ['wall6', 'wallSh6']];
+// towns, seen from above: flat roof terraces, terracotta hip roofs and white vaults, packed up the slope behind the quay.
+// a piazza with the church behind it, market stalls on the quay, cafés, a beach of umbrellas, people about
+const WALLS = ['wall1', 'wall2', 'wall3', 'wall4', 'wall5', 'wall6'];
 for (const P of ports){
   const r = rng(P.id * 977 + 13);
-  P.houses = [];
-  P.lights = [];
-  P.boats = [];
-  // rows of houses stacked up the slope, shoulder to shoulder, thinning out uphill and to the sides
-  const rowsN = P.isle ? 20 : 28;
+  P.houses = []; P.lights = []; P.lamps = []; P.stalls = []; P.cafes = []; P.umbrellas = []; P.walkers = [];
+  const onLand = (x, y, lo, hi) => { const d = depthAt(x, y, false); return d > lo && d < hi && TSRC === P.isle; };
+  const loc = (x, y) => { const dx = x - P.bx, dy = y - P.by; return [dx * P.tx + dy * P.ty, dx * P.nx + dy * P.ny]; };
+  P.loc = loc;
+  const inPiazza = (u, v) => u > -26 && u < 32 && v < -11 && v > -44;
+  // the church first, at the head of the piazza
+  {
+    const [x, y] = P.W(4, -60);
+    P.church = { gx: Math.round(x / MPP) - 8, gy: Math.round(y / MPP) - 18, w: 16, h: 34, dome: r() < 0.5 ? 'domeG' : 'domeB', side: r() < 0.5 ? -1 : 1 };
+  }
+  const C0 = P.church;
+  const hits = (gx, gy, w, h, pad) => {
+    if (gx < C0.gx + C0.w + 8 + pad && gx + w + pad > C0.gx - 8 && gy < C0.gy + C0.h + pad && gy + h + pad > C0.gy - 4) return true;
+    for (const o of P.houses) if (gx < o.gx + o.w + pad && gx + w + pad > o.gx && gy < o.gy + o.h + pad && gy + h + pad > o.gy) return true;
+    return false;
+  };
+  // rows climbing the slope; narrow alleys between houses, stairs between rows
+  const rowsN = P.isle ? 14 : 19;
+  let v = -16;
   for (let row = 0; row < rowsN; row++){
-    const v = -9 - row * 5.6 - r() * 1.5;
-    const half = (P.isle ? 80 : 110) * Math.pow(1 - row / rowsN, 0.6) * (0.7 + r() * 0.5);
-    let u = -half + r() * 6;
+    const depthM = 7 + r() * 6;
+    const half = (P.isle ? 115 : 150) * Math.pow(1 - row / rowsN, 0.5) * (0.8 + r() * 0.35);
+    let u = -half + r() * 8;
     while (u < half){
-      const w = 5 + (r() * 4 | 0), h = 4 + (r() * 3 | 0);
-      const [x, y] = P.W(u, v);
-      u += w * MPP + (r() < 0.15 ? 4 + r() * 8 : r() * 1.2);
-      if (r() < 0.1 + row / rowsN * 0.3) continue;
-      const d = depthAt(x, y);
-      if (d < 6 || d > 230 || TSRC !== P.isle) continue;
-      const gx = Math.round(x / MPP), gy = Math.round(y / MPP);
-      if (P.houses.some(o => gx < o.gx + o.w && gx + w > o.gx && gy < o.gy + o.h + 2 && gy + h + 2 > o.gy)) continue;
-      P.houses.push({ gx, gy, w, h, wall: WALLS[(r() * WALLS.length) | 0], flat: r() < 0.45 });
-      if (r() < 0.45) P.lights.push([(gx + 1 + (r() * (w - 2) | 0)) * MPP, (gy + h + 1) * MPP]);
+      const wm = 6 + r() * 9;
+      const [x, y] = P.W(u + wm / 2, v - depthM / 2);
+      const uu = u; u += wm + (r() < 0.12 ? 3 + r() * 7 : 0.8 + r() * 1.2);
+      if (r() < 0.03 + row / rowsN * 0.22) continue;
+      if (inPiazza(uu + wm / 2, v - depthM / 2)) continue;
+      if (!onLand(x, y, 5, 270)) continue;
+      const w = Math.round(wm / MPP), h = Math.round(depthM / MPP);
+      const gx = Math.round(x / MPP - w / 2), gy = Math.round(y / MPP - h / 2);
+      if (hits(gx, gy, w, h, 1)) continue;
+      const roof = r() < 0.42 ? 'flat' : r() < 0.7 ? 'hip' : 'vault';
+      P.houses.push({ gx, gy, w, h, roof, wall: WALLS[(r() * WALLS.length) | 0], ht: 5 + r() * 9, seed: (r() * 1e6) | 0 });
+      // windows glowing at night, on the side toward the sea
+      if (r() < 0.6) P.lights.push([(gx + 1 + r() * (w - 2)) * MPP, (gy + h + 0.5) * MPP]);
+    }
+    v -= depthM + 1.2 + r() * 2.2;
+  }
+  // fill the gaps: the town is denser near the water and the piazza, thinning uphill
+  for (let k = 0; k < 2600; k++){
+    const u = (r() - 0.5) * (P.isle ? 230 : 300), vv = -14 - Math.pow(r(), 1.5) * (P.isle ? 170 : 220);
+    if (r() > Math.exp((vv + 14) / 120) * (1 - Math.abs(u) / 170)) continue;
+    if (inPiazza(u, vv)) continue;
+    const wm = 6 + r() * 8, dm = 6 + r() * 7;
+    const [x, y] = P.W(u, vv);
+    if (!onLand(x, y, 5, 270)) continue;
+    const w = Math.round(wm / MPP), h = Math.round(dm / MPP), gx = Math.round(x / MPP - w / 2), gy = Math.round(y / MPP - h / 2);
+    if (hits(gx, gy, w, h, 1)) continue;
+    const roof = r() < 0.42 ? 'flat' : r() < 0.7 ? 'hip' : 'vault';
+    P.houses.push({ gx, gy, w, h, roof, wall: WALLS[(r() * WALLS.length) | 0], ht: 5 + r() * 9, seed: (r() * 1e6) | 0 });
+    if (r() < 0.6) P.lights.push([(gx + 1 + r() * (w - 2)) * MPP, (gy + h + 0.5) * MPP]);
+  }
+  // stalls along the back of the quay: striped awnings over crates of lemons, fish and greens
+  const STRIPES = [['red', 'white'], ['green', 'white'], ['domeB', 'white'], ['gold', 'roofDk']];
+  for (let u = -18; u < 20; u += 6.5) if (r() < 0.85){
+    const [x, y] = P.W(u, -6.5);
+    P.stalls.push({ gx: Math.round(x / MPP) - 3, gy: Math.round(y / MPP) - 2, st: STRIPES[(r() * STRIPES.length) | 0], goods: ['lemon', 'foam', 'mq2', 'roofLt', 'gold'][(r() * 5) | 0] });
+  }
+  // café tables at the edge of the piazza and along the quay
+  for (let k = 0; k < 9; k++){
+    const u = -24 + r() * 52, vv = -14 - r() * 6;
+    const [x, y] = P.W(u, vv);
+    P.cafes.push({ gx: Math.round(x / MPP), gy: Math.round(y / MPP), col: ['white', 'red', 'gold', 'domeB'][(r() * 4) | 0] });
+  }
+  // lamps along the quay
+  for (let u = -76; u <= 84; u += 16){ const [x, y] = P.W(u, -8); P.lamps.push([x, y]); }
+  // umbrellas in rows on the beaches either side of the harbour, following the waterline
+  for (const [u0, u1] of [[-230, -92], [104, 230]]) for (let u = u0; u < u1; u += 4.4){
+    let v0 = null;
+    for (let vv = 30; vv > -40; vv -= 1){ const [x, y] = P.W(u, vv); if (depthAt(x, y, false) > 0.6){ v0 = vv; break; } }
+    if (v0 == null) continue;
+    const [bx2, by2] = P.W(u, v0 - 4);
+    if (vnoise(bx2 / 260, by2 / 260, 31) < 0.42 || TSRC !== P.isle) continue;
+    for (const k of [3.5, 8, 12.5]){
+      const [x, y] = P.W(u + r() * 0.6, v0 - k), d = depthAt(x, y, false);
+      if (d > 0.8 && d < 4 + (vnoise(x / 260, y / 260, 31) - 0.42) * 30 - 1 && TSRC === P.isle) P.umbrellas.push({ gx: Math.round(x / MPP), gy: Math.round(y / MPP), col: ['red', 'gold', 'domeB', 'white', 'green', 'roofLt'][(r() * 6) | 0] });
     }
   }
-  // the church: a majolica dome and a bell tower
-  for (let k = 0; k < 200; k++){
-    const [x, y] = P.W((r() - 0.5) * 100, -40 - r() * 60);
-    if (depthAt(x, y) < 14 || TSRC !== P.isle) continue;
-    P.church = { gx: Math.round(x / MPP), gy: Math.round(y / MPP), dome: r() < 0.5 ? 'domeG' : 'domeB' };
-    P.houses = P.houses.filter(o => Math.abs(o.gx + o.w / 2 - P.church.gx) > 12 || Math.abs(o.gy + o.h / 2 - P.church.gy) > 11);
-    break;
+  // people: strolling the quay, crossing the piazza, standing at the stalls
+  const CLOTH = ['white', 'red', 'domeB', 'navy', 'gold', 'wall2', 'green', 'black'];
+  for (let k = 0; k < 26; k++){
+    const kind = k < 14 ? 'quay' : k < 20 ? 'piazza' : 'stall';
+    P.walkers.push({ kind, a: r(), sp: 0.6 + r() * 0.8, col: CLOTH[(r() * CLOTH.length) | 0], off: r(), lane: r() });
   }
-  // gozzi moored along the inside of the mole
-  const cols = ['hullN', 'red', 'green', 'domeB', 'hullW', 'gold'];
-  for (let v = 18; v < 92; v += 13) if (r() < 0.8){ const [x, y] = P.W(51, v); P.boats.push({ x, y, h: Math.atan2(P.nx, -P.ny) + (r() - 0.5) * 0.15, col: cols[(r() * cols.length) | 0] }); }
-  for (let u = 40; u > 5; u -= 14) if (r() < 0.7){ const [x, y] = P.W(u, 106 - (40 - u) * 0.3); P.boats.push({ x, y, h: Math.atan2(P.tx, -P.ty) + (r() - 0.5) * 0.15, col: cols[(r() * cols.length) | 0] }); }
 }
 // prices drift: each port remembers how much has been bought (+) or sold (-) lately, and forgets over a few days
 const market = ports.map(() => Object.fromEntries(GOODS.map(g => [g.id, 0])));
@@ -804,7 +885,7 @@ function heightOf(d, src, x, y){
     // the mainland climbs straight out of the sea; gullies run down to the coves
     const gul = 1 - Math.abs(vnoise(x / 260, y / 640, 8));
     h = 640 * (1 - Math.exp(-d / 430)) * (0.78 + 0.3 * gul);
-  } else if (src.moles) return 2.5;
+  } else if (src.struct) return 2.5;
   else if (src.r && !src.cx) return d;
   else {
     const I = src, dn = clamp(d / I.R, 0, 1.2);
@@ -842,14 +923,17 @@ function terrainCol(d, h, gx, gy, src, x, y, b){
   }
   const s = Math.hypot(gx, gy);
   const lam = (-gx * LX - gy * LY + LZ) / Math.sqrt(gx * gx + gy * gy + 1);
-  if (src && src.moles){
+  if (src && src.struct){
     // quays and moles: dressed stone, block joints
     const bx = Math.floor(x / 2.4), by = Math.floor(y / 1.8);
     return d < 2.2 ? U.stoneDk : hash(bx, by, 61) < 0.18 ? U.stone : U.stoneLt;
   }
   const volc = src && src.volcano;
+  const bn = vnoise(x / 260, y / 260, 31);
+  if (bn > 0.42 && s < 1.2 && d < 4 + (bn - 0.42) * 30 + j * 2)
+    return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.12 ? (volc ? U.ash3 : U.pebbleDk) : (volc ? U.ash2 : (hash(x / 90 | 0, 0, 4) < 0.5 ? U.pebble : U.sand));
   if (d < 3.2 + j * 2){
-    const beach = vnoise(x / 260, y / 260, 31) > 0.35 && s < 0.6;
+    const beach = bn > 0.35 && s < 0.6;
     if (beach) return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.12 ? (volc ? U.ash3 : U.pebbleDk) : (volc ? U.ash2 : (hash(x / 90 | 0, 0, 4) < 0.5 ? U.pebble : U.sand));
     return d < 1.6 ? U.rockWDk : U.rockW;
   }
@@ -895,6 +979,207 @@ function boatPix(g, cx, cy, h, Lp, Bp, hullCol){
     g.fillRect(cx + x, cy + y, 1, 1);
   }
 }
+// ---------------------------------------------------------------- harbours and towns, seen from above
+const SHADE = 'rgba(28,24,40,0.42)';
+function px1(g, x, y, col){ g.fillStyle = col; g.fillRect(x, y, 1, 1); }
+// the stone and timber of the harbour: quay paving, the mole's walkway, parapet and rubble, the jetty's planks
+function drawStructures(g, P, x0, y0, gx0, gy0){
+  const [cu, cv] = P.loc(P.cx, P.cy);
+  for (const S of P.struct){
+    const minx = Math.floor((Math.min(S.ax, S.bx) - S.r - 3) / MPP) - gx0, maxx = Math.ceil((Math.max(S.ax, S.bx) + S.r + 3) / MPP) - gx0;
+    const miny = Math.floor((Math.min(S.ay, S.by) - S.r - 3) / MPP) - gy0, maxy = Math.ceil((Math.max(S.ay, S.by) + S.r + 3) / MPP) - gy0;
+    const dx = S.bx - S.ax, dy = S.by - S.ay, len = Math.hypot(dx, dy);
+    // which side of the mole the basin lies
+    const [bcx, bcy] = P.W(cu, cv), inner = Math.sign(((bcx - S.ax) * -dy + (bcy - S.ay) * dx) / len) || 1;
+    for (let py = Math.max(0, miny); py < Math.min(TILE, maxy); py++) for (let qx = Math.max(0, minx); qx < Math.min(TILE, maxx); qx++){
+      const x = (qx + gx0 + 0.5) * MPP, y = (py + gy0 + 0.5) * MPP;
+      const t = clamp(((x - S.ax) * dx + (y - S.ay) * dy) / (len * len), 0, 1), along = t * len;
+      const d = Math.hypot(x - S.ax - dx * t, y - S.ay - dy * t);
+      const side = Math.sign((x - S.ax) * -dy + (y - S.ay) * dx);
+      let c = null;
+      if (S.kind === 'quay'){
+        if (d > S.r) continue;
+        const [, v] = P.loc(x, y);
+        const vis = along > 4 && along < 56;
+        if (v > S.r - 1.1) c = vis && Math.floor(along / 2) % 2 ? C.lemon : C.stoneDk;
+        else { const row = Math.floor((v + 20) / 1.5), sl = ((along + (row % 2) * 0.9) % 1.8 + 1.8) % 1.8; c = sl < 0.6 || ((v + 20) % 1.5 + 1.5) % 1.5 < 0.6 ? C.stone : hash(Math.floor(along / 1.8), row, 61) < 0.08 ? C.pave : C.stoneLt; }
+      } else if (S.kind === 'mole'){
+        const outer = side !== inner;
+        if (!outer){
+          if (d > S.r) continue;
+          c = d > S.r - 1.1 ? C.stoneDk : ((along % 1.8) + 1.8) % 1.8 < 0.6 || (d % 1.5) < 0.6 ? C.stone : C.stoneLt;
+        } else {
+          if (d < 2.6) c = ((along % 1.8) + 1.8) % 1.8 < 0.6 || (d % 1.5) < 0.6 ? C.stone : C.stoneLt;
+          else if (d < 3.7) c = d < 3.1 ? C.wall1 : C.wallSh1;
+          else if (d < S.r){
+            // rubble: big squared blocks, dark gaps between them
+            const bx = Math.floor((along + vnoise(along / 3, d, 5) * 1.5) / 1.7), by = Math.floor((d + vnoise(along / 2, 0, 6)) / 1.5), hb = hash(bx, by, 63);
+            const fx = ((along / 1.7) % 1 + 1) % 1, fy = ((d / 1.5) % 1 + 1) % 1;
+            c = fx < 0.18 || fy < 0.18 ? C.rockWDk : hb < 0.33 ? C.stone : hb < 0.66 ? C.stoneDk : C.rockW;
+          } else if (d < S.r + 1.6){ if (hash(qx + gx0, py + gy0, 64) < 0.5) c = C.surf; }
+          else continue;
+        }
+      } else {
+        if (d > S.r + 0.4) continue;
+        c = d > S.r - 0.4 ? C.woodDk : Math.floor(along / 0.6) % 4 === 0 ? C.wood : C.teak;
+        if (d > S.r - 0.6 && Math.floor(along / 3) !== Math.floor((along - 0.6) / 3)) c = C.black;
+      }
+      if (c){ g.fillStyle = c; g.fillRect(qx, py, 1, 1); }
+    }
+  }
+}
+// one house: shadow to the north-east, then the roof
+function drawHouse(g, hs, x, y){
+  const { w, h } = hs, R = rng(hs.seed);
+  const sx = Math.round(hs.ht * 0.33), sy = Math.round(hs.ht * 0.28);
+  g.fillStyle = SHADE; g.fillRect(x + sx, y - sy, w, h);
+  g.fillRect(x + w, y - sy, sx, h);
+  const wall = C[hs.wall], wsh = C[hs.wall.replace('wall', 'wallSh')];
+  if (hs.roof === 'hip'){
+    // four slopes: lit to the south and west, in shade to the north and east; a ridge along the long side
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){
+      const dl = i, dr = w - 1 - i, dt = j, db = h - 1 - j, m = Math.min(dl, dr, dt, db);
+      let c = m === db ? C.roofLt : m === dt ? C.roofDk : m === dl ? C.roof : C.roofMid;
+      if ((w >= h && Math.abs(dt - db) < 1 && dl > (h >> 1) - 1 && dr > (h >> 1) - 1) || (h > w && Math.abs(dl - dr) < 1 && dt > (w >> 1) - 1 && db > (w >> 1) - 1)) c = C.roofDk;
+      else if ((m === db || m === dt) && j % 2 === 1 && (i + j) % 3 === 0) c = m === db ? C.roof : C.roofDk;
+      px1(g, x + i, y + j, c);
+    }
+  } else if (hs.roof === 'vault'){
+    // white barrel vaults side by side, shaded across each curve
+    const along = w >= h, n = along ? w : h;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){
+      const k = (along ? j : i) % 4;
+      px1(g, x + i, y + j, k === 0 ? wsh : k === 3 ? C.white : wall);
+    }
+    g.fillStyle = wsh; g.fillRect(x, y + h - 1, w, 1); g.fillRect(x + w - 1, y, 1, h);
+    void n;
+  } else {
+    // a flat roof terrace: parapet, and whatever people keep up there
+    g.fillStyle = wall; g.fillRect(x, y, w, h);
+    g.fillStyle = wsh; g.fillRect(x, y, w, 1); g.fillRect(x, y, 1, h); g.fillRect(x, y + h - 1, w, 1); g.fillRect(x + w - 1, y, 1, h);
+    if (R() < 0.35 && w > 6 && h > 5){
+      // pergola under a vine
+      const pw = 3 + (R() * (w - 6) | 0), ph = 2 + (R() * (h - 5) | 0), px_ = x + 1 + (R() * (w - pw - 2) | 0), py_ = y + 1 + (R() * (h - ph - 2) | 0);
+      for (let j = 0; j < ph; j++) for (let i = 0; i < pw; i++) px1(g, px_ + i, py_ + j, (i + j) % 3 ? C.mq2 : C.mq3);
+    }
+    if (R() < 0.45){ const tx = x + 1 + (R() * (w - 3) | 0), ty = y + 1 + (R() * (h - 3) | 0); g.fillStyle = SHADE; g.fillRect(tx + 1, ty - 1, 2, 2); g.fillStyle = C.grey; g.fillRect(tx, ty, 2, 2); px1(g, tx, ty, C.stone); }
+    if (R() < 0.5){ const cx = x + 1 + (R() * (w - 2) | 0); px1(g, cx, y + 1, C.stoneDk); px1(g, cx + 1, y, SHADE); }
+    if (R() < 0.3 && w > 6){ const ly = y + 1 + (R() * (h - 2) | 0); for (let i = 1; i < w - 1; i += 1) if (R() < 0.6) px1(g, x + i, ly, [C.white, C.red, C.domeB, C.gold][(R() * 4) | 0]); }
+    for (const [cx, cy] of [[x + 1, y + 1], [x + w - 2, y + h - 2]]) if (R() < 0.5) px1(g, cx, cy, C.mq2);
+  }
+}
+function drawChurch(g, P, x, y){
+  const Ch = P.church, w = Ch.w, h = Ch.h;
+  // long shadow of the nave, longer of the bell tower
+  g.fillStyle = SHADE; g.fillRect(x + 4, y - 4, w, h); g.fillRect(x + w, y - 4, 4, h);
+  // apse at the north end
+  for (let j = -5; j <= 0; j++) for (let i = 0; i < w; i++){ const dx = i - w / 2 + 0.5, dy = j; if (dx * dx + dy * dy * 3 < (w / 2) * (w / 2)) px1(g, x + i, y + j, dx < 0 ? C.roof : C.roofMid); }
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){
+    const c = i === (w >> 1) ? C.roofDk : i < (w >> 1) ? (j % 2 ? C.roof : C.roofLt) : (j % 2 ? C.roofDk : C.roofMid);
+    px1(g, x + i, y + j, c);
+  }
+  g.fillStyle = C.wall1; g.fillRect(x - 1, y + h - 2, w + 2, 3);
+  g.fillStyle = C.wallSh1; g.fillRect(x - 1, y + h + 1, w + 2, 1);
+  // the majolica dome over the crossing: ribs in two colours, a white lantern on top
+  const dc = C[Ch.dome], cx = x + w / 2, cy = y + 11, R = 7.5;
+  for (let j = -9; j <= 9; j++) for (let i = -9; i <= 9; i++){
+    const d = Math.hypot(i + 0.5, j + 0.5);
+    if (d > R) continue;
+    const a = Math.atan2(j + 0.5, i + 0.5), rib = Math.floor((a + Math.PI) / (TAU / 16)) % 2;
+    let c = rib ? dc : C.domeY;
+    if (d > R - 1.2) c = C.wallSh1;
+    else if (i + j > 3 && rib) c = C.navy;
+    px1(g, Math.floor(cx + i), Math.floor(cy + j), c);
+  }
+  g.fillStyle = SHADE; g.fillRect(Math.floor(cx) + 1, Math.floor(cy) - 2, 2, 2);
+  g.fillStyle = C.white; g.fillRect(Math.floor(cx) - 1, Math.floor(cy) - 1, 2, 2);
+  // the bell tower beside the front, a little pyramid roof
+  const bx = Ch.side > 0 ? x + w + 2 : x - 9, by = y + h - 12;
+  g.fillStyle = SHADE; g.fillRect(bx + 4, by - 9, 7, 7); g.fillRect(bx + 7, by - 6, 7, 7);
+  g.fillStyle = C.wall3; g.fillRect(bx, by, 7, 7);
+  for (let j = 1; j < 6; j++) for (let i = 1; i < 6; i++){ const dl = i - 1, dr = 5 - i, dt = j - 1, db = 5 - j, m = Math.min(dl, dr, dt, db); px1(g, bx + i, by + j, m === db ? C.roofLt : m === dt ? C.roofDk : m === dl ? C.roof : C.roofMid); }
+  px1(g, bx + 3, by + 3, C.gold);
+}
+function drawHarbour(g, P, x0, y0, gx0, gy0){
+  const inT = (x, y, m = 14) => x > -m && y > -m && x < TILE + m && y < TILE + m;
+  drawStructures(g, P, x0, y0, gx0, gy0);
+  // paving around the houses: the alleys and stairs between them
+  g.fillStyle = C.pave;
+  for (const hs of P.houses){ const x = hs.gx - gx0, y = hs.gy - gy0; if (inT(x, y, 24)) g.fillRect(x - 2, y - 2, hs.w + 4, hs.h + 4); }
+  // the piazza: herringbone paving and a fountain
+  const pts = [[-26, -11], [32, -11], [32, -44], [-26, -44]].map(([u, v]) => P.W(u, v));
+  const mnx = Math.floor(Math.min(...pts.map(p => p[0])) / MPP) - gx0, mxx = Math.ceil(Math.max(...pts.map(p => p[0])) / MPP) - gx0;
+  const mny = Math.floor(Math.min(...pts.map(p => p[1])) / MPP) - gy0, mxy = Math.ceil(Math.max(...pts.map(p => p[1])) / MPP) - gy0;
+  for (let py = Math.max(0, mny); py < Math.min(TILE, mxy); py++) for (let qx = Math.max(0, mnx); qx < Math.min(TILE, mxx); qx++){
+    const [u, v] = P.loc((qx + gx0 + 0.5) * MPP, (py + gy0 + 0.5) * MPP);
+    if (u < -26 || u > 32 || v > -11 || v < -44) continue;
+    const fr = Math.hypot(u - 3, v + 27);
+    let c = (Math.floor(u / 1.1) + Math.floor(v / 0.55)) % 4 === 0 ? C.pave : (Math.floor(u / 0.55) + Math.floor(v / 1.1)) % 5 === 0 ? C.paveDk : C.stoneLt;
+    if (fr < 3.2) c = fr < 2.2 ? (fr < 0.6 ? C.white : C.w4) : C.stoneDk;
+    else if (fr < 6 && fr > 5.4) c = C.paveDk;
+    px1(g, qx, py, c);
+  }
+  // houses from north to south, so each casts its shadow over the roofs behind it
+  const hs_ = P.houses.filter(hs => inT(hs.gx - gx0, hs.gy - gy0, 30)).sort((a, b) => a.gy - b.gy);
+  const cy = P.church.gy;
+  let churchDone = false;
+  for (const hs of hs_){
+    if (!churchDone && hs.gy > cy){ churchDone = true; if (inT(P.church.gx - gx0, cy - gy0, 40)) drawChurch(g, P, P.church.gx - gx0, cy - gy0); }
+    drawHouse(g, hs, hs.gx - gx0, hs.gy - gy0);
+  }
+  if (!churchDone && inT(P.church.gx - gx0, cy - gy0, 40)) drawChurch(g, P, P.church.gx - gx0, cy - gy0);
+  // market stalls: striped awnings, crates in front
+  for (const st of P.stalls){
+    const x = st.gx - gx0, y = st.gy - gy0;
+    if (!inT(x, y)) continue;
+    g.fillStyle = SHADE; g.fillRect(x + 2, y - 1, 6, 4);
+    for (let i = 0; i < 6; i++){ g.fillStyle = C[st.st[i % 2]]; g.fillRect(x + i, y, 1, 4); }
+    g.fillStyle = C.woodDk; g.fillRect(x, y + 4, 6, 1);
+    for (let i = 0; i < 6; i += 2){ g.fillStyle = C[st.goods]; g.fillRect(x + i, y + 5, 2, 1); }
+  }
+  // café parasols with chairs around
+  for (const cf of P.cafes){
+    const x = cf.gx - gx0, y = cf.gy - gy0;
+    if (!inT(x, y)) continue;
+    g.fillStyle = SHADE; g.fillRect(x, y - 1, 3, 3);
+    px1(g, x - 2, y, C.woodDk); px1(g, x + 2, y, C.woodDk); px1(g, x, y + 2, C.woodDk);
+    g.fillStyle = C[cf.col]; g.fillRect(x - 1, y - 1, 3, 3);
+    px1(g, x - 1, y - 1, C.white);
+    px1(g, x, y, C.roofDk);
+  }
+  // beach umbrellas in rows, loungers beside
+  for (const um of P.umbrellas){
+    const x = um.gx - gx0, y = um.gy - gy0;
+    if (!inT(x, y)) continue;
+    g.fillStyle = SHADE; g.fillRect(x, y - 1, 3, 3);
+    g.fillStyle = C.white; g.fillRect(x + 2, y + 1, 1, 2); g.fillRect(x - 2, y + 1, 1, 2);
+    g.fillStyle = C[um.col]; g.fillRect(x - 1, y - 1, 3, 3);
+    px1(g, x, y, C.white);
+  }
+  // the quay: bollards along the edge, lamps, nets and crates near the jetty
+  for (let u = -78; u <= 86; u += 7){
+    const [x, y] = P.W(u, 9.4), qx = Math.round(x / MPP) - gx0, qy = Math.round(y / MPP) - gy0;
+    if (!inT(qx, qy, 2)) continue;
+    px1(g, qx + 1, qy - 1, SHADE); g.fillStyle = C.iron; g.fillRect(qx, qy, 2, 2);
+  }
+  for (const [x, y] of P.lamps){ const qx = Math.round(x / MPP) - gx0, qy = Math.round(y / MPP) - gy0; if (inT(qx, qy, 2)){ px1(g, qx + 1, qy - 2, SHADE); px1(g, qx, qy, C.iron); px1(g, qx, qy - 1, C.gold); } }
+  const R = rng(P.id * 31 + 7);
+  for (let k = 0; k < 14; k++){
+    const u = -24 + R() * 22, v = -2 + R() * 9, [x, y] = P.W(u, v), qx = Math.round(x / MPP) - gx0, qy = Math.round(y / MPP) - gy0;
+    if (!inT(qx, qy, 4)) continue;
+    const kind = R();
+    if (kind < 0.35){ for (let j = 0; j < 3; j++) for (let i = 0; i < 5; i++) if (hash(i, j, k) < 0.7) px1(g, qx + i, qy + j, (i + j) % 2 ? C.oliveDk : C.woodDk); }
+    else if (kind < 0.7){ g.fillStyle = SHADE; g.fillRect(qx + 1, qy - 1, 2, 2); g.fillStyle = C.wood; g.fillRect(qx, qy, 2, 2); px1(g, qx, qy, C.teak); }
+    else { px1(g, qx + 1, qy - 1, SHADE); px1(g, qx, qy, C.woodDk); px1(g, qx + 1, qy, C.wood); }
+  }
+  // the light on the mole head: a round white tower, a green lantern
+  const lx = Math.round(P.lx / MPP) - gx0, ly = Math.round(P.ly / MPP) - gy0;
+  if (inT(lx, ly)){
+    g.fillStyle = SHADE; g.fillRect(lx, ly - 6, 5, 5); g.fillRect(lx + 3, ly - 8, 3, 4);
+    for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (i * i + j * j <= 5) px1(g, lx + i, ly + j, i + j > 1 ? C.wallSh5 : C.white);
+    g.fillStyle = C.green; g.fillRect(lx - 1, ly - 1, 2, 2);
+  }
+}
 function bakeTile(tx, ty){
   const x0 = tx * TILE * MPP, y0 = ty * TILE * MPP, sz = TILE * MPP;
   const cands = isles.filter(I => x0 + sz > I.cx - I.bound && x0 < I.cx + I.bound && y0 + sz > I.cy - I.bound && y0 < I.cy + I.bound);
@@ -913,14 +1198,13 @@ function bakeTile(tx, ty){
   let deep = true;
   for (let j = 0; j < GN; j++) for (let i = 0; i < GN; i++){
     const x = x0 + (i - 1) * S4 * MPP, y = y0 + (j - 1) * S4 * MPP;
-    const d = grid[j * GN + i] = depthAt(x, y);
+    const d = grid[j * GN + i] = depthAt(x, y, false);
     srcs[j * GN + i] = TSRC;
     hgt[j * GN + i] = heightOf(d, TSRC, x, y);
     if (d > -160) deep = false;
   }
-  if (deep) return null;
+  if (deep && !nearP.length) return null;
   const step = S4 * MPP * 2;
-  const umbrellas = [];
   for (let py = 0; py < TILE; py++){
     const y = y0 + (py + 0.5) * MPP, fyy = (py + 0.5) / S4 + 1, gj = Math.min(GN - 3, Math.max(1, fyy | 0)), fy = fyy - gj;
     for (let qx = 0; qx < TILE; qx++){
@@ -934,16 +1218,13 @@ function bakeTile(tx, ty){
       const gx = lerp(lerp(gxA, gxB, fx), lerp(gxC, gxD, fx), fy), gy = lerp(lerp(gyA, gyB, fx), lerp(gyC, gyD, fx), fy);
       const src = srcs[o + (fy > 0.5 ? GN : 0) + (fx > 0.5 ? 1 : 0)];
       const c = terrainCol(d, h, gx, gy, src, x, y, BAYER[(py & 3) * 4 + (qx & 3)]);
-      if (c){
-        px[py * TILE + qx] = c; any = true;
-        if ((c === U.pebble || c === U.sand) && nearP.length && hash(qx + tx * 999, py + ty * 977, 71) < 0.006) umbrellas.push([qx, py]);
-      }
+      if (c){ px[py * TILE + qx] = c; any = true; }
     }
   }
-  if (!any) return null;
+  if (!any && !nearP.length) return null;
   g.putImageData(img, 0, 0);
-  const dpth = (x, y) => { const d = depthAt(x, y); return [d, TSRC, heightOf(d, TSRC, x, y)]; };
-  const inTown = (x, y) => nearP.some(P => Math.hypot(P.tx0 - x, P.ty0 - y) < 150 || Math.hypot(P.cx - x, P.cy - y) < 90);
+  const dpth = (x, y) => { const d = depthAt(x, y, false); return [d, TSRC, heightOf(d, TSRC, x, y)]; };
+  const inTown = (x, y) => nearP.some(P => { const [u, v] = P.loc(x, y); return u > -150 && u < 150 && v > -20 && v < 200 || P.houses.some(h => Math.abs(h.gx - x / MPP + h.w / 2) < h.w / 2 + 6 && Math.abs(h.gy - y / MPP + h.h / 2) < h.h / 2 + 6); });
   // trees: umbrella pines, olives and the odd cypress
   const TC = 9, gx0 = tx * TILE, gy0 = ty * TILE;
   const pineC = { d: C.pineDk, m: C.pine, l: C.pineLt }, oliveC = { o: C.oliveDk, O: C.olive }, cypC = { p: C.pineDk, P: C.pine };
@@ -953,7 +1234,7 @@ function bakeTile(tx, ty){
       if (hh > 0.3) continue;
       const x = (i + hash(i, j, 22)) * TC, y = (j + hash(i, j, 23)) * TC;
       const [d, src, h] = dpth(x, y);
-      if (d < 8 || h > 430 || (src && (src.volcano || src.moles || src.rock))) continue;
+      if (d < 8 || h > 430 || (src && (src.volcano || src.rock))) continue;
       if (inTown(x, y)) continue;
       const bx = Math.round(x / MPP) - gx0, by = Math.round(y / MPP) - gy0;
       if (hh < 0.09){ g.fillStyle = 'rgba(15,35,20,0.35)'; g.fillRect(bx + 2, by + 3, 7, 4); stamp(g, PINE, bx, by, pineC); }
@@ -961,72 +1242,8 @@ function bakeTile(tx, ty){
       else if (hh < 0.23) stamp(g, CYPRESS, bx, by, cypC);
     }
   }
-  // umbrellas on the beaches near town
-  const UMB = [C.red, C.gold, C.domeB, C.white, C.green];
-  for (const [ux, uy] of umbrellas){
-    g.fillStyle = 'rgba(20,30,40,0.3)'; g.fillRect(ux + 1, uy + 1, 3, 2);
-    g.fillStyle = UMB[(hash(ux, uy, 72) * UMB.length) | 0]; g.fillRect(ux, uy, 3, 2);
-    g.fillStyle = C.white; g.fillRect(ux + 1, uy, 1, 1);
-  }
-  // towns: pastel houses with a facade toward the viewer, flat roofs or terracotta, a church and its dome
-  for (const P of nearP){
-    for (const hs of P.houses){
-      const x = hs.gx - gx0, y = hs.gy - gy0;
-      if (x < -12 || y < -12 || x > TILE + 4 || y > TILE + 4) continue;
-      const [wl, ws] = hs.wall;
-      g.fillStyle = 'rgba(20,30,20,0.4)'; g.fillRect(x + 1, y + 1, hs.w + 1, hs.h + 3);
-      // facade
-      g.fillStyle = C[ws]; g.fillRect(x, y + hs.h, hs.w, 2);
-      g.fillStyle = '#3b3a44';
-      for (let k = 1; k < hs.w - 1; k += 2) g.fillRect(x + k, y + hs.h, 1, 1);
-      if (hs.flat){
-        g.fillStyle = C[wl]; g.fillRect(x, y, hs.w, hs.h);
-        g.fillStyle = C[ws]; g.fillRect(x, y + hs.h - 1, hs.w, 1);
-      } else {
-        g.fillStyle = C.roof; g.fillRect(x, y, hs.w, hs.h);
-        g.fillStyle = C.roofLt; g.fillRect(x, y + (hs.h >> 1) - 1, hs.w, 1);
-        g.fillStyle = C.roofDk; g.fillRect(x, y + hs.h - 1, hs.w, 1);
-      }
-    }
-    if (P.church){
-      const x = P.church.gx - gx0 - 5, y = P.church.gy - gy0 - 5;
-      if (x > -16 && y > -20 && x < TILE + 6 && y < TILE + 6){
-        g.fillStyle = 'rgba(20,30,20,0.4)'; g.fillRect(x + 1, y + 1, 12, 14);
-        g.fillStyle = C.wallSh1; g.fillRect(x, y + 10, 11, 3);
-        g.fillStyle = C.wall1; g.fillRect(x, y, 11, 10);
-        // majolica dome: tiles in two colours, a lantern on top
-        const dc = C[P.church.dome];
-        for (let yy = -3; yy <= 3; yy++) for (let xx = -3; xx <= 3; xx++){
-          if (xx * xx + yy * yy > 11) continue;
-          g.fillStyle = (xx + yy + 8) % 2 ? dc : C.domeY;
-          g.fillRect(x + 5 + xx, y + 4 + yy, 1, 1);
-        }
-        g.fillStyle = C.white; g.fillRect(x + 5, y + 4, 1, 1);
-        g.fillStyle = '#3b3a44'; g.fillRect(x + 4, y + 11, 3, 2);
-        // bell tower
-        g.fillStyle = C.wallSh3; g.fillRect(x + 12, y + 1, 4, 9);
-        g.fillStyle = C.wall3; g.fillRect(x + 12, y - 3, 4, 4);
-        g.fillStyle = C.roofDk; g.fillRect(x + 13, y - 3, 2, 1);
-        g.fillStyle = '#3b3a44'; g.fillRect(x + 13, y + 3, 2, 2);
-      }
-    }
-    // bollards on the quay, boats moored inside the mole, the light on its head
-    for (let u = -36; u <= 44; u += 10){
-      const [bx, by] = P.W(u, 8.5);
-      g.fillStyle = C.iron; g.fillRect(Math.round(bx / MPP) - gx0, Math.round(by / MPP) - gy0, 1, 1);
-    }
-    for (const b of P.boats){
-      const bx = Math.round(b.x / MPP) - gx0, by = Math.round(b.y / MPP) - gy0;
-      if (bx < -12 || by < -12 || bx > TILE + 12 || by > TILE + 12) continue;
-      g.fillStyle = 'rgba(10,40,70,0.35)'; g.fillRect(bx - 2, by + 1, 5, 4);
-      boatPix(g, bx, by, b.h, 14, 4.6, C[b.col]);
-    }
-    const lx = Math.round(P.lx / MPP) - gx0, ly = Math.round(P.ly / MPP) - gy0;
-    g.fillStyle = 'rgba(10,40,70,0.4)'; g.fillRect(lx, ly - 1, 4, 5);
-    g.fillStyle = C.stoneLt; g.fillRect(lx - 1, ly - 1, 3, 4);
-    g.fillStyle = C.white; g.fillRect(lx - 1, ly - 4, 3, 3);
-    g.fillStyle = C.green; g.fillRect(lx - 1, ly - 5, 3, 1);
-  }
+  // harbours and towns, pixel by pixel
+  for (const P of nearP) drawHarbour(g, P, x0, y0, gx0, gy0);
   // lighthouses on the capes: white tower, red lantern
   for (const L of LIGHTS){
     const lx = Math.round(L.x / MPP) - gx0, ly = Math.round(L.y / MPP) - gy0;
@@ -1114,15 +1331,23 @@ function polar(t, twa){
   }
   return P[P.length - 1][1];
 }
+const SQP = [[0, 0], [52, 0], [60, .3], [75, .45], [90, .55], [120, .62], [150, .6], [180, .55]];
 const RIGS = {
   // foremast and mainmast, each with a boom and a gaff; headsails from the bowsprit
   schooner: { masts: [{ y: -0.19, boom: 0.24, gaff: 0.19 }, { y: 0.05, boom: 0.5, gaff: 0.3 }], sprit: 7 },
   lateen: { masts: [{ y: -0.12, lateen: 1 }], sprit: 0 },
+  // square sails on the foremast, fore-and-aft behind
+  brig: { masts: [{ y: -0.22, sq: 1, w: 1 }, { y: 0.08, boom: 0.42, gaff: 0.3 }], sprit: 9 },
+  barq: { masts: [{ y: -0.28, sq: 1, w: 1.05 }, { y: -0.02, boom: 0.28, gaff: 0.22 }, { y: 0.22, boom: 0.34, gaff: 0.25 }], sprit: 11 },
+  steam: { masts: [{ y: -0.32, bare: 1 }, { y: 0.3, bare: 1 }], sprit: 0 },
 };
 const TYPES = {
-  schooner: { id: 'schooner', name: 'Schooner', L: 26, B: 6.2, polar: POLAR,  noGo: 40, cap: 11,  accel: 5, turn: 40, hull: 100, rig: 'schooner' },
-  gozzo:    { id: 'gozzo',    name: 'Gozzo',    L: 8.5, B: 2.8, polar: SMALLP, noGo: 50, cap: 5.5, accel: 3, turn: 46, hull: 30, rig: 'lateen' },
-  tartana:  { id: 'tartana',  name: 'Tartana',  L: 16, B: 5,   polar: SMALLP, noGo: 52, cap: 7.2, accel: 5, turn: 30, hull: 60, rig: 'lateen' },
+  schooner: { id: 'schooner', name: 'Schooner',    L: 26, B: 6.2, polar: POLAR,  noGo: 40, cap: 11,  accel: 5,  turn: 40, hull: 100, rig: 'schooner' },
+  gozzo:    { id: 'gozzo',    name: 'Gozzo',       L: 8,  B: 2.6, polar: SMALLP, noGo: 50, cap: 5.5, accel: 3,  turn: 46, hull: 30,  rig: 'lateen', dbl: 1 },
+  tartana:  { id: 'tartana',  name: 'Tartana',     L: 16, B: 5,   polar: SMALLP, noGo: 52, cap: 7.2, accel: 5,  turn: 30, hull: 60,  rig: 'lateen', dbl: 1 },
+  brig:     { id: 'brig',     name: 'Brigantine',  L: 32, B: 8,   polar: SQP,    noGo: 56, cap: 9,   accel: 8,  turn: 20, hull: 220, rig: 'brig' },
+  barq:     { id: 'barq',     name: 'Barquentine', L: 42, B: 9.5, polar: SQP,    noGo: 56, cap: 10,  accel: 10, turn: 16, hull: 300, rig: 'barq' },
+  steamer:  { id: 'steamer',  name: 'Steamer',     L: 52, B: 8.6, polar: SQP,    noGo: 0,  cap: 10,  accel: 12, turn: 14, hull: 500, rig: 'steam' },
 };
 // the shipwright's work belongs to the boat
 const UPG = {
@@ -1181,7 +1406,7 @@ function load(){
     (s.reqs || []).forEach((q, i) => { if (reqs[i]) reqs[i] = q; });
     if (s.reqDay) reqDay = s.reqDay;
     T = s.t || T;
-    if (s.moored != null && ports[s.moored]) moored = ports[s.moored];
+    if (s.moored != null && ports[s.moored]){ moored = ports[s.moored]; ship.berth = s.berth || null; }
     return true;
   } catch (e){ return false; }
 }
@@ -1191,7 +1416,7 @@ function save(){
     for (let i = 0; i < fog.length; i++) f += String.fromCharCode(fog[i]);
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       x: ship.x, y: ship.y, h: ship.h, set: ship.set, hull: ship.hull, rig: ship.rig, foul: ship.foul, up: ship.up, paint: ship.paint, tanbark: ship.tanbark, trimA: ship.trimA,
-      pl, market, reqs, reqDay, fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T, wseed: WSEED, moored: moored ? moored.id : null,
+      pl, market, reqs, reqDay, fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T, wseed: WSEED, moored: moored ? moored.id : null, berth: ship.berth,
     }));
   } catch (e){}
 }
@@ -1238,34 +1463,68 @@ function hullPoints(s){
   return [[s.x + fx * L * .45, s.y + fy * L * .45], [s.x, s.y], [s.x - fx * L * .4, s.y - fy * L * .4]];
 }
 let groundToastT = 0;
+// the natural sea bed: rocks, reefs and beaches (the stone of the harbours is handled exactly, below)
 function groundCheck(s){
   const fx = Math.sin(s.h), fy = -Math.cos(s.h), L = s.t.L;
-  if (depthFast(s.x + fx * L * .45, s.y + fy * L * .45) <= -1.5 && depthFast(s.x, s.y) <= -1.5 && depthFast(s.x - fx * L * .4, s.y - fy * L * .4) <= -1.5) return;
+  if (depthFastN(s.x + fx * L * .45, s.y + fy * L * .45) <= -1.5 && depthFastN(s.x, s.y) <= -1.5 && depthFastN(s.x - fx * L * .4, s.y - fy * L * .4) <= -1.5) return;
   let pts = hullPoints(s);
   s.grounded = true;
   let src = null;
   for (let k = 0; k < 60; k++){
     let worst = -1e9, wx = 0, wy = 0;
-    for (const [x, y] of pts){ const d = depthFast(x, y); if (d > worst){ worst = d; wx = x; wy = y; } }
+    for (const [x, y] of pts){ const d = depthFastN(x, y); if (d > worst){ worst = d; wx = x; wy = y; } }
     if (worst <= -1.5) break;
-    if (!k){ depthAt(wx, wy); src = TSRC; }
-    const gx = depthFast(wx + 4, wy) - depthFast(wx - 4, wy), gy = depthFast(wx, wy + 4) - depthFast(wx, wy - 4);
+    if (!k){ depthAt(wx, wy, false); src = TSRC; }
+    const gx = depthFastN(wx + 4, wy) - depthFastN(wx - 4, wy), gy = depthFastN(wx, wy + 4) - depthFastN(wx, wy - 4);
     const gl = Math.hypot(gx, gy) || 1;
     s.x -= gx / gl; s.y -= gy / gl;
     pts = hullPoints(s);
   }
   const v = Math.abs(s.v);
   if (v > 2){
-    const dmg = (v - 2) * (src && src.moles ? 4 : 6);
-    s.hull = Math.max(0, s.hull - dmg);
+    s.hull = Math.max(0, s.hull - (v - 2) * 6);
     if (s === ship && T > groundToastT){
       groundToastT = T + 3;
-      toast(src && src.moles ? 'Crunch! Too fast alongside the stone.' : src && src.r && !src.cx ? 'Reef! The keel grinds over rock.' : 'Aground! The timbers groan.');
+      toast(src && src.r && !src.cx ? 'Reef! The keel grinds over rock.' : 'Aground! The timbers groan.');
       sfx.crunch(Math.min(1, v / 6)); shake = Math.min(2, 0.4 + v * 0.25);
-      if (src && src.moles) tip('slow', 'Furl the sails a good way out and glide in under 2.5 knots.');
     }
   }
   s.v *= 0.3;
+}
+// quays, moles and jetties: her hull is a capsule; the stone does not move. fenders take a gentle touch, not a blow
+let bumpQuayT = 0;
+const sSeg = [0, 0, 0, 0];
+function structCollide(s){
+  for (const P of ports){
+    if (Math.abs(P.cx - s.x) > 320 || Math.abs(P.cy - s.y) > 320) continue;
+    for (const S of P.struct){
+      sSeg[0] = S.ax; sSeg[1] = S.ay; sSeg[2] = S.bx; sSeg[3] = S.by;
+      segClosest(hullSeg(s, segA), sSeg, cp);
+      let nx = cp[0] - cp[2], ny = cp[1] - cp[3], d = Math.hypot(nx, ny);
+      const R = s.t.B * 0.5 + S.r;
+      if (d >= R) continue;
+      if (d < 1e-3){ nx = s.x - cp[2]; ny = s.y - cp[3]; d = Math.hypot(nx, ny) || 1; }
+      nx /= d; ny /= d;
+      s.x += nx * (R - d); s.y += ny * (R - d);
+      // how hard she came in: the part of her motion straight at the stone, in knots
+      const fx = Math.sin(s.h), fy = -Math.cos(s.h), rx = Math.cos(s.h), ry = Math.sin(s.h);
+      const vx = fx * s.v + rx * (s.lat || 0) / KN, vy = fy * s.v + ry * (s.lat || 0) / KN;
+      const vn = -(vx * nx + vy * ny);
+      if (vn <= 0) continue;
+      // keep the motion along the stone, lose the motion into it
+      const along = fx * nx + fy * ny;
+      s.v *= 1 - Math.min(1, Math.abs(along)) * 0.9;
+      s.lat = (s.lat || 0) * 0.3;
+      if (s.ghost){ s.grounded = true; continue; }
+      if (vn > 2.2){
+        s.hull = Math.max(0, s.hull - (vn - 2.2) * 6);
+        if (s === ship && T > bumpQuayT){ bumpQuayT = T + 3; toast('Crunch! Too fast against the stone.'); sfx.crunch(Math.min(1, vn / 5)); shake = Math.min(2, vn * 0.4); tip('slow', 'Furl the sails a good way out and glide in. Touch the quay under 2 knots.'); }
+      } else if (vn > 0.3 && s === ship && T > bumpQuayT){ bumpQuayT = T + 2; sfx.fender(); }
+      // a blow off the bow swings her
+      const off = (cp[0] - s.x) * -ny + (cp[1] - s.y) * nx;
+      s.turn += clamp(off * vn * 0.004, -0.15, 0.15);
+    }
+  }
 }
 let knockT = 0, wearToastT = 0;
 function stepShip(s, dt, now = T){
@@ -1331,8 +1590,11 @@ function stepShip(s, dt, now = T){
   // leeway: sideways drift, strongest close-hauled
   const fx = Math.sin(s.h), fy = -Math.cos(s.h), rx = Math.cos(s.h), ry = Math.sin(s.h);
   const lee = w.spd * 0.03 * s.sail * (1 - clamp((twa - 40) / 110, 0, 1)) * (rel > 0 ? -1 : 1);
-  s.x += (fx * s.v + rx * lee) * KN * dt;
-  s.y += (fy * s.v + ry * lee) * KN * dt;
+  // a push off the quay dies away; with little canvas up the wind on her hull and rigging blows her bodily downwind
+  s.lat = (s.lat || 0) * Math.exp(-dt / 2.5);
+  const wage = w.spd * 0.018 * (1 - Math.min(1, s.sail * 1.5)) * (1 - Math.min(1, Math.abs(s.v) / 3));
+  s.x += (fx * s.v + rx * lee) * KN * dt + rx * s.lat * dt - Math.sin(w.dir) * wage * KN * dt;
+  s.y += (fy * s.v + ry * lee) * KN * dt + ry * s.lat * dt + Math.cos(w.dir) * wage * KN * dt;
 
   // apparent wind (for sails, flags and heel)
   const awx = -Math.sin(w.dir) * w.spd - fx * s.v, awy = Math.cos(w.dir) * w.spd - fy * s.v;
@@ -1365,6 +1627,7 @@ function stepShip(s, dt, now = T){
   }
 
   groundCheck(s);
+  if (!s.kin) structCollide(s);
   const M = 250;
   if (s.x < M || s.x > WW - M || s.y < M || s.y > WH - M){
     s.x = clamp(s.x, M, WW - M); s.y = clamp(s.y, M, WH - M);
@@ -1426,9 +1689,11 @@ function segClosest(A, B, o){
   o[0] = A[0] + d1x * s1; o[1] = A[1] + d1y * s1; o[2] = B[0] + d2x * t; o[3] = B[1] + d2y * t;
   return o;
 }
-const massOf = s => s.t.L * s.t.B * s.t.B;
+const massOf = s => s.kin ? 1e9 : s.t.L * s.t.B * s.t.B;
 let bumpToastT = 0;
 function collide(a, b){
+  if (a.kin && b.kin) return;
+  if ((a === ship && (moored || ship.securing)) || (b === ship && (moored || ship.securing))) return;
   segClosest(hullSeg(a, segA), hullSeg(b, segB), cp);
   let nx = cp[2] - cp[0], ny = cp[3] - cp[1], d = Math.hypot(nx, ny);
   const R = (a.t.B + b.t.B) * 0.5;
@@ -1443,13 +1708,14 @@ function collide(a, b){
   if (vrel >= -0.05) return;
   const J = -1.2 * vrel / (1 / ma + 1 / mb);
   const vax = fax * a.v - nx * J / ma, vay = fay * a.v - ny * J / ma, vbx = fbx * b.v + nx * J / mb, vby = fby * b.v + ny * J / mb;
-  a.v = vax * fax + vay * fay; b.v = vbx * fbx + vby * fby;
-  for (const [s, o] of [[a, b], [b, a]]) if (s !== ship){ s.bumpT = 4; s.bumpAway = Math.atan2(s.x - o.x, -(s.y - o.y)); }
+  if (!a.kin) a.v = vax * fax + vay * fay;
+  if (!b.kin) b.v = vbx * fbx + vby * fby;
+  for (const [s, o] of [[a, b], [b, a]]) if (s !== ship && !s.kin){ s.bumpT = 4; s.bumpAway = Math.atan2(s.x - o.x, -(s.y - o.y)); }
   const impact = -vrel;
   if (impact > 2 && (a === ship || b === ship)){
     ship.hull = Math.max(0, ship.hull - (impact - 2) * 3);
     sfx.crunch(0.5); shake = Math.min(2, shake + impact * 0.2);
-    if (T > bumpToastT){ bumpToastT = T + 6; toast('Bump! Mind the fishing boats.'); }
+    if (T > bumpToastT){ bumpToastT = T + 6; toast(a.t.L > 30 || b.t.L > 30 ? 'Crash! You hit a big ship.' : 'Bump! Mind the other boats.'); }
   }
 }
 
@@ -1490,27 +1756,301 @@ function giveWay(s, h){
   return h;
 }
 function steer(s, h){ s.rudder = clamp(wrap(h - s.h) * 2.2, -1, 1); }
+// sailing to a goal: beat if it lies upwind, keep off the rocks, give way; call back on arrival
 function think(s, dt){
   if (s.bumpT > 0){ s.bumpT -= dt; steer(s, s.bumpAway); return; }
-  if (!s.goal || Math.hypot(s.goal[0] - s.x, s.goal[1] - s.y) < 120){
-    const P = pick(ports.filter(q => Math.hypot(q.hx - s.x, q.hy - s.y) < 6000));
-    s.goal = P && Math.random() < 0.6 ? [P.hx, P.hy] : (() => {
-      for (let k = 0; k < 30; k++){ const x = s.x + rnd(-2500, 2500), y = s.y + rnd(-2500, 2500); if (x > 300 && y > 300 && x < WW - 300 && y < WH - 300 && depthFast(x, y) < -40) return [x, y]; }
-      return [s.x, s.y + 500];
-    })();
+  if (!s.goal){
+    for (let k = 0; k < 30 && !s.goal; k++){ const x = s.x + rnd(-2500, 2500), y = s.y + rnd(-2500, 2500); if (x > 300 && y > 300 && x < WW - 300 && y < WH - 300 && depthFast(x, y) < -40) s.goal = [x, y]; }
+    if (!s.goal) s.goal = [s.x, s.y + 500];
   }
+  if (Math.hypot(s.goal[0] - s.x, s.goal[1] - s.y) < (s.goalR || 120)){ const f = s.onGoal; s.goal = null; s.onGoal = null; if (f) f(s); return; }
   const b = Math.atan2(s.goal[0] - s.x, -(s.goal[1] - s.y));
   steer(s, giveWay(s, avoid(s, sailToward(s, b, dt))));
   s.set = s.wind.spd > 22 ? 2 : 3;
 }
+// ---- in harbour: towed, warped or rowed along a path at walking pace, sails furled; steamers at sea too
+function wakeTrail(s, dt){
+  if (!visible(s)) return;
+  s.wakeT -= dt;
+  if (s.wakeT <= 0 && s.v > 0.3){
+    s.wakeT = 0.08;
+    s.wake.push({ x: s.x - Math.sin(s.h) * s.t.L * 0.48, y: s.y + Math.cos(s.h) * s.t.L * 0.48, t: T, v: Math.abs(s.v) });
+    if (s.wake.length > 90) s.wake.shift();
+  }
+}
+function kinStep(s, dt){
+  s.windT -= dt;
+  if (s.windT <= 0){ s.wind = windAt(s.x, s.y, T); s.windT = 0.5; const fx = Math.sin(s.h), fy = -Math.cos(s.h); s.aw.toward = Math.atan2(-Math.sin(s.wind.dir) * s.wind.spd - fx * s.v, -(Math.cos(s.wind.dir) * s.wind.spd - fy * s.v)); }
+  s.sail = Math.max(0, s.sail - dt * 0.3); s.set = 0; s.heel *= 0.95;
+  if (!s.path || !s.path.length){ s.v = 0; return; }
+  const [wx, wy] = s.path[0], dx = wx - s.x, dy = wy - s.y, d = Math.hypot(dx, dy) || 1e-6, last = s.path.length === 1;
+  const want = last ? Math.min(s.vt, 0.25 + d / 14) : s.vt;
+  s.v += (want - s.v) * Math.min(1, dt / 3);
+  let b = Math.atan2(dx, -dy);
+  if (last && d < s.t.L * 0.9 && s.finalH != null) b = s.finalH;
+  const e = wrap(b - s.h), rate = 24 * DEG * clamp(s.v / 1.5, 0.35, 1);
+  s.turn = clamp(e * 1.5, -rate, rate);
+  s.h = norm(s.h + s.turn * dt);
+  // the tow pulls her toward the next point while she swings round to it
+  const fx = Math.sin(s.h), fy = -Math.cos(s.h), mx = fx * 0.55 + dx / d * 0.45, my = fy * 0.55 + dy / d * 0.45, ml = Math.hypot(mx, my) || 1;
+  const step = Math.min(d, s.v * KN * dt);
+  s.x += mx / ml * step; s.y += my / ml * step;
+  wakeTrail(s, dt);
+  if (d < (last ? 0.8 : 7)){
+    s.path.shift();
+    if (!s.path.length){ if (s.finalH != null) s.h = s.finalH; s.v = 0; const f = s.onDone; s.onDone = null; if (f) f(s); }
+  }
+}
+// harbour paths in the harbour's own frame, from a berth out through the mouth (reverse them to come in)
+const OUT = {
+  slip: sl => [[sl.u, 68], [-30, 124], [-46, 152], [-112, 218]],
+  small: () => [[15, 40], [2, 100], [-30, 130], [-46, 152], [-112, 218]],
+  steam: () => [[46, 42], [6, 108], [-46, 152], [-112, 218]],
+  cargo: () => [[66, 112], [30, 140], [-20, 142], [-46, 152], [-112, 218]],
+};
+function berthOf(F){
+  const P = F.P, t = TYPES[F.type];
+  if (F.slip){ const [x, y] = P.W(F.slip.u, F.slip.v); return [x, y, Math.atan2(P.nx, -P.ny)]; }
+  const Bt = F.berth === 'small' ? P.berthSmall : F.berth === 'steam' ? P.berthSteam : P.berthCargo;
+  return berthPos(Bt, 0.5, t.B, F.berth === 'cargo' ? 1 : -1);
+}
+const toWorld = (P, pts) => pts.map(([u, v]) => P.W(u, v));
+function outPath(F){ return toWorld(F.P, F.slip ? OUT.slip(F.slip) : OUT[F.berth]()); }
+function inPath(F){ const p = outPath(F).reverse(); const [x, y, h] = berthOf(F); p.push([x, y]); return { path: p, h }; }
+
+// ---- the harbour fleets: fishing boats out at dawn and back in the afternoon, lamp boats out at night,
+// a coaster at the small berth, and big cargo ships that come and go at the mole
+const fleet = [];
+for (const P of ports){
+  const r = rng(P.id * 4111 + 5);
+  P.slips.forEach((sl, i) => {
+    const lamp = i < 2;
+    fleet.push({ P, kind: lamp ? 'lamp' : 'fish', type: 'gozzo', slip: sl, col: pick(['hullW', 'domeB', 'hullW', 'red', 'green']), trim: pick(['red', 'domeB', 'gold', 'green', 'white']),
+      out: lamp ? 19 + r() * 2 : 4.5 + r() * 3, back: lamp ? 4 + r() * 2 : 13 + r() * 4, spotA: (r() - 0.5) * 2.2, spotD: 500 + r() * 900, ship: null });
+  });
+  fleet.push({ P, kind: 'trader', type: 'tartana', berth: 'small', col: pick(['hullN', 'green', 'red']), trim: 'white', salt: 11, p: 0.6, ship: null });
+  fleet.push({ P, kind: 'cargo', type: 'brig', berth: 'cargo', col: 'hullB', salt: 23, p: 0.55, ship: null });
+}
+// a day-to-day plan for the traders: present overnight on day d if occ(d); in on the afternoon, out in the morning
+const occ = (F, d) => hash(F.P.id, d, F.salt) < F.p;
+const arrH = (F, d) => 12 + hash(F.P.id, d, F.salt + 1) * 7;
+const depH = (F, d) => 6.5 + hash(F.P.id, d, F.salt + 2) * 6;
+function homeAt(F, t){
+  const h = hourOf(t), d = Math.floor(t / DAY);
+  if (F.kind === 'fish') return h < F.out || h >= F.back;
+  if (F.kind === 'lamp') return h >= F.back && h < F.out;
+  return (occ(F, d) && (h >= arrH(F, d) || occ(F, d - 1))) || (occ(F, d - 1) && h < depH(F, d));
+}
+// when did she come in? (for the ones that arrive while you are watching)
+function arrivedAt(F, t){
+  const h = hourOf(t), d = Math.floor(t / DAY);
+  if (F.kind === 'fish' || F.kind === 'lamp') return (d + F.back / 24) * DAY - (h < F.back ? DAY : 0);
+  if (occ(F, d) && !occ(F, d - 1) && h >= arrH(F, d)) return (d + arrH(F, d) / 24) * DAY;
+  return -1e9;
+}
+function fishSpot(F){
+  const P = F.P, a = Math.atan2(P.nx, -P.ny) + F.spotA;
+  for (let k = 0; k < 6; k++){
+    const d = F.spotD * (1 - k * 0.12), x = P.hx + Math.sin(a) * d, y = P.hy - Math.cos(a) * d;
+    if (depthFast(x, y) < -25) return [x, y];
+  }
+  return [P.hx + P.nx * 400, P.hy + P.ny * 400];
+}
+function newBoat(F, x, y, h){
+  const s = makeShip(F.type, x, y, h, 'fleet');
+  s.col = F.col; s.trim = F.trim; s.F = F; s.wind = windAt(x, y, T);
+  if (F.kind === 'cargo'){ const big = hash(F.P.id, Math.floor(T / DAY), 29) < 0.5; s.t = TYPES[big ? 'barq' : 'brig']; F.type = s.t.id; }
+  F.ship = s; ai.push(s);
+  return s;
+}
+function setMoored(s){ const [x, y, h] = berthOf(s.F); Object.assign(s, { x, y, h, v: 0, mode: 'moored', kin: true, sail: 0, set: 0 }); }
+function spawnMoored(F){ const [x, y, h] = berthOf(F); setMoored(newBoat(F, x, y, h)); }
+function sailTo(s, goal, r, then){ Object.assign(s, { mode: 'sail', kin: false, goal, goalR: r, onGoal: then, set: 3 }); }
+function towTo(s, path, h, vt, then){ Object.assign(s, { mode: 'tow', kin: true, path, finalH: h, vt, onDone: then }); }
+function comeIn(s){
+  const { path, h } = inPath(s.F);
+  towTo(s, path, h, s.t.L > 20 ? 1.6 : 2.2, setMoored);
+}
+function goHome(s){ const P = s.F.P; sailTo(s, [P.hx, P.hy], 60, comeIn); }
+function leave(s){
+  const F = s.F;
+  towTo(s, outPath(F), null, s.t.L > 20 ? 1.6 : 2.4, () => {
+    if (F.kind === 'fish' || F.kind === 'lamp') sailTo(s, fishSpot(F), 80, q => { q.mode = 'fish'; q.set = 0; });
+    else { const Q = pick(ports.filter(q => q !== F.P)); sailTo(s, [Q.hx, Q.hy], 150, q => { q.gone = true; }); }
+  });
+}
+// ---- the mail steamers: two of them, round all the harbours on a timetable, whether you watch or not
+const nav = new Uint8Array(GW * GH);
+for (let j = 1; j < GH - 1; j++) for (let i = 1; i < GW - 1; i++){
+  const x = (i + 0.5) * CELL, y = (j + 0.5) * CELL;
+  let ok = depthAt(x, y) < -40;
+  if (ok) for (const [dx, dy] of [[-70, -70], [70, -70], [-70, 70], [70, 70], [0, 95], [0, -95], [95, 0], [-95, 0]]) if (depthAt(x + dx, y + dy) > -8){ ok = false; break; }
+  nav[j * GW + i] = ok ? 1 : 0;
+}
+function freeCell(x, y){
+  const ci = Math.floor(x / CELL), cj = Math.floor(y / CELL);
+  for (let r = 0; r < 8; r++){
+    let best = -1, bd = 1e9;
+    for (let j = cj - r; j <= cj + r; j++) for (let i = ci - r; i <= ci + r; i++){
+      if (i < 0 || j < 0 || i >= GW || j >= GH || !nav[j * GW + i]) continue;
+      const d = Math.hypot((i + 0.5) * CELL - x, (j + 0.5) * CELL - y);
+      if (d < bd){ bd = d; best = j * GW + i; }
+    }
+    if (best >= 0) return best;
+  }
+  return -1;
+}
+function clearLine(ax, ay, bx, by){
+  const n = Math.ceil(Math.hypot(bx - ax, by - ay) / 30);
+  for (let k = 1; k < n; k++) if (depthAt(lerp(ax, bx, k / n), lerp(ay, by, k / n)) > -30) return false;
+  return true;
+}
+function astar(a, b){
+  const g = new Float32Array(GW * GH).fill(1e9), from = new Int32Array(GW * GH).fill(-1), closed = new Uint8Array(GW * GH);
+  const heap = [];
+  const push = (n, f) => { heap.push([f, n]); let i = heap.length - 1; while (i){ const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length){ heap[0] = last; let i = 0; for (;;){ const l = i * 2 + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top[1]; };
+  const bi = b % GW, bj = (b / GW) | 0, hfn = n => Math.hypot(n % GW - bi, ((n / GW) | 0) - bj);
+  g[a] = 0; push(a, hfn(a));
+  while (heap.length){
+    const n = pop();
+    if (n === b) break;
+    if (closed[n]) continue;
+    closed[n] = 1;
+    const ni = n % GW, nj = (n / GW) | 0;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++){
+      if (!di && !dj) continue;
+      const i = ni + di, j = nj + dj;
+      if (i < 0 || j < 0 || i >= GW || j >= GH) continue;
+      const m = j * GW + i;
+      if (!nav[m] || closed[m]) continue;
+      if (di && dj && (!nav[nj * GW + i] || !nav[j * GW + ni])) continue;
+      const ng = g[n] + (di && dj ? 1.414 : 1);
+      if (ng < g[m]){ g[m] = ng; from[m] = n; push(m, ng + hfn(m)); }
+    }
+  }
+  if (from[b] < 0 && a !== b) return null;
+  const out = [];
+  for (let n = b; n >= 0; n = from[n]) out.push(n);
+  return out.reverse().map(n => [(n % GW + 0.5) * CELL, (((n / GW) | 0) + 0.5) * CELL]);
+}
+function seaPath(ax, ay, bx, by){
+  const a = freeCell(ax, ay), b = freeCell(bx, by);
+  let pts = a >= 0 && b >= 0 ? astar(a, b) : null;
+  pts = [[ax, ay], ...(pts || []), [bx, by]];
+  const out = [pts[0]];
+  let i = 0;
+  while (i < pts.length - 1){
+    let j = pts.length - 1;
+    while (j > i + 1 && !clearLine(pts[i][0], pts[i][1], pts[j][0], pts[j][1])) j--;
+    out.push(pts[j]); i = j;
+  }
+  return out;
+}
+// a timetable: legs at sea at ten knots, slow in harbour, an hour and a bit alongside at each stop
+const STEAM_ROUTES = [[0, 1, 3, 4, 8, 5, 6, 7, 2], [0, 2, 7, 6, 5, 8, 4, 3, 1]];
+const steamers = STEAM_ROUTES.map((route, ri) => {
+  const segs = [];
+  let t = 0;
+  const add = (ax, ay, bx, by, kn) => { const len = Math.hypot(bx - ax, by - ay); if (len < 0.5) return; const dur = len / (kn * KN); segs.push({ ax, ay, bx, by, t0: t, t1: t + dur }); t += dur; };
+  for (let k = 0; k < route.length; k++){
+    const P = ports[route[k]], Q = ports[route[(k + 1) % route.length]];
+    const F = { P, berth: 'steam', type: 'steamer' }, G = { P: Q, berth: 'steam', type: 'steamer' };
+    const [bx, by, bh] = berthOf(F);
+    // alongside
+    segs.push({ ax: bx, ay: by, bx, by, t0: t, t1: t + 1.3 * HOUR, h: bh }); t += 1.3 * HOUR;
+    const out = [[bx, by], ...outPath(F)], inn = inPath(G).path;
+    for (let i = 1; i < out.length; i++) add(out[i - 1][0], out[i - 1][1], out[i][0], out[i][1], 3);
+    const sea = seaPath(P.hx, P.hy, Q.hx, Q.hy);
+    for (let i = 1; i < sea.length; i++) add(sea[i - 1][0], sea[i - 1][1], sea[i][0], sea[i][1], 10);
+    for (let i = 1; i < inn.length; i++) add(inn[i - 1][0], inn[i - 1][1], inn[i][0], inn[i][1], i > inn.length - 3 ? 1.5 : 3);
+  }
+  return { segs, cycle: t, off: ri * t * 0.5, name: ri ? 'Città di Lipara' : 'Principessa Azzurra', ship: null };
+});
+function steamAt(S, t, out){
+  const tt = ((t + S.off) % S.cycle + S.cycle) % S.cycle, segs = S.segs;
+  let lo = 0, hi = segs.length - 1;
+  while (lo < hi){ const m = (lo + hi + 1) >> 1; if (segs[m].t0 <= tt) lo = m; else hi = m - 1; }
+  const g = segs[lo], f = clamp((tt - g.t0) / (g.t1 - g.t0 || 1), 0, 1);
+  out[0] = lerp(g.ax, g.bx, f); out[1] = lerp(g.ay, g.by, f); out[2] = g.h; out[3] = g.h != null ? 0 : Math.hypot(g.bx - g.ax, g.by - g.ay) / (g.t1 - g.t0) / KN;
+  return out;
+}
+const sp0 = [0, 0, 0, 0], sp1 = [0, 0, 0, 0];
+function steamStep(s){
+  const S = s.S;
+  steamAt(S, T, sp0);
+  const ox_ = s.x, oy_ = s.y;
+  s.x = sp0[0]; s.y = sp0[1]; s.v = sp0[3];
+  if (sp0[2] != null) s.h += wrap(sp0[2] - s.h) * 0.05;
+  else { steamAt(S, T + 3, sp1); const a = Math.atan2(sp1[0] - ox_, -(sp1[1] - oy_)); if (Math.hypot(sp1[0] - ox_, sp1[1] - oy_) > 1) s.h += wrap(a - s.h) * 0.08; }
+  s.turn = 0;
+  wakeTrail(s, 1 / 60);
+  if (s.v > 0.5 || Math.random() < 0.3) if (visible(s) && Math.random() < 0.35){
+    const fx = Math.sin(s.h), fy = -Math.cos(s.h), w = s.wind;
+    puff('coal', s.x + fx * s.t.L * 0.04, s.y + fy * s.t.L * 0.04, -Math.sin(w.dir) * w.spd * 0.8 - fx * s.v * 2, Math.cos(w.dir) * w.spd * 0.8 - fy * s.v * 2, rnd(5, 9), 1.6, 1.6, 0.8);
+  }
+  s.windT -= 1 / 60;
+  if (s.windT <= 0){ s.wind = windAt(s.x, s.y, T); s.windT = 0.5; s.aw.toward = Math.atan2(-Math.sin(s.wind.dir) * s.wind.spd, -Math.cos(s.wind.dir) * s.wind.spd); }
+}
+// ---- the traffic manager: who should be where, near you
+let hornT = 0;
+function traffic(){
+  for (const F of fleet){
+    const P = F.P, dp = Math.hypot(P.cx - ship.x, P.cy - ship.y);
+    if (F.ship && F.ship.gone) F.ship = null;
+    const s = F.ship;
+    if (dp > 2900){ if (s && dist(s, ship) > 2500){ s.gone = true; F.ship = null; } continue; }
+    const want = homeAt(F, T);
+    if (!s){
+      if (dp > 2400) continue;
+      if (want){
+        // just coming in? then she is still out there, sailing for the mouth
+        if (T - arrivedAt(F, T) < 0.8 * HOUR && dp > 250){
+          const P2 = F.P, sp = F.kind === 'fish' || F.kind === 'lamp' ? fishSpot(F) : [P2.hx + P2.nx * 1300, P2.hy + P2.ny * 1300];
+          const q = newBoat(F, lerp(sp[0], P2.hx, 0.4), lerp(sp[1], P2.hy, 0.4), Math.atan2(P2.hx - sp[0], -(P2.hy - sp[1])));
+          q.v = 3; goHome(q);
+        } else spawnMoored(F);
+      } else if (F.kind === 'fish' || F.kind === 'lamp'){
+        const [x, y] = fishSpot(F);
+        if (Math.hypot(x - ship.x, y - ship.y) < 2200){ const q = newBoat(F, x, y, rnd(0, TAU)); q.mode = 'fish'; q.set = 0; }
+      }
+      continue;
+    }
+    if (s.mode === 'moored' && !want) leave(s);
+    else if (s.mode === 'fish' && want) goHome(s);
+  }
+  for (const S of steamers){
+    steamAt(S, T, sp0);
+    const d = Math.hypot(sp0[0] - ship.x, sp0[1] - ship.y);
+    if (S.ship && S.ship.gone) S.ship = null;
+    if (!S.ship && d < 2300){
+      const s = makeShip('steamer', sp0[0], sp0[1], sp0[2] || 0, 'steamer');
+      s.S = S; s.kin = true; s.mode = 'steam'; s.col = 'hullB'; s.name = S.name; s.wind = windAt(s.x, s.y, T);
+      steamAt(S, T + 3, sp1); if (sp0[2] == null) s.h = Math.atan2(sp1[0] - sp0[0], -(sp1[1] - sp0[1]));
+      S.ship = s; ai.push(s);
+    } else if (S.ship && d > 2700){ S.ship.gone = true; S.ship = null; }
+    // a long blast on the whistle when you stand into her way
+    const q = S.ship;
+    if (q && q.v > 2 && T > hornT){
+      const fx = Math.sin(q.h), fy = -Math.cos(q.h), dx = ship.x - q.x, dy = ship.y - q.y, ahead = dx * fx + dy * fy, side = Math.abs(dx * -fy + dy * fx);
+      if (ahead > 0 && ahead < 260 && side < 30){ hornT = T + 25; sfx.horn(); toast(`The ${S.name} sounds her whistle. Stand clear!`); }
+    }
+  }
+  // passing ships out at sea, small and large
+  if (ai.filter(q => q.role === 'local').length < 3 && Math.random() < 0.3) spawnBoat();
+}
 const HULLS = ['hullN', 'red', 'green', 'domeB', 'hullW', 'gold'];
 function spawnBoat(){
   for (let k = 0; k < 20; k++){
-    const a = rnd(0, TAU), d = rnd(900, 1700), x = ship.x + Math.sin(a) * d, y = ship.y - Math.cos(a) * d;
+    const a = rnd(0, TAU), d = rnd(1000, 1800), x = ship.x + Math.sin(a) * d, y = ship.y - Math.cos(a) * d;
     if (x < 300 || y < 300 || x > WW - 300 || y > WH - 300 || depthFast(x, y) > -40) continue;
-    const s = makeShip(Math.random() < 0.75 ? 'gozzo' : 'tartana', x, y, rnd(0, TAU), 'local');
-    s.col = pick(HULLS); s.set = 3; s.sail = 0.85; s.v = 3;
+    const r = Math.random(), type = r < 0.35 ? 'gozzo' : r < 0.6 ? 'tartana' : r < 0.82 ? 'brig' : 'barq';
+    const s = makeShip(type, x, y, rnd(0, TAU), 'local');
+    s.col = type === 'brig' || type === 'barq' ? 'hullB' : pick(HULLS); s.trim = pick(['white', 'red', 'gold']); s.set = 3; s.sail = 0.85; s.v = 3; s.mode = 'sail';
     s.wind = windAt(x, y, T);
+    // bound across the sea for some harbour, giving it a wide berth
+    const Q = pick(ports);
+    s.goal = [Q.hx + Q.nx * 400, Q.hy + Q.ny * 400]; s.goalR = 200; s.onGoal = q => { q.goal = null; };
     ai.push(s);
     return;
   }
@@ -1661,9 +2201,45 @@ function deliver(P){
 
 // ---------------------------------------------------------------- harbours
 let harbourTab = 'market';
+// the visitors' berth: is she alongside, parallel and slow enough to get her lines ashore?
+let dock = null;
+function dockCheck(P){
+  const Bt = P.visitor, dx = Bt.bx - Bt.ax, dy = Bt.by - Bt.ay, len = Bt.len;
+  const t = ((ship.x - Bt.ax) * dx + (ship.y - Bt.ay) * dy) / (len * len);
+  const gap = (ship.x - Bt.ax) * Bt.ox + (ship.y - Bt.ay) * Bt.oy - ship.t.B / 2;
+  const bh = Math.atan2(dx, -dy), da = Math.abs(wrap(ship.h - bh)), ang = Math.min(da, Math.PI - da) / DEG;
+  const near = t > -0.4 && t < 1.4 && gap < 30 && gap > -3;
+  let why = '';
+  if (gap > 3.5) why = 'CLOSER TO THE QUAY';
+  else if (ang > 22) why = 'LIE PARALLEL TO THE QUAY';
+  else if (t < 0.15 || t > 0.85) why = 'MOVE ALONG TO THE BERTH';
+  else if (Math.abs(ship.v) > 1.3) why = 'TOO FAST: LET HER SLOW';
+  return { P, near, ok: near && !why, why, t, gap, dir: da < Math.PI / 2 ? 1 : -1 };
+}
+// lines ashore: bow and stern lines go over the bollards and she is warped in snug
+function secure(){
+  const d = dock;
+  if (!d || !d.ok || paused) return;
+  const P = d.P, L = ship.t.L, Bt = P.visitor;
+  const f = clamp(d.t, (L / 2 + 2) / Bt.len, 1 - (L / 2 + 2) / Bt.len);
+  const [x, y, h] = berthPos(Bt, f, ship.t.B, d.dir);
+  ship.securing = { P, t0: T, x0: ship.x, y0: ship.y, h0: ship.h, x, y, h };
+  ship.berth = { pid: P.id, f, dir: d.dir };
+  setSail(0); ship.rudder = 0;
+  sfx.rope();
+  toast('Lines ashore!');
+}
+function securingStep(){
+  const S = ship.securing, p = clamp((T - S.t0) / 2.5, 0, 1), e = sm(p);
+  ship.x = lerp(S.x0, S.x, e); ship.y = lerp(S.y0, S.y, e); ship.h = norm(S.h0 + wrap(S.h - S.h0) * e);
+  ship.v = 0; ship.lat = 0; ship.turn = 0; ship.sail = Math.max(0, ship.sail - 0.02);
+  if (p >= 1){ ship.securing = null; moor(S.P); }
+}
 function moor(P){
   moored = P;
-  Object.assign(ship, { v: 0, turn: 0, rudder: 0, sail: 0, x: P.mx, y: P.my, h: outH(P), heel: 0 });
+  if (!ship.berth || ship.berth.pid !== P.id) ship.berth = { pid: P.id, f: 0.5, dir: -1 };
+  const [x, y, h] = berthPos(P.visitor, ship.berth.f, ship.t.B, ship.berth.dir);
+  Object.assign(ship, { v: 0, turn: 0, rudder: 0, sail: 0, lat: 0, x, y, h, heel: 0, securing: null });
   setSail(0);
   warp = false;
   const first = !pl.visited[P.name];
@@ -1674,21 +2250,39 @@ function moor(P){
   harbour(P, 'market', first);
   save();
 }
-let leftFrom = null;
 function castOff(){
   closePanel();
-  leftFrom = moored;
-  moored = null;
-  sfx.tap();
+  const P = moored, Bt = P.visitor;
+  moored = null; ship.berth = null;
+  // a shove off the quay with a boathook
+  ship.lat = (Bt.ox * Math.cos(ship.h) + Bt.oy * Math.sin(ship.h)) * 1.4;
+  sfx.rope();
   save();
-  tip('castoff', 'Raise the sails with the lever. She is slow to start: one pair of hands.');
+  tip('castoff', 'Lines in, pushed off. Raise the sails with the lever: she is slow to start, one pair of hands.');
+}
+// when the wind pins her to the quay, a fisherman tows her out past the mole for a few coins
+function towOut(){
+  const P = moored;
+  if (!P || pl.coins < 6) return;
+  pl.coins -= 6;
+  closePanel();
+  moored = null; ship.berth = null;
+  const h = Math.atan2(P.hx - P.ix, -(P.hy - P.iy));
+  Object.assign(ship, { x: P.hx, y: P.hy, h, v: 1.5, lat: 0, turn: 0 });
+  ship.wake.length = 0;
+  toast(`A fisherman from ${P.name} tows you out past the mole. Six coins well spent.`);
+  sfx.rope();
+  save();
 }
 function waitUntil(t1, P){
   const t0 = T;
   const S = nextStorm(t0, (t1 - t0) / HOUR);
   T = t1;
   for (const m of market) for (const k in m) m[k] *= Math.exp(-(t1 - t0) / (1.5 * DAY));
+  for (const q of ai) q.gone = true;
   ai.length = 0; critters.length = 0; parts.length = 0; ship.wake.length = 0;
+  for (const F of fleet) F.ship = null;
+  for (const S of steamers) S.ship = null;
   ship.wind = windAt(ship.x, ship.y, T);
   if (S && S.t1 <= t1 && S.t1 > t0){ pl.stats.storms++; toast('The gale blew itself out while you sat snug in harbour.'); }
   genReqs(P);
@@ -1769,7 +2363,7 @@ function harbour(P, tab = harbourTab, postcard = false){
     }
     body += `<h3>Forecast</h3><table>${fc.map(([a, b, c], i) => `<tr><td>${a}</td><td>${b}${i && fc[i - 1][2] === c ? '' : `<br><small>${c}</small>`}</td></tr>`).join('')}</table>`;
   }
-  panel(P.name, body, [['CAST OFF', castOff, true]], (a, v) => {
+  panel(P.name, body, [['CAST OFF', castOff, true], [`TOW OUT 6`, towOut]], (a, v) => {
     if (a === 'tab'){ sfx.tap(); harbour(P, v); return; }
     if (a === 'buy' || a === 'buy5'){
       for (let k = 0; k < (a === 'buy5' ? 5 : 1); k++){
@@ -1832,7 +2426,9 @@ function rescue(){
   for (const k in pl.cargo){ const n = Math.ceil(pl.cargo[k] / 2); lost += n; pl.cargo[k] -= n; if (!pl.cargo[k]) delete pl.cargo[k]; }
   ship.hull = 35; ship.rig = Math.max(ship.rig, 0.4);
   moored = P;
-  Object.assign(ship, { v: 0, turn: 0, rudder: 0, sail: 0, x: P.mx, y: P.my, h: outH(P), heel: 0 });
+  ship.berth = { pid: P.id, f: 0.5, dir: -1 };
+  const [bx, by, bh] = berthPos(P.visitor, 0.5, ship.t.B, -1);
+  Object.assign(ship, { v: 0, turn: 0, rudder: 0, sail: 0, x: bx, y: by, h: bh, heel: 0, securing: null });
   setSail(0);
   warp = false;
   if (mapOpen) closeMap();
@@ -1921,9 +2517,12 @@ const GUIDE = [
     <li><b>Downwind</b>, with the wind on the quarter and speed up, she <b>surfs</b> down the faces of the waves. Watch the knots climb.</li></ol>`],
   ['Harbours', () => `
     <ol><li>Every harbour has a stone <b>mole</b> with a green light on its head. Sail round it into the basin.</li>
-    <li>Inside it is sheltered and the wind is light. Come in <b>slowly</b>: furl the sails well out and glide.</li>
-    <li>Under about 2.5 knots, near the quay, press <b>MAKE FAST</b>.</li>
-    <li>Hit the stone too fast and the shipwright will be pleased to see you.</li>
+    <li>The <b>visitors' berth</b> is the stretch of quay with the <b>yellow kerb</b>. Near the harbour a dashed outline shows where she should lie.</li>
+    <li>Come alongside it <b>slowly</b>: furl the sails well out and glide in, <b>parallel</b> to the stone, a few metres off. With little sail up the wind blows her sideways, so use it.</li>
+    <li>When the button says <b>LINES ASHORE</b>, press it: bow and stern lines go over the bollards and she is warped in snug.</li>
+    <li>Touch the stone gently and the fenders take it. Hit it at more than two knots and the shipwright will be pleased to see you.</li>
+    <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, a fisherman will <b>TOW</b> you out for a few coins.</li>
+    <li>Mind the traffic: fishing boats go out at dawn and come back in the afternoon, lamp boats fish at night, coasters and big cargo ships lie at the mole, and the mail steamers keep their timetable whatever the wind.</li>
     <li><b>Reefs</b> break white just under the surface. They are marked on the chart once you have seen them.</li></ol>`],
   ['Weather', () => `
     <ol><li>Every day has its own wind. On fine days the <b>sea breeze</b> fills in from the south-west around noon and dies in the evening. At night a light breeze drifts off the land.</li>
@@ -2017,7 +2616,8 @@ function update(dt){
   if (warp && vaneOn){ const rel = wrap(ship.wind.dir - ship.h); want = clamp(-wrap(vaneA - rel) * 1.6, -0.6, 0.6); }
   ship.rudder += clamp(want - ship.rudder, -dt * (helmHeld ? 12 : 3), dt * (helmHeld ? 12 : 3));
   ship.grounded = false;
-  if (!moored) stepShip(ship, dt);
+  if (ship.securing) securingStep();
+  else if (!moored) stepShip(ship, dt);
   if (warp) warpWatch(dt);
   const lt = track[track.length - 1];
   if (!lt || Math.hypot(lt[0] - ship.x, lt[1] - ship.y) > 120){ track.push([ship.x, ship.y]); if (track.length > 4000) track.shift(); }
@@ -2025,14 +2625,24 @@ function update(dt){
 
   // other boats
   for (const s of ai){
+    if (s.mode === 'steam'){ steamStep(s); continue; }
+    if (s.mode === 'moored'){ s.v = 0; continue; }
+    if (s.mode === 'tow'){ kinStep(s, dt); continue; }
     s.acc = (s.acc || 0) + dt;
     const far = dist(s, ship) > 1500;
     if (far && s.acc < 0.25) continue;
-    s.thinkT = (s.thinkT || 0) - s.acc;
-    if (s.thinkT <= 0){ s.thinkT = far ? 0.5 : 0.15; think(s, Math.max(0.15, s.acc)); }
+    if (s.mode === 'fish'){
+      // lying to her nets, sails down, drifting
+      s.set = 0; s.rudder = Math.sin(T * 0.1 + s.seed) * 0.3;
+    } else {
+      s.thinkT = (s.thinkT || 0) - s.acc;
+      if (s.thinkT <= 0){ s.thinkT = far ? 0.5 : 0.15; think(s, Math.max(0.15, s.acc)); }
+    }
     stepShip(s, s.acc);
+    // fishermen row when the wind fails them
+    if (s.mode === 'sail' && s.t.id === 'gozzo' && s.v < 1.8 && s.goal){ s.v = 1.8; }
     s.acc = 0;
-    if (dist(s, ship) > 2600) s.gone = true;
+    if (dist(s, ship) > 2700 && !s.F) s.gone = true;
   }
   compact(ai, s => !s.gone);
   allShips.length = 0; allShips.push(ship);
@@ -2042,7 +2652,7 @@ function update(dt){
     if (Math.abs(a.x - b.x) < (a.t.L + b.t.L) * 0.6 && Math.abs(a.y - b.y) < (a.t.L + b.t.L) * 0.6) collide(a, b);
   }
   spawnT -= dt;
-  if (spawnT <= 0){ spawnT = 6; if (ai.length < (rainNow > 0.5 ? 1 : 5)) spawnBoat(); }
+  if (spawnT <= 0){ spawnT = 0.5; traffic(); }
   lifeStep(dt);
 
   // smoke from the volcanoes, drifting downwind
@@ -2057,7 +2667,7 @@ function update(dt){
   // particles
   for (const p of parts){
     p.x += p.vx * dt; p.y += p.vy * dt;
-    const k = Math.pow(p.kind === 'smoke' ? 0.9 : 0.4, dt);
+    const k = Math.pow(p.kind === 'smoke' || p.kind === 'coal' ? 0.9 : 0.4, dt);
     p.vx *= k; p.vy *= k;
     p.r += p.grow * dt; p.life -= dt;
   }
@@ -2096,17 +2706,16 @@ function update(dt){
   saveT -= dt;
   if (saveT <= 0){ saveT = 4; save(); }
 
-  // make fast in a harbour basin, slowly
-  let np = null;
-  for (const P of ports) if (Math.hypot(P.cx - ship.x, P.cy - ship.y) < 75) np = P;
-  if (leftFrom && (!np || np !== leftFrom)) leftFrom = null;
-  nearPort = !moored && np && np !== leftFrom ? np : null;
-  if (nearPort){
-    const slow = Math.abs(ship.v) < 2.5;
-    actBtn.textContent = slow ? `MAKE FAST: ${plain(nearPort.name)}` : `TOO FAST TO MOOR`;
-    actBtn.className = slow ? 'px' : 'px warn';
-    if (!slow) tip('fast', 'Too fast to moor. Furl the sails and let her glide.');
+  // coming alongside the visitors' berth
+  dock = null;
+  if (!moored && !ship.securing) for (const P of ports) if (Math.abs(P.cx - ship.x) < 320 && Math.abs(P.cy - ship.y) < 320){ dock = dockCheck(P); break; }
+  nearPort = dock ? dock.P : null;
+  if (dock && dock.near){
+    actBtn.textContent = dock.ok ? 'LINES ASHORE' : dock.why;
+    actBtn.className = dock.ok ? 'px' : 'px warn';
+    if (dock.ok) tip('lines', 'Alongside and slow: send your lines ashore.');
   } else actBtn.className = 'px hidden';
+  if (nearPort) tip('berth' + nearPort.id, `The visitors' berth is the yellow kerb on the quay. Come alongside it slowly, parallel to the stone.`);
   if (pl.dest >= 0 && Math.hypot(ports[pl.dest].cx - ship.x, ports[pl.dest].cy - ship.y) < 600 && !moored) tip('arrive' + pl.dest, `${ports[pl.dest].name} ahead. Furl early and glide in behind the mole.`);
 
   bakeChartRows(4);
@@ -2289,6 +2898,8 @@ function layout(){
   // zoomed out far enough to see a good stretch of water; art pixels stay a whole number of screen pixels
   const short = Math.min(innerWidth, viewH()) * dpr;
   zoomQ = Math.max(2, Math.round(PX * clamp(short / (300 * PX), 0.5, 1))) / PX;
+  const zo = location.hash.match(/zoom=([\d.]+)/);
+  if (zo) zoomQ = +zo[1];
   const z = mapOpen ? 1 : zoomQ, pz = PX * z;
   LW = Math.ceil(Wd / pz) + 2; LH = Math.ceil(Hd / pz) + 2;
   lo.width = LW; lo.height = LH;
@@ -2387,8 +2998,31 @@ function drawRig(g, s, shadow){
     return;
   }
   const reefK = s.set === 1 ? 0.55 : s.set === 2 ? 0.8 : 1;
+  const wl = s.aw.toward - s.h, wvx = Math.sin(wl), wvy = -Math.cos(wl);
   rig.masts.forEach((m, mi) => {
     const my = m.y * L;
+    if (m.bare){ g.fillStyle = spar; g.beginPath(); g.arc(0, my, 0.5, 0, TAU); g.fill(); g.strokeStyle = spar; g.lineWidth = 0.4; g.beginPath(); g.moveTo(-B * 0.35, my); g.lineTo(B * 0.35, my); g.stroke(); return; }
+    if (m.sq){
+      // square sails: the yards braced round, the leeward yardarm aft, the canvas bellied away from the wind
+      const brace = clamp((175 - awa) / 125, 0, 1) * 58 * DEG, half = B * 0.95 * m.w;
+      const ux = lee * Math.cos(brace), uy = Math.sin(brace);
+      const ax = -ux * half + hs * 0.5, ay = my - uy * half, bx = ux * half + hs * 0.5, by = my + uy * half;
+      let nx = -uy, ny = ux;
+      if (nx * wvx + ny * wvy < 0){ nx = -nx; ny = -ny; }
+      if (f > 0.02) for (const k of f > 0.5 ? [1, 0.72] : [1]){
+        const bel = (0.8 + 3 * f) * (luff ? 0.25 : 1) * k + flap, off = k < 1 ? 1.5 : 0;
+        const a2x = ax * k + nx * off, a2y = my + (ay - my) * k + ny * off, b2x = bx * k + nx * off, b2y = my + (by - my) * k + ny * off;
+        g.fillStyle = fill;
+        g.beginPath(); g.moveTo(a2x, a2y);
+        g.quadraticCurveTo((a2x + b2x) / 2 + nx * bel * 2, (a2y + b2y) / 2 + ny * bel * 2, b2x, b2y);
+        g.closePath(); g.fill();
+        if (!shadow){ g.strokeStyle = ss; g.lineWidth = 0.45; g.stroke(); }
+      }
+      g.strokeStyle = spar; g.lineWidth = 0.8;
+      g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+      if (f <= 0.02 && !shadow){ g.strokeStyle = ss; g.lineWidth = 1.1; g.beginPath(); g.moveTo(ax * 0.9 + nx * 0.5, ay * 0.9 + my * 0.1 + ny * 0.5); g.lineTo(bx * 0.9 + nx * 0.5, by * 0.9 + my * 0.1 + ny * 0.5); g.stroke(); }
+      return;
+    }
     const furled = f < 0.02 || (s.set === 1 && mi === 0);
     const Lb = L * m.boom;
     const bdx = lee * Math.sin(furled ? 2 * DEG : ba), bdy = Math.cos(furled ? 2 * DEG : ba);
@@ -2431,7 +3065,7 @@ function drawRig(g, s, shadow){
     g.beginPath(); g.moveTo(hs * 0.3, my); g.lineTo(gx, gy); g.stroke();
   });
   // headsails: staysail from the stem, jib from the bowsprit end
-  if (f > 0.05){
+  if (f > 0.05 && rig.sprit){
     const m0 = rig.masts[0].y * L;
     const jw = clamp((awa - 16) * 0.05, 0.3, 3.2) * (0.5 + 0.5 * f) * (B / 6);
     const heads = s.set === 1 ? [[-L / 2, 0.7]] : [[-L / 2, 0.85], [-L / 2 - rig.sprit, 1]];
@@ -2450,20 +3084,60 @@ function drawRig(g, s, shadow){
   }
 }
 
+// a double-ended hull, pointed at both ends: gozzi and tartane
+function dblPath(g, L, B){
+  const hl = L / 2, hb = B / 2;
+  g.beginPath();
+  g.moveTo(0, -hl);
+  g.bezierCurveTo(hb * 0.7, -hl * 0.8, hb, -hl * 0.3, hb, 0);
+  g.bezierCurveTo(hb, hl * 0.35, hb * 0.6, hl * 0.85, 0, hl);
+  g.bezierCurveTo(-hb * 0.6, hl * 0.85, -hb, hl * 0.35, -hb, 0);
+  g.bezierCurveTo(-hb, -hl * 0.3, -hb * 0.7, -hl * 0.8, 0, -hl);
+  g.closePath();
+}
 function drawShipBody(g, s){
   const t = s.t, L = t.L, B = t.B, rig = RIGS[t.rig];
-  const hullC = s === ship || s.ghost ? C[PAINTS[s.paint][0]] : C[s.col || 'hullW'];
-  hullPath(g, L, B);
-  g.fillStyle = hullC; g.fill();
-  g.save(); g.scale(0.66, 0.92); hullPath(g, L, B); g.restore();
-  g.fillStyle = C.teak; g.fill();
-  if (t.id === 'schooner'){
+  const mine = s === ship || s.ghost;
+  const hullC = mine ? C[PAINTS[s.paint][0]] : C[s.col || 'hullW'];
+  const inset = (k, kl, col, path = hullPath) => { g.save(); g.scale(k, kl); path(g, L, B); g.restore(); g.fillStyle = col; g.fill(); };
+  if (t.dbl){
+    // a painted gunwale, a wooden inside with its thwarts; a tartana has a deck and a hatch
+    dblPath(g, L, B); g.fillStyle = hullC; g.fill();
+    inset(0.78, 0.9, s.trim ? C[s.trim] : C.white, dblPath);
+    inset(0.62, 0.84, C.teak, dblPath);
+    g.fillStyle = C.wood;
+    if (t.id === 'gozzo') for (const y of [-0.22, 0.02, 0.24]) g.fillRect(-B * 0.32, y * L, B * 0.64, 0.4);
+    else { g.fillStyle = C.woodDk; g.fillRect(-B * 0.18, -L * 0.05, B * 0.36, L * 0.16); g.fillStyle = C.wood; g.fillRect(-B * 0.2, L * 0.25, B * 0.4, L * 0.1); }
+  } else if (t.id === 'steamer'){
+    // black hull, white superstructure amidships, the buff funnel with its black top, lifeboats along the boat deck
+    hullPath(g, L, B); g.fillStyle = C.hullB; g.fill();
+    inset(0.86, 0.95, C.teak);
+    g.fillStyle = C.woodDk; g.fillRect(-B * 0.22, -L * 0.36, B * 0.44, L * 0.08); g.fillRect(-B * 0.22, L * 0.3, B * 0.44, L * 0.08);
+    g.fillStyle = C.wallSh5; g.fillRect(-B * 0.36, -L * 0.16, B * 0.72, L * 0.4);
+    g.fillStyle = C.white; g.fillRect(-B * 0.33, -L * 0.15, B * 0.66, L * 0.37);
+    g.fillStyle = C.navy; g.fillRect(-B * 0.33, -L * 0.15, B * 0.66, 0.5);
+    g.fillStyle = C.white;
+    for (const y of [-0.06, 0.1]) for (const sd of [-1, 1]){ g.fillRect(sd * B * 0.42 - 0.6, y * L, 1.2, L * 0.07); }
+    g.fillStyle = C.gold; g.beginPath(); g.ellipse(0, L * 0.04, B * 0.17, B * 0.2, 0, 0, TAU); g.fill();
+    g.fillStyle = C.black; g.beginPath(); g.ellipse(0, L * 0.04, B * 0.11, B * 0.13, 0, 0, TAU); g.fill();
+  } else if (t.id === 'brig' || t.id === 'barq'){
+    // a working ship: black topsides with a white band, hatches, a deckhouse, the ship's boat on chocks
+    hullPath(g, L, B); g.fillStyle = C.hullB; g.fill();
+    inset(0.9, 0.96, C.white);
+    inset(0.8, 0.93, C.teak);
+    g.fillStyle = C.woodDk;
+    g.fillRect(-B * 0.18, -L * 0.1, B * 0.36, L * 0.08); g.fillRect(-B * 0.18, L * 0.14, B * 0.36, L * 0.07);
+    g.fillStyle = C.varnish; g.fillRect(-B * 0.22, L * 0.3, B * 0.44, L * 0.1);
+    g.fillStyle = C.white; g.save(); g.translate(B * 0.12, L * 0.02); dblPath(g, L * 0.13, B * 0.32); g.fill(); g.restore();
+  } else {
+    hullPath(g, L, B);
+    g.fillStyle = hullC; g.fill();
+    g.save(); g.scale(0.66, 0.92); hullPath(g, L, B); g.restore();
+    g.fillStyle = C.teak; g.fill();
     // varnished deckhouse between the masts with a white skylight, a dark cockpit aft
     g.fillStyle = C.varnish; g.fillRect(-B * 0.2, -L * 0.13, B * 0.4, L * 0.15);
     g.fillStyle = C.sail; g.fillRect(-B * 0.1, -L * 0.09, B * 0.2, L * 0.06);
     g.fillStyle = C.woodDk; g.fillRect(-B * 0.15, L * 0.3, B * 0.3, L * 0.09);
-  } else {
-    g.fillStyle = C.wood; g.fillRect(-B * 0.2, L * 0.1, B * 0.4, L * 0.2);
   }
   g.strokeStyle = C.woodDk; g.lineWidth = 0.6;
   if (rig.sprit){ g.beginPath(); g.moveTo(0, -L / 2); g.lineTo(0, -L / 2 - rig.sprit); g.stroke(); }
@@ -2482,7 +3156,7 @@ function drawFlag(g, x, y, ang, len, colA, colB){
 }
 
 let ox = 0, oy = 0; // lo pixel 0,0 in world pixel units
-const SPS = 112;
+const SPS = 176;
 const spritePool = new Map();
 function spriteCanvas(n){
   let e = spritePool.get(n);
@@ -2568,7 +3242,7 @@ function shipSprite(s){
   const awa = s.aw.awa / DEG, luff = s.sail > 0.02 && (awa < t.noGo - 6 || (s.trimErr || 0) > 8);
   const h = Math.round(norm(s.h) / (3 * DEG)) * 3 * DEG;
   const sun = sunVec();
-  const key = [t.id, s.paint, s.tanbark ? 1 : 0, s.col, Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 6), Math.round(s.sail * 10), s.set,
+  const key = [t.id, s.paint, s.tanbark ? 1 : 0, s.col, s.trim, Math.round(h / DEG), s.aw.rel > 0 ? 1 : 0, Math.round(awa / 6), Math.round(s.sail * 10), s.set,
     Math.round(clamp(s.trimA, 2, 85) / 5), luff ? Math.floor(T * 4) % 3 : -1, Math.floor(T * 2.5) % 2, Math.round(wrap(s.aw.toward - s.h) / (15 * DEG)),
     sun ? sun.q : -1, Math.round(Math.min(40, s.heel || 0) / 8)].join('|');
   let e = spriteCache.get(key);
@@ -2583,18 +3257,19 @@ function shipSprite(s){
   if (sun){
     // shadows fall away from the sun: the hull's close below, the sails' further off
     const cs = Math.cos(h), sn = Math.sin(h), lsx = sun.x * cs + sun.y * sn, lsy = -sun.x * sn + sun.y * cs;
-    c.save(); c.translate(lsx * 0.6, lsy * 0.6); hullPath(c, L, t.B); c.fillStyle = SHADOW; c.fill(); c.restore();
+    c.save(); c.translate(lsx * 0.6, lsy * 0.6); (t.dbl ? dblPath : hullPath)(c, L, t.B); c.fillStyle = SHADOW; c.fill(); c.restore();
     c.save(); c.translate(lsx * 2.4, lsy * 2.4); drawRig(c, s, true); c.restore();
   }
   drawShipBody(c, s);
   drawRig(c, s, false);
   const rig = RIGS[t.rig], top = rig.masts[rig.masts.length - 1].y * L;
   if (t.id === 'schooner') drawFlag(c, 0, top, s.aw.toward - s.h, 3.2, C.red, C.white);
-  else drawFlag(c, 0, top, s.aw.toward - s.h, 1.8, C.gold, null);
+  else if (t.id === 'steamer') drawFlag(c, 0, L * 0.5, s.aw.toward - s.h, 3, C.red, C.white);
+  else drawFlag(c, 0, top, s.aw.toward - s.h, t.L > 20 ? 3 : 1.8, C.gold, t.L > 20 ? C.red : null);
   c.setTransform(1, 0, 0, 1, 0, 0);
   // only the colours this boat is made of, so soft edges snap cleanly
   const [sc, ss] = sailCols(s);
-  const qz = palQuant([s === ship || s.ghost ? C[PAINTS[s.paint][0]] : C[s.col || 'hullW'], C.teak, C.varnish, C.woodDk, C.wood, sc, ss, C.red, C.white, C.gold, C.navy]);
+  const qz = palQuant([s === ship || s.ghost ? C[PAINTS[s.paint][0]] : C[s.col || 'hullW'], C.teak, C.varnish, C.woodDk, C.wood, sc, ss, C.red, C.white, C.gold, C.navy, C.hullB, C.wallSh5, C.black, C[s.trim || 'white']]);
   const d = c.getImageData(0, 0, n, n).data, q = new Uint32Array(n * n), solid = new Uint8Array(n * n), sh = new Uint8Array(n * n);
   for (let i = 0; i < q.length; i++){
     const al = d[i * 4 + 3];
@@ -2747,13 +3422,16 @@ function render(){
   for (const p of parts){
     const al = p.a * (p.life / p.max);
     if (p.kind === 'smoke') disc(p.x, p.y, p.r, U.stone, al * 0.7);
+    else if (p.kind === 'coal') disc(p.x, p.y, p.r, al > 0.45 ? U.ash3 : U.ash2, al * 0.8);
   }
   for (const c of critters) if (c.k === 'shear') drawCritter(c);
   drawGulls();
+  drawPeople();
 
   if (tint[0] < 0.985 || tint[1] < 0.985 || tint[2] < 0.985 || tint[0] > 1.015 || hazeF > 0.01) tintBuf(PB.buf, LW * LH, tint[0], tint[1], tint[2], hazeF);
   if (nightF > 0.05){ seaPx[0] = U.sea; tintBuf(seaPx, 1, tint[0], tint[1], tint[2], hazeF); tintedSea = seaPx[0]; drawLights(); }
   if (W.rain > 0.08) drawRain(W);
+  drawLines();
   drawLabels();
   drawCompass();
   PB.present();
@@ -2805,6 +3483,54 @@ function drawWaves(W){
   }
 }
 // gulls wheel over the harbours by day
+// people on the quay and in the piazza: a pixel of colour and its shadow, strolling
+function drawPeople(){
+  const hr = hourOf(T), busy = hr > 7 && hr < 23 ? (hr > 18 ? 1 : 0.75) : 0.15, rain = weatherAt(T).rain;
+  for (const P of ports){
+    if (Math.abs(P.cx - ship.x) > 500 || Math.abs(P.cy - ship.y) > 500) continue;
+    for (let i = 0; i < P.walkers.length; i++){
+      const w = P.walkers[i];
+      if (w.off > busy * (1 - rain)) continue;
+      let u, v;
+      const tt = T * 0.02 * w.sp + w.a * 50;
+      if (w.kind === 'quay'){ const p = Math.abs(((tt % 2) + 2) % 2 - 1); u = -74 + p * 156; v = -8 + w.lane * 14; }
+      else if (w.kind === 'piazza'){ const a = tt * 0.6 + w.a * TAU; u = 3 + Math.cos(a) * (8 + w.lane * 12); v = -27 + Math.sin(a * 0.7) * (5 + w.lane * 8); }
+      else { u = -18 + Math.floor(w.a * 6) * 6.5 + 2 + Math.sin(tt * 3) * 0.6; v = -2.5 + w.lane; }
+      const [x, y] = P.W(u, v), sx = Math.floor(x / MPP - ox), sy = Math.floor(y / MPP - oy);
+      if (sx < 0 || sy < 1 || sx >= LW - 1 || sy >= LH) continue;
+      plot(sx + 1, sy - 1, U.shadow, 0.6);
+      plot(sx, sy, U[w.col], 1);
+    }
+  }
+}
+// mooring lines from her bow and stern to the bollards; the visitors' berth marked out when you are near
+function drawLines(){
+  const g = PB;
+  const P = moored || (ship.securing && ship.securing.P);
+  if (P){
+    const p = ship.securing ? clamp((T - ship.securing.t0) / 0.8, 0, 1) : 1;
+    const fx = Math.sin(ship.h), fy = -Math.cos(ship.h), L = ship.t.L, Bt = P.visitor;
+    for (const [k, ahead] of [[0.42, 1], [-0.42, -1]]){
+      const cx = ship.x + fx * L * k, cy = ship.y + fy * L * k;
+      // the bollard a little beyond the end of the ship, on the quay edge
+      const bx = cx + fx * ahead * 6 - Bt.ox * (ship.t.B / 2 + 2), by = cy + fy * ahead * 6 - Bt.oy * (ship.t.B / 2 + 2);
+      const ex = lerp(cx, bx, p), ey = lerp(cy, by, p);
+      pline(g, cx / MPP - ox, cy / MPP - oy, ex / MPP - ox, ey / MPP - oy, C.teakLt);
+    }
+    return;
+  }
+  for (const Q of ports){
+    if (Math.abs(Q.cx - ship.x) > 420 || Math.abs(Q.cy - ship.y) > 420) continue;
+    const [x, y, h] = berthPos(Q.visitor, 0.5, ship.t.B, -1), L = ship.t.L / 2, B = ship.t.B / 2;
+    const fx = Math.sin(h), fy = -Math.cos(h), rx = Math.cos(h), ry = Math.sin(h);
+    const cs = [[L, B], [L, -B], [-L, -B], [-L, B]].map(([a, b]) => [(x + fx * a + rx * b) / MPP - ox, (y + fy * a + ry * b) / MPP - oy]);
+    const blink = (T * 2) % 1 < 0.7;
+    if (blink) for (let i = 0; i < 4; i++){
+      const [ax, ay] = cs[i], [bx, by] = cs[(i + 1) % 4], n = Math.max(Math.abs(bx - ax), Math.abs(by - ay)) | 0;
+      for (let k = 0; k <= n; k++) if ((k >> 1) % 2 === 0){ g.fillStyle = C.lemon; g.fillRect(Math.round(lerp(ax, bx, k / n)), Math.round(lerp(ay, by, k / n)), 1, 1); }
+    }
+  }
+}
 function drawGulls(){
   const hr = hourOf(T);
   if (hr < 6 || hr > 20) return;
@@ -2839,13 +3565,14 @@ function drawLights(){
       if (sx < -2 || sy < -2 || sx > LW + 2 || sy > LH + 2) continue;
       plot(sx, sy, lamp, nf); plot(sx, sy - 1, U.roofDk, 0.5 * nf);
     }
-    if (P.church){ const sx = P.church.gx - ox, sy = P.church.gy - oy; glow(sx, sy, 3, lamp, 0.5 * nf); }
+    if (P.church){ const sx = P.church.gx + 8 - ox, sy = P.church.gy + P.church.h + 1 - oy; glow(sx, sy, 4, lamp, 0.5 * nf); }
     // green light on the mole head
     const lx = Math.floor(P.lx / MPP - ox), ly = Math.floor(P.ly / MPP - oy) - 5;
     glow(lx, ly, 6, U.green, 0.9 * nf);
     plot(lx, ly, u32('#9effc0'), 1); plot(lx + 1, ly, u32('#9effc0'), 1);
-    // the quay lamps
-    for (let u = -30; u <= 40; u += 23){ const [x, y] = P.W(u, 6); glow(Math.floor(x / MPP - ox), Math.floor(y / MPP - oy), 3, lamp, 0.55 * nf); }
+    // the quay lamps and the cafés
+    for (const [x, y] of P.lamps){ const sx = Math.floor(x / MPP - ox), sy = Math.floor(y / MPP - oy) - 1; glow(sx, sy, 5, lamp, 0.55 * nf); plot(sx, sy, hot, 1); }
+    for (const cf of P.cafes){ const sx = cf.gx - ox, sy = cf.gy - oy; glow(sx, sy, 3, lamp, 0.45 * nf); }
   }
   for (const L of LIGHTS){
     if (Math.abs(L.x - ship.x) > 2600 || Math.abs(L.y - ship.y) > 2600) continue;
@@ -2861,9 +3588,17 @@ function drawLights(){
     glow(sx, sy, 4, hot, nf);
   }
   for (const s of ai){
-    if (!onScreen(s.x, s.y, 10)) continue;
+    if (!onScreen(s.x, s.y, 40)) continue;
     const sx = Math.floor(s.x / MPP - ox), sy = Math.floor(s.y / MPP - oy);
+    // the lamp boats: a blazing light over the water to draw the fish
+    if (s.F && s.F.kind === 'lamp' && s.mode === 'fish'){ glow(sx, sy, 14, lamp, 0.5 * nf); glow(sx, sy, 5, hot, nf); continue; }
     plot(sx, sy, hot, 1); glow(sx, sy, 2, lamp, 0.4 * nf);
+    if (s.t.L > 30){
+      // a big ship's portholes and her masthead light
+      const fx = Math.sin(s.h), fy = -Math.cos(s.h);
+      for (const k of [-0.3, -0.1, 0.1, 0.3]) plot(Math.floor((s.x + fx * s.t.L * k) / MPP - ox), Math.floor((s.y + fy * s.t.L * k) / MPP - oy), lamp, nf);
+      glow(Math.floor((s.x + fx * s.t.L * 0.3) / MPP - ox), Math.floor((s.y + fy * s.t.L * 0.3) / MPP - oy), 3, hot, 0.6 * nf);
+    }
   }
   for (const c of critters){
     if (c.k !== 'jelly') continue;
@@ -3586,11 +4321,7 @@ el('tabChart').addEventListener('click', () => { sfx.tap(); if (!warp) project()
 el('tabShip').addEventListener('click', () => { sfx.tap(); setTab('ship'); });
 el('mapIn').addEventListener('click', () => { sfx.tap(); mv.k = Math.min(6, mv.k + 1); });
 el('mapOut').addEventListener('click', () => { sfx.tap(); mv.k = Math.max(1, mv.k - 1); });
-function act(){
-  if (paused || !nearPort) return;
-  if (Math.abs(ship.v) >= 2.5){ toast('Too fast to make fast. Let her slow down.'); return; }
-  moor(nearPort);
-}
+function act(){ secure(); }
 actBtn.addEventListener('click', act);
 
 // chart: drag to pan, pinch / wheel to zoom, tap the dashes to skip ahead or a harbour to steer for it
@@ -3741,6 +4472,9 @@ const sfx = (() => {
     if (crash){ burst(0.5, 'lowpass', 900, 0.8, { f1: 120 }); creakNow(0.3, 90); burst(0.15, 'bandpass', 1400, 0.3, { q: 2, delay: 0.02 }); }
     else { burst(0.4, 'bandpass', 600, 0.15, { f1: 300, attack: 0.05 }); creakNow(0.08, 120); }
   };
+  S.rope = () => { burst(0.35, 'bandpass', 1200, 0.12, { f1: 500, attack: 0.02, q: 1.5 }); burst(0.15, 'lowpass', 400, 0.2, { delay: 0.4 }); creakNow(0.08, 100); };
+  S.fender = () => { tone(140, 110, 0.25, 0.12, { type: 'triangle' }); creakNow(0.12, 80); };
+  S.horn = () => { for (const f of [146, 220]) tone(f, f * 0.99, 2.2, 0.09, { type: 'sawtooth', attack: 0.15 }); };
   S.thunder = d => { burst(3.5, 'lowpass', 300, 0.55, { f1: 60, delay: d, attack: 0.05 }); burst(1.2, 'lowpass', 900, 0.25, { f1: 120, delay: d }); };
   // church bells strike the hour across the water
   S.church = n => {
@@ -3927,7 +4661,7 @@ function frame(now){
   }
 }
 requestAnimationFrame(frame);
-window.__game = { shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
+window.__game = { OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
   get trimManual(){ return trimManual; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
