@@ -908,6 +908,8 @@ const TONES = {
 for (const k in TONES) TONES[k] = TONES[k].map(c => U[c]);
 function tone(set, lam, b){ return set[clamp(Math.floor((lam - 0.5) * 5 + 1.6 + b - 0.5), 0, 3)]; }
 // colour of one pixel: depth d, height h, gradient gx gy, which land, dither b
+// slow noise for the terrain, looked up once per 4-pixel grid node rather than per pixel
+const NZ = { bn: 0, n90: 0, n60: 0, n120: 0, n520: 0 };
 function terrainCol(d, h, gx, gy, src, x, y, b){
   const j = b - 0.5;
   if (d < 0.6){
@@ -929,7 +931,7 @@ function terrainCol(d, h, gx, gy, src, x, y, b){
     return d < 2.2 ? U.stoneDk : hash(bx, by, 61) < 0.18 ? U.stone : U.stoneLt;
   }
   const volc = src && src.volcano;
-  const bn = vnoise(x / 260, y / 260, 31);
+  const bn = NZ.bn;
   if (bn > 0.42 && s < 1.2 && d < 4 + (bn - 0.42) * 30 + j * 2)
     return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.12 ? (volc ? U.ash3 : U.pebbleDk) : (volc ? U.ash2 : (hash(x / 90 | 0, 0, 4) < 0.5 ? U.pebble : U.sand));
   if (d < 3.2 + j * 2){
@@ -937,12 +939,12 @@ function terrainCol(d, h, gx, gy, src, x, y, b){
     if (beach) return hash(x * 1.7 | 0, y * 1.7 | 0, 3) < 0.12 ? (volc ? U.ash3 : U.pebbleDk) : (volc ? U.ash2 : (hash(x / 90 | 0, 0, 4) < 0.5 ? U.pebble : U.sand));
     return d < 1.6 ? U.rockWDk : U.rockW;
   }
-  if (volc && h > 40 + vnoise(x / 90, y / 90, 9) * 25) return tone(TONES.ash, lam, b);
+  if (volc && h > 40 + NZ.n90 * 25) return tone(TONES.ash, lam, b);
   const cliff = 2.1 - clamp((30 - d) / 30, 0, 1) * 1.1;
-  if (s > cliff + j * 0.4 + vnoise(x / 60, y / 60, 12) * 0.35 || h > 480 + vnoise(x / 120, y / 120, 10) * 60)
+  if (s > cliff + j * 0.4 + NZ.n60 * 0.35 || h > 480 + NZ.n120 * 60)
     return vnoise(x / 14, y / 14, 13) > 0.35 ? tone(TONES.mq, lam - 0.2, b) : tone(TONES.lime, lam, b);
   // terraces of lemons and vines, following the contours
-  const terr = h > 20 && h < 340 && s < 1.8 && vnoise(x / 520, y / 520, 41) + (src && src.port ? 0.25 : 0) + (src === null ? 0.15 : 0) > 0.05;
+  const terr = h > 20 && h < 340 && s < 1.8 && NZ.n520 + (src && src.port ? 0.25 : 0) + (src === null ? 0.15 : 0) > 0.05;
   if (terr){
     const hb = (h + vnoise(x / 30, y / 30, 42) * 2) % 8;
     if (hb < 1.1) return U.terWall;
@@ -1180,6 +1182,30 @@ function drawHarbour(g, P, x0, y0, gx0, gy0){
     g.fillStyle = C.green; g.fillRect(lx - 1, ly - 1, 2, 2);
   }
 }
+// a tile is drawn straight into its pixels: solid colours replace, translucent ones (shadows) blend over what is there, or over the sea
+function tileBuf(buf){
+  return {
+    buf, c: null,
+    set fillStyle(v){ this.c = parseCol(v); },
+    fillRect(x, y, w, h){
+      let x0 = Math.round(x), y0 = Math.round(y), x1 = Math.round(x + w), y1 = Math.round(y + h);
+      if (x1 === x0) x1++;
+      if (y1 === y0) y1++;
+      if (x0 < 0) x0 = 0;
+      if (y0 < 0) y0 = 0;
+      if (x1 > TILE) x1 = TILE;
+      if (y1 > TILE) y1 = TILE;
+      if (x0 >= x1 || y0 >= y1) return;
+      const [col, a, r, g, b] = this.c;
+      if (a >= 0.99){ for (let yy = y0; yy < y1; yy++) buf.fill(col, yy * TILE + x0, yy * TILE + x1); return; }
+      const ia = 1 - a, sea = U.sea;
+      for (let yy = y0; yy < y1; yy++) for (let i = yy * TILE + x0, e = yy * TILE + x1; i < e; i++){
+        const q = buf[i] || sea;
+        buf[i] = (255 << 24 | (((q >> 16) & 255) * ia + b * a) << 16 | (((q >> 8) & 255) * ia + g * a) << 8 | ((q & 255) * ia + r * a)) >>> 0;
+      }
+    },
+  };
+}
 function bakeTile(tx, ty){
   const x0 = tx * TILE * MPP, y0 = ty * TILE * MPP, sz = TILE * MPP;
   const cands = isles.filter(I => x0 + sz > I.cx - I.bound && x0 < I.cx + I.bound && y0 + sz > I.cy - I.bound && y0 < I.cy + I.bound);
@@ -1187,20 +1213,20 @@ function bakeTile(tx, ty){
   const nearP = ports.filter(P => Math.abs(P.bx - x0 - sz / 2) < 420 && Math.abs(P.by - y0 - sz / 2) < 420);
   const nearR = REEFS.filter(R => Math.abs(R.x - x0 - sz / 2) < sz / 2 + R.r * 1.5 && Math.abs(R.y - y0 - sz / 2) < sz / 2 + R.r * 1.5);
   if (!cands.length && !main && !nearR.length) return null;
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = TILE;
-  const g = cv.getContext('2d', { willReadFrequently: true });
-  const img = g.createImageData(TILE, TILE);
-  const px = new Uint32Array(img.data.buffer);
+  const px = new Uint32Array(TILE * TILE);
+  const g = tileBuf(px);
   let any = false;
   // exact depth and height every 4 pixels, interpolated in between
   const S4 = 4, GN = TILE / S4 + 3, grid = new Float32Array(GN * GN), hgt = new Float32Array(GN * GN), srcs = new Array(GN * GN);
+  const nzB = new Float32Array(GN * GN), nz90 = new Float32Array(GN * GN), nz60 = new Float32Array(GN * GN), nz120 = new Float32Array(GN * GN), nz520 = new Float32Array(GN * GN);
   let deep = true;
   for (let j = 0; j < GN; j++) for (let i = 0; i < GN; i++){
     const x = x0 + (i - 1) * S4 * MPP, y = y0 + (j - 1) * S4 * MPP;
     const d = grid[j * GN + i] = depthAt(x, y, false);
     srcs[j * GN + i] = TSRC;
     hgt[j * GN + i] = heightOf(d, TSRC, x, y);
+    const q = j * GN + i;
+    if (d > -2){ nzB[q] = vnoise(x / 260, y / 260, 31); nz90[q] = vnoise(x / 90, y / 90, 9); nz60[q] = vnoise(x / 60, y / 60, 12); nz120[q] = vnoise(x / 120, y / 120, 10); nz520[q] = vnoise(x / 520, y / 520, 41); }
     if (d > -160) deep = false;
   }
   if (deep && !nearP.length) return null;
@@ -1216,13 +1242,13 @@ function bakeTile(tx, ty){
       const gxA = (hgt[o + 1] - hgt[o - 1]) / step, gxB = (hgt[o + 2] - hgt[o]) / step, gxC = (hgt[o + GN + 1] - hgt[o + GN - 1]) / step, gxD = (hgt[o + GN + 2] - hgt[o + GN]) / step;
       const gyA = (hgt[o + GN] - hgt[o - GN]) / step, gyB = (hgt[o + GN + 1] - hgt[o - GN + 1]) / step, gyC = (hgt[o + 2 * GN] - hgt[o]) / step, gyD = (hgt[o + 2 * GN + 1] - hgt[o + 1]) / step;
       const gx = lerp(lerp(gxA, gxB, fx), lerp(gxC, gxD, fx), fy), gy = lerp(lerp(gyA, gyB, fx), lerp(gyC, gyD, fx), fy);
-      const src = srcs[o + (fy > 0.5 ? GN : 0) + (fx > 0.5 ? 1 : 0)];
+      const on = o + (fy > 0.5 ? GN : 0) + (fx > 0.5 ? 1 : 0), src = srcs[on];
+      if (d >= 0.6){ NZ.bn = nzB[on]; NZ.n90 = nz90[on]; NZ.n60 = nz60[on]; NZ.n120 = nz120[on]; NZ.n520 = nz520[on]; }
       const c = terrainCol(d, h, gx, gy, src, x, y, BAYER[(py & 3) * 4 + (qx & 3)]);
       if (c){ px[py * TILE + qx] = c; any = true; }
     }
   }
   if (!any && !nearP.length) return null;
-  g.putImageData(img, 0, 0);
   const dpth = (x, y) => { const d = depthAt(x, y, false); return [d, TSRC, heightOf(d, TSRC, x, y)]; };
   const inTown = (x, y) => nearP.some(P => { const [u, v] = P.loc(x, y); return u > -150 && u < 150 && v > -20 && v < 200 || P.houses.some(h => Math.abs(h.gx - x / MPP + h.w / 2) < h.w / 2 + 6 && Math.abs(h.gy - y / MPP + h.h / 2) < h.h / 2 + 6); });
   // trees: umbrella pines, olives and the odd cypress
@@ -1254,7 +1280,7 @@ function bakeTile(tx, ty){
     g.fillStyle = C.white; g.fillRect(lx - 1, ly - 7, 3, 6);
     g.fillStyle = C.red; g.fillRect(lx - 1, ly - 9, 3, 2);
   }
-  const px2 = new Uint32Array(g.getImageData(0, 0, TILE, TILE).data.buffer);
+  const px2 = px;
   const runs = [];
   for (let y = 0; y < TILE; y++){
     const row = [];
@@ -4000,7 +4026,7 @@ function renderSide(){
     const kk = 1 - pd / 2600, n = Math.round(8 + kk * 26), w = LW * (0.15 + kk * 0.35), x0 = LW * (0.3 + 0.4 * hash(P.id, 2, 9)) - w / 2;
     for (let q = 0; q < n; q++){
       const hx = Math.round(x0 + hash(q, P.id, 11) * w), hh = Math.round(1 + kk * 3 + hash(q, P.id, 12) * kk * 3), up = Math.round(Math.pow(hash(q, P.id, 13), 2) * kk * 10);
-      const wall = rgb(C[WALLS[(hash(q, P.id, 14) * 6) | 0][0]]).map((v, z) => v * Math.min(1, tint[z]));
+      const wall = rgb(C[WALLS[(hash(q, P.id, 14) * 6) | 0]]).map((v, z) => v * Math.min(1, tint[z]));
       g.fillStyle = css(mix(wall, hor, 0.5 - kk * 0.4)); g.fillRect(hx, hz - hh - up, Math.max(1, Math.round(1 + kk * 2)), hh);
       if (nightF > 0.4 && hash(q, P.id, 15) < 0.6){ g.fillStyle = C.lamp; g.fillRect(hx, hz - hh - up + 1, 1, 1); }
     }
@@ -4661,7 +4687,7 @@ function frame(now){
   }
 }
 requestAnimationFrame(frame);
-window.__game = { OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
+window.__game = { bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
   get trimManual(){ return trimManual; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
