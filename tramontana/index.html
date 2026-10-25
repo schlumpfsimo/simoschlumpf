@@ -455,6 +455,34 @@ const ISLE_DEFS = [
   ['Strombolo',    14700, 6900,  820, 800,   0, { peak: 720, volcano: 1 }],
   ['Ponzella',      2400, 9200, 1400, 330, -32, { peak: 220 }],
   ['Licosa',       15200, 3950,  320, 180,  20, { peak: 25 }],
+  // more islands, after the real ones: Li Galli off Positano, Alicudi and La Canna by Filicudi, the Pontine islets,
+  // Strombolicchio, the rocks round Panarea, the Formiche, and a whole archipelago in the far south-east like La Maddalena
+  ['Gallo Lungo',    6950, 3060,  150,  48,  28, { peak: 40, group: 'Li Galli' }],
+  ['La Castelluccia', 7140, 3170,  52,  42,   0, { peak: 30, group: 'Li Galli' }],
+  ['La Rotonda',     6780, 3190,   48,  46,   0, { peak: 28, group: 'Li Galli' }],
+  ['Alicuda',        3100, 6900,  380, 340,   0, { peak: 420 }],
+  ['La Canna',       5560, 7240,   32,  28,   0, { peak: 75, rock: 1 }],
+  ['Palmarola',       700, 8650,  380, 140, -62, { peak: 160 }],
+  ['Zannone',        3820, 9820,  210, 150,  20, { peak: 110 }],
+  ['Strombolicchio',15480, 6050,   48,  42,   0, { peak: 50, rock: 1 }],
+  ['Dattilo',       13010, 9430,   58,  46,   0, { peak: 45, rock: 1, group: 'Isolotti di Panarella' }],
+  ['Lisca Bianca',  13660, 9040,   72,  42,  30, { peak: 20, group: 'Isolotti di Panarella' }],
+  ['Lisca Nera',    13560, 8930,   36,  30,   0, { peak: 12, rock: 1, group: 'Isolotti di Panarella' }],
+  ['Bottaro',       13740, 9250,   32,  26,   0, { peak: 15, rock: 1, group: 'Isolotti di Panarella' }],
+  ['Le Formiche',    8500, 5440,   38,  30,   0, { peak: 12, rock: 1 }],
+  ['Le Formiche',    8590, 5510,   28,  24,   0, { peak: 9, rock: 1 }],
+  ['Le Formiche',    8660, 5450,   34,  26,   0, { peak: 11, rock: 1 }],
+  ['Le Formiche',    8730, 5570,   26,  22,   0, { peak: 8, rock: 1 }],
+  ['Le Formiche',    8610, 5640,   40,  30,   0, { peak: 14, rock: 1 }],
+  ['Le Formiche',    8450, 5590,   24,  20,   0, { peak: 7, rock: 1 }],
+  ['Isola Bianca',  10300, 5300,  160, 100, -15, { peak: 30 }],
+  ['La Maddalena',  14750, 9800,  450, 340,  10, { peak: 160, group: 'Isole della Maddalena' }],
+  ['Caprera',       15560, 9620,  160, 400,  -8, { peak: 210, group: 'Isole della Maddalena' }],
+  ['Santo Stefano', 15250, 10380, 150, 130,   0, { peak: 90, group: 'Isole della Maddalena' }],
+  ['Spargi',        13850, 10150, 260, 230,   0, { peak: 150, group: 'Isole della Maddalena' }],
+  ['Budelli',       14250, 10600, 230, 110,  15, { peak: 60, group: 'Isole della Maddalena' }],
+  ['Razzoli',       13700, 10620, 180, 120,   0, { peak: 50, group: 'Isole della Maddalena' }],
+  ['Santa Maria',   14800, 10600, 180, 110,   0, { peak: 40, group: 'Isole della Maddalena' }],
 ];
 const isles = ISLE_DEFS.map(([name, cx, cy, rx, ry, rot, o], id) => {
   const r = rng(9001 + id * 31);
@@ -491,7 +519,8 @@ function near(I, x, y, m = 0){ return Math.abs(x - I.cx) < I.bound + m && Math.a
 
 // reefs: rocks just under the surface; the sea breaks over them
 const REEFS = [[7250, 3800, 100], [4250, 5150, 90], [6300, 8150, 110], [11650, 8650, 95], [13900, 7700, 90],
-  [3600, 8450, 110], [9350, 6150, 80], [12100, 4700, 100], [10600, 3600, 70], [1200, 6300, 90], [15000, 8600, 120], [6900, 5900, 85]]
+  [3600, 8450, 110], [9350, 6150, 80], [12100, 4700, 100], [10600, 3600, 70], [1200, 6300, 90], [15000, 8600, 120], [6900, 5900, 85],
+  [8380, 5720, 60], [8850, 5380, 55], [14420, 10350, 70], [13200, 10000, 80]]
   .map(([x, y, r]) => ({ x, y, r }));
 function reefDepth(R, x, y){
   const q = Math.hypot(x - R.x, y - R.y) / R.r + vnoise(x / 40, y / 40, 77) * 0.12;
@@ -574,19 +603,20 @@ const GOODS = [
   { id: 'wine',       name: 'Malvasia',    base: 28 },
   { id: 'limoncello', name: 'Limoncello',  base: 30 },
   { id: 'ceramics',   name: 'Ceramics',    base: 34 },
+  { id: 'coral',      name: 'Red coral',   base: 44 },
 ];
 const GOOD = {}; for (const g of GOODS) GOOD[g.id] = g;
 // name, island (or the mainland and an x), angle in the island frame, which side the mole stands, what the town makes, what it wants
 const PORT_DEFS = [
   ['Ravella',       null,            8700,  1, ['lemons', 'oil'],          ['capers', 'pumice', 'wine'],
     'Home. A fishing harbour under the lemon terraces, the church dome green and gold above the roofs.'],
-  ['Positella',     null,            6050, -1, ['ceramics', 'limoncello'], ['anchovies', 'wine', 'capers'],
+  ['Positella',     null,            6050, -1, ['ceramics', 'limoncello'], ['anchovies', 'wine', 'capers', 'coral'],
     'Pink and yellow houses stacked up the cliff like a heap of sugared almonds. Every staircase leads to the sea.'],
   ['Cetrara',       null,           11900,  1, ['anchovies'],              ['lemons', 'oil', 'ceramics'],
     'A town of fishermen and salted anchovies. The smell of the harbour reaches you before the bell does.'],
   ['Sorrenta',      'Capo Minerva',    92,  1, ['limoncello', 'lemons'],   ['pumice', 'wine', 'anchovies'],
     'Orchards right down to the cliff edge. Somebody here distils every lemon on the coast.'],
-  ['Marina Grande', 'Isola Azzurra',  268,  1, ['lemons'],                 ['limoncello', 'wine', 'ceramics'],
+  ['Marina Grande', 'Isola Azzurra',  268,  1, ['lemons'],                 ['limoncello', 'wine', 'ceramics', 'coral'],
     'The island of the blue grotto. Fine villas, finer prices, and people who pay well for nice things.'],
   ['Lipara',        'Lipara',          12, -1, ['pumice', 'capers'],       ['oil', 'ceramics', 'limoncello'],
     'White pumice cliffs and a castle on the rock. The beaches here are made of glass and stone.'],
@@ -596,6 +626,8 @@ const PORT_DEFS = [
     'The smallest harbour, all white walls and bougainvillea. Fashionable, and short of everything.'],
   ['Ponzella',      'Ponzella',        96, -1, ['anchovies', 'wine'],      ['pumice', 'oil', 'lemons'],
     'A crescent island far to the west, its harbour a horseshoe of fishermen\'s houses.'],
+  ['Cala Gavetta',  'La Maddalena',   262,  1, ['coral'],                  ['limoncello', 'oil', 'ceramics'],
+    'The far islands at last: granite worn into strange shapes, water like glass, and coral jewellers on every corner.'],
 ];
 function gradAt(x, y, e = 30){
   const gx = depthAt(x + e, y) - depthAt(x - e, y), gy = depthAt(x, y + e) - depthAt(x, y - e), l = Math.hypot(gx, gy) || 1;
@@ -642,8 +674,131 @@ function berthPos(Bt, f, B, dir){
 }
 
 // standalone lighthouses on capes: island and angle
-const LIGHTS = [['Capo Minerva', 180], ['Isola Azzurra', 180], ['Lipara', 160], ['Strombolo', 30], ['Salina', 330], ['Ponzella', 200], ['Licosa', 0]]
+const LIGHTS = [['Capo Minerva', 180], ['Isola Azzurra', 180], ['Lipara', 160], ['Strombolo', 30], ['Salina', 330], ['Ponzella', 200], ['Licosa', 0], ['Strombolicchio', 40], ['Caprera', 75]]
   .map(([n, a], i) => { const I = isles.find(q => q.name === n), [x, y] = islePoint(I, a * DEG, -14); return { x, y, id: i, isle: I }; });
+
+// ---------------------------------------------------------------- things to find: marked on the chart with a query, until you go and look
+// name, kind, where (an island, an angle round it and metres inland; or a point at sea), coins found, what you see
+const POI_DEFS = [
+  ['Grotta Azzurra',        'grotto',   ['Isola Azzurra', 300, 0],  0,  'A cave mouth so low you lie flat in the dinghy to row in. Inside the water glows blue, as if lit from below.'],
+  ['Villa of the Emperor',  'ruins',    ['Isola Azzurra', 8, -70],  0,  'Broken columns and mosaic floors on the clifftop. An emperor once watched the sea from here, and threw his enemies off the edge.'],
+  ['Torre Saracena',        'tower',    ['Capo Minerva', 182, -16], 0,  'A round watchtower against the corsairs. From the top you could see a sail coming a day away.'],
+  ['Grotta delle Foche',    'grotto',   ['Faraglione', 80, 0],      0,  'A sea cave in the stacks. Something big and whiskered rolls over in the dark water and watches you.'],
+  ['Wreck of the Santa Rosalia', 'wreck', [5250, 4900],            60,  'Ten metres down, a brigantine on her side, her ribs grown over with weed. You dive and bring up a brass bell.'],
+  ['Roman amphorae',        'amphorae', [6100, 7700],              80,  'Hundreds of clay jars on the sand, where a Roman ship sank with her wine. You lift one, still sealed.'],
+  ['Hermitage of San Costanzo', 'chapel', ['Isca', 95, -22],        0,  'A tiny white chapel. The hermit who lived here kept a lamp burning for sailors every night of his life.'],
+  ['The fumaroles',         'bubbles',  ['Vulcanella', 330, 70],    0,  'The sea fizzes like wine. Bubbles rise from vents in the seabed and the water smells of sulphur and is warm to the hand.'],
+  ['Sciara del Fuoco',      'lava',     ['Strombolo', 300, -120],   0,  'A black scar down the mountain to the sea. Every few minutes the crater spits fire, and at night the glowing rocks roll all the way down.'],
+  ['Hot springs of Lisca Bianca', 'bubbles', [13640, 9140],         0,  'Warm water bubbling up between the islets. The fishermen swim here in winter.'],
+  ['Spiaggia Rosa',         'pinkbeach', ['Budelli', 20, 0],        0,  'A beach of pink sand, made of crushed shells and coral. The water in front is the colour of a peppermint.'],
+  ['Cala Coticcio',         'cove',     ['Caprera', 5, 0],         120, 'A hidden cove behind granite boulders, and an old sea chest wedged in the rocks above the tide line. Spanish silver!'],
+  ['Wreck of the steamer Sirio', 'wreck', [8820, 5330],            90,  'She struck the Formiche in the fog. Her boilers stand up from the sand like barrels. You salvage a ship\'s clock.'],
+  ['Seahorse meadow',       'seagrass', [6930, 3230],               0,  'In the lee of Li Galli, a meadow of seagrass waving in the swell. Seahorses hang in it, curled round the blades.'],
+  ['Villa on Gallo Lungo',  'villa',    ['Gallo Lungo', 200, -10],  0,  'A white villa on the island of the sirens. A famous dancer lived here once, they say, and danced alone on the terrace.'],
+  ['The Bocche channel',    'bubbles',  [14250, 10360],             0,  'A narrow passage between the granite islands, with the current running through it like a river.'],
+];
+const POIS = POI_DEFS.map(([name, kind, w, coins, text], id) => {
+  let x, y, I = null;
+  if (typeof w[0] === 'string'){ I = isles.find(q => q.name === w[0]); [x, y] = islePoint(I, w[1] * DEG, w[2]); }
+  else [x, y] = w;
+  // which way the sea lies, for things on the shore
+  const sx = I ? x - I.cx : 0, sy = I ? y - I.cy : 1, sl = Math.hypot(sx, sy) || 1;
+  const sea = kind === 'wreck' || kind === 'amphorae' || kind === 'seagrass' || kind === 'bubbles' && !I;
+  // a beach follows the curve of the shore
+  const shore = I && (kind === 'pinkbeach' || kind === 'cove') ? Array.from({ length: kind === 'cove' ? 9 : 25 }, (_, k, a) => islePoint(I, (w[1] + (k - 12 * (kind === 'cove' ? 1 / 3 : 1)) * (kind === 'cove' ? 3 : 6) / I.R * 57) * DEG, -2.5)) : null;
+  return { id, name, kind, x, y, I, coins, text, shore, nx: sx / sl, ny: sy / sl, under: kind === 'wreck' || kind === 'amphorae' || kind === 'seagrass', r: sea ? 90 : 230 };
+});
+let poiT = 0;
+function poiStep(dt){
+  poiT -= dt;
+  if (poiT > 0) return;
+  poiT = 0.5;
+  for (const Q of POIS){
+    if (pl.found[Q.id] || Math.abs(Q.x - ship.x) > Q.r || Math.abs(Q.y - ship.y) > Q.r || Math.hypot(Q.x - ship.x, Q.y - ship.y) > Q.r) continue;
+    // to see what lies on the bottom you have to slow down and look over the side
+    if (Q.under && ship.v > 3){ if (T > (Q.hintT || 0)){ Q.hintT = T + 30; toast('Something dark on the bottom here. Slow down to see.'); } continue; }
+    pl.found[Q.id] = dayOf(T);
+    pl.coins += Q.coins;
+    if (warp) stopWarp();
+    sfx.chime();
+    const n = Object.keys(pl.found).length;
+    panel(Q.name, `<p>${Q.text}</p>${Q.coins ? `<p>Worth <b>${Q.coins}</b> coins to the right buyer.</p>` : ''}<p class="help">Discovered ${n} of ${POIS.length}. The rest are marked ? on the chart.</p>`, [['SAIL ON', closePanel, true]]);
+    save();
+    return;
+  }
+}
+let PC_ = null;
+const PC = () => PC_ || (PC_ = { stone: u32('#cbbd9e'), stoneDk: u32('#8d8270'), sand: u32('#e9d9a6'), terra: u32('#b3603a'), pink: u32('#eba7b0'), glow: u32('#3fb8ff'),
+  lava: u32('#ff7a2a'), lavaHot: u32('#ffd060'), grass: u32('#2f6a4a'), bottom: u32('#3b86b4'), white: u32('#f4efe4'), pool: u32('#5fc8e6'), roof: u32('#b9523a'), gold: u32('#e8c54a') });
+// what you see from above when you come by
+function drawPOI(Q){
+  if (!onScreen(Q.x, Q.y, 80)) return;
+  const c = PC(), x = Q.x, y = Q.y, nx = Q.nx, ny = Q.ny, tx = -ny, ty = nx, h = hash(Q.id, 1, 3);
+  switch (Q.kind){
+    case 'wreck': {
+      const a = h * TAU, fx = Math.sin(a), fy = -Math.cos(a);
+      // the sand she lies on shows paler through the water; her hull a dark shape on it
+      for (let k = 0; k < 7; k++){ const a = hash(Q.id, k, 21) * TAU, d = hash(Q.id, k, 22) * 15 * 0.5; disc(x + Math.cos(a) * d, y + Math.sin(a) * d, 15 * (0.45 + hash(Q.id, k, 23) * 0.3), c.bottom, 0.4); }
+      capsule(x - fx * 11, y - fy * 11, x + fx * 11, y + fy * 11, 6, U.seaDk, 0.85);
+      for (let k = -9; k <= 9; k += 3) capsule(x + fx * k - fy * 3, y + fy * k + fx * 3, x + fx * k + fy * 3, y + fy * k - fx * 3, 0.6, U.navy, 0.55);
+      capsule(x + fx * 4 + fy * 2, y + fy * 4 - fx * 2, x + fx * 4 + fy * 14, y + fy * 4 - fx * 9, 0.7, U.seaDk, 0.5);
+      break;
+    }
+    case 'amphorae':
+      for (let k = 0; k < 7; k++){ const a = hash(Q.id, k, 21) * TAU, d = hash(Q.id, k, 22) * 13 * 0.5; disc(x + Math.cos(a) * d, y + Math.sin(a) * d, 13 * (0.45 + hash(Q.id, k, 23) * 0.3), c.bottom, 0.4); }
+      for (let k = 0; k < 22; k++){ const a = hash(Q.id, k, 5) * TAU, d = hash(Q.id, k, 6) * 11; disc(x + Math.cos(a) * d, y + Math.sin(a) * d, 0.55, c.terra, 0.6); }
+      break;
+    case 'seagrass':
+      for (let k = 0; k < 26; k++){ const a = hash(Q.id, k, 5) * TAU, d = hash(Q.id, k, 6) * 26; disc(x + Math.cos(a) * d, y + Math.sin(a) * d, 2 + hash(Q.id, k, 7) * 2.5, c.grass, 0.45); }
+      if (Math.sin(T * 0.7) > 0) plot(Math.floor((x + 3) / MPP - ox), Math.floor((y - 2) / MPP - oy), c.gold, 0.9);
+      break;
+    case 'bubbles':
+      for (let k = 0; k < 6; k++){
+        const p = (T * 0.4 + hash(Q.id, k, 2)) % 1, a = hash(Q.id, k, 3) * TAU, d = hash(Q.id, k, 4) * 14;
+        ring(x + Math.cos(a) * d, y + Math.sin(a) * d, 0.4 + p * 2.5, U.foam, (1 - p) * 0.8);
+      }
+      if (Math.random() < 0.1) puff('foam', x + rnd(-12, 12), y + rnd(-12, 12), 0, 0, 0.6, 0.4, 0.6, 0.8);
+      break;
+    case 'grotto':
+      disc(x - nx * 1.5, y - ny * 1.5, 3.2, U.navy, 1);
+      disc(x + nx * 3, y + ny * 3, 4.5, c.glow, 0.45);
+      break;
+    case 'pinkbeach':
+      for (const [px, py] of Q.shore){ disc(px, py, 3.4, c.pink, 0.95); disc(px + nx * 5, py + ny * 5, 2.6, c.glow, 0.3); }
+      break;
+    case 'cove':
+      for (const [px, py] of Q.shore) disc(px, py, 2.6, c.sand, 0.95);
+      if (!pl.found[Q.id]){ disc(x - nx * 8, y - ny * 8, 1, U.woodDk, 1); plot(Math.floor((x - nx * 8) / MPP - ox), Math.floor((y - ny * 8) / MPP - oy), c.gold, 1); }
+      break;
+    case 'tower':
+      disc(x + 2, y + 2, 4, U.shadow, 0.6);
+      disc(x, y, 3.8, c.stoneDk, 1); disc(x, y, 3, c.stone, 1);
+      for (let k = 0; k < 8; k++) plot(Math.floor((x + Math.cos(k * TAU / 8) * 3.3) / MPP - ox), Math.floor((y + Math.sin(k * TAU / 8) * 3.3) / MPP - oy), c.stoneDk, 1);
+      break;
+    case 'chapel': case 'villa': {
+      const vl = Q.kind === 'villa';
+      capsule(x - tx * 4 + 1.5, y - ty * 4 + 1.5, x + tx * 4 + 1.5, y + ty * 4 + 1.5, vl ? 7 : 5, U.shadow, 0.6);
+      capsule(x - tx * 4, y - ty * 4, x + tx * 4, y + ty * 4, vl ? 7 : 5, c.white, 1);
+      if (vl){ capsule(x + nx * 6 - tx * 2, y + ny * 6 - ty * 2, x + nx * 6 + tx * 2, y + ny * 6 + ty * 2, 3, c.pool, 1); }
+      else { capsule(x - tx * 2.5, y - ty * 2.5, x + tx * 2.5, y + ty * 2.5, 2.6, c.roof, 1); disc(x + tx * 4.5, y + ty * 4.5, 1.4, c.white, 1); }
+      break;
+    }
+    case 'ruins':
+      for (let k = 0; k < 14; k++){ const u = (k % 5) - 2, v = Math.floor(k / 5) - 1; if (hash(Q.id, k, 8) < 0.25) continue; disc(x + tx * u * 5 + nx * v * 5, y + ty * u * 5 + ny * v * 5, 1.1, c.stone, 1); }
+      capsule(x - tx * 11, y - ty * 11, x + tx * 11, y + ty * 11, 0.8, c.stoneDk, 0.8);
+      break;
+    case 'lava': {
+      const night = nightF > 0.3;
+      for (let k = 0; k < 30; k++){
+        const t = k / 30, w = Math.sin(t * 9 + Q.id) * 6, px = x + nx * t * 110 + tx * w, py = y + ny * t * 110 + ty * w;
+        disc(px, py, 3 + t * 3, U.navy, 0.7);
+        if (night && hash(k, Math.floor(T * 3), 11) < 0.35) disc(px, py, 1, hash(k, 2, 12) < 0.5 ? c.lava : c.lavaHot, 1);
+      }
+      if (Math.random() < 0.06) puff('smoke', x + rnd(-6, 6), y + rnd(-6, 6), rnd(-1, 1), rnd(-1, 1), 6, 4, 2, 0.6);
+      break;
+    }
+  }
+}
 
 // towns, seen from above: flat roof terraces, terracotta hip roofs and white vaults, packed up the slope behind the quay.
 // a piazza with the church behind it, market stalls on the quay, cafés, a beach of umbrellas, people about
@@ -1497,11 +1652,12 @@ function makeShip(type, x, y, h, role){
 const outH = P => Math.atan2(-P.tx, P.ty); // lying alongside, bow toward the harbour mouth
 const ship = makeShip('schooner', home.mx, home.my, outH(home), 'player');
 const pl = {
-  coins: 150, cargo: {}, parcels: [], catch: [], visited: {}, seen: {}, friends: {}, dest: -1,
+  coins: 150, cargo: {}, parcels: [], catch: [], found: {}, visited: {}, seen: {}, friends: {}, dest: -1,
   stats: { dist: 0, best: 0, storms: 0, nights: 0, trades: 0, gybes: 0, crash: 0, surf: 0 }, tips: {},
 };
 const cargoN = () => Object.values(pl.cargo).reduce((a, b) => a + b, 0) + pl.parcels.filter(q => q.kind === 'parcel').length;
-const fog = new Uint8Array(GW * GH);
+// the chart is a good one: the whole coast and every island are on it from the start. what is on them, you find out
+const fog = new Uint8Array(GW * GH).fill(1);
 let ai = [], critters = [];
 let T = 10.5 * HOUR;
 let parts = [], discT = 0, saveT = 0, shake = 0, spawnT = 0, lifeT = 0;
@@ -1518,9 +1674,8 @@ function load(){
       up: s.up || {}, paint: s.paint || 'navy', tanbark: !!s.tanbark, trimA: s.trimA || 30 });
     Object.assign(pl, s.pl || {});
     pl.stats = Object.assign({ dist: 0, best: 0, storms: 0, nights: 0, trades: 0, gybes: 0, crash: 0, surf: 0 }, pl.stats);
-    pl.tips = pl.tips || {}; pl.catch = pl.catch || [];
+    pl.tips = pl.tips || {}; pl.catch = pl.catch || []; pl.found = pl.found || {};
     const f = atob(s.fog);
-    for (let i = 0; i < f.length && i < fog.length; i++) fog[i] = f.charCodeAt(i);
     for (const id of s.disc || []) if (isles[id]) isles[id].disc = true;
     (s.market || []).forEach((m, i) => { if (market[i]) Object.assign(market[i], m); });
     (s.reqs || []).forEach((q, i) => { if (reqs[i]) reqs[i] = q; });
@@ -1569,7 +1724,8 @@ function discover(){
     if (I.disc || !near(I, ship.x, ship.y, SIGHT)) continue;
     if (isleDepth(I, ship.x, ship.y) > -SIGHT){
       I.disc = true;
-      if (!I.rock || I.name !== (isles[I.id - 1] || {}).name) toast(I.port ? `Land ho! ${I.name}, and the harbour of ${I.port.name}.` : `Land ho! ${I.name}.`);
+      if (I.group){ if (!pl.seen['g_' + I.group]){ pl.seen['g_' + I.group] = dayOf(T); toast(`Land ho! ${I.group}.`); } }
+      else if (!I.rock || I.name !== (isles[I.id - 1] || {}).name) toast(I.port ? `Land ho! ${I.name}, and the harbour of ${I.port.name}.` : `Land ho! ${I.name}.`);
     }
   }
 }
@@ -3082,6 +3238,8 @@ function logbook(){
     const d = pl.seen[k];
     body += `<tr><td class="${d ? '' : 'unk'}">${d ? LIFE[k].name : '???'}</td><td>${d ? `day ${d}` : ''}</td></tr>`;
   }
+  body += `</table><h3>Discoveries ${Object.keys(pl.found).length}/${POIS.length}</h3><table class="log">`;
+  for (const Q of POIS){ const d = pl.found[Q.id]; body += `<tr><td class="${d ? '' : 'unk'}">${d ? Q.name : '???'}</td><td>${d ? `day ${d}` : ''}</td></tr>`; }
   body += '</table><h3>Caught</h3><table class="log">';
   for (const k in FISH){ const d = pl.seen['c_' + k]; body += `<tr><td class="${d ? '' : 'unk'}">${d ? FISH[k].name : '???'}</td><td>${d ? `day ${d}` : ''}</td></tr>`; }
   body += '</table>';
@@ -3330,6 +3488,7 @@ function update(dt){
   warnT -= dt;
   if (warnT <= 0){ warnT = 0.25; warnStep(); }
   fishStep(dt);
+  poiStep(dt);
   if (crashInfo && T - crashT > 1.4 && !paused && !tow && ship.hull > 0) crashPanel();
   lifeStep(dt);
 
@@ -4164,6 +4323,7 @@ function render(){
     else if (p.kind === 'splinter') plot(Math.floor(p.x / MPP - ox), Math.floor(p.y / MPP - oy), al > 0.5 ? U.teak : U.wood, 1);
     else if (p.kind === 'splash') ring(p.x, p.y, p.r, U.white, al);
   }
+  for (const Q of POIS) drawPOI(Q);
   for (const c of critters) if (c.k !== 'shear') drawCritter(c);
   for (const s of ai) drawShip(s);
   drawMe();
@@ -5023,9 +5183,20 @@ function renderMap(){
   for (const L of LIGHTS){ if (!seen(L.x, L.y)) continue; const px = X(L.x), py = Y(L.y); g.fillStyle = C.ink; g.fillRect(px - 1, py - 1, 3, 3); g.fillStyle = C.lemon; g.fillRect(px, py, 1, 1); }
   for (const I of isles){
     if (!I.disc || I.rock && I.name === (isles[I.id - 1] || {}).name) continue;
-    if (I.name === 'Capo Minerva' || I.R < 120 || (I.port && I.port.name === I.name)) continue;
+    if (I.name === 'Capo Minerva' || I.R < 120 && k < 5 || (I.port && I.port.name === I.name) || I.group && k < 3) continue;
     const nm = I.name, w = textWidth(nm);
     drawText(g, nm, X(I.cx) - w / 2, Y(I.cy) - 2, C.ink, 1, C.parch);
+  }
+  // archipelagos get one name across them, once sighted
+  const groups = {};
+  for (const I of isles) if (I.group){ const G = groups[I.group] || (groups[I.group] = { x: 0, n: 0, top: 1e9, seen: false }); G.x += I.cx; G.n++; G.top = Math.min(G.top, I.cy - I.ry); G.seen = G.seen || I.disc; }
+  for (const nm in groups){ const G = groups[nm]; if (!G.seen || k >= 5) continue; drawText(g, nm, X(G.x / G.n) - textWidth(nm) / 2, Y(G.top) - 9, C.ink, 1, C.parch); }
+  // things to find: a red query until you have been there, then a star
+  for (const Q of POIS){
+    const px = X(Q.x), py = Y(Q.y);
+    if (px < -10 || py < -10 || px > LW + 10 || py > LH + 10) continue;
+    if (pl.found[Q.id]){ g.fillStyle = C.ink; g.fillRect(px - 1, py - 2, 3, 5); g.fillRect(px - 2, py - 1, 5, 3); g.fillStyle = C.lemon; g.fillRect(px - 1, py - 1, 3, 3); if (k >= 3) drawText(g, Q.name, px + 4, py - 2, C.ink, 1, C.parch); }
+    else drawText(g, '?', px - 1, py - 2, C.cRed, 1, C.parch);
   }
   for (const P of ports){
     if (!known(P)) continue;
@@ -5512,7 +5683,7 @@ function frame(now){
 requestAnimationFrame(frame);
 window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
-  get trimManual(){ return trimManual; }, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
+  get trimManual(){ return trimManual; }, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
 </script>
 </body>
