@@ -84,6 +84,16 @@
     #rowMain{ right:auto; left:6px; }
     #rowMain .px{ min-width:0; font-size:9px; }
     #deck .px.on{ background:#ffffff26; border-color:#ffffff; }
+    /* the tutorial card: under the readout, the same plain glass as the deck */
+    #tut{ position:absolute; left:8px; right:8px; top:calc(100px + env(safe-area-inset-top)); background:rgba(16,21,28,0.9); border:1px solid #d5dbe255; border-radius:4px; padding:8px 10px; color:#d5dbe2; font-size:10px; line-height:1.45; }
+    #tut .th{ display:flex; gap:8px; align-items:baseline; margin-bottom:4px; }
+    #tut .th span{ opacity:.5; font-size:9px; }
+    #tut .th b{ color:#fff; font-weight:normal; font-size:11px; letter-spacing:1px; }
+    #tut .tb{ display:flex; justify-content:space-between; margin-top:6px; }
+    #tut .px{ background:transparent; border:1px solid #d5dbe299; box-shadow:none; color:#d5dbe2; border-radius:3px; font-size:9px; padding:3px 8px; }
+    #tutNext{ border-color:#e2c46c !important; color:#fff !important; }
+    .tutHi{ outline:2px solid #e2c46c; outline-offset:2px; animation:tutp 0.9s ease-in-out infinite alternate; }
+    @keyframes tutp{ from{ outline-color:#e2c46c33; } to{ outline-color:#e2c46c; } }
     #storm{
       position:absolute; right:calc(10px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top));
       background:#7a2416; border:3px solid #f0cf45; padding:4px 8px; box-shadow:3px 3px 0 #000a; pointer-events:none;
@@ -274,6 +284,11 @@
     </div>
   </div>
   <div id="floats"></div>
+  <div id="tut" class="hidden">
+    <div class="th"><span id="tutStep">1/1</span><b id="tutTitle">-</b></div>
+    <div id="tutText">-</div>
+    <div class="tb"><button class="px" id="tutSkip">SKIP TUTORIAL</button><button class="px hidden" id="tutNext">NEXT</button></div>
+  </div>
   <div id="legacy" class="hidden">
   <div id="left">
     <div id="trimRow">
@@ -1229,7 +1244,9 @@ function gustO(x, y, W){
   const g = vnoise(gx / 380, gy / 380, 13) + 0.5 * vnoise(gx / 160, gy / 160, 14);
   return Math.sign(g) * Math.pow(Math.min(1, Math.abs(g)), 0.8);
 }
+let tut = null;
 function windAt(x, y, t, lee = true){
+  if (tut && tut.wind != null) return { dir: tut.wind + Math.sin(t * 0.013) * 0.04, spd: 11 + Math.sin(t * 0.05) * 0.5 };
   const W = weatherAt(t);
   const base = Math.hypot(W.ux, W.uy), bdir = Math.atan2(-W.ux, W.uy), gw = W.g;
   const n1 = vnoise(x / 6000 + t * 0.004, y / 6000 - t * 0.003, 11);
@@ -1991,11 +2008,11 @@ function save(){
 const toastEl = document.getElementById('toast');
 const toastQ = [];
 let toastT = 0;
-function toast(msg){ if (!toastQ.includes(msg) && toastEl.textContent !== msg) toastQ.push(msg); }
+function toast(msg){ if (tut) return; if (!toastQ.includes(msg) && toastEl.textContent !== msg) toastQ.push(msg); }
 // news that cannot wait goes straight up
 function toastNow(msg){ toastQ.unshift(msg); toastT = 0; }
 // a tip shown only the first time it applies
-function tip(key, msg){ if (pl.tips[key]) return; pl.tips[key] = 1; toast(msg); }
+function tip(key, msg){ if (pl.tips[key] || tut) return; pl.tips[key] = 1; toast(msg); }
 function updToast(dt){
   toastT -= dt;
   if (toastT <= 0){
@@ -2115,15 +2132,18 @@ function kedgeOff(){
   s.kedge = { t0: T, ax: s.x + Math.sin(a) * 55, ay: s.y - Math.cos(a) * 55, a };
   setSail(0);
   sfx.chain(false);
-  toast('The anchor goes out in the dinghy. Now the windlass...');
+  toast(atSt('bow') ? 'The anchor goes out in the dinghy. Then pump the windlass to haul her off.' : 'The anchor goes out in the dinghy. Go to the BOW and pump the windlass to haul her off.');
 }
 function kedgeStep(dt){
   const s = ship, K = s.kedge, p = (T - K.t0);
   if (p < 3) return;  // rowing the anchor out
+  // each stroke of the windlass hauls her a little way towards the kedge
+  if (!((K.work || 0) > 0)) return;
+  const k = Math.min(dt, K.work); K.work -= k;
   if (Math.random() < dt * 3) sfx.creak();
   const dx = K.ax - s.x, dy = K.ay - s.y, d = Math.hypot(dx, dy);
-  s.x += dx / d * 1.1 * dt; s.y += dy / d * 1.1 * dt;
-  s.heel *= 1 - dt * 0.3;
+  s.x += dx / d * 4.3 * k; s.y += dy / d * 4.3 * k;
+  s.heel *= 1 - k * 0.3;
   const ok = hullPoints(s).every(([x, y]) => depthFastN(x, y) < -2.2);
   if (ok || d < 8){
     s.aground = null; s.kedge = null; s.v = 0; s.heel = 0;
@@ -3742,6 +3762,7 @@ function guide(i){
   if (i === GUIDE.length - 1){
     btns.push(['SOUND', () => { sfx.cycle(); guide(i); }]);
     btns.push(['CONTROLS UP', () => { setLift((lift + 1) % LIFTS.length); sfx.tap(); guide(i); }]);
+    btns.push(['REPLAY TUTORIAL', () => { closePanel(); tutStart(); }]);
     btns.push([trimManual ? 'AUTO TRIM' : 'MANUAL TRIM', () => {
       trimManual = !trimManual;
       try { localStorage.setItem('tramontana-trim', trimManual ? '1' : '0'); } catch (e){}
@@ -3875,6 +3896,7 @@ function update(dt){
   if (warnT <= 0){ warnT = 0.25; warnStep(); }
   fishStep(dt);
   poiStep(dt);
+  tutStep(dt);
   if (crashInfo && T - crashT > 1.4 && !paused && !tow && ship.hull > 0) crashPanel();
   lifeStep(dt);
 
@@ -3958,7 +3980,7 @@ const actBtn = el('actBtn');
 function sailHint(rel, twa){
   const t = ship.t;
   if (moored) return '';
-  if (ship.aground) return ship.kedge ? 'Winching her off on the anchor line...' : 'Aground! KEDGE OFF with the anchor, or set sail if the wind blows off the shore.';
+  if (ship.aground) return ship.kedge ? 'Kedging: pump the windlass at the BOW to haul her off.' : 'Aground! KEDGE OFF with the anchor, or set sail if the wind blows off the shore.';
   if (ship.anchor) return ship.anchor.drag ? 'The anchor is dragging!' : 'At anchor, swinging to the wind.';
   if (ship.sail < 0.05) return Math.abs(ship.v) > 0.5 ? 'Sails down, gliding.' : 'Sails down: go forward and haul up the halyards.';
   if (ship.jibFree && ship.hJ > 0.3) return 'The jib is flying free: haul the sheet on the new side (JIB).';
@@ -4005,7 +4027,7 @@ function updHud(){
   fb.classList.toggle('hot', !!F.bite || !!(F.fight && F.fight.ten > 0.7));
   setText(fb, F.bite ? 'STRIKE!' : F.fight ? `REEL ${Math.round(F.fight.prog * 100)}%${F.fight.ten > 0.7 ? ' !!' : F.fight.ten > 0.45 ? ' !' : ''}` : F.out ? 'LINES IN' : 'LINES OUT');
   const tb = el('towBtn'), to = towOffer();
-  tb.classList.toggle('hidden', !to && (!tow || tow.mode === 'rescue'));
+  tb.classList.toggle('hidden', !!tut || !to && (!tow || tow.mode === 'rescue'));
   tb.classList.toggle('on', !!tow);
   setText(tb, tow ? (tow.phase === 'tow' ? 'CAST OFF TOW' : 'CANCEL TUG') : to ? `${to.mode === 'off' ? 'TOW OFF' : 'TOW IN'} ${to.fee}` : '');
   ab.classList.toggle('on', !!ship.anchor || !!ship.aground);
@@ -5882,6 +5904,7 @@ function drawDeck(){
   if (crew.walk){ dText(`WALKING TO THE ${S.name}...`, DK.w / 2, DK.h / 2 - 3, ND, 'center'); return; }
   if (S.id === 'helm'){ const R = Math.min(DK.h * 0.3, DK.w * 0.2), cy = DK.h * 0.52 + 2; drawWheel(DK.w * 0.27, cy, R); DK.wheel = { x: DK.w * 0.27, y: cy, r: R }; }
   if (typeof drawStation === 'function') drawStation(S.id);
+  tutMark();
 }
 function deckHUD(){
   const S = STATIONS[crew.st], prev = STATIONS[crew.st - 1], next = STATIONS[crew.st + 1];
@@ -5966,6 +5989,7 @@ function haul(k, d, winch){
   const q = d * eff;
   if (R.hal){
     if (s.drop[R.hal]){ s.drop[R.hal] = false; }
+    if (R.hal === 'hJ' && s.hJ < 0.05) s.jibFree = true;
     if (R.hal === 'hM' && s.hM >= 0.99 && s.reef) {}
     s[R.hal] = Math.min(1, s[R.hal] + q * 0.006);
   } else if (R.sheet){ s.letGo[R.sheet] = false; s[R.sheet] = Math.max(0, s[R.sheet] - q * 0.8); }
@@ -6014,6 +6038,8 @@ function shakeOut(){
 // the windlass: every stroke of the lever brings in a fathom of chain
 let pumpDir = 0, pumpAcc = 0;
 function pumpStroke(){
+  const K = ship.kedge;
+  if (K){ if (T - K.t0 >= 3){ K.work = (K.work || 0) + 0.7; sfx.chain(true); buzz(15); } return; }
   const A = ship.anchor;
   if (!A){ return; }
   if (!A.weigh){ A.weigh = T; toastNow('Weighing: pump the windlass.'); }
@@ -6065,7 +6091,9 @@ function drawStation(id){
     const ang = (pumpDir > 0 ? -0.5 : 0.5) * Math.min(1, pumpAcc / 18) - 0.2;
     dLine(cx, cy, cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28, NL, 1); dDisc(cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28, 1.6, NA);
     DK.pump = { x: cx, y: cy, r: 44 };
-    dText(A ? (A.weigh ? 'PUMP THE LEVER UP AND DOWN' : `AT ANCHOR, ${Math.round(RODE)} M OF CHAIN`) : ship.aground ? 'AGROUND: KEDGE OFF' : 'ANCHOR READY', cx, H - 7, ND, 'center');
+    const K = ship.kedge;
+    dText(A ? (A.weigh ? 'PUMP THE LEVER UP AND DOWN' : `AT ANCHOR, ${Math.round(RODE)} M OF CHAIN`) : K ? (T - K.t0 < 3 ? 'THE DINGHY ROWS THE ANCHOR OUT' : 'PUMP TO HAUL HER OFF') : ship.aground ? 'AGROUND: KEDGE OFF' : 'ANCHOR READY', cx, H - 7, ND, 'center');
+    if (K && T - K.t0 >= 3) dText(`${Math.round(Math.hypot(K.ax - ship.x, K.ay - ship.y))} M TO THE KEDGE`, cx, cy - 18, NA, 'center');
     if (A && A.weigh) dText(`${Math.round(clamp(A.prog || 0, 0, 1) * 100)}%`, cx, cy - 18, NA, 'center');
     return;
   }
@@ -6117,6 +6145,93 @@ function stationUp(P){
 }
 el('rowMain').innerHTML = '<button class="px" id="shakeBtn">SHAKE OUT</button>';
 el('shakeBtn').addEventListener('click', shakeOut);
+// ---------------------------------------------------------------- the first voyage: a walk through everything, at anchor off the coast in a steady breeze
+const twaNow = () => Math.abs(wrap(ship.wind.dir - ship.h)) / DEG;
+const atS = id => atSt(id);
+const leeSheet = () => { const ws = wrap(ship.wind.dir - ship.h) > 0 ? 1 : -1; return ws > 0 ? 'jibP' : 'jibS'; };
+const TUT = [
+  { t: 'Welcome aboard', x: 'You sail the Tramontana alone, lying at anchor off the coast with the wind blowing from the land. The panel at the bottom is what is in reach where you stand. You are at the HELM, aft.', next: true },
+  { t: 'Walk forward', x: 'Tap the arrow to walk forward to the MAINSAIL. Watch yourself go along her deck.', go: 'main', done: () => atS('main') },
+  { t: 'Hoist the main', x: 'Swipe DOWN on the HALYARD rope, again and again, hand over hand. The bar to its right shows how far up the sail is.', hi: 'rope:mainHal', done: () => ship.hM >= 0.55 },
+  { t: 'The winch', x: 'Near the top the halyard gets heavy: the bar on its left turns red. Crank the WINCH: drag round it clockwise until the sail is right up.', hi: 'winch', done: () => ship.hM >= 0.95 },
+  { t: 'The foresail', x: 'Walk forward to the FORESAIL and hoist it the same way: swipe the halyard, then the winch.', go: 'fore', hi: 'rope:foreHal', done: () => ship.hF >= 0.95 },
+  { t: 'The jib', x: 'Now the JIB, right forward. Hoist it. With its sheets slack it will flap free for now.', go: 'jib', hi: 'rope:jibHal', done: () => ship.hJ >= 0.95 },
+  { t: 'Weigh anchor', x: 'All sail is up, flapping, because she lies head to wind on her anchor. Walk to the BOW, tap WEIGH ANCHOR, then pump the windlass lever up and down.', go: 'bow', hiEl: 'anchorBtn', done: () => !ship.anchor },
+  { t: 'To the helm', x: 'She is free and drifting. Walk aft to the HELM, quickly.', go: 'helm', done: () => atS('helm') },
+  { t: 'Bear away', x: 'Turn the WHEEL with your finger, round like a real wheel, so she turns away from the wind. Aim for the wind well behind the side: the arrow on the compass shows where it comes from.', hi: 'wheel', done: () => twaNow() > 95 && twaNow() < 150 && ship.v > 0.8, hold: 1.5 },
+  { t: 'Trim the main', x: 'Look above the MAINSHEET: GOOD, HAUL or EASE. Those are the telltales on the sail. Swipe down to haul, up to ease, until it says GOOD.', hi: 'rope:mainSh', done: () => Math.abs(ship.trimErr) < 5, hold: 1.5 },
+  { t: 'Sheet the jib', x: 'Walk to the JIB. It has two sheets, PORT and STBD; haul in the one on the side away from the wind until it reads GOOD. (Haul the windward one and the jib goes aback: let it fly at its cleat and try the other.)', go: 'jib', hi: 'jibLee', done: () => !ship.jibFree && !ship.aback && Math.abs(ship.trimErrF) < 6, hold: 1 },
+  { t: 'Sheet the foresail', x: 'And the FORESAIL sheet, until GOOD.', go: 'fore', hi: 'rope:foreSh', done: () => Math.abs(ship.trimErrS) < 6, hold: 1 },
+  { t: 'Under way', x: 'Back to the HELM. All three sails drawing, she picks up speed. Get her going at four knots or more.', go: 'helm', done: () => atS('helm') && ship.v > 4 },
+  { t: 'Come about', x: 'Now a tack. Turn the wheel the other way, toward the wind, and keep turning through it. She needs her speed: half-hearted and she stops head to wind.', hi: 'wheel', enter: T_ => { T_.side = Math.sign(wrap(ship.wind.dir - ship.h)); }, done: T_ => { const sd = Math.sign(wrap(ship.wind.dir - ship.h)); if (sd !== T_.side && twaNow() < 100) return true; if (sd !== T_.side) T_.side = sd; return false; } },
+  { t: 'Jib across', x: 'You are through! The jib is ABACK, still sheeted on the old side, pushing her bow round. Walk to the JIB: tap the old sheet\'s cleat to let it fly, then haul in the other one.', go: 'jib', hi: 'jibLee', done: () => !ship.aback && !ship.jibFree && Math.abs(ship.trimErrF) < 8 },
+  { t: 'Settle her', x: 'Back to the HELM and steady her on the new tack, wind on the side or a little behind. Trim the mainsheet to GOOD.', go: 'helm', hi: 'rope:mainSh', done: () => atS('helm') && twaNow() > 55 && twaNow() < 140 && Math.abs(ship.trimErr) < 6, hold: 1.5 },
+  { t: 'Heave to', x: 'To stop at sea and wait, HEAVE TO: jib backed, main eased, wheel lashed. Tap HEAVE TO.', hiEl: 'heaveBtn', done: () => ship.hove },
+  { t: 'Let draw', x: 'She lies quiet, drifting slowly. Tap LET DRAW, or take the wheel, and she sails on.', hiEl: 'heaveBtn', done: () => !ship.hove && ship.v > 1 },
+  { t: 'Reefing', x: 'When it blows hard, reef the main: at the MAINSAIL let the halyard go at its cleat, catch it at the reef band, tap the four reef points along the boom, and hoist again. A gust looks like a dark ruffled patch on the water coming down the wind: ease the mainsheet as it hits.', next: true },
+  { t: 'Harbours', x: 'Coming into harbour: lower the sails well outside (tap each halyard\'s cleat), glide in slowly, and when the bow or stern is close to the yellow kerb, throw a line. Near a harbour the TOW button calls the tug instead. At the BOW you can anchor in any bay.', next: true },
+  { t: 'Off you go', x: 'Your home port, Ravella, is marked on the compass in yellow. The CHART plans a course and skips ahead; the harbours buy and sell. Settings has AUTO TRIM if you would rather the sheets looked after themselves. Fair winds!', next: true, last: true },
+];
+function tutStart(){
+  closePanel(); if (mapOpen) closeMap();
+  moored = null; ship.berth = null; warp = false; tow = null; ship.hold = false; ship.securing = null;
+  // a roadstead off the coast between Positella and Ravella, fifty metres of water, the wind off the land
+  const x = 7400; let y = coastY(x) + 40;
+  while (depthFast(x, y) > -50 && y < coastY(x) + 2500) y += 10;
+  Object.assign(ship, { x, y, h: 0, v: 0, turn: 0, lat: 0, heel: 0, rudder: 0, aground: null, kedge: null, hove: false });
+  ship.wake.length = 0;
+  setSail(0);
+  ship.anchor = { x, y: y - ship.t.L * 0.45 - 30, t0: T, drag: 0 };
+  trimManual = true; setTrimUI(); vaneOn = false; setVaneUI();
+  crew.st = 4; crew.y = 0.40; wheelA = 0; wheelLashed = true;
+  pl.dest = -1;
+  tut = { i: 0, wind: 0, t0: T, okT: 0 };
+  tutEnter();
+}
+function tutEnter(){
+  const S = TUT[tut.i];
+  tut.okT = 0;
+  if (S.enter) S.enter(tut);
+  setText(el('tutStep'), `${tut.i + 1}/${TUT.length}`); setText(el('tutTitle'), S.t); el('tutText').textContent = S.x;
+  el('tutNext').classList.toggle('hidden', !S.next); setText(el('tutNext'), S.last ? 'DONE' : 'NEXT');
+  el('tut').classList.remove('hidden');
+  sfx.tap();
+}
+function tutEnd(){
+  tut = null;
+  el('tut').classList.add('hidden');
+  for (const e of document.querySelectorAll('.tutHi')) e.classList.remove('tutHi');
+  pl.dest = home.id; pl.tips.castoff = 1;
+  save();
+}
+function tutStep(dt){
+  if (!tut) return;
+  const S = TUT[tut.i];
+  // the wind holds steady from the land while you learn
+  // what to point at: the arrow toward the station, a button, or a line on the deck panel
+  const want = S.go ? STATIONS.findIndex(q => q.id === S.go) : -1;
+  const hiEls = new Set();
+  if (want >= 0 && want !== crew.st && !crew.walk) hiEls.add(want < crew.st ? 'stPrev' : 'stNext');
+  if (S.hiEl && (want < 0 || want === crew.st)) hiEls.add(S.hiEl);
+  for (const id of ['stPrev', 'stNext', 'anchorBtn', 'heaveBtn']) el(id).classList.toggle('tutHi', hiEls.has(id));
+  tut.hi = (want < 0 || want === crew.st) && !crew.walk ? (S.hi === 'jibLee' ? 'rope:' + leeSheet() : S.hi) : null;
+  if (S.next || !S.done) return;
+  if (S.done(tut)){ tut.okT += dt; if (tut.okT >= (S.hold || 0)){ sfx.chime(); tut.i++; if (tut.i >= TUT.length) tutEnd(); else tutEnter(); } }
+  else tut.okT = 0;
+}
+// a pulsing ring round what the step wants you to touch
+function tutMark(){
+  if (!tut || !tut.hi) return;
+  const p = 0.5 + 0.5 * Math.sin(performance.now() / 180), c = `rgba(226,196,108,${(0.5 + p * 0.5).toFixed(2)})`;
+  if (tut.hi === 'winch' && DK.winchW) dRing(DK.winchW.x, DK.winchW.y, DK.winchW.r + 3 + p * 2, DK.winchW.r + 4 + p * 2, c);
+  else if (tut.hi === 'wheel' && DK.wheel) dRing(DK.wheel.x, DK.wheel.y, DK.wheel.r + 5 + p * 2, DK.wheel.r + 6 + p * 2, c);
+  else if (tut.hi.startsWith('rope:')){
+    const R = (DK.ropes || []).find(r => r.k === tut.hi.slice(5));
+    if (R){ const x0 = R.x - 11, x1 = R.x + 11, y0 = R.y0 - 7, y1 = R.y1 + 1; dpx(x0, y0, x1 - x0, 1, c); dpx(x0, y1, x1 - x0, 1, c); dpx(x0, y0, 1, y1 - y0, c); dpx(x1, y0, 1, y1 - y0 + 1, c); }
+  }
+}
+el('tutNext').addEventListener('click', () => { if (!tut) return; if (TUT[tut.i].last){ tutEnd(); return; } tut.i++; tutEnter(); });
+el('tutSkip').addEventListener('click', () => { if (!tut) return; if (ship.anchor) ship.anchor = null; tutEnd(); toast('Tutorial skipped. INFO, SETTINGS can replay it.'); });
 function setTrimUI(){
   el('trimWrap').classList.toggle('auto', !trimManual);
   el('winchRow').classList.toggle('hidden', !trimManual);
@@ -6473,7 +6588,7 @@ const sfx = (() => {
 layout();
 const hasSave = load();
 if (hasSave){ el('btnStart').textContent = 'CONTINUE'; el('btnNew').classList.remove('hidden'); }
-else { moored = home; pl.visited[home.name] = 1; notePrices(home); }
+else { pl.visited[home.name] = 1; notePrices(home); }
 setSail(ship.set, true);
 setTrimUI();
 setVaneUI();
@@ -6486,11 +6601,7 @@ el('btnStart').addEventListener('click', () => {
   started = true;
   for (let i = 0; i < 6; i++) updHud();
   if (moored) harbour(moored, 'market', !hasSave);
-  if (!hasSave){
-    tip('castoff', 'Walk forward with the arrows below to the MAINSAIL, and swipe down the halyard to hoist it. Crank the winch for the last of it.');
-    toast('Steer out past the green light on the mole.');
-    toast('Wind on the side is her best point of sail.');
-  }
+  if (!hasSave) tutStart();
 });
 el('btnNew').addEventListener('click', () => {
   try { localStorage.removeItem(SAVE_KEY); } catch (e){}
@@ -6562,7 +6673,7 @@ function frame(now){
 requestAnimationFrame(frame);
 window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
-  get trimManual(){ return trimManual; }, set trimManual(v){ trimManual = v; }, DK, walk: walkTo, crew, haul, ease, cleat, tieReef, pumpStroke, setTrimUI, get winchGear(){ return winchGear; }, helm: v => { helmHeld = v != null; helmTarget = v || 0; }, heaveTo, econ, ecoPrice, GI, GOODS, ecoHour, ecoDay, priceOf, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
+  get trimManual(){ return trimManual; }, set trimManual(v){ trimManual = v; }, DK, tutStart, get tut(){ return tut; }, TUT, walk: walkTo, crew, haul, ease, cleat, tieReef, pumpStroke, setTrimUI, get winchGear(){ return winchGear; }, helm: v => { helmHeld = v != null; helmTarget = v || 0; }, heaveTo, econ, ecoPrice, GI, GOODS, ecoHour, ecoDay, priceOf, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
 </script>
 </body>
