@@ -96,17 +96,19 @@
     #trimRow{ display:flex; gap:8px; align-items:flex-end; }
     #tell{ width:60px; height:52px; image-rendering:pixelated; image-rendering:crisp-edges; border:3px solid #f6ecd6; box-shadow:3px 3px 0 #000a; background:#11283fcc; pointer-events:none; }
     #trim,#trimF{
-      position:relative; width:calc(min(49vw,250px) - 68px); height:22px; background:#11283fcc;
+      position:relative; width:calc(min(49vw,250px) - 68px); height:32px; background:#11283fcc;
       border:3px solid #f6ecd6; box-shadow:3px 3px 0 #000a; touch-action:none;
     }
-    #trim::before,#trimF::before{ content:attr(data-l); position:absolute; right:4px; top:4px; font-size:9px; opacity:.6; pointer-events:none; }
-    #trimKnob,#trimFKnob{ position:absolute; top:2px; width:14px; height:12px; margin-left:-7px; left:30%; background:#f6ecd6; border:3px solid #7a4a24; }
+    #trim::before,#trimF::before{ content:attr(data-l); position:absolute; right:5px; top:9px; font-size:9px; opacity:.6; pointer-events:none; }
+    #trimKnob,#trimFKnob{ position:absolute; top:3px; width:20px; height:20px; margin-left:-10px; left:30%; background:#f6ecd6; border:3px solid #7a4a24; }
     #trimF.aback #trimFKnob{ border-color:#d0402e; }
     #trimWrap.auto #trim,#trimWrap.auto #trimF{ opacity:.55; }
     #heaveBtn{ font-size:10px; padding:4px 8px; }
-    #winchRow{ display:flex; gap:8px; align-items:center; }
-    #winch{ width:60px; height:60px; image-rendering:pixelated; image-rendering:crisp-edges; border:3px solid #f6ecd6; border-radius:50%; box-shadow:3px 3px 0 #000a; background:#11283fcc; touch-action:none; cursor:grab; }
-    .wlab{ display:flex; flex-direction:column; gap:2px; font-size:10px; text-shadow:1px 1px 0 #000; }
+    #acts{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+    #acts .px{ min-height:36px; min-width:96px; }
+    #winchRow{ display:flex; flex-direction:column; gap:3px; align-items:center; }
+    #winch{ width:96px; height:96px; image-rendering:pixelated; image-rendering:crisp-edges; border:3px solid #f6ecd6; border-radius:50%; box-shadow:3px 3px 0 #000a; background:#11283fcc; touch-action:none; cursor:grab; }
+    .wlab{ display:flex; flex-direction:column; align-items:center; gap:1px; font-size:9px; text-shadow:1px 1px 0 #000; }
     .wlab small{ font-size:8px; opacity:.7; }
     #winchSel{ color:#f0cf45; }
     #trim.sel,#trimF.sel{ border-color:#f0cf45; }
@@ -130,12 +132,23 @@
       position:absolute; right:4px; width:44px; height:28px; background:#f6ecd6; border:3px solid #7a4a24;
       box-shadow:2px 2px 0 #000a; transition:top .12s steps(3);
     }
-    #vaneBtn,#anchorBtn,#towBtn,#fishBtn,#heaveBtn{ font-size:10px; padding:4px 8px; }
+    #vaneBtn,#anchorBtn,#towBtn,#fishBtn,#heaveBtn{ font-size:10px; padding:6px 10px; }
     #fishBtn.hot{ background:#b8472e; border-color:#f0cf45; }
     #heaveBtn.on{ background:#7a4a24; border-color:#f0cf45; }
     #anchorBtn.on{ background:#7a4a24; border-color:#f0cf45; }
     #vaneBtn.on{ background:#2f7a6a; border-color:#7fd6c8; }
 
+    @media (max-height: 520px){
+      #right{ flex-direction:row; align-items:flex-end; }
+      /* on its side the ship sits in the middle of a short screen: keep the buttons up under the top bar, clear of her */
+      #acts{ position:fixed; flex-direction:row; flex-wrap:wrap; justify-content:flex-end; top:calc(58px + env(safe-area-inset-top)); right:calc(10px + env(safe-area-inset-right)); max-width:calc(100vw - 300px); gap:6px; }
+      #acts .px{ min-width:84px; min-height:32px; }
+    }
+    @media (max-height: 760px) and (orientation: portrait){
+      #acts{ flex-wrap:wrap-reverse; flex-direction:row; justify-content:flex-end; max-width:200px; gap:6px; }
+      #acts .px{ min-width:94px; }
+      #winch{ width:84px; height:84px; }
+    }
     #actBtn{ position:absolute; left:50%; transform:translateX(-50%); top:calc(50% + 64px); border-color:#f0cf45; white-space:nowrap; }
     #actBtn.warn{ border-color:#f6ecd6; opacity:.85; pointer-events:none; }
 
@@ -227,10 +240,6 @@
   <div id="toast"></div>
   <button class="px hidden" id="actBtn">-</button>
   <div id="left">
-    <div id="winchRow" class="hidden">
-      <canvas id="winch" width="40" height="40"></canvas>
-      <div class="wlab"><span id="winchSel">MAIN</span><span id="winchGear">LOW GEAR</span><small>crank clockwise<br>tap: change gear</small></div>
-    </div>
     <div id="trimRow">
       <canvas id="tell" width="20" height="17"></canvas>
       <div id="trimWrap">
@@ -245,11 +254,17 @@
     </div>
   </div>
   <div id="right">
-    <button class="px hidden" id="heaveBtn">HEAVE TO</button>
-    <button class="px hidden" id="fishBtn">LINES OUT</button>
-    <button class="px hidden" id="towBtn">TOW IN</button>
-    <button class="px" id="anchorBtn">ANCHOR</button>
-    <button class="px hidden" id="vaneBtn">VANE OFF</button>
+    <div id="acts">
+      <button class="px hidden" id="heaveBtn">HEAVE TO</button>
+      <button class="px hidden" id="fishBtn">LINES OUT</button>
+      <button class="px hidden" id="towBtn">TOW IN</button>
+      <button class="px" id="anchorBtn">ANCHOR</button>
+      <button class="px hidden" id="vaneBtn">VANE OFF</button>
+    </div>
+    <div id="winchRow" class="hidden">
+      <canvas id="winch" width="40" height="40"></canvas>
+      <div class="wlab"><span id="winchSel">MAIN</span><span id="winchGear">LOW GEAR</span></div>
+    </div>
     <div id="sails">
       <div class="stop" data-s="4">TOPSAILS</div>
       <div class="stop" data-s="3">FULL SAIL</div>
@@ -2461,7 +2476,7 @@ function collide(a, b){
   if (a !== ship && b !== ship) return;
   const me = a === ship ? a : b, them = a === ship ? b : a, mine = a === ship ? da : db, theirs = a === ship ? db : da;
   const sev = mine / me.t.hull;
-  sfx.crunch(clamp(0.3 + sev * 3 + theirs / 60, 0.3, 1)); shake = Math.min(0.7, shake + impact * 0.06 + sev * 2);
+  buzz(Math.round(60 + sev * 300)); sfx.crunch(clamp(0.3 + sev * 3 + theirs / 60, 0.3, 1)); shake = Math.min(0.7, shake + impact * 0.06 + sev * 2);
   slowUntil = Math.max(slowUntil, T + 1.2);
   // who ran into whom: whoever was closing faster pays for the other's planks
   const mvx = Math.sin(me.h) * me.v, mvy = -Math.cos(me.h) * me.v, tvx = Math.sin(them.h) * them.v, tvy = -Math.cos(them.h) * them.v;
@@ -3028,7 +3043,7 @@ function fishStep(dt){
   const S = FISH[sp], kg = S.kg[0] + (S.kg[1] - S.kg[0]) * Math.pow(Math.random(), 1.8);
   F.bite = { sp, kg, t0: T };
   sfx.reel();
-  toastNow('Fish on! STRIKE!');
+  toastNow('Fish on! STRIKE!'); buzz([40, 40, 40]);
 }
 
 // ---------------------------------------------------------------- panels
@@ -3128,7 +3143,7 @@ function secure(){
   ship.berth = null;
   setSail(0); ship.rudder = 0;
   sfx.rope();
-  toast(E.k > 0 ? 'Bow line ashore! Haul her in.' : 'Stern line ashore! Haul her in.');
+  toast(E.k > 0 ? 'Bow line ashore! Haul her in.' : 'Stern line ashore! Haul her in.'); buzz(20);
 }
 function securingStep(dt = 1 / 60){
   const S = ship.securing;
@@ -5631,6 +5646,7 @@ const trimEl = el('trim'), trimKnob = el('trimKnob');
 let trimHeld = false;
 const trimFEl = el('trimF'), trimFKnob = el('trimFKnob');
 // the sheet winch: easing a sheet is quick, hauling it in takes cranking. high gear is fast but jams under load, low gear always turns
+const buzz = ms => { try { if (navigator.vibrate && !document.hidden) navigator.vibrate(ms); } catch (e){} };
 const winchCv = el('winch'), winchCtx = winchCv.getContext('2d');
 let winchSel = 'main', winchGear = 0, winchAng = 0, winchHeld = false, winchA0 = 0, winchMoved = 0, winchT0 = 0, winchClick = 0, winchJamT = 0;
 const winchLoad = () => { const a = ship.aw.spd || ship.wind.spd; return a * a * ship.sail * (winchSel === 'main' ? 0.55 : 0.45) / 30; };
@@ -5642,7 +5658,7 @@ function winchTurn(dA){
   const key = winchSel === 'main' ? 'trimA' : 'trimF';
   ship[key] = Math.max(0, ship[key] - dA / TAU * k);
   winchAng += dA; winchClick += dA;
-  if (winchClick > 0.5){ winchClick = 0; sfx.ratchet(); }
+  if (winchClick > 0.5){ winchClick = 0; sfx.ratchet(); buzz(6); }
   setTrimUI(); drawWinch();
 }
 function drawWinch(){
