@@ -2971,33 +2971,64 @@ let harbourTab = 'market';
 // the visitors' berth: is she alongside, parallel and slow enough to get her lines ashore?
 let dock = null;
 function dockCheck(P){
-  const Bt = P.visitor, dx = Bt.bx - Bt.ax, dy = Bt.by - Bt.ay, len = Bt.len;
-  const t = ((ship.x - Bt.ax) * dx + (ship.y - Bt.ay) * dy) / (len * len);
-  const gap = (ship.x - Bt.ax) * Bt.ox + (ship.y - Bt.ay) * Bt.oy - ship.t.B / 2;
+  const Bt = P.visitor, dx = Bt.bx - Bt.ax, dy = Bt.by - Bt.ay, len = Bt.len, L = ship.t.L;
+  const fx = Math.sin(ship.h), fy = -Math.cos(ship.h);
+  // each end of her on its own: how far along the berth, how far off the stone
+  const at = k => { const x = ship.x + fx * L * 0.45 * k, y = ship.y + fy * L * 0.45 * k;
+    return { k, x, y, t: ((x - Bt.ax) * dx + (y - Bt.ay) * dy) / (len * len), gap: (x - Bt.ax) * Bt.ox + (y - Bt.ay) * Bt.oy - ship.t.B * 0.22 }; };
+  const ends = [at(1), at(-1)], t = ((ship.x - Bt.ax) * dx + (ship.y - Bt.ay) * dy) / (len * len);
   const bh = Math.atan2(dx, -dy), da = Math.abs(wrap(ship.h - bh)), ang = Math.min(da, Math.PI - da) / DEG;
-  const near = t > -0.4 && t < 1.4 && gap < 30 && gap > -3;
+  const reach = ends.filter(e => e.gap < 6 && e.gap > -3 && e.t > -0.05 && e.t < 1.05).sort((a, b) => a.gap - b.gap)[0];
+  const near = t > -0.4 && t < 1.4 && Math.min(ends[0].gap, ends[1].gap) < 30 && Math.max(ends[0].gap, ends[1].gap) > -6;
   let why = '';
-  if (gap > 3.5) why = 'CLOSER TO THE QUAY';
-  else if (ang > 22) why = 'LIE PARALLEL TO THE QUAY';
-  else if (t < 0.15 || t > 0.85) why = 'MOVE ALONG TO THE BERTH';
-  else if (Math.abs(ship.v) > 1.3) why = 'TOO FAST: LET HER SLOW';
-  return { P, near, ok: near && !why, why, t, gap, dir: da < Math.PI / 2 ? 1 : -1 };
+  if (!reach) why = Math.min(ends[0].t, ends[1].t) > 1.05 || Math.max(ends[0].t, ends[1].t) < -0.05 ? 'MOVE ALONG TO THE BERTH' : 'CLOSER TO THE QUAY';
+  else if (ang > 55) why = 'TURN ALONGSIDE';
+  else if (Math.abs(ship.v) > 1.8) why = 'TOO FAST: LET HER SLOW';
+  return { P, near, ok: near && !why, why, t, end: reach, dir: da < Math.PI / 2 ? 1 : -1 };
 }
-// lines ashore: bow and stern lines go over the bollards and she is warped in snug
+// the first line: thrown from whichever end is close, over a bollard. it snubs her, the crew haul that end in,
+// she swings alongside, the second line goes ashore and she is warped in snug
 function secure(){
   const d = dock;
   if (!d || !d.ok || paused) return;
-  const P = d.P, L = ship.t.L, Bt = P.visitor;
-  const f = clamp(d.t, (L / 2 + 2) / Bt.len, 1 - (L / 2 + 2) / Bt.len);
-  const [x, y, h] = berthPos(Bt, f, ship.t.B, d.dir);
-  ship.securing = { P, t0: T, x0: ship.x, y0: ship.y, h0: ship.h, x, y, h };
-  ship.berth = { pid: P.id, f, dir: d.dir };
+  const P = d.P, Bt = P.visitor, E = d.end, tt = clamp(E.t, 0.03, 0.97);
+  const bx = lerp(Bt.ax, Bt.bx, tt) - Bt.ox * 1.5, by = lerp(Bt.ay, Bt.by, tt) - Bt.oy * 1.5;
+  ship.securing = { P, stage: 'line', k: E.k, bx, by, t0: T, len: Math.hypot(E.x - bx, E.y - by) + 0.5, dir: d.dir };
+  ship.berth = null;
   setSail(0); ship.rudder = 0;
   sfx.rope();
-  toast('Lines ashore!');
+  toast(E.k > 0 ? 'Bow line ashore! Haul her in.' : 'Stern line ashore! Haul her in.');
 }
-function securingStep(){
-  const S = ship.securing, p = clamp((T - S.t0) / 2.5, 0, 1), e = sm(p);
+function securingStep(dt = 1 / 60){
+  const S = ship.securing;
+  if (S.stage === 'line'){
+    const L = ship.t.L, Bt = S.P.visitor;
+    // the line snubs her way off; the crew haul in hand over hand once it is fast
+    ship.v *= Math.pow(0.4, dt); ship.lat *= Math.pow(0.3, dt); ship.turn = 0; ship.heel *= 0.97; ship.sail = Math.max(0, ship.sail - 0.02);
+    if (T - S.t0 > 0.6) S.len = Math.max(1.2, S.len - dt * 1.4);
+    // she swings round on the line until she lies along the stone
+    const bh = Math.atan2(Bt.bx - Bt.ax, -(Bt.by - Bt.ay)) + (S.dir > 0 ? 0 : Math.PI), e = wrap(bh - ship.h);
+    ship.h = norm(ship.h + clamp(e, -1, 1) * dt * 0.55);
+    let fx = Math.sin(ship.h), fy = -Math.cos(ship.h);
+    // the near end holds to the bollard on its line
+    let ex = ship.x + fx * L * 0.45 * S.k, ey = ship.y + fy * L * 0.45 * S.k;
+    ship.x += fx * ship.v * KN * dt; ship.y += fy * ship.v * KN * dt;
+    ex = ship.x + fx * L * 0.45 * S.k; ey = ship.y + fy * L * 0.45 * S.k;
+    const lx = ex - S.bx, ly = ey - S.by, ld = Math.hypot(lx, ly);
+    if (ld > S.len){ const c = (ld - S.len) / ld; ship.x -= lx * c; ship.y -= ly * c; }
+    // and the far end comes in toward the quay as she swings: when it is close, the second line
+    const ox = ship.x - fx * L * 0.45 * S.k, oy = ship.y - fy * L * 0.45 * S.k;
+    const gap = (ox - Bt.ax) * Bt.ox + (oy - Bt.ay) * Bt.oy - ship.t.B * 0.22;
+    if ((S.len < 3 && Math.abs(e) < 8 * DEG && gap < 5) || T - S.t0 > 14){
+      const dx = Bt.bx - Bt.ax, dy = Bt.by - Bt.ay, f = clamp(((ship.x - Bt.ax) * dx + (ship.y - Bt.ay) * dy) / (Bt.len * Bt.len), (L / 2 + 2) / Bt.len, 1 - (L / 2 + 2) / Bt.len);
+      const [x, y, h] = berthPos(Bt, f, ship.t.B, S.dir);
+      ship.securing = { P: S.P, t0: T, x0: ship.x, y0: ship.y, h0: ship.h, x, y, h, first: S };
+      ship.berth = { pid: S.P.id, f, dir: S.dir };
+      sfx.rope(); toast(S.k > 0 ? 'Stern line ashore. Made fast!' : 'Bow line ashore. Made fast!');
+    }
+    return;
+  }
+  const p = clamp((T - S.t0) / 2.5, 0, 1), e = sm(p);
   ship.x = lerp(S.x0, S.x, e); ship.y = lerp(S.y0, S.y, e); ship.h = norm(S.h0 + wrap(S.h - S.h0) * e);
   ship.v = 0; ship.lat = 0; ship.turn = 0; ship.sail = Math.max(0, ship.sail - 0.02);
   if (p >= 1){ ship.securing = null; moor(S.P); }
@@ -3453,7 +3484,7 @@ const GUIDE = [
     <ol><li>Every harbour has a stone <b>mole</b> with a green light on its head. Sail round it into the basin.</li>
     <li>The <b>visitors' berth</b> is the stretch of quay with the <b>yellow kerb</b>. Near the harbour a dashed outline shows where she should lie.</li>
     <li>Come alongside it <b>slowly</b>: furl the sails well out and glide in, <b>parallel</b> to the stone, a few metres off. With little sail up the wind blows her sideways, so use it.</li>
-    <li>When the button says <b>LINES ASHORE</b>, press it: bow and stern lines go over the bollards and she is warped in snug.</li>
+    <li>As soon as her bow or her stern is a few metres from the stone, and she is slow, the button says <b>BOW LINE ASHORE</b> or <b>STERN LINE ASHORE</b>. Throw it: the line goes over a bollard and snubs her, the crew haul that end in, she swings alongside, the second line goes ashore and she is warped in snug.</li>
     <li>Touch the stone gently and the fenders take it. Hit it at more than two knots and the shipwright will be pleased to see you.</li>
     <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, the harbour tug will <b>TOW</b> you out for a few coins. Close off a harbour, close in under the shore, aground, or damaged in a crash, the <b>TOW</b> button calls her out to fetch you.</li>
     <li>Mind the traffic: fishing boats go out at dawn and come back in the afternoon, lamp boats fish at night, coasters and big cargo ships lie at the mole, and the mail steamers keep their timetable whatever the wind.</li>
@@ -3555,7 +3586,7 @@ function update(dt){
   if (warp && vaneOn){ const rel = wrap(ship.wind.dir - ship.h); want = clamp(-wrap(vaneA - rel) * 1.6, -0.6, 0.6); }
   ship.rudder += clamp(want - ship.rudder, -dt * (helmHeld ? 12 : 3), dt * (helmHeld ? 12 : 3));
   ship.grounded = false;
-  if (ship.securing) securingStep();
+  if (ship.securing) securingStep(dt);
   else if (tow && tow.phase !== 'come' && tow.phase !== 'hook') towStep(dt);
   else if (ship.hold){ ship.v *= Math.pow(0.6, dt); ship.turn = 0; ship.lat = 0; ship.heel *= 0.97; if (tow) towStep(dt); }
   else if (tow && (ship.aground || moored)){ towStep(dt); if (ship.aground) groundedStep(dt); }
@@ -3693,9 +3724,9 @@ function update(dt){
   if (!moored && !ship.securing && !ship.aground && !ship.anchor && !tow && !ship.hold) for (const P of ports) if (Math.abs(P.cx - ship.x) < 320 && Math.abs(P.cy - ship.y) < 320){ dock = dockCheck(P); break; }
   nearPort = dock ? dock.P : null;
   if (dock && dock.near){
-    actBtn.textContent = dock.ok ? 'LINES ASHORE' : dock.why;
+    actBtn.textContent = dock.ok ? (dock.end.k > 0 ? 'BOW LINE ASHORE' : 'STERN LINE ASHORE') : dock.why;
     actBtn.className = dock.ok ? 'px' : 'px warn';
-    if (dock.ok) tip('lines', 'Alongside and slow: send your lines ashore.');
+    if (dock.ok) tip('lines', 'Close enough: throw a line from that end. The crew haul her in.');
   } else actBtn.className = 'px hidden';
   if (nearPort) tip('berth' + nearPort.id, `The visitors' berth is the yellow kerb on the quay. Come alongside it slowly, parallel to the stone.`);
   if (pl.dest >= 0 && Math.hypot(ports[pl.dest].cx - ship.x, ports[pl.dest].cy - ship.y) < 600 && !moored) tip('arrive' + pl.dest, `${ports[pl.dest].name} ahead. Furl early and glide in behind the mole.`);
@@ -4599,9 +4630,17 @@ function drawLines(){
     g.fillStyle = C.white; g.fillRect(sx, sy - 1, 1, 1);
     if (ship.kedge && p < 1){ g.fillStyle = C.hullW; g.fillRect(sx - 2, sy, 4, 2); g.fillStyle = C.wood; g.fillRect(sx - 1, sy, 2, 1); }
   }
+  if (ship.securing && ship.securing.stage === 'line'){
+    const S = ship.securing, fx = Math.sin(ship.h), fy = -Math.cos(ship.h), L = ship.t.L;
+    const cx = ship.x + fx * L * 0.42 * S.k, cy = ship.y + fy * L * 0.42 * S.k, p = clamp((T - S.t0) / 0.5, 0, 1);
+    pline(g, cx / MPP - ox, cy / MPP - oy, lerp(cx, S.bx, p) / MPP - ox, lerp(cy, S.by, p) / MPP - oy, C.teakLt);
+    const sx = Math.round(S.bx / MPP - ox), sy = Math.round(S.by / MPP - oy);
+    g.fillStyle = C.black; g.fillRect(sx - 1, sy - 1, 2, 2);
+    return;
+  }
   const P = moored || (ship.securing && ship.securing.P);
   if (P){
-    const p = ship.securing ? clamp((T - ship.securing.t0) / 0.8, 0, 1) : 1;
+    const p = ship.securing ? (ship.securing.first ? 1 : clamp((T - ship.securing.t0) / 0.8, 0, 1)) : 1;
     const fx = Math.sin(ship.h), fy = -Math.cos(ship.h), L = ship.t.L, Bt = P.visitor;
     for (const [k, ahead] of [[0.42, 1], [-0.42, -1]]){
       const cx = ship.x + fx * L * k, cy = ship.y + fy * L * k;
