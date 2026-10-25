@@ -1722,8 +1722,12 @@ function stepShip(s, dt, now = T){
     if (s.surf > 0.5 && s.v > 9.5){ pl.stats.surf++; if (!pl.tips.surf){ tip('surf', 'She is surfing! Keep the wind on the quarter and ride the waves.'); } }
     // gybing: the stern passes through the wind and the boom swings across
     const side = rel > 0 ? 1 : -1;
-    if (s.lastSide && side !== s.lastSide && twa > 120 && s.sail > 0.15) gybe(s, w);
-    s.lastSide = side;
+    // the boom only goes across once the stern is clearly through the wind, and not again straight after
+    s.gybeT = Math.max(0, (s.gybeT || 0) - dt);
+    if (twa < 172 || !s.lastSide){
+      if (s.lastSide && side !== s.lastSide && twa > 120 && s.sail > 0.15 && !s.gybeT) gybe(s, w, side);
+      s.lastSide = side;
+    }
     // knocked down by a gust: she rounds up, canvas flogging
     knockT = Math.max(0, knockT - dt);
     if (s.heel > 42 && !knockT){
@@ -1767,12 +1771,14 @@ function stepShip(s, dt, now = T){
   } else if (s.wake.length) s.wake.length = 0;
 }
 let recordT = 0;
-function gybe(s, w){
+function gybe(s, w, side){
+  s.gybeT = 4;
   const crash = trimManual && s.trimA > 32 && w.spd > 9;
   if (crash){
     const dmg = clamp((w.spd - 9) * 0.01 * s.sail, 0.01, 0.12);
     s.rig = Math.max(0.2, s.rig - dmg);
-    s.turn += (s.lastSide || 1) * 0.25;
+    // the slam swings her up toward the wind on her new side, away from dead downwind
+    s.turn = side * 0.2;
     s.v *= 0.8; shake = 1.2; pl.stats.crash++;
     sfx.gybe(true);
     toast(dmg > 0.04 ? 'Crash gybe! The boom slammed across. Sails damaged.' : 'Crash gybe! The boom slammed across.');
