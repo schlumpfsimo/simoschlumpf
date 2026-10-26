@@ -2609,9 +2609,8 @@ function stepShip(s, dt, now = T){
     rate += Math.sign(rel || 1) * (pm - pf * 0.89) * Math.min(1.5, aws / 12) * 16 * DEG * (0.35 + 0.65 * flow);
   }
   // a long keel: she does not like to swing, and with the wheel lashed she holds the heading you lashed it on
-  rate -= s.turn * 1.0;
   if (mine && wheelLashed && !helmHeld && !wheelHeld && !vaneOn && !s.hove && lashH != null){
-    rate += clamp(wrap(lashH - s.h) * 3.2, -12 * DEG, 12 * DEG) * Math.max(0.5, flow);
+    rate += clamp(wrap(lashH - s.h) * 3.2, -12 * DEG, 12 * DEG) * Math.max(0.5, flow) - s.turn * 1.0;
   }
   // hove to: jib aback, main eased, helm lashed to windward. she lies quietly about fifty degrees off the wind, fore-reaching slowly
   if (s.hove) rate = -Math.sign(rel || 1) * clamp(55 - twa, -25, 25) * 0.5 * DEG;
