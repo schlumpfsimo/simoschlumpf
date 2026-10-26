@@ -693,11 +693,13 @@ const coves = COVE_DEFS.map(c => {
   return { x: c[0], y: coastY(c[0]) - c[1] * 0.6, r: c[1], I: null };
 });
 // a cove's water: depth falls off toward its middle; the beach fills the inner half
-const coveDepth = (Cv, x, y) => (Math.hypot(x - Cv.x, y - Cv.y) - Cv.r + vnoise(x / 60, y / 60, 71) * 9) * 0.35;
+// (beyond the rim the carve climbs fast, so the land outside is left as it was)
+const coveDepth = (Cv, x, y) => { const e = Math.hypot(x - Cv.x, y - Cv.y) - Cv.r + vnoise(x / 60, y / 60, 71) * 9; return e < 0 ? e * 0.35 : e * 2; };
 function coveAt(x, y){
   let d = 1e9;
-  for (const Cv of coves) if (Math.abs(x - Cv.x) < Cv.r + 20 && Math.abs(y - Cv.y) < Cv.r + 20){ const e = coveDepth(Cv, x, y); if (e < d) d = e; }
-  for (const P of ports) if (P.coves) for (const Cv of P.coves) if (Math.abs(x - Cv.x) < Cv.r + 20 && Math.abs(y - Cv.y) < Cv.r + 20){ const e = coveDepth(Cv, x, y); if (e < d) d = e; }
+  // (the slopes run down to a cove from far enough back that the box never shows as a line in the hills)
+  for (const Cv of coves) if (Math.abs(x - Cv.x) < Cv.r + 640 && Math.abs(y - Cv.y) < Cv.r + 640){ const e = coveDepth(Cv, x, y); if (e < d) d = e; }
+  for (const P of ports) if (P.coves) for (const Cv of P.coves) if (Math.abs(x - Cv.x) < Cv.r + 640 && Math.abs(y - Cv.y) < Cv.r + 640){ const e = coveDepth(Cv, x, y); if (e < d) d = e; }
   return d;
 }
 
@@ -731,7 +733,7 @@ let TSRC = null; // which land a depth sample belongs to: null mainland, an isle
 function depthAt(x, y, built = true){
   let d = Math.max(coastY(x) - y, westX(y) - x, x - eastX(y)), src = null;
   for (const I of isles) if (near(I, x, y)){ const e = isleDepth(I, x, y); if (e > d){ d = e; src = I; } }
-  if (d > -70){ const e = coveAt(x, y); if (e < d) d = e; }
+  if (d > -70 && d < 1300){ const e = coveAt(x, y); if (e < d) d = e; }
   for (const R of REEFS) if (Math.abs(x - R.x) < R.r * 1.5 && Math.abs(y - R.y) < R.r * 1.5){ const e = reefDepth(R, x, y); if (e > d){ d = e; src = R; } }
   if (built) for (const P of ports) if (Math.abs(x - P.bx) < 260 && Math.abs(y - P.by) < 260){ const e = structDepth(P, x, y); if (e > d){ d = e; src = P; } }
   TSRC = src;
@@ -1100,6 +1102,25 @@ for (const P of ports){
       house(gx, gy, w, h, false);
     }
     v -= depthM + 1.4 + r() * 1.6;
+  }
+  // a cove town climbs round its bay: houses along both rims, a little way back from the water, thinning toward the mouth
+  if (P.kind === 'cove'){
+    const Cv = P.coves[0], Rc = Cv.r;
+    for (const sd of [-1, 1]) for (let vv = 2; vv < 2 * Rc - 60; vv += 7 + r() * 4){
+      // the rim at this height up the bay, and a row or two of houses outside it
+      const dv = vv - (Rc - 11), half = Math.sqrt(Math.max(0, Rc * Rc - dv * dv));
+      for (let k = 0; k < (vv < Rc ? 3 : 2); k++){
+        if (r() < 0.15 + k * 0.2 + vv / (2 * Rc) * 0.3) continue;
+        const wm = 6 + r() * 6, dm = 6 + r() * 5, u = sd * (half + 9 + k * (dm + 3) + r() * 3);
+        const [x, y] = P.W(u, vv);
+        if (!onLand(x, y, 5, 270)) continue;
+        const w = Math.round(wm / MPP), h = Math.round(dm / MPP), gx = Math.round(x / MPP - w / 2), gy = Math.round(y / MPP - h / 2);
+        if (hits(gx, gy, w, h, 1)) continue;
+        house(gx, gy, w, h, false);
+      }
+    }
+    // steps down to the water here and there, and a chapel on the point
+    for (const sd of [-1, 1]) for (let vv = 30; vv < 2 * Rc - 80; vv += 50 + r() * 30){ const dv = vv - (Rc - 11), half = Math.sqrt(Math.max(0, Rc * Rc - dv * dv)); const [x, y] = P.W(sd * (half + 3), vv); if (onLand(x, y, 1, 60)) P.cafes.push({ gx: Math.round(x / MPP), gy: Math.round(y / MPP), col: ['white', 'red', 'gold', 'domeB'][(r() * 4) | 0] }); }
   }
   // and fill the gaps nearer the water, where the town is densest
   for (let k = 0; k < 1500; k++){
@@ -3929,8 +3950,8 @@ function cabinCook(){
   } else if (pl.cargo.grain){ takeCargo('grain', 1); what = 'Pasta from the hold, a little oil, the last of the lemons. Simple and perfect, eaten off your knees with the lamp swinging.'; }
   else if (pl.cargo.lemons && pl.cargo.oil){ takeCargo('lemons', 1); what = 'Bread rubbed with oil, a lemon squeezed over it, salt. Breakfast of the whole coast.'; }
   else what = 'Ship\'s biscuit, an onion and a piece of hard cheese from the locker. It does.';
-  cabin.cookT = T; pl.fed = T + 0.7 * DAY; pl.stats.meals = (pl.stats.meals || 0) + 1;
-  cabinSay(what + '<br><small>Well fed: for the rest of the day there is more strength in your arms on the halyards and the windlass.</small>');
+  cabin.cookT = T; pl.stats.meals = (pl.stats.meals || 0) + 1;
+  cabinSay(what);
   sfx.hammer(); buzz(10);
 }
 function cabinWine(){
@@ -4421,7 +4442,7 @@ const GUIDE = [
     <li>He also fits <b>topsails</b>, <b>new canvas</b>, <b>copper</b>, a <b>bigger hold</b>, a <b>wind vane</b> that steers for you, and a <b>barometer</b>.</li></ol>`],
   ['The cabin', () => `
     <ol><li>At anchor or alongside, the HELM has a <b>CABIN</b> button (ashore, GO BELOW from your ship). Below is the galley, the table, the bookshelf and your bunk.</li>
-    <li><b>COOK</b> a supper from the catch or the hold: well fed, you have more strength on the halyards and the windlass for the rest of the day.</li>
+    <li><b>COOK</b> a supper from the catch or the hold, for no reason but that it is supper time.</li>
     <li><b>A glass of wine</b> is a glass of wine. The wheel feels a little loose for an hour.</li>
     <li><b>READ</b> the pilot book: a page on every harbour, and the log of your own voyage at the back.</li>
     <li><b>SLEEP</b> till morning, or a siesta in the heat of the day. At anchor, a gale will wake you: the anchor drags.</li></ol>`],
@@ -6785,8 +6806,7 @@ function haul(k, d, winch){
   if (d > 4){ let q = 0; for (let r = d; r > 0; r -= 4) q += haul(k, Math.min(4, r), winch); return q; }
   const R = ROPES[k], s = ship, L = ropeLoad(k);
   if (R.need && !upOf(s, R.need)){ toastNow('No topsail yet. The shipwright can fit one.'); return 0; }
-  const fed = pl.fed > T ? 1.15 : 1;
-  const eff = (winch ? 1 : R.hal ? clamp(1.6 - L * 0.55, 0.008, 1) : R.sheet ? 1 / (1 + L * 0.35) : clamp(1.5 - L * 0.7, 0.01, 1)) * fed;
+  const eff = winch ? 1 : R.hal ? clamp(1.6 - L * 0.55, 0.008, 1) : R.sheet ? 1 / (1 + L * 0.35) : clamp(1.5 - L * 0.7, 0.01, 1);
   if (!winch && eff < 0.12 && d > 0.5 && T > (haul.warnT || 0)){ haul.warnT = T + 5; toastNow(ST_WINCH[STATIONS[crew.st].id] ? 'Too heavy by hand. Take it to the winch and crank.' : 'Too heavy: bear away a little to take the weight off.'); }
   const q = d * eff;
   if (R.hal){
@@ -6845,7 +6865,7 @@ function pumpStroke(){
   const A = ship.anchor;
   if (!A){ return; }
   if (!A.weigh){ A.weigh = T; toastNow('Weighing: pump the windlass.'); }
-  A.work = (A.work || 0) + (pl.fed > T ? 0.8 : 0.7);
+  A.work = (A.work || 0) + 0.7;
   sfx.chain(true); buzz(15);
 }
 // drawing the lines: a rope you swipe down to haul, hold to ease; the cleat at its foot to let go
