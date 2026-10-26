@@ -4018,13 +4018,24 @@ function drawCabin(){
   const PINE = '#9a6b3a', PINE2 = '#8a5d30', SEAM = '#5a3a1c', OAK = '#5e3d1e', OAKDK = '#3e2814', BRASS = '#c9a43a', BRASSDK = '#8a6a20', IRON = '#2a2a2e';
   const deckY = 13, soleY = H - 13;
   const man = (x, y, face, sit) => {
-      // straw hat, striped shirt, dark trousers, bare feet; drawn from the hat down, standing (18 tall) or sitting (14)
-      R(x - 4, y, 8, 1, '#e8c97a'); R(x - 2, y - 2, 4, 2, '#e8c97a'); P1(x - 2, y - 1, '#b8944a');
-      R(x - 2, y + 1, 4, 3, '#e2a97c'); P1(x + face * 1, y + 2, '#3e2814');
-      for (let j = 0; j < 6; j++) R(x - 3, y + 4 + j, 6, 1, j % 2 ? '#f4f1e8' : '#25406a');
-      R(x - 5, y + 5, 2, 4, '#f4f1e8'); R(x + 3, y + 5, 2, 4, '#f4f1e8'); R(x - 5 + face * 1, y + 9, 2, 1, '#e2a97c'); R(x + 3 + face * 1, y + 9, 2, 1, '#e2a97c');
-      if (sit){ R(x - 3, y + 10, 6, 2, '#1d2b44'); R(x - 4 + face * 4, y + 10, 3, 4, '#1d2b44'); R(x - 4 + face * 4, y + 14, 3, 1, '#e2a97c'); }
-      else { R(x - 3, y + 10, 3, 7, '#1d2b44'); R(x, y + 10, 3, 7, '#1d2b44'); R(x - 3, y + 17, 3, 1, '#e2a97c'); R(x, y + 17, 3, 1, '#e2a97c'); }
+      // you, to the scale of the saloon: a yard and three quarters of sailor under a straw hat, striped shirt, dark trousers, bare feet.
+      // x is the middle, y the top of the hat; standing is 50 tall, sitting 38
+      const f = face;
+      R(x - 9, y + 3, 18, 2, '#e8c97a'); R(x - 5, y, 10, 3, '#e8c97a'); R(x - 5, y + 2, 10, 1, '#b8944a');
+      R(x - 4, y + 5, 8, 7, '#e2a97c'); R(x - 4, y + 5, 8, 1, '#c98d64'); R(x + f * 2, y + 7, 1, 1, '#3e2814'); R(x + f * 3 - 1, y + 10, 3, 1, '#b8705a');
+      R(x - 2, y + 12, 4, 2, '#e2a97c');
+      for (let k = 0; k < 16; k++) R(x - 7, y + 14 + k, 14, 1, (k >> 1) % 2 ? '#25406a' : '#f4f1e8');
+      R(x - 11, y + 15, 4, 12, '#f4f1e8'); R(x + 7, y + 15, 4, 12, '#f4f1e8'); R(x - 11, y + 17, 4, 1, '#25406a'); R(x + 7, y + 17, 4, 1, '#25406a'); R(x - 11, y + 21, 4, 1, '#25406a'); R(x + 7, y + 21, 4, 1, '#25406a');
+      R(x - 11 + f * 2, y + 27, 4, 3, '#e2a97c'); R(x + 7 + f * 2, y + 27, 4, 3, '#e2a97c');
+      R(x - 7, y + 30, 14, 2, '#1d2b44');
+      if (sit){
+        // thighs out to the front, shins down, feet on the sole
+        R(x - 7 + (f > 0 ? 0 : -6), y + 30, 13, 4, '#1d2b44'); R(x - 7 + (f > 0 ? 9 : -6), y + 34, 4, 5, '#1d2b44'); R(x - 7 + (f > 0 ? 3 : -2), y + 34, 4, 5, '#1d2b44');
+        R(x - 7 + (f > 0 ? 9 : -8), y + 39, 5, 2, '#e2a97c'); R(x - 7 + (f > 0 ? 3 : -4), y + 39, 5, 2, '#e2a97c');
+      } else {
+        R(x - 7, y + 32, 6, 15, '#1d2b44'); R(x + 1, y + 32, 6, 15, '#1d2b44'); R(x - 6, y + 40, 4, 1, '#2d3f5e'); R(x + 2, y + 40, 4, 1, '#2d3f5e');
+        R(x - 8 + f, y + 47, 7, 3, '#e2a97c'); R(x + 1 + f, y + 47, 7, 3, '#e2a97c');
+      }
     };
   const pose = T - cabin.sleepT < 0.05 * HOUR ? 'sleep' : cabin.page >= 0 ? 'read' : T - cabin.wineT < 0.12 * HOUR ? 'wine' : T - cabin.cookT < 0.25 * HOUR ? 'cook' : 'chart';
   const bob = Math.round(Math.sin(T * 2.2) * 0.6);
@@ -4075,7 +4086,7 @@ function drawCabin(){
     if (cooking){ R(gx + 14, gy - 2, 9, 3, '#2a2a2e'); R(gx + 15, gy - 3, 7, 2, '#e8902e'); R(gx + 23, gy - 2, 3, 1, '#2a2a2e'); for (let k = 0; k < 5; k++){ const a = (T * 0.7 + k * 0.31) % 1; R(gx + 15 + k * 1.6 + Math.sin(T * 3 + k) * 1.5, gy - 5 - a * 16, 1, 2, `rgba(240,240,240,${(1 - a) * 0.8})`); } R(gx + 6, gy + 5, 4, 3, '#e0705c'); R(gx + 15, gy + 5, 6, 3, '#e0705c'); }
     R(gx + 28, gy + 2, 8, 15, OAK); R(gx + 29, gy + 3, 6, 13, '#7a4a24'); R(gx + 29, gy + 8, 6, 1, IRON); R(gx + 29, gy + 12, 6, 1, IRON);
   }
-  if (pose === 'chart') man(W * 0.47 + 14 + 16, soleY - 34 + bob, 1, false);
+  if (pose === 'chart') man(W * 0.47 + 14 + 18, soleY - 50 + bob, 1, false);
   // the chart table: the chart under its fiddle, dividers and the parallel rule, the log and a pencil, the bottle in its rack and the glass
   { const tx = W * 0.47 + 14, ty = soleY - 22, tw = 44;
     R(tx, ty, tw, 3, OAK); R(tx, ty, tw, 1, '#e0b880'); R(tx + 2, ty + 3, 3, 19, OAKDK); R(tx + tw - 5, ty + 3, 3, 19, OAKDK); R(tx + 2, ty + 12, tw - 4, 1, OAKDK);
@@ -4117,7 +4128,7 @@ function drawCabin(){
     R(sx - 2, ky, 40, 10, '#2f6fa8'); R(sx - 2, ky, 40, 3, '#f4f1e8'); for (let k = 0; k < 40; k += 4) R(sx - 2 + k, ky + 5, 2, 1, '#2a5c8a');
     R(sx - 2, ky + 10, 40, 1, '#d6caab'); for (let k = 0; k < 40; k += 8) P1(sx + k, ky + 11, BRASSDK);
     const sleeping = T - cabin.sleepT < 0.05 * HOUR;
-    if (sleeping){ R(sx + 6, ky + 1, 28, 8, '#2f6fa8'); R(sx + 3, ky, 6, 5, '#e2a97c'); R(sx + 3, ky - 1, 6, 2, '#3e2814'); }
+    if (sleeping){ R(sx + 8, ky, 30, 10, '#2f6fa8'); R(sx + 10, ky - 1, 26, 2, '#3a7ab8'); R(sx + 1, ky - 1, 8, 7, '#e2a97c'); R(sx + 1, ky - 3, 8, 3, '#3e2814'); R(sx + 3, ky + 2, 1, 1, '#3e2814'); }
     else { R(sx + 26, ky + 3, 9, 4, '#6d6a66'); R(sx + 33, ky + 2, 4, 3, '#6d6a66'); P1(sx + 34, ky + 2, '#e8b84a'); P1(sx + 36, ky + 2, '#e8b84a'); R(sx + 24, ky + 5, 3, 1, '#6d6a66'); }
   }
   // the companionway: steps up to the hatch and the daylight, oilskins and a sou'wester on their hooks beside it, sea boots on the sole
@@ -4130,9 +4141,9 @@ function drawCabin(){
   // and you: on the bunk with the book, at the table with the glass, at the stove when the pan is on, in the bunk asleep, else bent over the chart
   {
     if (pose === 'sleep'){ /* in the bunk, drawn there */ }
-    else if (pose === 'read'){ man(W - 60 + 12, soleY - 28, 1, true); R(W - 60 + 16, soleY - 19, 7, 5, '#f0e3c2'); R(W - 60 + 19, soleY - 19, 1, 5, '#8f8676'); }
-    else if (pose === 'wine'){ man(W * 0.47 + 14 - 9, soleY - 28, 1, true); R(W * 0.47 + 14 - 4, soleY - 20, 3, 3, '#d8e6ea'); }
-    else if (pose === 'cook') man(6 + 30, soleY - 18 + bob, -1, false);
+    else if (pose === 'read'){ man(W - 60 + 10, soleY - 52, 1, true); R(W - 60 + 17, soleY - 30, 12, 8, '#f0e3c2'); R(W - 60 + 22, soleY - 30, 1, 8, '#8f8676'); for (let k = 0; k < 3; k++){ R(W - 60 + 18, soleY - 28 + k * 2, 3, 1, '#9f9686'); R(W - 60 + 24, soleY - 28 + k * 2, 3, 1, '#9f9686'); } }
+    else if (pose === 'wine'){ const qx = W * 0.47 + 14 - 12; R(qx - 7, soleY - 9, 14, 2, '#5e3d1e'); R(qx - 6, soleY - 7, 2, 7, '#3e2814'); R(qx + 4, soleY - 7, 2, 7, '#3e2814'); man(qx, soleY - 41, 1, true); R(W * 0.47 + 14 - 2, soleY - 22, 4, 6, '#d8e6ea'); R(W * 0.47 + 14 - 1, soleY - 18, 2, 2, '#c9a43a'); }
+    else if (pose === 'cook') man(6 + 34, soleY - 50 + bob, -1, false);
   }
   // the sole: planks fore and aft, a brass ring over the bilge hatch, a coil of line, the rug under the table
   // the sole: planks fore and aft, a brass ring over the bilge hatch, a coil of line, the rug under the table
