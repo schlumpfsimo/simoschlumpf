@@ -118,7 +118,7 @@
     #cabinHead{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 8px 4px; }
     #cabinHead .px{ background:transparent; border:1px solid #d5dbe299; box-shadow:none; color:#d5dbe2; border-radius:3px; min-width:58px; min-height:28px; font-size:10px; padding:3px 8px; }
     #cabinHead span{ min-width:58px; }
-    #cabinCv{ flex:0 0 auto; width:100%; height:40%; image-rendering:pixelated; image-rendering:crisp-edges; border-top:1px solid #d5dbe222; border-bottom:1px solid #d5dbe222; }
+    #cabinCv{ flex:0 0 auto; width:100%; height:50%; image-rendering:pixelated; image-rendering:crisp-edges; border-top:1px solid #d5dbe222; border-bottom:1px solid #d5dbe222; }
     #cabinText{ flex:1 1 auto; min-height:0; overflow:auto; padding:6px 10px; }
     #cabinText b{ color:#fff; font-weight:normal; letter-spacing:1px; }
     #cabinText small{ opacity:.6; font-size:8px; }
@@ -4006,68 +4006,121 @@ pEl('cabinBtns').addEventListener('click', e => {
   else if (a === 'shelf') cabinSay('The book goes back on the shelf.'); else if (a === 'sleep') cabinSleep(false); else if (a === 'gale') cabinSleep(true);
 });
 pEl('cabinUp').addEventListener('click', cabinClose);
-// the scene: planked bulkheads, the galley to port, the table under the lamp, the shelf and the bunk to starboard, two portholes on the day outside
+// the scene: the starboard side of her saloon, looking across. deck beams overhead with a skylight, the mast coming down
+// through the middle, curved frames and planking along the side with two portholes, the galley forward (left), the chart
+// table under the lamp, the bookshelf, bunk and companionway ladder aft (right); everything fiddled and hung so the sea cannot throw it
 function drawCabin(){
-  const r = cabinCv.getBoundingClientRect(), W = Math.max(80, Math.round(r.width / 2)), H = Math.max(40, Math.round(r.height / 2));
+  const r = cabinCv.getBoundingClientRect(), W = Math.max(80, Math.round(r.width / 2)), H = Math.max(60, Math.round(r.height / 2));
   if (cabinCv.width !== W || cabinCv.height !== H){ cabinCv.width = W; cabinCv.height = H; }
   const g = cctx, R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
-  const night = nightF, sky = skyTint();
-  // planking: varnished pine, darker seams, a beam along the deckhead
-  for (let y = 0; y < H; y += 5){ R(0, y, W, 5, y % 10 ? '#8a5a2e' : '#935f31'); R(0, y + 4, W, 1, '#5a3a1c'); }
-  R(0, 0, W, 4, '#4a2e14'); R(0, 4, W, 1, '#2e1c0c');
-  R(0, H - 12, W, 12, '#3a2412'); for (let x = 0; x < W; x += 9) R(x, H - 12, 1, 12, '#2a180a');
-  R(W * 0.3, H - 10, W * 0.4, 7, '#7a2a2a'); for (let x = W * 0.3; x < W * 0.7; x += 4) R(x, H - 8, 2, 3, '#c0392b');
-  // portholes: brass rings, the sky and sea of the hour outside, rain streaks in a gale
-  const skyC = `rgb(${sky.top ? sky.top.join(',') : '140,190,230'})`;
-  for (const px of [W * 0.22, W * 0.78]){
-    const py = 16, pr = 7;
-    g.fillStyle = '#b08a3a'; g.beginPath(); g.arc(px, py, pr + 2, 0, TAU); g.fill();
-    g.fillStyle = `rgb(${Math.round(120 * (1 - night) + 20)},${Math.round(180 * (1 - night) + 30)},${Math.round(230 * (1 - night) + 70)})`; g.beginPath(); g.arc(px, py, pr, 0, TAU); g.fill();
-    g.fillStyle = `rgb(${Math.round(26 * (1 - night) + 8)},${Math.round(90 * (1 - night) + 20)},${Math.round(148 * (1 - night) + 50)})`; g.beginPath(); g.arc(px, py, pr, 0.15 + Math.sin(T * 1.3) * 0.08, Math.PI - 0.15 + Math.sin(T * 1.3) * 0.08); g.fill();
-    if (weatherAt(T).rain > 0.1) for (let k = 0; k < 5; k++){ const a = (T * 3 + k * 1.7) % 1; R(px - 5 + k * 2.5, py - 6 + a * 10, 1, 2, '#e4f5f4'); }
-    for (let k = 0; k < 4; k++) R(px + Math.cos(k * Math.PI / 2 + 0.78) * (pr + 1) - 0.5, py + Math.sin(k * Math.PI / 2 + 0.78) * (pr + 1) - 0.5, 1, 1, '#e8c97a');
-    void skyC;
+  const P1 = (x, y, c) => R(x, y, 1, 1, c);
+  const night = nightF, Wx = weatherAt(T), rain = Wx.rain;
+  const PINE = '#9a6b3a', PINE2 = '#8a5d30', SEAM = '#5a3a1c', OAK = '#5e3d1e', OAKDK = '#3e2814', BRASS = '#c9a43a', BRASSDK = '#8a6a20', IRON = '#2a2a2e';
+  const deckY = 13, soleY = H - 13;
+  // the side: planks running fore and aft between the frames, lighter high up where the lamp and the day reach them
+  for (let y = deckY; y < soleY; y += 4){ const k = (y - deckY) / (soleY - deckY); R(0, y, W, 4, k < 0.5 ? PINE : PINE2); R(0, y + 3, W, 1, SEAM); }
+  // the frames: ribs every so often, curving in toward the sole
+  for (let x = 6; x < W; x += 23){ const bow = Math.sin((x / W) * Math.PI) * 0; for (let y = deckY; y < soleY; y++){ const k = (y - deckY) / (soleY - deckY); P1(x + Math.round(bow + k * k * 2), y, OAK); P1(x + 1 + Math.round(bow + k * k * 2), y, OAKDK); } }
+  // the deckhead: beams athwartships, the planking of the deck above between them, a skylight amidships
+  R(0, 0, W, deckY, '#3a2412'); for (let x = 0; x < W; x += 3) R(x, 0, 1, deckY, '#2e1c0c');
+  for (let x = 2; x < W; x += 23){ R(x - 1, deckY - 5, 5, 5, OAK); R(x - 1, deckY - 1, 5, 1, OAKDK); }
+  R(0, deckY - 1, W, 1, OAKDK);
+  { const sx = W * 0.5 - 16; R(sx, 2, 32, 9, BRASSDK); R(sx + 1, 3, 30, 7, BRASS);
+    const dayC = `rgb(${Math.round(150 * (1 - night) + 16)},${Math.round(195 * (1 - night) + 28)},${Math.round(235 * (1 - night) + 60)})`;
+    for (let k = 0; k < 3; k++) R(sx + 2 + k * 10, 4, 8, 5, dayC);
+    if (rain > 0.1) for (let k = 0; k < 6; k++) P1(sx + 3 + ((k * 7 + Math.floor(T * 9)) % 27), 4 + ((k * 3 + Math.floor(T * 11)) % 5), '#e4f5f4');
+    if (night > 0.4 && rain < 0.1) P1(sx + 20, 5, '#fff3c4');
   }
-  // the galley: a black stove on a brass rail, a kettle, pans on hooks; cooking, a pan steams
-  const gx = 8, gy = H - 36;
-  R(gx, gy + 8, 26, 18, '#1a1816'); R(gx + 1, gy + 9, 24, 16, '#2a2a2e'); R(gx, gy + 6, 26, 2, '#b08a3a');
-  R(gx + 3, gy + 12, 6, 6, '#141210'); R(gx + 14, gy + 12, 8, 6, '#141210');
-  R(gx + 4, gy + 2, 8, 6, '#6d6a66'); R(gx + 5, gy, 1, 2, '#6d6a66'); R(gx + 11, gy + 1, 3, 1, '#6d6a66');
-  for (let k = 0; k < 3; k++){ R(gx + 2 + k * 8, 8, 1, 4, '#2a2a2e'); R(gx + k * 8, 12, 5, 3, k ? '#8a8a90' : '#b87333'); }
-  const cooking = T - cabin.cookT < 0.2 * HOUR;
-  if (cooking){ R(gx + 14, gy + 9, 8, 3, '#2a2a2e'); R(gx + 15, gy + 8, 6, 2, '#e8902e'); for (let k = 0; k < 4; k++){ const a = (T * 0.8 + k * 0.37) % 1; R(gx + 15 + k * 2 + Math.sin(T * 3 + k) * 1.5, gy + 6 - a * 14, 1, 2, `rgba(240,240,240,${(1 - a) * 0.8})`); } R(gx + 4, gy + 12, 3, 3, '#e0705c'); }
-  // the table under the lamp: the chart, a bottle and a glass; the lamp swings with the boat
-  const tx = W * 0.5, ty = H - 26;
-  R(tx - 22, ty, 44, 3, '#5a3a1c'); R(tx - 20, ty + 3, 3, 12, '#4a2e14'); R(tx + 17, ty + 3, 3, 12, '#4a2e14');
-  R(tx - 18, ty - 1, 20, 1, '#f0e3c2'); R(tx - 17, ty - 4, 18, 3, '#f0e3c2'); R(tx - 14, ty - 3, 8, 1, '#bfd6d2'); R(tx - 6, ty - 3, 3, 1, '#e2c68e');
-  R(tx + 8, ty - 9, 3, 9, '#2f6f3a'); R(tx + 9, ty - 11, 1, 2, '#2f6f3a'); R(tx + 8, ty - 7, 3, 2, '#f0e3c2');
-  const drinking = T - cabin.wineT < 0.1 * HOUR, fill = drinking ? 3 : T - cabin.wineT < HOUR ? 1 : 0;
-  R(tx + 13, ty - 6, 4, 6, '#d8e6ea'); if (fill) R(tx + 14, ty - fill, 2, fill, '#c9a43a'); R(tx + 14, ty - 1, 2, 1, '#d8e6ea');
-  const heelK = (ship.heel || 0) * 0.02 + Math.sin(T * 1.7) * 0.06 * (moored ? 0.2 : 1);
-  cabin.lampV += (heelK - cabin.lampA) * 0.4 - cabin.lampV * 0.3; cabin.lampA += cabin.lampV * 0.5;
-  const lx = tx + Math.sin(cabin.lampA) * 14, ly = 5 + Math.cos(cabin.lampA) * 14;
-  g.strokeStyle = '#b08a3a'; g.lineWidth = 1; g.beginPath(); g.moveTo(tx, 4); g.lineTo(lx, ly); g.stroke();
-  R(lx - 3, ly, 6, 2, '#b08a3a'); R(lx - 2, ly + 2, 4, 5, night > 0.3 ? '#fff3c4' : '#ffd77a'); R(lx - 3, ly + 7, 6, 1, '#b08a3a');
-  if (night > 0.3){ g.fillStyle = 'rgba(255,215,122,0.08)'; g.beginPath(); g.arc(lx, ly + 10, 26, 0, TAU); g.fill(); }
-  // the shelf of books, the clock, and the bunk with its blanket; the ship's cat asleep on it
-  const sx = W - 42;
-  R(sx, 10, 36, 1, '#5a3a1c'); R(sx, 18, 36, 1, '#5a3a1c');
-  const SP = ['#9e2f25', '#2f6fa8', '#2f8f6e', '#e8b84a', '#6d4a2e', '#c0392b', '#1f3a5f', '#d8e6ea', '#9e2f25', '#2f6fa8'];
-  for (let k = 0, x = sx + 1; x < sx + 34; k++){ const w = 2 + (k % 3); R(x, 11 - (k % 2), w, 7 + (k % 2), SP[k % SP.length]); x += w + 1; }
-  g.fillStyle = '#b08a3a'; g.beginPath(); g.arc(sx + 18, 26, 5, 0, TAU); g.fill(); g.fillStyle = '#f0e3c2'; g.beginPath(); g.arc(sx + 18, 26, 4, 0, TAU); g.fill();
-  const hr = hourOf(T), ha = (hr % 12) / 12 * TAU, ma = (hr % 1) * TAU;
-  g.strokeStyle = '#141210'; g.lineWidth = 1; g.beginPath(); g.moveTo(sx + 18, 26); g.lineTo(sx + 18 + Math.sin(ha) * 2.2, 26 - Math.cos(ha) * 2.2); g.stroke(); g.beginPath(); g.moveTo(sx + 18, 26); g.lineTo(sx + 18 + Math.sin(ma) * 3.2, 26 - Math.cos(ma) * 3.2); g.stroke();
-  R(sx - 2, H - 30, 40, 18, '#4a2e14'); R(sx - 1, H - 29, 38, 16, '#7a4a24'); R(sx, H - 28, 36, 12, '#2f6fa8'); R(sx, H - 28, 36, 3, '#f4f1e8');
-  const sleeping = T - cabin.sleepT < 0.05 * HOUR;
-  if (sleeping){ R(sx + 6, H - 26, 26, 8, '#2f6fa8'); R(sx + 4, H - 27, 6, 5, '#e2a97c'); }
-  else { R(sx + 24, H - 24, 8, 4, '#6d6a66'); R(sx + 30, H - 25, 3, 3, '#6d6a66'); R(sx + 31, H - 25, 1, 1, '#e8b84a'); }
-  // a lifebelt and the barometer on the forward bulkhead
-  g.strokeStyle = '#f4f1e8'; g.lineWidth = 2; g.beginPath(); g.arc(W * 0.36, 16, 5, 0, TAU); g.stroke(); g.strokeStyle = '#c0392b'; g.beginPath(); g.arc(W * 0.36, 16, 5, 0.3, 1.2); g.stroke(); g.beginPath(); g.arc(W * 0.36, 16, 5, 3.4, 4.3); g.stroke();
-  g.fillStyle = '#b08a3a'; g.beginPath(); g.arc(W * 0.64, 16, 5, 0, TAU); g.fill(); g.fillStyle = '#f0e3c2'; g.beginPath(); g.arc(W * 0.64, 16, 4, 0, TAU); g.fill();
-  const bar = nextStorm(T, 12) ? -0.9 : weatherAt(T).rain > 0.1 ? -1.2 : 0.4 - weatherAt(T).haze * 0.6;
-  g.strokeStyle = '#141210'; g.beginPath(); g.moveTo(W * 0.64, 16); g.lineTo(W * 0.64 + Math.sin(bar) * 3, 16 - Math.cos(bar) * 3); g.stroke();
+  // portholes: a brass rim, the sea and sky of the hour, the dogs that screw them shut; spray runs down the glass in a blow
+  for (const px of [W * 0.3, W * 0.56]){
+    const py = deckY + 14, pr = 7;
+    g.fillStyle = BRASSDK; g.beginPath(); g.arc(px, py, pr + 3, 0, TAU); g.fill();
+    g.fillStyle = BRASS; g.beginPath(); g.arc(px, py, pr + 2, 0, TAU); g.fill();
+    g.fillStyle = `rgb(${Math.round(130 * (1 - night) + 18)},${Math.round(185 * (1 - night) + 30)},${Math.round(232 * (1 - night) + 68)})`; g.beginPath(); g.arc(px, py, pr, 0, TAU); g.fill();
+    const tilt = Math.sin(T * 1.3) * 0.08 + (ship.heel || 0) * 0.006;
+    g.fillStyle = `rgb(${Math.round(26 * (1 - night) + 6)},${Math.round(90 * (1 - night) + 18)},${Math.round(148 * (1 - night) + 48)})`; g.beginPath(); g.arc(px, py, pr, 0.1 + tilt, Math.PI - 0.1 + tilt); g.fill();
+    if (night > 0.5) P1(px + 3, py - 4, '#fff3c4');
+    if ((ship.sea || 0) > 1.2 || rain > 0.1) for (let k = 0; k < 4; k++){ const a = (T * 2.5 + k * 1.3) % 1; P1(px - 4 + k * 2.6, py - 6 + a * 11, '#e4f5f4'); }
+    for (let k = 0; k < 4; k++){ const a = k * Math.PI / 2 + 0.78; R(px + Math.cos(a) * (pr + 2) - 1, py + Math.sin(a) * (pr + 2) - 1, 2, 2, BRASSDK); }
+  }
+  // the mast comes down through the saloon: a fat varnished spar with its partners at the deckhead and a pin rail with coiled halyards
+  { const mx = W * 0.47, mw = 7;
+    R(mx - mw / 2 - 2, deckY - 3, mw + 4, 5, OAK); R(mx - mw / 2 - 2, deckY + 1, mw + 4, 1, OAKDK);
+    for (let y = deckY; y < soleY; y++){ R(mx - mw / 2, y, mw, 1, y % 7 === 0 ? '#9c6a32' : '#b9773a'); P1(mx - mw / 2, y, '#8a5a22'); P1(mx + mw / 2 - 1, y, '#e0b880'); }
+    R(mx - mw / 2 - 1, soleY - 3, mw + 2, 3, OAKDK);
+    R(mx - 9, deckY + 22, 18, 2, OAK); for (const dx of [-7, -3, 1, 5]){ R(mx + dx, deckY + 20, 1, 5, '#e0b880'); for (let a = 0; a < 6; a++) P1(mx + dx + Math.round(Math.cos(a) * 1.3), deckY + 27 + Math.round(a * 0.9), a % 2 ? '#e0b880' : '#cc9c60'); }
+  }
+  // the galley, forward: a stove swung in gimbals, the fiddled rail round the top, the kettle, pans and cups on hooks, a cupboard
+  { const gx = 6, gy = soleY - 26;
+    R(gx - 2, gy - 22, 30, 12, OAK); R(gx - 1, gy - 21, 28, 10, PINE2); R(gx - 1, gy - 21, 28, 1, OAKDK);
+    for (let k = 0; k < 4; k++){ R(gx + 1 + k * 7, gy - 19, 5, 4, k % 2 ? '#e8e3d4' : '#4a7fa8'); P1(gx + 2 + k * 7, gy - 18, '#2a2a2e'); }
+    R(gx - 1, gy - 12, 28, 1, OAKDK); for (let k = 0; k < 3; k++) R(gx + 2 + k * 9, gy - 11, 6, 1, '#2f6f3a');
+    R(gx + 2, gy - 1, 24, 2, BRASS); R(gx + 1, gy, 1, 18, BRASSDK); R(gx + 26, gy, 1, 18, BRASSDK);
+    R(gx + 3, gy + 1, 22, 16, IRON); R(gx + 4, gy + 2, 20, 14, '#2a2a2e');
+    R(gx + 5, gy + 4, 6, 5, '#141210'); R(gx + 14, gy + 4, 8, 5, '#141210'); R(gx + 5, gy + 11, 17, 4, '#1a1816'); R(gx + 12, gy + 12, 3, 1, BRASS);
+    R(gx + 3, gy + 1, 22, 1, '#6d6a66');
+    R(gx + 6, gy - 7, 7, 6, '#7a7a80'); R(gx + 7, gy - 9, 1, 2, '#7a7a80'); R(gx + 13, gy - 6, 3, 1, '#7a7a80'); R(gx + 5, gy - 5, 1, 4, '#7a7a80');
+    const cooking = T - cabin.cookT < 0.25 * HOUR;
+    if (cooking){ R(gx + 14, gy - 2, 9, 3, '#2a2a2e'); R(gx + 15, gy - 3, 7, 2, '#e8902e'); R(gx + 23, gy - 2, 3, 1, '#2a2a2e'); for (let k = 0; k < 5; k++){ const a = (T * 0.7 + k * 0.31) % 1; R(gx + 15 + k * 1.6 + Math.sin(T * 3 + k) * 1.5, gy - 5 - a * 16, 1, 2, `rgba(240,240,240,${(1 - a) * 0.8})`); } R(gx + 6, gy + 5, 4, 3, '#e0705c'); R(gx + 15, gy + 5, 6, 3, '#e0705c'); }
+    R(gx + 28, gy + 2, 8, 15, OAK); R(gx + 29, gy + 3, 6, 13, '#7a4a24'); R(gx + 29, gy + 8, 6, 1, IRON); R(gx + 29, gy + 12, 6, 1, IRON);
+  }
+  // the chart table: the chart under its fiddle, dividers and the parallel rule, the log and a pencil, the bottle in its rack and the glass
+  { const tx = W * 0.47 + 14, ty = soleY - 22, tw = 44;
+    R(tx, ty, tw, 3, OAK); R(tx, ty, tw, 1, '#e0b880'); R(tx + 2, ty + 3, 3, 19, OAKDK); R(tx + tw - 5, ty + 3, 3, 19, OAKDK); R(tx + 2, ty + 12, tw - 4, 1, OAKDK);
+    R(tx + 3, ty - 1, tw - 6, 1, BRASSDK);
+    R(tx + 4, ty - 5, 22, 5, '#f0e3c2'); R(tx + 6, ty - 4, 9, 1, '#bfd6d2'); R(tx + 7, ty - 2, 12, 1, '#e2c68e'); P1(tx + 11, ty - 3, '#b0402e'); R(tx + 16, ty - 4, 4, 1, '#bfd6d2');
+    R(tx + 8, ty - 7, 1, 3, IRON); R(tx + 10, ty - 7, 1, 3, IRON); P1(tx + 9, ty - 8, IRON);
+    R(tx + 20, ty - 6, 8, 1, '#2a2a2e'); R(tx + 20, ty - 4, 8, 1, '#2a2a2e');
+    R(tx + 28, ty - 4, 7, 4, '#1f3a5f'); R(tx + 29, ty - 3, 5, 1, '#f4f1e8'); R(tx + 27, ty - 6, 1, 6, '#e8b84a');
+    R(tx + 36, ty - 11, 3, 11, '#2f6f3a'); R(tx + 37, ty - 13, 1, 2, '#2f6f3a'); R(tx + 36, ty - 8, 3, 2, '#f0e3c2'); R(tx + 35, ty - 2, 5, 1, BRASSDK);
+    const drinking = T - cabin.wineT < 0.1 * HOUR, fill = drinking ? 3 : T - cabin.wineT < HOUR ? 1 : 0;
+    R(tx + 41, ty - 6, 4, 6, '#d8e6ea'); if (fill) R(tx + 42, ty - fill, 2, fill, '#c9a43a'); R(tx + 41, ty - 1, 4, 1, '#d8e6ea');
+  }
+  // the lamp: an oil lamp in brass gimbals under a beam, swinging as she rolls; by night it is all the light there is
+  { const lx0 = W * 0.47 + 30;
+    const heelK = (ship.heel || 0) * 0.02 + Math.sin(T * 1.7) * 0.06 * (moored ? 0.2 : 1);
+    cabin.lampV += (heelK - cabin.lampA) * 0.4 - cabin.lampV * 0.3; cabin.lampA += cabin.lampV * 0.5;
+    const lx = lx0 + Math.sin(cabin.lampA) * 12, ly = deckY + 2 + Math.cos(cabin.lampA) * 12;
+    R(lx0 - 2, deckY - 2, 4, 3, BRASSDK);
+    g.strokeStyle = BRASS; g.lineWidth = 1; g.beginPath(); g.moveTo(lx0, deckY); g.lineTo(lx, ly); g.stroke();
+    R(lx - 4, ly, 8, 2, BRASS); R(lx - 3, ly + 2, 6, 6, night > 0.3 ? '#fff3c4' : '#ffd77a'); R(lx - 2, ly + 3, 4, 4, night > 0.3 ? '#ffe8a0' : '#f0c860'); R(lx - 4, ly + 8, 8, 1, BRASS); R(lx - 1, ly + 9, 2, 2, BRASSDK);
+    if (night > 0.3){ g.fillStyle = `rgba(255,215,122,${0.1 * night})`; g.beginPath(); g.arc(lx, ly + 12, 34, 0, TAU); g.fill(); g.fillStyle = `rgba(255,215,122,${0.08 * night})`; g.beginPath(); g.arc(lx, ly + 12, 20, 0, TAU); g.fill(); }
+  }
+  // aft: the bookshelf with its fiddle, the barometer and the clock, the bunk with its lee cloth and the cat, oilskins by the ladder
+  { const sx = W - 60;
+    R(sx, deckY + 2, 34, 1, OAK); R(sx, deckY + 12, 34, 2, OAK); R(sx, deckY + 3, 1, 10, OAKDK); R(sx + 33, deckY + 3, 1, 10, OAKDK); R(sx, deckY + 10, 34, 1, '#e0b880');
+    const SP = ['#9e2f25', '#2f6fa8', '#2f8f6e', '#e8b84a', '#6d4a2e', '#c0392b', '#1f3a5f', '#d8e6ea', '#9e2f25', '#2f6fa8', '#7a2a2a'];
+    for (let k = 0, x = sx + 2; x < sx + 32; k++){ const w = 2 + (k % 3); R(x, deckY + 4 - (k % 2), w, 7 + (k % 2), SP[k % SP.length]); P1(x, deckY + 5, '#ffffff44'); x += w + 1; }
+    const cx = sx + 8, cy = deckY + 24;
+    g.fillStyle = BRASSDK; g.beginPath(); g.arc(cx, cy, 6, 0, TAU); g.fill(); g.fillStyle = BRASS; g.beginPath(); g.arc(cx, cy, 5, 0, TAU); g.fill(); g.fillStyle = '#f0e3c2'; g.beginPath(); g.arc(cx, cy, 4, 0, TAU); g.fill();
+    const hr = hourOf(T), ha = (hr % 12) / 12 * TAU, ma = (hr % 1) * TAU;
+    g.strokeStyle = '#141210'; g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.sin(ha) * 2.2, cy - Math.cos(ha) * 2.2); g.stroke(); g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.sin(ma) * 3.3, cy - Math.cos(ma) * 3.3); g.stroke();
+    const bx = sx + 24, by = deckY + 24;
+    g.fillStyle = BRASSDK; g.beginPath(); g.arc(bx, by, 6, 0, TAU); g.fill(); g.fillStyle = BRASS; g.beginPath(); g.arc(bx, by, 5, 0, TAU); g.fill(); g.fillStyle = '#f0e3c2'; g.beginPath(); g.arc(bx, by, 4, 0, TAU); g.fill();
+    for (let k = -2; k <= 2; k++) P1(Math.round(bx + Math.sin(k * 0.5) * 3), Math.round(by - Math.cos(k * 0.5) * 3), k ? '#6d6a66' : '#c0392b');
+    const bar = nextStorm(T, 12) ? -0.9 : rain > 0.1 ? -1.2 : 0.4 - Wx.haze * 0.6;
+    g.strokeStyle = '#141210'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + Math.sin(bar) * 3, by - Math.cos(bar) * 3); g.stroke();
+    const ky = soleY - 16;
+    R(sx - 4, ky - 2, 44, 18, OAK); R(sx - 3, ky - 1, 42, 16, '#7a4a24'); R(sx - 3, ky + 10, 42, 1, OAKDK);
+    R(sx - 2, ky, 40, 10, '#2f6fa8'); R(sx - 2, ky, 40, 3, '#f4f1e8'); for (let k = 0; k < 40; k += 4) R(sx - 2 + k, ky + 5, 2, 1, '#2a5c8a');
+    R(sx - 2, ky + 10, 40, 1, '#d6caab'); for (let k = 0; k < 40; k += 8) P1(sx + k, ky + 11, BRASSDK);
+    const sleeping = T - cabin.sleepT < 0.05 * HOUR;
+    if (sleeping){ R(sx + 6, ky + 1, 28, 8, '#2f6fa8'); R(sx + 3, ky, 6, 5, '#e2a97c'); R(sx + 3, ky - 1, 6, 2, '#3e2814'); }
+    else { R(sx + 26, ky + 3, 9, 4, '#6d6a66'); R(sx + 33, ky + 2, 4, 3, '#6d6a66'); P1(sx + 34, ky + 2, '#e8b84a'); P1(sx + 36, ky + 2, '#e8b84a'); R(sx + 24, ky + 5, 3, 1, '#6d6a66'); }
+  }
+  // the companionway: steps up to the hatch and the daylight, oilskins and a sou'wester on their hooks beside it, sea boots on the sole
+  { const cx = W - 14;
+    R(cx - 2, 0, 16, deckY, `rgb(${Math.round(160 * (1 - night) + 20)},${Math.round(200 * (1 - night) + 30)},${Math.round(235 * (1 - night) + 60)})`);
+    for (let k = 0; k < 5; k++){ R(cx + k * 2, deckY + 3 + k * 9, 14 - k * 2, 2, '#e0b880'); R(cx + k * 2, deckY + 5 + k * 9, 14 - k * 2, 1, OAKDK); }
+    R(cx - 10, deckY + 2, 1, 1, IRON); R(cx - 12, deckY + 3, 5, 14, '#e2c46c'); R(cx - 11, deckY + 4, 3, 12, '#d9b24a'); R(cx - 12, deckY + 1, 5, 2, '#e2c46c');
+    R(cx - 11, soleY - 7, 3, 7, IRON); R(cx - 7, soleY - 6, 3, 6, IRON); R(cx - 11, soleY - 1, 4, 1, '#141210'); R(cx - 7, soleY - 1, 4, 1, '#141210');
+  }
+  // the sole: planks fore and aft, a brass ring over the bilge hatch, a coil of line, the rug under the table
+  R(0, soleY, W, H - soleY, '#3a2412'); for (let x = 0; x < W; x += 9) R(x, soleY, 1, H - soleY, '#2a180a'); R(0, soleY, W, 1, '#4a2e14');
+  R(W * 0.47 + 8, soleY + 3, 54, 7, '#7a2a2a'); for (let x = W * 0.47 + 10; x < W * 0.47 + 60; x += 4) R(x, soleY + 5, 2, 3, '#c0392b');
+  for (let a = 0; a < 10; a++) P1(Math.round(W * 0.2 + Math.cos(a / 10 * TAU) * 4), Math.round(soleY + 6 + Math.sin(a / 10 * TAU) * 2), a % 2 ? '#e0b880' : '#cc9c60');
+  g.strokeStyle = BRASS; g.lineWidth = 1; g.beginPath(); g.arc(W * 0.33, soleY + 7, 2, 0, TAU); g.stroke();
 }
-
 // ---------------------------------------------------------------- the tug
 // a little steam tug puts out from the nearest harbour, comes up under your bow, passes a line and tows you where you need to go
 let tow = null;
