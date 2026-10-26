@@ -4091,7 +4091,7 @@ function finePath(ax, ay, bx, by){
   const pass = n => {
     if (ok[n] < 0){
       const x = x0 + (n % W + 0.5) * FINE, y = y0 + (((n / W) | 0) + 0.5) * FINE;
-      ok[n] = wetAt(x, y, 7) ? 1 : 0;
+      ok[n] = wetAt(x, y, 9) ? 1 : 0;
       // hug the middle of the fairway, not the stones
       if (ok[n]) cost[n] = wetAt(x, y, 18) ? 0 : 2.5;
     }
