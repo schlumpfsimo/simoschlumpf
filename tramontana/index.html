@@ -121,6 +121,7 @@
     #cabinHead{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 8px 4px; }
     #cabinHead .px{ background:transparent; border:1px solid #d5dbe299; box-shadow:none; color:#d5dbe2; border-radius:3px; min-width:58px; min-height:28px; font-size:10px; padding:3px 8px; }
     #cabinHead span{ min-width:58px; }
+    #cabName{ text-align:center; display:flex; flex-direction:column; line-height:1.2; } #cabName b{ font-size:11px; color:#fff; font-weight:normal; letter-spacing:1px; } #cabName small{ font-size:8px; opacity:.55; }
     #cabinCv{ flex:0 0 auto; width:100%; height:50%; image-rendering:pixelated; image-rendering:crisp-edges; border-top:1px solid #d5dbe222; border-bottom:1px solid #d5dbe222; }
     #cabinText{ flex:1 1 auto; min-height:0; overflow:auto; padding:6px 10px; }
     #cabinText b{ color:#fff; font-weight:normal; letter-spacing:1px; }
@@ -136,6 +137,8 @@
     #tut .tb{ display:flex; justify-content:space-between; margin-top:6px; }
     #tut .px{ background:transparent; border:1px solid #d5dbe299; box-shadow:none; color:#d5dbe2; border-radius:3px; font-size:9px; padding:3px 8px; }
     #tutNext{ border-color:#e2c46c !important; color:#fff !important; }
+    #storm.tutHide{ display:none !important; }
+    #floats.below{ display:none; }
     .tutHi{ outline:2px solid #e2c46c; outline-offset:2px; animation:tutp 0.9s ease-in-out infinite alternate; }
     @keyframes tutp{ from{ outline-color:#e2c46c33; } to{ outline-color:#e2c46c; } }
     #storm{
@@ -340,7 +343,7 @@
     <div id="shoreBody"></div>
   </div>
   <div id="cabin" class="hidden">
-    <div id="cabinHead"><button class="px dk" id="cabinUp">&lt; ON DECK</button><div id="shName"><b>CABIN</b><small>below, out of the weather</small></div><span></span></div>
+    <div id="cabinHead"><button class="px dk" id="cabinUp">&lt; ON DECK</button><div id="cabName"><b>CABIN</b><small>below, out of the weather</small></div><span></span></div>
     <canvas id="cabinCv"></canvas>
     <div id="cabinText"></div>
     <div id="cabinBtns"></div>
@@ -645,8 +648,8 @@ const ISLE_DEFS = [
   // the south: a green volcanic island, a black one, a low island of rabbits, and the long salt island
   ['Ustica',         6200, 12800,  650,  600,  0, { peak: 240 }],
   ['Linosa',        10200, 12300,  330,  300,  0, { peak: 190, volcano: 1 }],
-  ['Isola dei Conigli', 12600, 13700, 440, 240, 15, { peak: 60 }],
-  ['Lampione',      11900, 13900,   60,   40,  0, { peak: 30, rock: 1 }],
+  ['Isola dei Conigli', 12600, 12900, 440, 240, 15, { peak: 60 }],
+  ['Lampione',      11900, 13050,   60,   40,  0, { peak: 30, rock: 1 }],
   ['Isola Lunga',   17500, 12900, 1100,  340, 20, { peak: 40 }],
   ['Ventotena',      1500, 11800,  250,  140, -10, { peak: 90 }],
   ['Scoglio Santo Stefano', 1900, 11950, 70, 60, 0, { peak: 50, rock: 1 }],
@@ -861,7 +864,7 @@ const PORT_DEFS = [
     'A merchant town at the head of the eastern gulf, with a Saracen tower on the mole and warehouses along the quay.', { tower: 1 }],
   ['Ustica',        'Ustica',          20,  1, 'cove',  'white',  0.7, ['lemons', 'capers'],    ['grain', 'timber', 'ceramics'],
     'A green island alone in the south, its village painted with murals, its cove full of the bluest water you ever saw.'],
-  ['Saline',        'Isola Lunga',    300, -1, 'mole',  'fisher', 0.7, ['salt', 'oil'],         ['timber', 'wine', 'lemons'],
+  ['Saline',        'Isola Lunga',    315, -1, 'mole',  'fisher', 0.7, ['salt', 'oil'],         ['timber', 'wine', 'lemons'],
     'A low island of salt pans and windmills. White pyramids of salt stand along the quay, waiting for ships.', { mills: 1 }],
 ];
 function gradAt(x, y, e = 30){
@@ -885,6 +888,8 @@ PORT_DEFS.forEach(([name, isleName, a, side, kind, style, size, make, want, blur
     bx = ccx - nx * (R - 11); by = ccy - ny * (R - 11);
   }
   P.bx = bx; P.by = by;
+  // the other harbours get a basin dug under their quay and moles, so no berth ever lies on a beach
+  if (kind !== 'cove') P.coves = [{ x: bx + nx * 105 + tx * 10, y: by + ny * 105 + ty * 10, r: 100, I }];
   // the harbour frame: u along the shore, v out to sea
   const W = (u, v) => [bx + tx * u + nx * v, by + ty * u + ny * v];
   P.W = W;
@@ -961,7 +966,7 @@ const POI_DEFS = [
   ['Cala del Bue Marino',   'grotto',   ['Ustica', 150, 0],         0,  'A sea cave at the back of the cove. Monk seals once hauled out here; the fishermen say one still does.'],
   ['Roman cisterns',        'ruins',    ['Ventotena', 90, -30],     0,  'Cisterns cut into the rock, and the old Roman harbour carved out of the tufa, still sheltering the boats after two thousand years.'],
   ['Black sand of Linosa',  'pinkbeach', ['Linosa', 60, 0],         0,  'A beach of black volcanic sand, warm underfoot, where the turtles come up to lay at night.'],
-  ['The amphorae of Lampione', 'amphorae', [11960, 13820],         90,  'Round the rock the seabed is littered with jars from a dozen wrecks. You lift one with a dolphin painted on it.'],
+  ['The amphorae of Lampione', 'amphorae', [11960, 12970],         90,  'Round the rock the seabed is littered with jars from a dozen wrecks. You lift one with a dolphin painted on it.'],
 ];
 const POIS = POI_DEFS.map(([name, kind, w, coins, text], id) => {
   let x, y, I = null;
@@ -2266,6 +2271,9 @@ function load(){
     pl.parcels = pl.parcels.filter(q => q.kind === 'contract' || q.kind === 'parcel' || q.kind === 'order');
     T = s.t || T;
     if (Array.isArray(s.track)) track = s.track;
+    if (Array.isArray(s.rods)) s.rods.forEach((q, i) => { if (fishing.rods[i]) Object.assign(fishing.rods[i], { lure: q.lure || 'feather', drag: q.drag || 1, out: q.out || 0 }); });
+    if (s.hove) ship.hove = true;
+    if (s.stormNote != null){ stormNote = s.stormNote; stormT0 = s.stormT0; }
     if (s.nightNote != null) nightNote = s.nightNote;
     if (s.moored != null && ports[s.moored]){ moored = ports[s.moored]; ship.berth = s.berth || null; }
     else if (ship.hull < 1) ship.hull = 0;
@@ -2279,6 +2287,7 @@ function save(){
     for (let i = 0; i < fog.length; i++) f += String.fromCharCode(fog[i]);
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       x: ship.x, y: ship.y, h: ship.h, set: ship.set, hull: ship.hull, anchor: ship.anchor && !ship.anchor.weigh ? { x: ship.anchor.x, y: ship.anchor.y } : null, aground: ship.aground, rig: ship.rig, foul: ship.foul, up: ship.up, paint: ship.paint, tanbark: ship.tanbark, trimA: ship.trimA, trimF: ship.trimF, rig_: { hJ: ship.hJ, hF: ship.hF, hM: ship.hM, hT: ship.hT, reef: ship.reef, reefPts: ship.reefPts, trimS: ship.trimS, jibFree: ship.jibFree, jibSide: ship.jibSide },
+      rods: fishing.rods.map(r => ({ lure: r.lure, drag: r.drag, out: r.fish ? 0 : r.out })), hove: ship.hove, stormNote, stormT0,
       pl, econ, fog: btoa(f), disc: isles.filter(i => i.disc).map(i => i.id), t: T, wseed: WSEED, moored: moored ? moored.id : null, berth: ship.berth, track: track.filter((q, i) => i % 2 === 0 || i > track.length - 40).slice(-600), nightNote,
     }));
   } catch (e){}
@@ -2665,7 +2674,7 @@ function stepShip(s, dt, now = T){
   const M = 250;
   // south: the gale sets her back, and nothing lives beyond it
   const sb = stormBelt(s.y);
-  if (sb > 0){ s.y -= sb * sb * 20 * dt; if (me && T > (edgeWarnT || 0)){ edgeWarnT = T + 20; toast(sb > 0.6 ? 'The Libeccio has her: the seas are mountains. She is driven back north whatever you do.' : 'The sky to the south is black from edge to edge. The open sea: no place for a coasting schooner.'); } }
+  if (sb > 0){ const pa = land(s.x, s.y - 160) || land(s.x - 100, s.y - 120) || land(s.x + 100, s.y - 120) ? deepDir(s.x, s.y) : 0; s.x += Math.sin(pa) * sb * sb * 20 * dt; s.y -= Math.cos(pa) * sb * sb * 20 * dt; if (me && T > (edgeWarnT || 0)){ edgeWarnT = T + 20; toast(sb > 0.6 ? 'The Libeccio has her: the seas are mountains. She is driven back north whatever you do.' : 'The sky to the south is black from edge to edge. The open sea: no place for a coasting schooner.'); } }
   if (s.x < M || s.x > WW - M || s.y < M || s.y > WH - M){
     s.x = clamp(s.x, M, WW - M); s.y = clamp(s.y, M, WH - M);
     s.v *= 0.9;
@@ -3051,6 +3060,18 @@ function clearLine(ax, ay, bx, by){
   for (let k = 1; k < n; k++) if (depthAt(lerp(ax, bx, k / n), lerp(ay, by, k / n)) > -30) return false;
   return true;
 }
+// a link between two cells is only good if the water runs all the way between them
+const linkCache = new Map();
+function linkOK(a, b){
+  const k = a < b ? a * 65536 + b : b * 65536 + a;
+  let v = linkCache.get(k);
+  if (v != null) return v;
+  const ax = (a % GW + 0.5) * CELL, ay = ((a / GW | 0) + 0.5) * CELL, bx = (b % GW + 0.5) * CELL, by = ((b / GW | 0) + 0.5) * CELL;
+  v = true;
+  for (let t = 0.08; t < 0.95 && v; t += 0.08) if (depthAt(lerp(ax, bx, t), lerp(ay, by, t)) > -8) v = false;
+  linkCache.set(k, v);
+  return v;
+}
 function astar(a, b){
   const g = new Float32Array(GW * GH).fill(1e9), from = new Int32Array(GW * GH).fill(-1), closed = new Uint8Array(GW * GH);
   const heap = [];
@@ -3071,6 +3092,7 @@ function astar(a, b){
       const m = j * GW + i;
       if (!nav[m] || closed[m]) continue;
       if (di && dj && (!nav[nj * GW + i] || !nav[j * GW + ni])) continue;
+      if (!linkOK(n, m)) continue;
       const ng = g[n] + (di && dj ? 1.414 : 1);
       if (ng < g[m]){ g[m] = ng; from[m] = n; push(m, ng + hfn(m)); }
     }
@@ -4006,14 +4028,14 @@ const cabinCv = pEl('cabinCv'), cctx = cabinCv.getContext('2d');
 const cabinOK = () => (moored || ship.anchor) && !tow && !ship.securing && !ship.aground;
 function cabinOpen(){
   if (!cabinOK()) return;
-  cabin.open = true; cabin.page = -1;
+  cabin.open = true; cabin.page = -1; pEl('floats').classList.add('below');
   pEl('cabin').classList.remove('hidden'); pEl('deck').classList.add('hidden'); pEl('shore').classList.add('hidden'); pEl('tut').classList.add('hidden');
   cabinSay(moored ? 'Below, out of the sun. The quay noises come down the companionway: carts, gulls, somebody singing.' : 'Below, out of the wind. The chain grumbles at the bow and the lamp swings with her.');
   fitViewport(); sfx.tap();
 }
 function cabinClose(){
   if (!cabin.open) return;
-  cabin.open = false;
+  cabin.open = false; pEl('floats').classList.remove('below');
   pEl('cabin').classList.add('hidden');
   if (moored) harbour(moored, 'quay'); else pEl('deck').classList.remove('hidden');
   fitViewport(); sfx.tap();
@@ -4026,7 +4048,7 @@ function cabinBtns(){
   b.push(['A GLASS OF WINE', 'wine', T - cabin.wineT > HOUR]);
   b.push(['READ', 'read', true]);
   b.push([h >= 19 || h < 5 ? 'SLEEP TILL MORNING' : 'A SIESTA, 3 HOURS', 'sleep', true]);
-  if (S && S.t0 > T) b.push(['WAIT OUT THE GALE', 'gale', true]);
+  if (S && S.t0 > T && moored) b.push(['WAIT OUT THE GALE', 'gale', true]);
   pEl('cabinBtns').innerHTML = b.map(([n, a, ok]) => `<button class="px" data-a="${a}" ${ok ? '' : 'disabled'}>${n}</button>`).join('');
 }
 // a meal: the catch first, then what is in the hold, else ship's biscuit. a good supper puts strength in your arms for a day
@@ -4061,7 +4083,7 @@ function cabinRead(d = 0){
   let t;
   if (i === 0) t = `<b>THE PILOT BOOK OF THE COAST</b><br>Sailing directions for the harbours and anchorages between the mainland and the far islands, with notes on what each town makes and wants. Turn the page.`;
   else if (i <= ports.length){
-    const P = ports[i - 1], kind = P.kind === 'cove' ? 'A round cove with a stone pier at its head and a short mole on the eastern side; good holding on sand, open to the south.' : P.kind === 'basin' ? 'A walled basin: two moles, a narrow mouth between the lights, and a long quay. Enter dead slow.' : 'A quay along the shore with a hooked mole; round the green light at the mole head and the visitors\' berth is the yellow kerb to port.';
+    const P = ports[i - 1], kind = P.kind === 'cove' ? 'A round cove with a stone pier at its head and a short mole on one side; good holding on sand.' : P.kind === 'basin' ? 'A walled basin: two moles, a narrow mouth between the lights, and a long quay. Enter dead slow.' : 'A quay along the shore with a hooked mole; round the green light at the mole head and the visitors\' berth is the yellow kerb to port.';
     const d = Math.hypot(P.cx - ship.x, P.cy - ship.y), b = Math.atan2(P.cx - ship.x, -(P.cy - ship.y));
     t = `<b>${P.name.toUpperCase()}</b> <small>${(d / 1852).toFixed(0)} nm ${compassName(b)} of here</small><br>${P.blurb}<br><small>${kind}</small><br><small>Makes ${P.make.map(k => GOOD[k].name.toLowerCase()).join(' and ')}. Wants ${P.want.map(k => GOOD[k].name.toLowerCase()).join(', ')}.${P.castle ? ' A castle stands over the town.' : ''}${P.tower ? ' A Saracen tower marks the mole.' : ''}${P.mills ? ' Windmills turn over the salt pans.' : ''}</small>`;
   } else {
@@ -4588,7 +4610,7 @@ const GUIDE = [
     <li>Touch the stone gently and the fenders take it. Hit it at more than two knots and the shipwright will be pleased to see you.</li>
     <li>Casting off, you push her clear with a boathook. If the wind pins her to the quay, the harbour tug will <b>TOW</b> you out for a few coins. Close off a harbour, close in under the shore, aground, or damaged in a crash, the <b>TOW</b> button calls her out to fetch you.</li>
     <li>Mind the traffic: fishing boats go out at dawn and come back in the afternoon, lamp boats fish at night, coasters and big cargo ships lie at the mole, and the mail steamers keep their timetable whatever the wind.</li>
-    <li><b>Reefs</b> break white just under the surface. They are marked on the chart once you have seen them.</li>
+    <li><b>Reefs</b> break white just under the surface. The chart marks them with a cross.</li>
     <li>With the wheel <b>lashed</b> she holds the heading she had when you lashed it, so you can go forward or aft and leave her to it. The readout's last line says what each sail wants: haul, ease or ok.</li></ol>`],
   ['Anchoring and running aground', () => `
     <ol><li>Near the coast, going slowly, press <b>ANCHOR</b>. She lies to about 45 metres of line and swings to face the wind. Far out it is too deep.</li>
@@ -4629,7 +4651,7 @@ const GUIDE = [
     <li>The <b>LOG</b> keeps your harbours, the creatures you have met, and your contracts.</li></ol>`],
   ['Settings', () => `
     <p>Sound: <b>${['music and sea', 'sea only', 'off'][sfx.mode]}</b></p>
-    <p>Sheet: <b>${trimManual ? 'manual (the SHEET slider)' : 'automatic'}</b></p>
+    <p>Sheets: <b>${trimManual ? 'manual (the sheets on deck)' : 'automatic'}</b></p>
     <p>Controls lifted: <b>${LIFTS[lift]} px</b>. Use this if a browser bar covers the helm or the sail lever.</p>
     <p class="help">Best of all: open the browser menu and choose <b>Add to Home screen</b>. Tramontana then opens full screen.</p>`],
 ];
@@ -5532,8 +5554,8 @@ function ring(wx, wy, rm, col, al){
 function capsule(ax, ay, bx, by, wm, col, al){
   const x0 = ax / MPP - ox, y0 = ay / MPP - oy, x1 = bx / MPP - ox, y1 = by / MPP - oy, r = wm / MPP / 2;
   const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1;
-  const minx = Math.floor(Math.min(x0, x1) - r), maxx = Math.ceil(Math.max(x0, x1) + r);
-  const miny = Math.floor(Math.min(y0, y1) - r), maxy = Math.ceil(Math.max(y0, y1) + r);
+  const minx = Math.max(FX, Math.floor(Math.min(x0, x1) - r)), maxx = Math.min(FX + FW - 1, Math.ceil(Math.max(x0, x1) + r));
+  const miny = Math.max(FY, Math.floor(Math.min(y0, y1) - r)), maxy = Math.min(FY + FH - 1, Math.ceil(Math.max(y0, y1) + r));
   for (let y = miny; y <= maxy; y++) for (let x = minx; x <= maxx; x++){
     const px = x + 0.5 - x0, py = y + 0.5 - y0, t = clamp((px * dx + py * dy) / L2, 0, 1);
     const ex = px - dx * t, ey = py - dy * t;
@@ -7237,7 +7259,8 @@ const TUT = [
 function tutStart(){
   closePanel(); if (mapOpen) closeMap();
   if (tow) tow.tug.gone = true;
-  moored = null; ship.berth = null; warp = false; tow = null; ship.hold = false; ship.securing = null; shoreClose();
+  moored = null; ship.berth = null; warp = false; tow = null; ship.hold = false; ship.securing = null; crashInfo = null;
+  cabin.open = false; pEl('cabin').classList.add('hidden'); pEl('floats').classList.remove('below'); pEl('shore').classList.add('hidden'); pEl('deck').classList.remove('hidden'); shore.P = null; shore.postcard = false;
   // a roadstead off the coast between Positella and Ravella, fifty metres of water, the wind off the land
   const x = 7400; let y = coastY(x) + 40;
   while (depthFast(x, y) > -50 && y < coastY(x) + 2500) y += 10;
@@ -7283,6 +7306,7 @@ function tutStep(dt){
   if (want >= 0 && want !== crew.st && !crew.walk) hiEls.add(want < crew.st ? 'stPrev' : 'stNext');
   if (S.hiEl && (want < 0 || want === crew.st)) hiEls.add(S.hiEl);
   for (const id of ['stPrev', 'stNext', 'anchorBtn', 'heaveBtn']) el(id).classList.toggle('tutHi', hiEls.has(id));
+  el('storm').classList.toggle('tutHide', !!tut);
   tut.hi = (want < 0 || want === crew.st) && !crew.walk ? (S.hi === 'jibLee' ? 'rope:' + leeSheet() : S.hi) : null;
   if (S.next || !S.done) return;
   if (S.done(tut)){ tut.okT += dt; if (tut.okT >= (S.hold || 0)){ sfx.chime(); tut.i++; if (tut.i >= TUT.length) tutEnd(); else tutEnter(); } }
@@ -7742,7 +7766,7 @@ function frame(now){
 requestAnimationFrame(frame);
 window.__game = { sfxState: () => window.__ac && window.__ac.state, TYPES, makeShipX: (t, x, y, h) => { const q = makeShip(t, x, y, h, 'local'); q.col = 'hullW'; q.mode = 'moored'; q.kin = t === 'steamer'; q.wind = windAt(x, y, T); return q; }, bakeTile, OUT, outPath, inPath, freeCell, astar, nav, dockCheck, steamers, steamAt, fleet, shipSprite, ship, pl, ports, isles, REEFS, LIGHTS, days, weatherAt, windAt, depthAt, depthFast, openMap, closeMap, setTab, moor, harbour, logbook,
   setSail, get T(){ return T; }, set T(v){ T = v; }, get moored(){ return moored; }, set moored(v){ moored = v; }, ai: () => ai, critters: () => critters,
-  get trimManual(){ return trimManual; }, set trimManual(v){ trimManual = v; setTrimUI(); }, norm_: norm, HAMLETS_: () => HAMLETS, rivers_: () => rivers, DK, tutStart, shore, shoreWalk, shoreOn, reel, payOut, gaff, cycleLure, LURES, GEAR, finePath, waterway, wetAt, get tut(){ return tut; }, TUT, walk: walkTo, crew, haul, ease, cleat, tieReef, pumpStroke, setTrimUI, get winchGear(){ return winchGear; }, helm: v => { helmHeld = v != null; helmTarget = v || 0; }, heaveTo, econ, GI, GOODS, GOOD, ecoDay, priceOf, localPrice, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, ai_: () => ai, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, setGameZoom, fog, LIFE, upOf, update, render, renderSide, renderMap };
+  get trimManual(){ return trimManual; }, set trimManual(v){ trimManual = v; setTrimUI(); }, norm_: norm, islePoint_: islePoint, HAMLETS_: () => HAMLETS, rivers_: () => rivers, DK, tutStart, shore, shoreWalk, shoreOn, reel, payOut, gaff, cycleLure, LURES, GEAR, finePath, waterway, wetAt, get tut(){ return tut; }, TUT, walk: walkTo, crew, haul, ease, cleat, tieReef, pumpStroke, setTrimUI, get winchGear(){ return winchGear; }, helm: v => { helmHeld = v != null; helmTarget = v || 0; }, heaveTo, econ, GI, GOODS, GOOD, ecoDay, priceOf, localPrice, POIS, fishing, FISH, linesBtnPress, critters_: () => critters, ai_: () => ai, get tow(){ return tow; }, callTow, towOffer, towBtnPress, get crashInfo(){ return crashInfo; }, get paused(){ return paused; }, get slowK(){ return slowK; }, nextStorm, project, proj: () => proj, mv, get warp(){ return warp; }, startWarp, pickAt: q => { pick_ = q; }, setGameZoom, fog, LIFE, upOf, update, render, renderSide, renderMap };
 })();
 </script>
 </body>
