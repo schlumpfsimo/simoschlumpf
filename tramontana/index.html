@@ -4017,6 +4017,17 @@ function drawCabin(){
   const night = nightF, Wx = weatherAt(T), rain = Wx.rain;
   const PINE = '#9a6b3a', PINE2 = '#8a5d30', SEAM = '#5a3a1c', OAK = '#5e3d1e', OAKDK = '#3e2814', BRASS = '#c9a43a', BRASSDK = '#8a6a20', IRON = '#2a2a2e';
   const deckY = 13, soleY = H - 13;
+  const man = (x, y, face, sit) => {
+      // straw hat, striped shirt, dark trousers, bare feet; drawn from the hat down, standing (18 tall) or sitting (14)
+      R(x - 4, y, 8, 1, '#e8c97a'); R(x - 2, y - 2, 4, 2, '#e8c97a'); P1(x - 2, y - 1, '#b8944a');
+      R(x - 2, y + 1, 4, 3, '#e2a97c'); P1(x + face * 1, y + 2, '#3e2814');
+      for (let j = 0; j < 6; j++) R(x - 3, y + 4 + j, 6, 1, j % 2 ? '#f4f1e8' : '#25406a');
+      R(x - 5, y + 5, 2, 4, '#f4f1e8'); R(x + 3, y + 5, 2, 4, '#f4f1e8'); R(x - 5 + face * 1, y + 9, 2, 1, '#e2a97c'); R(x + 3 + face * 1, y + 9, 2, 1, '#e2a97c');
+      if (sit){ R(x - 3, y + 10, 6, 2, '#1d2b44'); R(x - 4 + face * 4, y + 10, 3, 4, '#1d2b44'); R(x - 4 + face * 4, y + 14, 3, 1, '#e2a97c'); }
+      else { R(x - 3, y + 10, 3, 7, '#1d2b44'); R(x, y + 10, 3, 7, '#1d2b44'); R(x - 3, y + 17, 3, 1, '#e2a97c'); R(x, y + 17, 3, 1, '#e2a97c'); }
+    };
+  const pose = T - cabin.sleepT < 0.05 * HOUR ? 'sleep' : cabin.page >= 0 ? 'read' : T - cabin.wineT < 0.12 * HOUR ? 'wine' : T - cabin.cookT < 0.25 * HOUR ? 'cook' : 'chart';
+  const bob = Math.round(Math.sin(T * 2.2) * 0.6);
   // the side: planks running fore and aft between the frames, lighter high up where the lamp and the day reach them
   for (let y = deckY; y < soleY; y += 4){ const k = (y - deckY) / (soleY - deckY); R(0, y, W, 4, k < 0.5 ? PINE : PINE2); R(0, y + 3, W, 1, SEAM); }
   // the frames: ribs every so often, curving in toward the sole
@@ -4064,6 +4075,7 @@ function drawCabin(){
     if (cooking){ R(gx + 14, gy - 2, 9, 3, '#2a2a2e'); R(gx + 15, gy - 3, 7, 2, '#e8902e'); R(gx + 23, gy - 2, 3, 1, '#2a2a2e'); for (let k = 0; k < 5; k++){ const a = (T * 0.7 + k * 0.31) % 1; R(gx + 15 + k * 1.6 + Math.sin(T * 3 + k) * 1.5, gy - 5 - a * 16, 1, 2, `rgba(240,240,240,${(1 - a) * 0.8})`); } R(gx + 6, gy + 5, 4, 3, '#e0705c'); R(gx + 15, gy + 5, 6, 3, '#e0705c'); }
     R(gx + 28, gy + 2, 8, 15, OAK); R(gx + 29, gy + 3, 6, 13, '#7a4a24'); R(gx + 29, gy + 8, 6, 1, IRON); R(gx + 29, gy + 12, 6, 1, IRON);
   }
+  if (pose === 'chart') man(W * 0.47 + 14 + 16, soleY - 34 + bob, 1, false);
   // the chart table: the chart under its fiddle, dividers and the parallel rule, the log and a pencil, the bottle in its rack and the glass
   { const tx = W * 0.47 + 14, ty = soleY - 22, tw = 44;
     R(tx, ty, tw, 3, OAK); R(tx, ty, tw, 1, '#e0b880'); R(tx + 2, ty + 3, 3, 19, OAKDK); R(tx + tw - 5, ty + 3, 3, 19, OAKDK); R(tx + 2, ty + 12, tw - 4, 1, OAKDK);
@@ -4115,6 +4127,14 @@ function drawCabin(){
     R(cx - 10, deckY + 2, 1, 1, IRON); R(cx - 12, deckY + 3, 5, 14, '#e2c46c'); R(cx - 11, deckY + 4, 3, 12, '#d9b24a'); R(cx - 12, deckY + 1, 5, 2, '#e2c46c');
     R(cx - 11, soleY - 7, 3, 7, IRON); R(cx - 7, soleY - 6, 3, 6, IRON); R(cx - 11, soleY - 1, 4, 1, '#141210'); R(cx - 7, soleY - 1, 4, 1, '#141210');
   }
+  // and you: on the bunk with the book, at the table with the glass, at the stove when the pan is on, in the bunk asleep, else bent over the chart
+  {
+    if (pose === 'sleep'){ /* in the bunk, drawn there */ }
+    else if (pose === 'read'){ man(W - 60 + 12, soleY - 28, 1, true); R(W - 60 + 16, soleY - 19, 7, 5, '#f0e3c2'); R(W - 60 + 19, soleY - 19, 1, 5, '#8f8676'); }
+    else if (pose === 'wine'){ man(W * 0.47 + 14 - 9, soleY - 28, 1, true); R(W * 0.47 + 14 - 4, soleY - 20, 3, 3, '#d8e6ea'); }
+    else if (pose === 'cook') man(6 + 30, soleY - 18 + bob, -1, false);
+  }
+  // the sole: planks fore and aft, a brass ring over the bilge hatch, a coil of line, the rug under the table
   // the sole: planks fore and aft, a brass ring over the bilge hatch, a coil of line, the rug under the table
   R(0, soleY, W, H - soleY, '#3a2412'); for (let x = 0; x < W; x += 9) R(x, soleY, 1, H - soleY, '#2a180a'); R(0, soleY, W, 1, '#4a2e14');
   R(W * 0.47 + 8, soleY + 3, 54, 7, '#7a2a2a'); for (let x = W * 0.47 + 10; x < W * 0.47 + 60; x += 4) R(x, soleY + 5, 2, 3, '#c0392b');
