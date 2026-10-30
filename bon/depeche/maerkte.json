@@ -1,15 +1,15 @@
 {
- "aktualisiert": "2026-10-30T01:21:17.134Z",
+ "aktualisiert": "2026-10-30T10:27:49.315Z",
  "quelle": "Yahoo Finance, Terminkontrakte",
  "brent": {
-  "preis": 111.49,
-  "vortag": 115.32,
+  "preis": 113.46,
+  "vortag": 114.88,
   "datum": "2026-10-30",
   "waehrung": "USD"
  },
  "wti": {
-  "preis": 102.73,
-  "vortag": 102.78,
+  "preis": 104.25,
+  "vortag": 102,
   "datum": "2026-10-30",
   "waehrung": "USD"
  }
