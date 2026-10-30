@@ -123,6 +123,7 @@ button:disabled{opacity:.4;cursor:default}
     <p class="mass" id="mass"></p>
   </div>
 </main>
+<script src="../protokoll.js"></script>
 
 <script src="woerter.js"></script>
 <script>
@@ -534,6 +535,7 @@ $('drucken').addEventListener('click', async () => {
     await neuZeichnen();
     if (!fertig.length) throw new Error('nichts zu drucken');
     const bonsJetzt = fertig.slice();
+    window.bonProtokoll?.warten(bonsJetzt.map((_, i) => bonsJetzt.length > 1 ? `Vokabel ${i + 1}/${bonsJetzt.length}` : 'Vokabeln'));   // alle als «wartet» ins Protokoll
     for (let i = 0; i < bonsJetzt.length; i++) {
       msg(bonsJetzt.length > 1 ? `Sende ${i + 1} von ${bonsJetzt.length} …` : 'Sende …');
       await einreichen(bonsJetzt[i], bonsJetzt.length > 1 ? `Vokabel ${i + 1}/${bonsJetzt.length}` : 'Vokabeln');

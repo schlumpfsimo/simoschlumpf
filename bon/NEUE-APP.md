@@ -38,6 +38,15 @@ Startprompt für einen neuen Chat:
   jedes Safari.
 - Stil wie /euroturbo: weiss, schwarz, Monospace, eckig, keine Schatten, keine Rundungen.
   Kopf, Knöpfe und Farben aus bon/text/ übernehmen.
+- Jede App bindet gleich nach `</main>` und vor dem eigenen Skript `<script src="../protokoll.js"></script>`
+  ein. Das zeigt unten das aufklappbare Feld «Druckaufträge»: alle Bons, die von diesem Gerät eingereicht
+  wurden (localStorage `bon.protokoll`, gemeinsam für alle Apps), mit Stand wartet, wird gesendet,
+  eingereicht, Fehler, abgebrochen. Das Skript fängt den `fetch` an die Bon-Post selbst ab, die App muss
+  nichts tun. Nur bei mehreren Bons nacheinander vorher `window.bonProtokoll?.warten([titel, …])` aufrufen,
+  dann stehen die noch nicht gesendeten als «wartet» drin. Druck direkt per USB (bon/namen/):
+  `const e = window.bonProtokoll?.beginnen({ titel, weg: 'usb' })`, dann `e?.gedruckt()` oder
+  `e?.fehler(text)`. Ob der Mac einen eingereichten Bon schon gedruckt hat, weiss die Website nicht
+  (der Web-Schlüssel darf nicht abholen).
 - Jede App hat oben links einen Knopf «← Zurück» zur Startseite (`href="../"`) und
   `<meta name="robots" content="noindex, nofollow">`. Sie ist von nirgends sonst verlinkt.
 - Vor allem am Handy benutzt: Felder mit 16 px Schrift, damit iOS nicht zoomt, grosse Knöpfe,

@@ -97,6 +97,7 @@ button:disabled{opacity:.4;cursor:default}
     <p class="mass" id="mass"></p>
   </div>
 </main>
+<script src="../protokoll.js"></script>
 
 <script>
 // Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
@@ -406,6 +407,7 @@ $('drucken').addEventListener('click', async () => {
     const liste = [];
     for (let k = 0; k < wahl.blaetter; k++) bons.forEach((b, i) => liste.push({ inhalt: html[i], titel: b.titel }));
     if (regeln) liste.push({ inhalt: await bonHtml(regeln), titel: 'Kniffel Spielregeln' });
+    window.bonProtokoll?.warten(liste.map(b => b.titel));   // alle als «wartet» ins Protokoll
     for (let i = 0; i < liste.length; i++) {
       msg(liste.length > 1 ? `Sende ${i + 1} von ${liste.length} …` : 'Sende …');
       await einreichen(liste[i].inhalt, liste[i].titel);
