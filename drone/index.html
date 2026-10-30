@@ -72,21 +72,17 @@ const S = {
   hintPad: { de: "← → SPRACHE · ↑ ↓ WÄHLEN · A OK", fr: "← → LANGUE · ↑ ↓ CHOISIR · A OK", en: "← → LANGUAGE · ↑ ↓ CHOOSE · A OK" },
   skipTrailerKb: { de: "LEERTASTE HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR ESPACE POUR PASSER", en: "HOLD SPACE TO SKIP" },
   skipTrailerA: { de: "A HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR A POUR PASSER", en: "HOLD A TO SKIP" },
-  skipTutKb: { de: "ENTER HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR ENTRÉE POUR PASSER", en: "HOLD ENTER TO SKIP" },
-  skipTutVR: { de: "GRIFFTASTE HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR LE BOUTON LATÉRAL POUR PASSER", en: "HOLD GRIP TO SKIP" },
-  skipTutPad: { de: "VIEW HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR VIEW POUR PASSER", en: "HOLD VIEW TO SKIP" },
   // trailer: one text card before each scene
   t1: { de: "FEBRUAR 2022: RUSSLAND BEGINNT DIE VOLLINVASION DER UKRAINE.", fr: "FÉVRIER 2022 : LA RUSSIE LANCE L'INVASION À GRANDE ÉCHELLE DE L'UKRAINE.", en: "FEBRUARY 2022: RUSSIA LAUNCHES THE FULL-SCALE INVASION OF UKRAINE." },
-  t2: { de: "DIE UKRAINE HÄLT STAND.", fr: "L'UKRAINE TIENT BON.", en: "UKRAINE HOLDS THE LINE." },
-  t3: { de: "DOCH DER TERROR GEHT WEITER. JEDE NACHT SCHICKT RUSSLAND HUNDERTE SHAHED-DROHNEN GEGEN UKRAINISCHE STÄDTE.", fr: "MAIS LA TERREUR CONTINUE. CHAQUE NUIT, LA RUSSIE LANCE DES CENTAINES DE DRONES SHAHED SUR LES VILLES UKRAINIENNES.", en: "BUT THE TERROR CONTINUES. EVERY NIGHT, RUSSIA SENDS HUNDREDS OF SHAHED DRONES AGAINST UKRAINIAN CITIES." },
+  t2: { de: "DIE UKRAINE VERTEIDIGT SICH.", fr: "L'UKRAINE SE DÉFEND.", en: "UKRAINE DEFENDS ITSELF." },
+  t3: { de: "DOCH DER TERROR GEHT WEITER. JEDE NACHT SCHICKT RUSSLAND HUNDERTE SHAHED-DROHNEN AUF UKRAINISCHE STÄDTE.", fr: "MAIS LA TERREUR CONTINUE. CHAQUE NUIT, LA RUSSIE LANCE DES CENTAINES DE DRONES SHAHED SUR LES VILLES UKRAINIENNES.", en: "BUT THE TERROR CONTINUES. EVERY NIGHT, RUSSIA SENDS HUNDREDS OF SHAHED DRONES AT UKRAINIAN CITIES." },
   tWest: { de: "DER WESTEN WEIGERT SICH, DER UKRAINE GENÜGEND LUFTABWEHRSYSTEME ZU VERKAUFEN.", fr: "L'OCCIDENT REFUSE DE VENDRE À L'UKRAINE SUFFISAMMENT DE SYSTÈMES DE DÉFENSE AÉRIENNE.", en: "THE WEST REFUSES TO SELL UKRAINE SUFFICIENT AIR DEFENCE SYSTEMS." },
-  children: { de: "KINDER", fr: "ENFANTS", en: "CHILDREN" },
   tSol: { de: "DIE LÖSUNG DER UKRAINE: FPV-ABFANGDROHNEN.", fr: "LA SOLUTION DE L'UKRAINE : DES DRONES FPV INTERCEPTEURS.", en: "UKRAINE'S SOLUTION: FPV INTERCEPTOR DRONES." },
-  c10a: { de: "KLEIN, BILLIG, VON HAND GEFLOGEN. DER PILOT SIEHT DURCH DIE KAMERA DER DROHNE.", fr: "PETITS, BON MARCHÉ, PILOTÉS À LA MAIN. LE PILOTE VOIT À TRAVERS LA CAMÉRA DU DRONE.", en: "SMALL, CHEAP, FLOWN BY HAND. THE PILOT SEES THROUGH THE DRONE'S CAMERA." },
-  c10b: { de: "SIE JAGEN SHAHEDS, BEVOR SIE DIE STADT ERREICHEN.", fr: "ILS TRAQUENT LES SHAHED AVANT QU'ILS N'ATTEIGNENT LA VILLE.", en: "THEY HUNT SHAHEDS BEFORE THEY REACH THE CITY." },
+  c10a: { de: "KLEIN, BILLIG. FERNGESTEUERT.", fr: "PETITS, BON MARCHÉ. TÉLÉPILOTÉS.", en: "SMALL, CHEAP. REMOTE-CONTROLLED." },
+  c10b: { de: "SIE FANGEN SHAHEDS AB, BEVOR SIE DIE STADT ERREICHEN.", fr: "ILS INTERCEPTENT LES SHAHED AVANT QU'ILS N'ATTEIGNENT LA VILLE.", en: "THEY INTERCEPT SHAHEDS BEFORE THEY REACH THE CITY." },
   tQ: { de: "WIE LANGE BLEIBEN WIR NOCH NEUTRAL?", fr: "COMBIEN DE TEMPS ENCORE RESTERONS-NOUS NEUTRES ?", en: "FOR HOW MUCH LONGER WILL WE REMAIN NEUTRAL?" },
   tEnd: { de: "KEIN MATERIAL, TROTZDEM KRIEG.", fr: "PAS DE MATÉRIEL, LA GUERRE QUAND MÊME.", en: "NO MATERIEL, WAR ANYWAY." },
-  tTurn: { de: "DU BIST DRAN.", fr: "À TOI.", en: "YOUR TURN." },
+  tTurn: { de: "SLAVA.", fr: "SLAVA.", en: "SLAVA." },
   school: { de: "FLUGSCHULE", fr: "ÉCOLE DE PILOTAGE", en: "FLIGHT SCHOOL" },
   // end of a round
   endTheatre: { de: "DAS THEATER WURDE GETROFFEN.", fr: "LE THÉÂTRE A ÉTÉ TOUCHÉ.", en: "THE THEATRE WAS HIT." },
@@ -117,22 +113,26 @@ const S = {
     en: ["THRUST POINTS UP THROUGH", "FRAME: TILT + THR = SPEED", "ACRO  STICK = SPIN RATE", "      LEVEL IT YOURSELF", "ANGL  STICK = TILT ANGLE", "      AUTO LEVEL"],
   },
 };
-// flight school: one line per step; steps with keys have a keyboard text and a controller text (Quest and gamepad)
-const TUT = {
-  1: { de: "DU SIEHST DURCH DIE KAMERA DER DROHNE.", fr: "TU VOIS À TRAVERS LA CAMÉRA DU DRONE.", en: "YOU SEE THROUGH THE DRONE'S CAMERA." },
-  2: { kb: { de: "LEERTASTE: MOTOREN STARTEN.", fr: "ESPACE : DÉMARRER LES MOTEURS.", en: "PRESS SPACE TO START THE MOTORS." },
-       vr: { de: "DRÜCK A: MOTOREN STARTEN.", fr: "APPUIE SUR A : DÉMARRER LES MOTEURS.", en: "PRESS A TO START THE MOTORS." } },
-  3: { kb: { de: "W HALTEN: STEIGEN. S: SINKEN.", fr: "MAINTENIR W : MONTER. S : DESCENDRE.", en: "HOLD W TO CLIMB. S TO SINK." },
-       vr: { de: "LINKER STICK HOCH: STEIGEN. RUNTER: SINKEN.", fr: "STICK GAUCHE EN HAUT : MONTER. EN BAS : DESCENDRE.", en: "LEFT STICK UP: CLIMB. DOWN: SINK." } },
-  4: { kb: { de: "↑ HALTEN: NACH VORNE KIPPEN UND FLIEGEN.", fr: "MAINTENIR ↑ : INCLINER VERS L'AVANT ET AVANCER.", en: "HOLD ↑ TO TILT FORWARD AND FLY." },
-       vr: { de: "RECHTER STICK HOCH: NACH VORNE KIPPEN UND FLIEGEN.", fr: "STICK DROIT EN HAUT : INCLINER VERS L'AVANT ET AVANCER.", en: "RIGHT STICK UP: TILT FORWARD AND FLY." } },
-  5: { kb: { de: "A / D: DREHEN. ← / →: SEITLICH NEIGEN.", fr: "A / D : TOURNER. ← / → : S'INCLINER SUR LE CÔTÉ.", en: "A / D TURN. ← / → LEAN SIDEWAYS." },
-       vr: { de: "LINKER STICK SEITLICH: DREHEN. RECHTER STICK SEITLICH: NEIGEN.", fr: "STICK GAUCHE SUR LE CÔTÉ : TOURNER. STICK DROIT SUR LE CÔTÉ : S'INCLINER.", en: "LEFT STICK SIDEWAYS: TURN. RIGHT STICK SIDEWAYS: LEAN." } },
-  6: { de: "EINE LANGSAME ÜBUNGSDROHNE ERSCHEINT. HOL SIE EIN.", fr: "UN DRONE D'ENTRAÎNEMENT LENT APPARAÎT. RATTRAPE-LE.", en: "A SLOW TRAINING DRONE APPEARS. CATCH IT." },
-  7: { kb: { de: "NAH GENUG? DRÜCK E.", fr: "ASSEZ PROCHE ? APPUIE SUR E.", en: "CLOSE ENOUGH? PRESS E." },
-       vr: { de: "NAH GENUG? DRÜCK B.", fr: "ASSEZ PROCHE ? APPUIE SUR B.", en: "CLOSE ENOUGH? PRESS B." } },
-  8: { de: "KILL = GESTOPPT. LEAK = DURCHGEKOMMEN. SCHÜTZE DIE STADT.", fr: "KILL = ARRÊTÉ. LEAK = PASSÉ. PROTÈGE LA VILLE.", en: "KILL = STOPPED. LEAK = GOT THROUGH. PROTECT THE TOWN." },
-};
+// flight school: cards over a scripted flight of the drone seen from outside, [seconds, text];
+// texts with keys have a keyboard (kb), a Quest (vr) and optionally a gamepad (pad) version; pad falls back to vr
+const CTRL = [
+  [2.5, { de: "DAS IST DEINE DROHNE.", fr: "VOICI TON DRONE.", en: "THIS IS YOUR DRONE." }],
+  [2.5, { kb: { de: "LEERTASTE: MOTOREN STARTEN.", fr: "ESPACE : DÉMARRER LES MOTEURS.", en: "SPACE: START THE MOTORS." },
+          vr: { de: "A: MOTOREN STARTEN.", fr: "A : DÉMARRER LES MOTEURS.", en: "A: START THE MOTORS." } }],
+  [3.5, { kb: { de: "W / S: GAS GEBEN / GAS WEGNEHMEN. MEHR GAS = STEIGEN.", fr: "W / S : PLUS / MOINS DE GAZ. PLUS DE GAZ = MONTER.", en: "W / S: MORE / LESS THROTTLE. MORE THROTTLE = CLIMB." },
+          vr: { de: "LINKER ABZUG: GAS. MEHR GAS = STEIGEN.", fr: "GÂCHETTE GAUCHE : GAZ. PLUS DE GAZ = MONTER.", en: "LEFT TRIGGER: THROTTLE. MORE THROTTLE = CLIMB." },
+          pad: { de: "RT: GAS. MEHR GAS = STEIGEN.", fr: "RT : GAZ. PLUS DE GAZ = MONTER.", en: "RT: THROTTLE. MORE THROTTLE = CLIMB." } }],
+  [4.5, { kb: { de: "↑ / ↓: KIPPEN. ACRO-MODUS: LOSLASSEN, UND DIE DROHNE BLEIBT SCHRÄG.", fr: "↑ / ↓ : INCLINER. MODE ACRO : TU LÂCHES, LE DRONE RESTE INCLINÉ.", en: "↑ / ↓: TILT. ACRO MODE: LET GO AND THE DRONE STAYS TILTED." },
+          vr: { de: "RECHTER STICK VOR / ZURÜCK: KIPPEN. ACRO-MODUS: LOSLASSEN, UND DIE DROHNE BLEIBT SCHRÄG.", fr: "STICK DROIT AVANT / ARRIÈRE : INCLINER. MODE ACRO : TU LÂCHES, LE DRONE RESTE INCLINÉ.", en: "RIGHT STICK FORWARD / BACK: TILT. ACRO MODE: LET GO AND THE DRONE STAYS TILTED." } }],
+  [4, { de: "SCHRÄG + GAS = TEMPO. ZUM BREMSEN ZURÜCKKIPPEN.", fr: "INCLINÉ + GAZ = VITESSE. POUR FREINER, INCLINER EN ARRIÈRE.", en: "TILT + THROTTLE = SPEED. TO BRAKE, TILT BACK." }],
+  [4, { kb: { de: "A / D: DREHEN. ← / →: SEITLICH KIPPEN.", fr: "A / D : TOURNER. ← / → : INCLINER SUR LE CÔTÉ.", en: "A / D: TURN. ← / →: TILT SIDEWAYS." },
+        vr: { de: "LINKER STICK SEITLICH: DREHEN. RECHTER STICK SEITLICH: SEITLICH KIPPEN.", fr: "STICK GAUCHE SUR LE CÔTÉ : TOURNER. STICK DROIT SUR LE CÔTÉ : INCLINER SUR LE CÔTÉ.", en: "LEFT STICK SIDEWAYS: TURN. RIGHT STICK SIDEWAYS: TILT SIDEWAYS." } }],
+  [3, { kb: { de: "NAH AN EINER SHAHED? E: ZÜNDEN.", fr: "PRÈS D'UN SHAHED ? E : DÉTONER.", en: "CLOSE TO A SHAHED? E: DETONATE." },
+        vr: { de: "NAH AN EINER SHAHED? B: ZÜNDEN.", fr: "PRÈS D'UN SHAHED ? B : DÉTONER.", en: "CLOSE TO A SHAHED? B: DETONATE." } }],
+  [4, { kb: { de: "ZU SCHWER? M: ANGL-MODUS. DIE DROHNE RICHTET SICH SELBST AUS.", fr: "TROP DIFFICILE ? M : MODE ANGL. LE DRONE SE REDRESSE TOUT SEUL.", en: "TOO HARD? M: ANGL MODE. THE DRONE LEVELS ITSELF." },
+        vr: { de: "ZU SCHWER? Y: ANGL-MODUS. DIE DROHNE RICHTET SICH SELBST AUS. STEIGEN: LINKER STICK.", fr: "TROP DIFFICILE ? Y : MODE ANGL. LE DRONE SE REDRESSE TOUT SEUL. MONTER : STICK GAUCHE.", en: "TOO HARD? Y: ANGL MODE. THE DRONE LEVELS ITSELF. CLIMB: LEFT STICK." } }],
+  [2.5, { de: "SCHÜTZE DIE STADT.", fr: "PROTÈGE LA VILLE.", en: "PROTECT THE TOWN." }],
+];
 const scene = new THREE.Scene();
 const FOG = new THREE.Color(0.72, 0.70, 0.66);
 scene.fog = new THREE.FogExp2(FOG, 0.00015);
@@ -1187,8 +1187,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   keys[e.code] = true;
   if (seq.active){ seqKey(e.code); return; }
-  // Enter is kept free in the flight school: holding it skips the lessons
-  if (e.code === 'Space' || (e.code === 'Enter' && ended)) act('arm');
+  if (e.code === 'Space' || e.code === 'Enter') act('arm');
   if (e.code === 'KeyP' || e.code === 'Escape') act('pause');
   if (e.code === 'KeyN') act('vision');
   if (e.code === 'KeyM' || e.code === 'Tab') act('mode');
@@ -1209,15 +1208,15 @@ function act(a){
 
 // analog input: Quest Touch controllers in VR, or a standard gamepad (Xbox layout) on the desktop
 // gp: a gamepad was used last (for the button names); block: buttons held across a change of screen do not fire;
-// hold: the trailer skip button is held; skip: the flight school skip button is held
-const pad = { active: false, pitch: 0, roll: 0, yaw: 0, thr: 0, climb: 0, thrSeen: false, prev: {}, gp: false, block: false, hold: false, skip: false };
+// hold: the skip button is held (trailer and flight school)
+const pad = { active: false, pitch: 0, roll: 0, yaw: 0, thr: 0, climb: 0, thrSeen: false, prev: {}, gp: false, block: false, hold: false };
 const padBusy = gp => gp.buttons.some(b => b.pressed) || gp.axes.some(v => Math.abs(v) > 0.3);
 const device = () => renderer.xr.isPresenting ? 'vr' : pad.gp ? 'pad' : 'kb';
 const dead = v => Math.abs(v) < 0.08 ? 0 : (v - Math.sign(v) * 0.08) / 0.92;
 const expo = v => v * (0.35 + 0.65 * v * v);
 function edge(id, on, a){ if (on && !pad.prev[id] && !pad.block){ audioInit(); act(a); } pad.prev[id] = on; }
 function readPads(){
-  pad.active = false; pad.skip = false;
+  pad.active = false;
   const session = renderer.xr.getSession();
   if (seq.active){ readSeqPads(session); return; }
   let busy = false;
@@ -1228,7 +1227,6 @@ function readPads(){
       const ax = gp.axes, bt = gp.buttons;
       pad.active = true;
       if (padBusy(gp)) busy = true;
-      if (bt[1] && bt[1].pressed) pad.skip = true;  // grip
       if (src.handedness === 'right'){
         pad.roll = expo(dead(ax[2] || 0)); pad.pitch = -expo(dead(ax[3] || 0));
         edge('A', bt[4] && bt[4].pressed, 'arm'); edge('B', bt[5] && bt[5].pressed, 'det'); edge('RS', bt[3] && bt[3].pressed, 'screen');
@@ -1244,7 +1242,6 @@ function readPads(){
       const ax = gp.axes, bt = gp.buttons;
       pad.active = true;
       if (padBusy(gp)){ busy = true; pad.gp = true; }
-      if (bt[8] && bt[8].pressed) pad.skip = true;  // View / Back
       pad.yaw = expo(dead(ax[0])); pad.climb = -dead(ax[1]); pad.roll = expo(dead(ax[2])); pad.pitch = -expo(dead(ax[3]));
       pad.thr = bt[7] ? bt[7].value : 0;
       edge('g0', bt[0].pressed, 'arm'); edge('g1', bt[1].pressed, 'det'); edge('g2', bt[2].pressed, 'vision'); edge('g3', bt[3].pressed, 'mode'); edge('g9', bt[9] && bt[9].pressed, 'pause');
@@ -1313,7 +1310,7 @@ function die(how){
   P.alive = false; P.armed = false; P.deadAt = clock;
   if (how === 'boom' || how === 'hit'){
     explosion(P.pos.clone(), how === 'boom' ? 0.8 : 0.3, P.pos.y - groundAt(P.pos.x, P.pos.z) < 3);
-    for (const g of gerans) if (g.state !== 'down' && g.pos.distanceTo(P.pos) < (g.practice ? 25 : 14)) killGeran(g, 'player');
+    for (const g of gerans) if (g.state !== 'down' && g.pos.distanceTo(P.pos) < 14) killGeran(g, 'player');
     if (how === 'boom') for (const v of vehicles) if (v.alive && v.pos.distanceTo(P.pos) < 7){ v.kill(); if (!seq.active) confirmHit(v.type === 'mtlb' ? 'MT-LB' : v.type.toUpperCase()); }
   }
   if (how === 'boom'){ flash = 1; boom(0, 1.6); } else if (how === 'hit') boom(0, 0.3);
@@ -1465,7 +1462,6 @@ class Geran {
       if (o || this.pos.y <= groundAt(this.pos.x, this.pos.z) + 0.5) this.impact(o, 1.6);
     } else {
       let tx, tz;
-      if (this.practice && this.wi >= this.wp.length) this.wi = 0;  // the practice drone flies its circle until it is caught
       if (this.wi < this.wp.length){ [tx, tz] = this.wp[this.wi]; if (Math.hypot(tx - this.pos.x, tz - this.pos.z) < 200) this.wi++; }
       else { tx = this.aimP.x; tz = this.aimP.z; }
       const hd = Math.hypot(this.aimP.x - this.pos.x, this.aimP.z - this.pos.z);
@@ -1664,7 +1660,7 @@ class Vehicle {
     this.side += ((wreckAhead ? 7 : 0) - this.side) * Math.min(1, dt * 0.8);
     this.s += Math.max(0, speed) * dt;
     this.place(dt);
-    if (this.s >= this.road.len - 4 && !seq.active && !tut.active) endFeed('column');
+    if (this.s >= this.road.len - 4 && !seq.active) endFeed('column');
     this.dustT -= dt;
     if (this.dustT <= 0 && speed > 2 && !this.hidden && !this.noDust){ this.dustT = 0.12; fx(_p3.set(this.pos.x, this.pos.y + 0.8, this.pos.z).addScaledVector(this.vel, -0.4), false, 3, 16, 7, _ev.set(rr(-0.5, 0.5), 1.2, rr(-0.5, 0.5)), 0.6, 0, DUST); }
     if (AU.ready){ if (!this.snd) this.snd = makeVehicleSound(); updateSrcSound(this.snd, this.pos, this.vel, true); }
@@ -1802,7 +1798,7 @@ const _aim = new THREE.Vector3();
 function updateGuns(dt){
   for (const s of guns){
     let tgt = null, td = s.g.range;
-    for (const g of gerans){ if (g.state === 'down' || g.practice) continue; const d = g.pos.distanceTo(s.pos); if (d < td){ td = d; tgt = g; } }
+    for (const g of gerans){ if (g.state === 'down') continue; const d = g.pos.distanceTo(s.pos); if (d < td){ td = d; tgt = g; } }
     s.cd -= dt;
     if (tgt && s.cd <= 0 && s.burst <= 0){
       if (s.target !== tgt){
@@ -1899,7 +1895,6 @@ function spawnForestVehicle(road = pick(ROADS.filter(r => r.forest))){
   v.colSpeed = 3.5; v.hidden = true; vehicles.push(v);
 }
 function updateThreats(){
-  if (tut.active) return;  // flight school: only the practice drone
   if (clock > nextTrainer){ spawnTrainer(); nextTrainer = Infinity; }
   if (clock > nextForest){
     if (!nextForest) for (const r of ROADS.filter(r => r.forest)) spawnForestVehicle(r);
@@ -1926,7 +1921,7 @@ let endedAt = 0, endReason = 'theatre', roundTime = 0;
 const endPhase = () => ended ? (performance.now() - endedAt) / 1000 : 0;
 function centralHit(){
   if (seq.active){ if (seq.phase === 'theater') theaterHit(); }
-  else if (!tut.active) endFeed('theatre');
+  else endFeed('theatre');
 }
 function endFeed(why){
   if (ended) return;
@@ -2296,9 +2291,9 @@ function drawPause(){
 }
 
 // ---------------------------------------------------------------- opening sequence
-// the trailer: a text card (texts in S) before each scene; it ends with a rhetorical question and leads into the flight school
-const SEQ_TIME = { t1: 5, column: 5.5, t2: 3.5, hit: 4.6, t3: 6.5, swarm: 10.5, tWest: 5.5, theater: 11, deti: 3.5, tSol: 4, intercept: 7.5, tQ: 4.5, tEnd: 3.5, tTurn: 2 };
-const SEQ_NEXT = { t1: 'column', column: 't2', t2: 'hit', hit: 't3', t3: 'swarm', swarm: 'tWest', tWest: 'theater', theater: 'deti', deti: 'tSol', tSol: 'intercept', intercept: 'tQ', tQ: 'tEnd', tEnd: 'tTurn' };
+// the trailer: a text card (texts in S) before each scene; it ends with a rhetorical question and leads into the flight school (ctrl)
+const SEQ_TIME = { t1: 5, column: 5.5, t2: 3.5, hit: 4.6, t3: 6.5, swarm: 10.5, tWest: 5.5, theater: 11, deti: 3.5, tSol: 4, intercept: 7.5, tQ: 4.5, tEnd: 3.5, tTurn: 2, ctrl: CTRL.reduce((a, c) => a + c[0], 0) };
+const SEQ_NEXT = { t1: 'column', column: 't2', t2: 'hit', hit: 't3', t3: 'swarm', swarm: 'tWest', tWest: 'theater', theater: 'deti', deti: 'tSol', tSol: 'intercept', intercept: 'tQ', tQ: 'tEnd', tEnd: 'tTurn', tTurn: 'ctrl' };
 const SEQ_BLACK = ['start', 't1', 't2', 't3', 'tWest', 'deti', 'tSol', 'tQ', 'tEnd', 'tTurn'];
 // position of the white "Z" on the right side of each vehicle type
 const ZPOS = { bmp: [1.47, 1.45, -1.8], btr: [1.47, 1.45, -1.2], mtlb: [1.47, 1.3, -1.5] };
@@ -2316,6 +2311,9 @@ function seqGo(phase){
   if (phase === 'swarm') seqSwarm();
   if (phase === 'theater') seqTheater();
   if (phase === 'intercept') seqIntercept();
+  if (phase === 'ctrl') seqCtrl();
+  quad.visible = quadPad.visible = phase === 'ctrl';
+  camera.fov = phase === 'ctrl' ? 55 : 100; camera.updateProjectionMatrix();
 }
 
 // scene 1: a column with "Z" marks rolls towards the camera
@@ -2493,7 +2491,8 @@ function seqBackground(dt){
 function seqUpdate(dt){
   seq.t += dt;
   const ph = seq.phase;
-  if (ph !== 'start' && holdSkip(keys.Space || mouseDown || pad.hold, dt)) return startTutorial();
+  // holding skips the trailer to the flight school, and the flight school to the round
+  if (ph !== 'start' && holdSkip(keys.Space || mouseDown || pad.hold, dt)) return ph === 'ctrl' ? startRound() : seqGo('ctrl');
   if (['column', 't2', 'hit', 'swarm'].includes(ph)) seqBackground(dt);
   noise = 0.04;
   seq.static = Math.max(0, seq.static - dt * 2.5);
@@ -2502,11 +2501,12 @@ function seqUpdate(dt){
   else if (ph === 'swarm') seqCamSwarm();
   else if (ph === 'theater') seqCamTheater(dt);
   else if (ph === 'intercept') seqCamIntercept();
+  else if (ph === 'ctrl') seqCamCtrl(dt);
   else if (ph === 'start'){ camera.position.copy(P.pos); camera.quaternion.copy(P.q).multiply(UPTILT); }
   if (ph !== 'theater') camera.up.set(0, 1, 0);
   if (ph === 'theater' && seq.t + dt >= SEQ_TIME.theater) seqDetiSpot();
   if (SEQ_TIME[ph] && seq.t >= SEQ_TIME[ph]){
-    if (ph === 'tTurn') startTutorial();
+    if (ph === 'ctrl') startRound();
     else seqGo(SEQ_NEXT[ph]);
   }
 }
@@ -2546,8 +2546,8 @@ function resetWorld(){
   for (const s of guns){ s.burst = 0; s.target = null; }
   kills = leaks = aaKills = 0; hitMsg = killBlink = 0; clock = 0;
   nextGeran = FIRST_GERAN; nextColumn = FIRST_COLUMN; nextTrainer = 20; nextForest = 0;
-  respawn(); P.mode = 'ANGL'; staticAmt = 1; flash = 0;
-  tut.active = false; tut.drone = null;
+  respawn(); P.mode = 'ACRO'; staticAmt = 1; flash = 0;
+  quad.visible = quadPad.visible = false; camera.fov = 100; camera.updateProjectionMatrix();
   hold.t = 0; hold.ready = false; pad.block = true;
   setVision('day');
   setPaused(false);
@@ -2556,72 +2556,72 @@ function startRound(){
   resetWorld();
   seq.active = false; seq.black = 0;
 }
-function startTutorial(){
-  resetWorld();
-  seq.active = false; seq.black = 0;
-  tut.active = true; tutStep(1);
-}
 function resetToStart(){
   resetWorld();
   setLang(DEFAULT_LANG);
   seq.active = true; seq.focus = 0; seqGo('start');
 }
 
-// ---------------------------------------------------------------- flight school: one step at a time, each waits for the action
-const tut = { active: false, step: 0, t: 0, dist: 0, turn: 0, hd: 0, drone: null };
-const _hd = new THREE.Vector3();
-const heading = () => { _hd.set(0, 0, -1).applyQuaternion(P.q); return Math.atan2(-_hd.x, -_hd.z); };
-function tutStep(n){
-  tut.step = n; tut.t = 0; tut.dist = 0; tut.turn = 0; tut.hd = heading();
-  if (n === 6) spawnPracticeDrone();
-}
-// a slow Geran-2 that circles low over the fields east of the start
-function spawnPracticeDrone(){
-  if (tut.drone && tut.drone.grp.parent && tut.drone.state !== 'down') return;
-  const cx = START.x + 330, cz = START.z, R = 220, wp = [];
-  for (let i = 0; i < 12; i++){ const a = -i / 12 * 6.2832; wp.push([cx + Math.cos(a) * R, cz + Math.sin(a) * R]); }
-  const g = new Geran(2, wp);
-  g.wp = wp; g.wi = 1; g.practice = true; g.goal = null; g.alt = 45; g.speed = 22; g.hp = 1e9;
-  g.pos.set(wp[0][0], groundAt(wp[0][0], wp[0][1]) + 50, wp[0][1]);
-  g.heading = Math.atan2(wp[1][0] - wp[0][0], wp[1][1] - wp[0][1]);
-  g.aimP.set(cx, -1e4, cz);
-  gerans.push(g); tut.drone = g;
-}
-function tutProgress(){
-  if (tut.step === 3) return (P.pos.y - groundAt(P.pos.x, P.pos.z)) / 15;
-  if (tut.step === 4) return tut.dist / 50;
-  if (tut.step === 5) return tut.turn / 6.2;
-  return -1;
-}
-function tutUpdate(dt){
-  tut.t += dt;
-  if (holdSkip(keys.Enter || pad.skip, dt)) return startRound();
-  const s = tut.step, ready = P.alive && P.armed, hd = heading(), dh = hd - tut.hd;
-  tut.hd = hd;
-  if (ready){ tut.dist += Math.hypot(P.pos.x - _p0.x, P.pos.z - _p0.z); tut.turn += Math.abs(Math.atan2(Math.sin(dh), Math.cos(dh))); }
-  if (s === 1){ if (P.armed) tutStep(3); else if (tut.t > 3.5) tutStep(2); }
-  else if (s === 2){ if (P.armed) tutStep(3); }
-  else if (s >= 3 && s <= 5){ if (ready && tutProgress() >= 1) tutStep(s + 1); }
-  else if (s === 6 || s === 7){
-    const g = tut.drone;
-    if (g && g.state === 'down') tutStep(8);
-    else if (!g || !g.grp.parent) spawnPracticeDrone();
-    else {
-      const d = g.pos.distanceTo(P.pos);
-      if (s === 6 && ready && d < 25) tutStep(7);
-      else if (s === 7 && (d > 45 || !P.alive)) tutStep(6);
-    }
+// ---------------------------------------------------------------- flight school: the drone seen from outside flies what each card explains
+const quad = new THREE.Group();
+{
+  const dark = lam({ color: 0x55575a }, 0.6), grey = lam({ color: 0x8e8f90 }, 0.8), red = lam({ color: 0xc0402e }, 0.5);
+  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); quad.add(m); return m; };
+  add(new THREE.BoxGeometry(0.12, 0.035, 0.2), dark, 0, 0.03, 0);              // frame plates
+  add(new THREE.BoxGeometry(0.08, 0.05, 0.13), red, 0, 0.075, 0.02);           // battery on top
+  add(new THREE.BoxGeometry(0.045, 0.045, 0.04), grey, 0, 0.05, -0.105);       // camera, front is -z
+  for (const a of [Math.PI / 4, -Math.PI / 4]){ const m = add(new THREE.BoxGeometry(0.03, 0.012, 0.5), dark, 0, 0.018, 0); m.rotation.y = a; }
+  quad.userData.props = [];
+  for (const [x, z, cw] of [[0.177, 0.177, 1], [0.177, -0.177, -1], [-0.177, 0.177, -1], [-0.177, -0.177, 1]]){
+    add(new THREE.CylinderGeometry(0.028, 0.028, 0.035, 12), grey, x, 0.04, z);
+    const disc = add(new THREE.CircleGeometry(0.125, 24), new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }), x, 0.062, z);
+    disc.rotation.x = -Math.PI / 2;
+    const blade = add(new THREE.BoxGeometry(0.25, 0.004, 0.022), dark, x, 0.062, z);
+    quad.userData.props.push({ blade, cw });
   }
-  else if (s === 8 && tut.t > 6) startRound();
+  quad.scale.setScalar(2.6);
+  quad.visible = false;
+  scene.add(quad);
 }
-function drawTutorial(){
-  if (!tut.active || ended || paused) return;
-  const d = device();
-  let s = tut.step;
-  if (s >= 3 && s <= 7 && P.alive && !P.armed) s = 2;  // after a crash: start the motors again
-  const e = TUT[s], text = say(e.kb ? (d === 'kb' ? e.kb : e.vr) : e);
-  drawBox(text, say(S.school) + ' ' + tut.step + '/8', s === tut.step && P.armed ? tutProgress() : -1);
-  drawHold(say(d === 'vr' ? S.skipTutVR : d === 'pad' ? S.skipTutPad : S.skipTutKb));
+// a crate to start from, so the drone stands above the grass
+const CRATE_H = 0.45;
+const quadPad = new THREE.Mesh(new THREE.BoxGeometry(0.9, CRATE_H, 0.9), lam({ color: 0x9a8262 }, 0.4));
+quadPad.visible = false;
+scene.add(quadPad);
+// the scripted flight: [time, forward m, height m, pitch deg (nose down +), roll deg (right +), turn deg, throttle 0-1]
+const CTRL_KEYS = [
+  [0, 0, 0, 0, 0, 0, 0], [2.5, 0, 0, 0, 0, 0, 0], [3.2, 0, 0, 0, 0, 0, 0.25], [5, 0, 0, 0, 0, 0, 0.25],
+  [5.6, 0, 0.3, 0, 0, 0, 0.75], [7.6, 0, 3, 0, 0, 0, 0.75], [8.5, 0, 3, 0, 0, 0, 0.5],
+  [9.6, 0.3, 3, 28, 0, 0, 0.5], [11.8, 4, 2.9, 28, 0, 0, 0.55], [13, 6, 3, 0, 0, 0, 0.5],
+  [13.8, 7, 3, 35, 0, 0, 0.9], [15.6, 17, 3.2, 35, 0, 0, 0.9], [16.4, 20, 3.2, -22, 0, 0, 0.7], [17, 21, 3, 0, 0, 0, 0.5],
+  [19, 21, 3, 0, 0, 180, 0.55], [19.7, 21, 3, 0, -28, 180, 0.55], [20.4, 21, 3, 0, 28, 180, 0.55], [21, 21, 3, 0, 0, 180, 0.5],
+  [24, 21, 3.2, 0, 0, 180, 0.5], [24.8, 21, 3.2, 0, 32, 180, 0.5], [26.6, 21, 3, 0, 0, 180, 0.5], [28, 21, 3, 0, 0, 180, 0.5],
+  [30.5, 26, 22, 10, 0, 180, 1],
+];
+const ctrlPose = t => {
+  let i = 0;
+  while (i < CTRL_KEYS.length - 2 && t > CTRL_KEYS[i + 1][0]) i++;
+  const a = CTRL_KEYS[i], b = CTRL_KEYS[i + 1], k = sstep(a[0], b[0], t);
+  return a.map((v, j) => v + (b[j] - v) * k);
+};
+const _cq = new THREE.Vector3(), _ct = new THREE.Vector3();
+function seqCtrl(){
+  resetWorld();
+  so.camInit = false;
+  quadPad.position.set(START.x, groundAt(START.x, START.z) + CRATE_H / 2, START.z);
+}
+function seqCamCtrl(dt){
+  const [, fwd, up, pitch, roll, turn, thr] = ctrlPose(seq.t), D = THREE.MathUtils.degToRad;
+  const x = START.x + fwd, z = START.z;
+  quad.position.set(x, groundAt(START.x, z) + CRATE_H + up, z);
+  quad.rotation.set(-D(pitch), -Math.PI / 2 + D(turn), -D(roll), 'YXZ');
+  for (const p of quad.userData.props) p.blade.rotation.y += p.cw * thr * 70 * dt;
+  if (thr > 0.05) quad.position.y += Math.sin(seq.t * 9) * 0.01;
+  // camera to the side and a little behind, following smoothly
+  _ct.set(quad.position.x - 0.9, Math.max(quad.position.y + 0.8, groundAt(quad.position.x - 0.9, z + 2.4) + 1.2), z + 2.4);
+  if (!so.camInit){ camera.position.copy(_ct); so.camInit = true; }
+  else camera.position.lerp(_ct, 1 - Math.exp(-dt * 3));
+  camera.lookAt(_cq.copy(quad.position).setY(quad.position.y + 0.1));
 }
 
 // ---------------------------------------------------------------- start screen: language, trailer or flight school
@@ -2638,7 +2638,7 @@ function startPick(i){
   audioInit();
   if (i < 3) return setLang(LANGS[i]);
   seq.focus = i - 3;
-  if (i === 3) seqGo('t1'); else startTutorial();
+  if (i === 3) seqGo('t1'); else seqGo('ctrl');
 }
 function startMove(dy, dx){
   if (dx) setLang(LANGS[(LANGS.indexOf(lang) + dx + 3) % 3]);
@@ -2747,8 +2747,12 @@ function drawSeq(){
     const d = seq.detiSpot || { x: W / 2, y: H / 2, size: 34 };
     oc.font = 'bold ' + d.size.toFixed(1) + 'px Arial, Helvetica, sans-serif'; oc.textAlign = 'center'; oc.fillStyle = INK;
     oc.fillText('ДЕТИ', d.x, d.y + d.size * 0.04);
-    oc.font = 'bold 11px monospace';
-    txt('(' + say(S.children) + ')', d.x, Math.min(H - 50, d.y + d.size * 0.55 + 12), 'center');
+  }
+  if (ph === 'ctrl'){
+    let t = seq.t, n = 0;
+    while (n < CTRL.length - 1 && t >= CTRL[n][0]){ t -= CTRL[n][0]; n++; }
+    const e = CTRL[n][1], dv = device(), text = e.de ? e : e[dv] || e.vr;
+    drawBox(say(text), say(S.school) + ' ' + (n + 1) + '/' + CTRL.length);
   }
 }
 
@@ -2784,7 +2788,6 @@ function update(dt){
       if (P.armed) P.time += dt;
     } else if (!ended && clock - P.deadAt > 0.5) respawn();
     updateThreats();
-    if (tut.active && !ended) tutUpdate(dt);
   }
   for (const g of [...gerans]) g.update(dt);
   for (const v of vehicles) v.update(dt);
@@ -2922,7 +2925,6 @@ function render(){
     lastFeed = t;
     drawOSD();
     if (seq.active && seq.phase !== 'start') drawHold(say(device() === 'kb' ? S.skipTrailerKb : S.skipTrailerA));
-    drawTutorial();
     if (paused) drawPause();
     osdTex.needsUpdate = true;
     const xrTarget = renderer.getRenderTarget();
@@ -2949,7 +2951,7 @@ function frame(now){
   render();
 }
 renderer.setAnimationLoop(frame);
-if (location.hash === '#dbg') window.__d = { seq, seqGo, startRound, startTutorial, resetToStart, tut, setLang, hold, pad, groundAt, P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; }, quality, applyQuality,
+if (location.hash === '#dbg') window.__d = { seq, seqGo, startRound, resetToStart, quad, setLang, hold, pad, groundAt, P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; }, quality, applyQuality,
   vrPreview(){ renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(feedRT); renderer.render(postScene, postCam); renderer.setRenderTarget(null); vrCam.aspect = RW / RH; vrCam.fov = 75; vrCam.updateProjectionMatrix(); renderer.render(vrScene, vrCam); },
   vrQuality,
   get state(){ return { clock, ended, endReason, kills, leaks, aaKills, lang, paused, alive: houses.filter(h => h.village && h.alive).length }; } };
