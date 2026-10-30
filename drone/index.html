@@ -44,7 +44,95 @@ addEventListener('resize', fit); fit();
 let clock = 0, last = performance.now(), ended = false, paused = false;
 let kills = 0, aaKills = 0, leaks = 0;
 // opening sequence state; the game runs only when seq.active is false
-const seq = { active: true, phase: 'gate', t: 0, choice: -1, skips: 0, destroyed: [], black: 1, static: 0, ptr: null };
+const seq = { active: true, phase: 'start', t: 0, focus: 0, black: 1, static: 0, ptr: null };
+// buildings destroyed since the last reset; a reset (new round, flight school, start screen) rebuilds them
+const destroyedLog = [];
+// hold-to-skip: it only counts once the button was free after the last change of screen
+const hold = { t: 0, ready: false }, HOLD_TIME = 1;
+// event kiosk: back to the start screen after a minute without any input
+const IDLE_MS = 60000;
+let lastInput = performance.now(), mouseDown = false;
+const noteInput = () => { lastInput = performance.now(); };
+
+// ---------------------------------------------------------------- languages: German (default), French, English; ?lang=fr or ?lang=en sets another default
+const LANGS = ['de', 'fr', 'en'];
+const DEFAULT_LANG = (() => { const q = new URLSearchParams(location.search).get('lang'); return LANGS.includes(q) ? q : 'de'; })();
+let lang = DEFAULT_LANG;
+function setLang(l){ lang = l; document.documentElement.lang = l; }
+setLang(lang);
+const say = o => o[lang] || o.en;
+// French strings use a no-break space ( ) before ":" and "?", so a line never starts with one
+const S = {
+  title: { de: "KEIN MATERIAL, TROTZDEM KRIEG", fr: "PAS DE MATÉRIEL, LA GUERRE QUAND MÊME", en: "NO MATERIEL, WAR ANYWAY" },
+  sub: { de: "FLIEG EINE FPV-DROHNE, DIE ANGRIFFSDROHNEN STOPPT.", fr: "PILOTE UN DRONE FPV QUI ARRÊTE LES DRONES D'ATTAQUE.", en: "FLY AN FPV DRONE THAT STOPS ATTACK DRONES." },
+  watch: { de: "TRAILER ANSEHEN · 1 MIN", fr: "VOIR LA BANDE-ANNONCE · 1 MIN", en: "WATCH TRAILER · 1 MIN" },
+  skip: { de: "DIREKT ZUR FLUGSCHULE", fr: "ALLER À L'ÉCOLE DE PILOTAGE", en: "SKIP TO FLIGHT SCHOOL" },
+  hintVR: { de: "ZEIGEN UND ABZUG DRÜCKEN", fr: "VISER ET APPUYER SUR LA GÂCHETTE", en: "POINT AND PULL THE TRIGGER" },
+  hintKb: { de: "← → SPRACHE · ↑ ↓ WÄHLEN · ENTER OK", fr: "← → LANGUE · ↑ ↓ CHOISIR · ENTRÉE OK", en: "← → LANGUAGE · ↑ ↓ CHOOSE · ENTER OK" },
+  hintPad: { de: "← → SPRACHE · ↑ ↓ WÄHLEN · A OK", fr: "← → LANGUE · ↑ ↓ CHOISIR · A OK", en: "← → LANGUAGE · ↑ ↓ CHOOSE · A OK" },
+  skipTrailerKb: { de: "LEERTASTE HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR ESPACE POUR PASSER", en: "HOLD SPACE TO SKIP" },
+  skipTrailerA: { de: "A HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR A POUR PASSER", en: "HOLD A TO SKIP" },
+  skipTutKb: { de: "ENTER HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR ENTRÉE POUR PASSER", en: "HOLD ENTER TO SKIP" },
+  skipTutVR: { de: "GRIFFTASTE HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR LE BOUTON LATÉRAL POUR PASSER", en: "HOLD GRIP TO SKIP" },
+  skipTutPad: { de: "VIEW HALTEN ZUM ÜBERSPRINGEN", fr: "MAINTENIR VIEW POUR PASSER", en: "HOLD VIEW TO SKIP" },
+  // trailer: one text card before each scene
+  t1: { de: "FEBRUAR 2022: RUSSLAND BEGINNT DIE VOLLINVASION DER UKRAINE.", fr: "FÉVRIER 2022 : LA RUSSIE LANCE L'INVASION À GRANDE ÉCHELLE DE L'UKRAINE.", en: "FEBRUARY 2022: RUSSIA LAUNCHES THE FULL-SCALE INVASION OF UKRAINE." },
+  t2: { de: "DIE UKRAINE HÄLT STAND.", fr: "L'UKRAINE TIENT BON.", en: "UKRAINE HOLDS THE LINE." },
+  t3: { de: "DOCH DER TERROR GEHT WEITER. JEDE NACHT SCHICKT RUSSLAND HUNDERTE SHAHED-DROHNEN GEGEN UKRAINISCHE STÄDTE.", fr: "MAIS LA TERREUR CONTINUE. CHAQUE NUIT, LA RUSSIE LANCE DES CENTAINES DE DRONES SHAHED SUR LES VILLES UKRAINIENNES.", en: "BUT THE TERROR CONTINUES. EVERY NIGHT, RUSSIA SENDS HUNDREDS OF SHAHED DRONES AGAINST UKRAINIAN CITIES." },
+  tWest: { de: "DER WESTEN WEIGERT SICH, DER UKRAINE GENÜGEND LUFTABWEHRSYSTEME ZU VERKAUFEN.", fr: "L'OCCIDENT REFUSE DE VENDRE À L'UKRAINE SUFFISAMMENT DE SYSTÈMES DE DÉFENSE AÉRIENNE.", en: "THE WEST REFUSES TO SELL UKRAINE SUFFICIENT AIR DEFENCE SYSTEMS." },
+  children: { de: "KINDER", fr: "ENFANTS", en: "CHILDREN" },
+  tSol: { de: "DIE LÖSUNG DER UKRAINE: FPV-ABFANGDROHNEN.", fr: "LA SOLUTION DE L'UKRAINE : DES DRONES FPV INTERCEPTEURS.", en: "UKRAINE'S SOLUTION: FPV INTERCEPTOR DRONES." },
+  c10a: { de: "KLEIN, BILLIG, VON HAND GEFLOGEN. DER PILOT SIEHT DURCH DIE KAMERA DER DROHNE.", fr: "PETITS, BON MARCHÉ, PILOTÉS À LA MAIN. LE PILOTE VOIT À TRAVERS LA CAMÉRA DU DRONE.", en: "SMALL, CHEAP, FLOWN BY HAND. THE PILOT SEES THROUGH THE DRONE'S CAMERA." },
+  c10b: { de: "SIE JAGEN SHAHEDS, BEVOR SIE DIE STADT ERREICHEN.", fr: "ILS TRAQUENT LES SHAHED AVANT QU'ILS N'ATTEIGNENT LA VILLE.", en: "THEY HUNT SHAHEDS BEFORE THEY REACH THE CITY." },
+  tQ: { de: "WIE LANGE BLEIBEN WIR NOCH NEUTRAL?", fr: "COMBIEN DE TEMPS ENCORE RESTERONS-NOUS NEUTRES ?", en: "FOR HOW MUCH LONGER WILL WE REMAIN NEUTRAL?" },
+  tEnd: { de: "KEIN MATERIAL, TROTZDEM KRIEG.", fr: "PAS DE MATÉRIEL, LA GUERRE QUAND MÊME.", en: "NO MATERIEL, WAR ANYWAY." },
+  tTurn: { de: "DU BIST DRAN.", fr: "À TOI.", en: "YOUR TURN." },
+  school: { de: "FLUGSCHULE", fr: "ÉCOLE DE PILOTAGE", en: "FLIGHT SCHOOL" },
+  // end of a round
+  endTheatre: { de: "DAS THEATER WURDE GETROFFEN.", fr: "LE THÉÂTRE A ÉTÉ TOUCHÉ.", en: "THE THEATRE WAS HIT." },
+  endColumn: { de: "EINE KOLONNE HAT DIE STADT ERREICHT.", fr: "UNE COLONNE A ATTEINT LA VILLE.", en: "A COLUMN REACHED THE TOWN." },
+  stopped: { de: "GESTOPPT", fr: "ARRÊTÉS", en: "STOPPED" },
+  through: { de: "DURCHGEKOMMEN", fr: "PASSÉS", en: "GOT THROUGH" },
+  time: { de: "ZEIT", fr: "TEMPS", en: "TIME" },
+  again: { de: "NOCHMAL", fr: "RÉESSAYER", en: "TRY AGAIN" },
+  // pause screen
+  pResumeKb: { de: "[P] WEITER  [R] NEUSTART", fr: "[P] REPRENDRE  [R] RECOMMENCER", en: "[P] RESUME  [R] RESTART" },
+  pResumeVR: { de: "[L-STICK] WEITER  [B] NEUSTART", fr: "[L-STICK] REPRENDRE  [B] RECOMMENCER", en: "[L-STICK] RESUME  [B] RESTART" },
+  pFront: { de: "VORNE", fr: "AVANT", en: "FRONT" },
+  pKb1: { de: "LEERTASTE START  E ZÜNDEN", fr: "ESPACE ARMER  E DÉTONER", en: "SPACE ARM   E DETONATE" },
+  pKb2: { de: "M ACRO/ANGL  N WÄRMEBILD", fr: "M ACRO/ANGL  N THERMIQUE", en: "M ACRO/ANGL N THERMAL" },
+  pVR1: { de: "A START  B ZÜNDEN  TRIG GAS", fr: "A ARMER  B DÉTONER  GÂCH. GAZ", en: "A ARM  B DET  TRIG THR" },
+  pVR2: { de: "Y ACRO/ANGL  X WÄRMEBILD", fr: "Y ACRO/ANGL  X THERMIQUE", en: "Y ACRO/ANGL X THERMAL" },
+  pVR3: { de: "R-STICK DRÜCKEN: BILDGRÖSSE", fr: "R-STICK CLIC : TAILLE ÉCRAN", en: "R-STICK CLICK: SCREEN SIZE" },
+  pHoldKb: { de: "TASTE HALTEN: MOTORMIX", fr: "TOUCHE MAINTENUE : MOTEURS", en: "HOLD A KEY: MOTOR MIX" },
+  pHoldVR: { de: "STICK BEWEGEN: MOTORMIX", fr: "STICK BOUGÉ : MOTEURS", en: "MOVE A STICK: MOTOR MIX" },
+  pRows: {
+    de: [["GAS   ALLE 4 SCHNELLER", "= STEIGEN"], ["NICK  HINTEN 1+3 MEHR", "= NASE TIEF, VORWÄRTS"], ["ROLL  LINKS 3+4 MEHR", "= NACH RECHTS NEIGEN"], ["GIER  CCW 2+3 MEHR", "= NACH RECHTS DREHEN"]],
+    fr: [["GAZ   LES 4 PLUS VITE", "= MONTER"], ["TANG. ARRIÈRE 1+3 +", "= NEZ EN BAS, AVANCER"], ["ROUL. GAUCHE 3+4 +", "= PENCHER À DROITE"], ["LACET CCW 2+3 +", "= TOURNER À DROITE"]],
+    en: [["THR  ALL 4 FASTER", "= CLIMB"], ["PITCH REAR 1+3 UP", "= NOSE DOWN, FLY FWD"], ["ROLL  LEFT 3+4 UP", "= BANK RIGHT"], ["YAW   CCW 2+3 UP", "= TURN RIGHT"]],
+  },
+  pFoot: {
+    de: ["SCHUB WIRKT SENKRECHT ZUM", "RAHMEN: NEIGUNG+GAS = TEMPO", "ACRO  STICK = DREHRATE", "      SELBST AUSRICHTEN", "ANGL  STICK = NEIGUNG", "      RICHTET SICH AUS"],
+    fr: ["LA POUSSÉE SUIT LE CADRE :", "INCLINAISON + GAZ = VITESSE", "ACRO  STICK = ROTATION", "      À REDRESSER SOI-MÊME", "ANGL  STICK = INCLINAISON", "      AUTO-NIVELLEMENT"],
+    en: ["THRUST POINTS UP THROUGH", "FRAME: TILT + THR = SPEED", "ACRO  STICK = SPIN RATE", "      LEVEL IT YOURSELF", "ANGL  STICK = TILT ANGLE", "      AUTO LEVEL"],
+  },
+};
+// flight school: one line per step; steps with keys have a keyboard text and a controller text (Quest and gamepad)
+const TUT = {
+  1: { de: "DU SIEHST DURCH DIE KAMERA DER DROHNE.", fr: "TU VOIS À TRAVERS LA CAMÉRA DU DRONE.", en: "YOU SEE THROUGH THE DRONE'S CAMERA." },
+  2: { kb: { de: "LEERTASTE: MOTOREN STARTEN.", fr: "ESPACE : DÉMARRER LES MOTEURS.", en: "PRESS SPACE TO START THE MOTORS." },
+       vr: { de: "DRÜCK A: MOTOREN STARTEN.", fr: "APPUIE SUR A : DÉMARRER LES MOTEURS.", en: "PRESS A TO START THE MOTORS." } },
+  3: { kb: { de: "W HALTEN: STEIGEN. S: SINKEN.", fr: "MAINTENIR W : MONTER. S : DESCENDRE.", en: "HOLD W TO CLIMB. S TO SINK." },
+       vr: { de: "LINKER STICK HOCH: STEIGEN. RUNTER: SINKEN.", fr: "STICK GAUCHE EN HAUT : MONTER. EN BAS : DESCENDRE.", en: "LEFT STICK UP: CLIMB. DOWN: SINK." } },
+  4: { kb: { de: "↑ HALTEN: NACH VORNE KIPPEN UND FLIEGEN.", fr: "MAINTENIR ↑ : INCLINER VERS L'AVANT ET AVANCER.", en: "HOLD ↑ TO TILT FORWARD AND FLY." },
+       vr: { de: "RECHTER STICK HOCH: NACH VORNE KIPPEN UND FLIEGEN.", fr: "STICK DROIT EN HAUT : INCLINER VERS L'AVANT ET AVANCER.", en: "RIGHT STICK UP: TILT FORWARD AND FLY." } },
+  5: { kb: { de: "A / D: DREHEN. ← / →: SEITLICH NEIGEN.", fr: "A / D : TOURNER. ← / → : S'INCLINER SUR LE CÔTÉ.", en: "A / D TURN. ← / → LEAN SIDEWAYS." },
+       vr: { de: "LINKER STICK SEITLICH: DREHEN. RECHTER STICK SEITLICH: NEIGEN.", fr: "STICK GAUCHE SUR LE CÔTÉ : TOURNER. STICK DROIT SUR LE CÔTÉ : S'INCLINER.", en: "LEFT STICK SIDEWAYS: TURN. RIGHT STICK SIDEWAYS: LEAN." } },
+  6: { de: "EINE LANGSAME ÜBUNGSDROHNE ERSCHEINT. HOL SIE EIN.", fr: "UN DRONE D'ENTRAÎNEMENT LENT APPARAÎT. RATTRAPE-LE.", en: "A SLOW TRAINING DRONE APPEARS. CATCH IT." },
+  7: { kb: { de: "NAH GENUG? DRÜCK E.", fr: "ASSEZ PROCHE ? APPUIE SUR E.", en: "CLOSE ENOUGH? PRESS E." },
+       vr: { de: "NAH GENUG? DRÜCK B.", fr: "ASSEZ PROCHE ? APPUIE SUR B.", en: "CLOSE ENOUGH? PRESS B." } },
+  8: { de: "KILL = GESTOPPT. LEAK = DURCHGEKOMMEN. SCHÜTZE DIE STADT.", fr: "KILL = ARRÊTÉ. LEAK = PASSÉ. PROTÈGE LA VILLE.", en: "KILL = STOPPED. LEAK = GOT THROUGH. PROTECT THE TOWN." },
+};
 const scene = new THREE.Scene();
 const FOG = new THREE.Color(0.72, 0.70, 0.66);
 scene.fog = new THREE.FogExp2(FOG, 0.00015);
@@ -1094,26 +1182,23 @@ function setPaused(v){
   last = performance.now();
 }
 addEventListener('keydown', e => {
-  audioInit();
+  audioInit(); noteInput(); pad.gp = false;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
   keys[e.code] = true;
   if (seq.active){ seqKey(e.code); return; }
-  if (e.code === 'Space' || e.code === 'Enter') act('arm');
+  // Enter is kept free in the flight school: holding it skips the lessons
+  if (e.code === 'Space' || (e.code === 'Enter' && ended)) act('arm');
   if (e.code === 'KeyP' || e.code === 'Escape') act('pause');
   if (e.code === 'KeyN') act('vision');
   if (e.code === 'KeyM' || e.code === 'Tab') act('mode');
   if (e.code === 'KeyE') act('det');
   if (e.code === 'KeyR' && paused) act('restart');
 });
-function restartGame(){
-  try { sessionStorage.setItem('interceptor-restart', '1'); } catch (e) {}
-  location.reload();
-}
 function act(a){
-  if (ended){ if (endPhase() > 7 && (a === 'arm' || a === 'det')) location.reload(); return; }
+  if (ended){ if (endPhase() > 7 && (a === 'arm' || a === 'det')) startRound(); return; }
   if (a === 'pause') return setPaused(!paused);
-  if (paused && (a === 'restart' || a === 'det')) return restartGame();
+  if (paused && (a === 'restart' || a === 'det')) return startRound();
   if (a === 'screen') return cycleGoggle();
   if (a === 'vision') return setVision(vision === 'day' ? 'thermal' : 'day');
   if (paused) return;
@@ -1123,20 +1208,27 @@ function act(a){
 }
 
 // analog input: Quest Touch controllers in VR, or a standard gamepad (Xbox layout) on the desktop
-const pad = { active: false, pitch: 0, roll: 0, yaw: 0, thr: 0, climb: 0, thrSeen: false, prev: {} };
+// gp: a gamepad was used last (for the button names); block: buttons held across a change of screen do not fire;
+// hold: the trailer skip button is held; skip: the flight school skip button is held
+const pad = { active: false, pitch: 0, roll: 0, yaw: 0, thr: 0, climb: 0, thrSeen: false, prev: {}, gp: false, block: false, hold: false, skip: false };
+const padBusy = gp => gp.buttons.some(b => b.pressed) || gp.axes.some(v => Math.abs(v) > 0.3);
+const device = () => renderer.xr.isPresenting ? 'vr' : pad.gp ? 'pad' : 'kb';
 const dead = v => Math.abs(v) < 0.08 ? 0 : (v - Math.sign(v) * 0.08) / 0.92;
 const expo = v => v * (0.35 + 0.65 * v * v);
-function edge(id, on, a){ if (on && !pad.prev[id]){ audioInit(); act(a); } pad.prev[id] = on; }
+function edge(id, on, a){ if (on && !pad.prev[id] && !pad.block){ audioInit(); act(a); } pad.prev[id] = on; }
 function readPads(){
-  pad.active = false;
+  pad.active = false; pad.skip = false;
   const session = renderer.xr.getSession();
   if (seq.active){ readSeqPads(session); return; }
+  let busy = false;
   if (session){
     for (const src of session.inputSources){
       const gp = src.gamepad;
       if (!gp) continue;
       const ax = gp.axes, bt = gp.buttons;
       pad.active = true;
+      if (padBusy(gp)) busy = true;
+      if (bt[1] && bt[1].pressed) pad.skip = true;  // grip
       if (src.handedness === 'right'){
         pad.roll = expo(dead(ax[2] || 0)); pad.pitch = -expo(dead(ax[3] || 0));
         edge('A', bt[4] && bt[4].pressed, 'arm'); edge('B', bt[5] && bt[5].pressed, 'det'); edge('RS', bt[3] && bt[3].pressed, 'screen');
@@ -1151,6 +1243,8 @@ function readPads(){
       if (!gp || !gp.connected || gp.mapping !== 'standard') continue;
       const ax = gp.axes, bt = gp.buttons;
       pad.active = true;
+      if (padBusy(gp)){ busy = true; pad.gp = true; }
+      if (bt[8] && bt[8].pressed) pad.skip = true;  // View / Back
       pad.yaw = expo(dead(ax[0])); pad.climb = -dead(ax[1]); pad.roll = expo(dead(ax[2])); pad.pitch = -expo(dead(ax[3]));
       pad.thr = bt[7] ? bt[7].value : 0;
       edge('g0', bt[0].pressed, 'arm'); edge('g1', bt[1].pressed, 'det'); edge('g2', bt[2].pressed, 'vision'); edge('g3', bt[3].pressed, 'mode'); edge('g9', bt[9] && bt[9].pressed, 'pause');
@@ -1159,10 +1253,26 @@ function readPads(){
   }
   if (!pad.active){ pad.pitch = pad.roll = pad.yaw = pad.climb = 0; }
   if (pad.thr > 0.05) pad.thrSeen = true;
+  if (busy) noteInput();
+  pad.block = false;
 }
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (!paused && !seq.active && !renderer.xr.isPresenting) setPaused(true); });
-addEventListener('pointerdown', e => { audioInit(); if (seq.active) seqPointer(e); else if (ended && endPhase() > 7) location.reload(); });
+const canvasXY = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; };
+addEventListener('pointerdown', e => {
+  audioInit(); noteInput(); mouseDown = true;
+  if (seq.active){ if (seq.phase === 'start') startPick(startItemAt(...canvasXY(e))); }
+  else if (ended && endPhase() > 7) startRound();
+});
+addEventListener('pointerup', () => { mouseDown = false; });
+addEventListener('pointercancel', () => { mouseDown = false; });
+addEventListener('pointermove', e => {
+  noteInput();
+  if (!seq.active || seq.phase !== 'start') return;
+  const k = startItemAt(...canvasXY(e));
+  if (k >= 3) seq.focus = k - 3;
+  cv.style.cursor = k >= 0 ? 'pointer' : '';
+});
 
 // ---------------------------------------------------------------- player drone (P1-SUN style interceptor)
 const G = 9.81, MAXT = 4.6 * G, KDRAG = 0.0036, LDRAG = 0.12;
@@ -1203,7 +1313,7 @@ function die(how){
   P.alive = false; P.armed = false; P.deadAt = clock;
   if (how === 'boom' || how === 'hit'){
     explosion(P.pos.clone(), how === 'boom' ? 0.8 : 0.3, P.pos.y - groundAt(P.pos.x, P.pos.z) < 3);
-    for (const g of gerans) if (g.state !== 'down' && g.pos.distanceTo(P.pos) < 14) killGeran(g, 'player');
+    for (const g of gerans) if (g.state !== 'down' && g.pos.distanceTo(P.pos) < (g.practice ? 25 : 14)) killGeran(g, 'player');
     if (how === 'boom') for (const v of vehicles) if (v.alive && v.pos.distanceTo(P.pos) < 7){ v.kill(); if (!seq.active) confirmHit(v.type === 'mtlb' ? 'MT-LB' : v.type.toUpperCase()); }
   }
   if (how === 'boom'){ flash = 1; boom(0, 1.6); } else if (how === 'hit') boom(0, 0.3);
@@ -1317,7 +1427,7 @@ function makeGeranModel(type){
 }
 const gerans = [];
 class Geran {
-  constructor(type, corridor){
+  constructor(type, corridor, aimCentral = false){
     const t = GTYPES[type];
     this.type = type; this.t = t; this.state = 'cruise'; this.hp = t.hp;
     this.wp = corridor.map(([x, z], i) => [x + (i ? rr(-250, 250) : rr(0, 100)), z + rr(-300, 300)]);
@@ -1328,9 +1438,9 @@ class Geran {
     this.speed = t.speed * rr(0.95, 1.05);
     // aim at the village; not every Geran is accurate
     const alive = houses.filter(h => h.village && h.alive);
-    this.goal = rnd() < 0.05 || !alive.length ? central : pick(alive);
+    this.goal = aimCentral || !alive.length ? central : pick(alive);
     this.aimP = new THREE.Vector3(this.goal.x, 0, this.goal.z);
-    if (rnd() < 0.45){ const a = rr(0, 6.283), d = rr(40, 260); this.aimP.x += Math.cos(a) * d; this.aimP.z += Math.sin(a) * d; this.goal = null; }
+    if (rnd() < (this.goal === central ? 0.2 : 0.45)){ const a = rr(0, 6.283), d = rr(40, 260); this.aimP.x += Math.cos(a) * d; this.aimP.z += Math.sin(a) * d; this.goal = null; }
     this.aimP.y = groundAt(this.aimP.x, this.aimP.z) + (this.goal ? 3 : 0);
     this.heading = Math.atan2(this.wp[1][0] - x0, this.wp[1][1] - z0);
     this.vel = new THREE.Vector3();
@@ -1355,6 +1465,7 @@ class Geran {
       if (o || this.pos.y <= groundAt(this.pos.x, this.pos.z) + 0.5) this.impact(o, 1.6);
     } else {
       let tx, tz;
+      if (this.practice && this.wi >= this.wp.length) this.wi = 0;  // the practice drone flies its circle until it is caught
       if (this.wi < this.wp.length){ [tx, tz] = this.wp[this.wi]; if (Math.hypot(tx - this.pos.x, tz - this.pos.z) < 200) this.wi++; }
       else { tx = this.aimP.x; tz = this.aimP.z; }
       const hd = Math.hypot(this.aimP.x - this.pos.x, this.aimP.z - this.pos.z);
@@ -1410,16 +1521,25 @@ class Geran {
   remove(){
     if (!this.grp.parent) return;
     scene.remove(this.grp);
+    disposeTree(this.grp);
     if (this.snd) stopSound(this.snd);
     gerans.splice(gerans.indexOf(this), 1);
   }
 }
+// free the GPU buffers of a removed model: at an event the page runs all evening without a reload
+function disposeTree(o){
+  o.traverse(m => {
+    if (m.isMesh){ m.geometry.dispose(); for (const x of [].concat(m.material)) x.dispose(); }
+    else if (m.isSprite) m.material.dispose();
+  });
+}
 function destroyHouse(h){
   if (!h.alive) return;
   h.alive = false;
-  if (seq.active) seq.destroyed.push(h);
+  destroyedLog.push(h);
   h.intact.visible = false;
   scene.remove(h.ruin);
+  h.ruin.geometry.dispose();
   h.ruin = new THREE.Mesh(houseRuin(h, h.frame, true), burntMat);
   h.ruin.matrixAutoUpdate = false;
   scene.add(h.ruin);
@@ -1544,7 +1664,7 @@ class Vehicle {
     this.side += ((wreckAhead ? 7 : 0) - this.side) * Math.min(1, dt * 0.8);
     this.s += Math.max(0, speed) * dt;
     this.place(dt);
-    if (this.s >= this.road.len - 4 && !seq.active) endFeed();
+    if (this.s >= this.road.len - 4 && !seq.active && !tut.active) endFeed('column');
     this.dustT -= dt;
     if (this.dustT <= 0 && speed > 2 && !this.hidden && !this.noDust){ this.dustT = 0.12; fx(_p3.set(this.pos.x, this.pos.y + 0.8, this.pos.z).addScaledVector(this.vel, -0.4), false, 3, 16, 7, _ev.set(rr(-0.5, 0.5), 1.2, rr(-0.5, 0.5)), 0.6, 0, DUST); }
     if (AU.ready){ if (!this.snd) this.snd = makeVehicleSound(); updateSrcSound(this.snd, this.pos, this.vel, true); }
@@ -1682,7 +1802,7 @@ const _aim = new THREE.Vector3();
 function updateGuns(dt){
   for (const s of guns){
     let tgt = null, td = s.g.range;
-    for (const g of gerans){ if (g.state === 'down') continue; const d = g.pos.distanceTo(s.pos); if (d < td){ td = d; tgt = g; } }
+    for (const g of gerans){ if (g.state === 'down' || g.practice) continue; const d = g.pos.distanceTo(s.pos); if (d < td){ td = d; tgt = g; } }
     s.cd -= dt;
     if (tgt && s.cd <= 0 && s.burst <= 0){
       if (s.target !== tgt){
@@ -1759,7 +1879,10 @@ function updateGuns(dt){
 }
 
 // ---------------------------------------------------------------- the threat: Gerans and columns arrive over time
-let nextGeran = 90, nextColumn = 600 - COLUMN_TIME, nextTrainer = 20, nextForest = 0;
+// a round lasts about five minutes: the waves grow and come faster, and from two minutes on more and more
+// Gerans aim at the theatre; whoever stops many of them plays a little longer
+const ROUND = 300, FIRST_GERAN = 12, FIRST_COLUMN = 150;
+let nextGeran = FIRST_GERAN, nextColumn = FIRST_COLUMN, nextTrainer = 20, nextForest = 0;
 const pending = [];
 // a slow vehicle on the east road to practise on: no fire for 3 min, it cannot reach the village before the first column
 function spawnTrainer(){
@@ -1776,7 +1899,7 @@ function spawnForestVehicle(road = pick(ROADS.filter(r => r.forest))){
   v.colSpeed = 3.5; v.hidden = true; vehicles.push(v);
 }
 function updateThreats(){
-  const ramp = Math.max(0.6, 1 - clock / 2400);
+  if (tut.active) return;  // flight school: only the practice drone
   if (clock > nextTrainer){ spawnTrainer(); nextTrainer = Infinity; }
   if (clock > nextForest){
     if (!nextForest) for (const r of ROADS.filter(r => r.forest)) spawnForestVehicle(r);
@@ -1784,27 +1907,30 @@ function updateThreats(){
     nextForest = clock + rr(300, 420);
   }
   if (clock > nextGeran){
-    const n = rnd() < 0.75 ? 1 : 2, corr = pick(CORRIDORS);
-    for (let k = 0; k < n; k++){
-      const r = rnd();
-      const type = clock > 720 && r < 0.2 ? 4 : clock > 360 && r < 0.45 ? 3 : 2;
-      pending.push({ at: clock + k * rr(5, 12), type, corr });
+    const k = Math.min(1.3, clock / ROUND), c = pick(CORRIDORS);
+    const n = 1 + Math.floor(k * 3 + rnd() * 1.3), toCentral = clamp((clock - 120) / 160, 0, 0.8);
+    for (let i = 0; i < n; i++){
+      const r = rnd(), type = clock > 180 && r < 0.25 ? 4 : clock > 80 && r < 0.45 ? 3 : 2;
+      // they enter closer than the corridor start, so the first ones arrive after about a minute
+      pending.push({ at: clock + i * rr(3, 8), type, corr: c.slice(type === 2 ? 2 : 1), central: rnd() < toCentral });
     }
-    nextGeran = clock + rr(60, 110) * ramp;
+    nextGeran = clock + (40 - 26 * Math.min(1, k)) * rr(0.8, 1.2);
   }
-  for (let i = pending.length - 1; i >= 0; i--) if (clock >= pending[i].at){ gerans.push(new Geran(pending[i].type, pending[i].corr)); pending.splice(i, 1); }
+  for (let i = pending.length - 1; i >= 0; i--){
+    const p = pending[i];
+    if (clock >= p.at){ gerans.push(new Geran(p.type, p.corr, p.central)); pending.splice(i, 1); }
+  }
   if (clock > nextColumn){ spawnColumn(); nextColumn = clock + rr(240, 300); }
 }
-let endedAt = 0;
+let endedAt = 0, endReason = 'theatre', roundTime = 0;
 const endPhase = () => ended ? (performance.now() - endedAt) / 1000 : 0;
 function centralHit(){
-  if (seq.active){ if (seq.phase === 'yes') theaterHit(); }
-  else endFeed();
+  if (seq.active){ if (seq.phase === 'theater') theaterHit(); }
+  else if (!tut.active) endFeed('theatre');
 }
-function endFeed(){
+function endFeed(why){
   if (ended) return;
-  seq.active = false;
-  ended = true; endedAt = performance.now();
+  ended = true; endedAt = performance.now(); endReason = why; roundTime = clock;
   P.alive = false; P.armed = false;
   staticAmt = 1;
 }
@@ -1948,13 +2074,14 @@ function drawCompass(){
 function drawOSD(){
   oc.setTransform(OW / W, 0, 0, OH / H, 0, 0);
   oc.clearRect(0, 0, W, H);
-  if (seq.active && !(seq.phase === 'hit' && P.alive)){ drawSeq(); return; }
+  if (seq.active && !(seq.phase === 'hit' && P.alive) && seq.phase !== 'intercept'){ drawSeq(); return; }
   if (ended){ drawEnd(); return; }
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle';
   oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
   if (hitMsg > 0){
     txt('HIT CONFIRMED', W / 2, H / 2 + 54, 'center'); txt(hitWhat, W / 2, H / 2 + 66, 'center');  // under DISARMED and the arm keys
   }
+  if (seq.active && seq.phase === 'intercept') drawBox(say(seq.t < 3.5 ? S.c10a : S.c10b));
   if (!P.alive) return;
   oc.lineJoin = 'round';
   const blink = (clock * 2.5 | 0) % 2 === 0;
@@ -2038,9 +2165,56 @@ function drawOSD(){
 
 function drawEnd(){
   if (endPhase() < 7) return;
-  oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle';
+  oc.textBaseline = 'middle'; oc.lineJoin = 'round';
   oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
-  txt('[TRY AGAIN]', W / 2, H / 2, 'center');
+  oc.font = 'bold 11px monospace';
+  const lines = wrapPx(say(endReason === 'column' ? S.endColumn : S.endTheatre), 280);
+  lines.forEach((l, i) => txt(l, W / 2, H / 2 - 44 + i * 15, 'center'));
+  oc.font = 'bold 9px monospace';
+  const m = Math.floor(roundTime / 60), sec = Math.floor(roundTime % 60);
+  txt(say(S.stopped) + ' ' + kills, W / 2, H / 2 - 12, 'center');
+  txt(say(S.through) + ' ' + leaks, W / 2, H / 2, 'center');
+  txt(say(S.time) + ' ' + m + ':' + String(sec).padStart(2, '0'), W / 2, H / 2 + 12, 'center');
+  txt('[' + say(S.again) + ']', W / 2, H / 2 + 38, 'center');
+}
+// wraps a text to lines no wider than max, in the current font
+function wrapPx(str, max){
+  const out = []; let line = '';
+  for (const w of str.split(' ')){
+    const t = line ? line + ' ' + w : w;
+    if (line && oc.measureText(t).width > max){ out.push(line); line = w; } else line = t;
+  }
+  if (line) out.push(line);
+  return out;
+}
+// a text panel in the upper third: trailer captions and the flight school
+function drawBox(text, head = '', prog = -1){
+  oc.save();
+  oc.textBaseline = 'middle'; oc.lineJoin = 'round';
+  oc.font = 'bold 10px monospace';
+  const lines = wrapPx(text, 250), top = 44;
+  const h = 8 + (head ? 11 : 0) + lines.length * 13 + (prog >= 0 ? 8 : 0);
+  oc.fillStyle = 'rgba(0,0,0,0.55)'; oc.fillRect(W / 2 - 134, top, 268, h);
+  oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
+  let y = top + 4;
+  if (head){ oc.font = 'bold 8px monospace'; txt(head, W / 2, y + 5, 'center'); y += 11; oc.font = 'bold 10px monospace'; }
+  for (const l of lines){ txt(l, W / 2, y + 7, 'center'); y += 13; }
+  if (prog >= 0){
+    oc.fillStyle = 'rgba(244,242,236,0.25)'; oc.fillRect(W / 2 - 60, y + 2, 120, 3);
+    oc.fillStyle = INK; oc.fillRect(W / 2 - 60, y + 2, 120 * clamp(prog, 0, 1), 3);
+  }
+  oc.restore();
+}
+// "hold ... to skip" with a bar that fills while the button is held
+function drawHold(label){
+  oc.save();
+  oc.textBaseline = 'middle'; oc.lineJoin = 'round'; oc.font = 'bold 8px monospace';
+  oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
+  const y = H - 36, w = oc.measureText(label).width;
+  txt(label, W / 2, y, 'center');
+  oc.fillStyle = 'rgba(0,0,0,0.6)'; oc.fillRect(W / 2 - w / 2, y + 6, w, 3);
+  oc.fillStyle = INK; oc.fillRect(W / 2 - w / 2, y + 6, w * clamp(hold.t / HOLD_TIME, 0, 1), 3);
+  oc.restore();
 }
 
 // ---------------------------------------------------------------- pause screen: quadcopter schematic
@@ -2057,20 +2231,21 @@ function outlined(draw, w = 1){
   oc.lineWidth = w + 2; oc.strokeStyle = 'rgba(0,0,0,0.8)'; oc.beginPath(); draw(); oc.stroke();
   oc.lineWidth = w; oc.strokeStyle = INK; oc.beginPath(); draw(); oc.stroke();
 }
-function drawPause(intro = false){
+function drawPause(){
   const now = performance.now(), pdt = Math.min(0.05, (now - pauseLast) / 1000); pauseLast = now;
   oc.setTransform(OW / W, 0, 0, OH / H, 0, 0);
   oc.clearRect(0, 0, W, H);
   oc.fillStyle = 'rgba(0,0,0,0.6)'; oc.fillRect(0, 0, W, H);
   oc.font = 'bold 9px monospace'; oc.textBaseline = 'middle'; oc.lineJoin = 'round';
   oc.lineWidth = 2.5; oc.strokeStyle = 'rgba(0,0,0,0.8)'; oc.fillStyle = INK;
-  txt(intro ? 'CONTROLS' : 'PAUSE', 80, 12, 'center');
-  txt(intro ? (renderer.xr.isPresenting ? '[A] START' : '[ENTER] START') : (renderer.xr.isPresenting ? '[L-STICK] RESUME  [B] RESTART' : '[P] RESUME  [R] RESTART'), W - 8, 12, 'right');
+  const vr = renderer.xr.isPresenting;
+  txt('PAUSE', 80, 12, 'center');
+  txt(say(vr ? S.pResumeVR : S.pResumeKb), W - 8, 12, 'right');
 
-  const thr = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
-  const pit = (keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0);
-  const rol = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
-  const yaw = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
+  const thr = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + pad.climb, -1, 1);
+  const pit = clamp((keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0) + pad.pitch, -1, 1);
+  const rol = clamp((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0) + pad.roll, -1, 1);
+  const yaw = clamp((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + pad.yaw, -1, 1);
 
   const cx = 80, cy = 124;
   outlined(() => { for (const m of MOTORS){ oc.moveTo(cx, cy); oc.lineTo(m.x, m.y); } }, 2);
@@ -2081,7 +2256,7 @@ function drawPause(intro = false){
   txt('CAM', cx, cy - 4, 'center');
   txt('FC', cx, cy + 8, 'center');
   outlined(() => { oc.moveTo(cx, cy - 26); oc.lineTo(cx, cy - 62); oc.moveTo(cx - 5, cy - 56); oc.lineTo(cx, cy - 62); oc.lineTo(cx + 5, cy - 56); });
-  txt('FRONT', cx, cy - 70, 'center');
+  txt(say(S.pFront), cx, cy - 70, 'center');
 
   MOTORS.forEach((m, i) => {
     const mix = clamp(0.5 + 0.3 * thr + 0.18 * (pit * m.p + rol * m.r + yaw * m.y_), 0.05, 1);
@@ -2099,13 +2274,13 @@ function drawPause(intro = false){
     const ly = m.y < cy ? m.y - 33 : m.y + 33;
     txt(m.n + (m.cw ? ' CW ' : ' CCW ') + Math.round(mix * 100) + '%', m.x, ly, 'center');
   });
-  if (renderer.xr.isPresenting){
-    txt('A ARM  B DET  TRIG THR', 8, 218);
-    txt('Y ACRO/ANGL X THERMAL', 8, 229);
-    txt('R-STICK CLICK: SCREEN SIZE', 162, 229);
+  if (vr){
+    txt(say(S.pVR1), 8, 218);
+    txt(say(S.pVR2), 8, 229);
+    txt(say(S.pVR3), 162, 229);
   } else {
-    txt('SPACE ARM   E DETONATE', 8, 218);
-    txt('M ACRO/ANGL N THERMAL', 8, 229);
+    txt(say(S.pKb1), 8, 218);
+    txt(say(S.pKb2), 8, 229);
   }
 
   const x0 = 162; let y = 30;
@@ -2113,46 +2288,35 @@ function drawPause(intro = false){
     if (on){ oc.fillStyle = 'rgba(244,242,236,0.25)'; oc.fillRect(x0 - 4, y - 6, W - x0, 23); oc.fillStyle = INK; }
     txt(a, x0, y); txt(b, x0 + 32, y + 11); y += 25;
   };
-  txt('HOLD A KEY: MOTOR MIX', x0, y); y += 16;
-  row(thr !== 0, 'W S  THR  ALL 4 FASTER', '= CLIMB');
-  row(pit !== 0, '↑ ↓  PITCH REAR 1+3 UP', '= NOSE DOWN, FLY FWD');
-  row(rol !== 0, '← →  ROLL  LEFT 3+4 UP', '= BANK RIGHT');
-  row(yaw !== 0, 'A D  YAW   CCW 2+3 UP', '= TURN RIGHT');
+  txt(say(vr ? S.pHoldVR : S.pHoldKb), x0, y); y += 16;
+  const keyNames = vr ? ['L ↕', 'R ↕', 'R ↔', 'L ↔'] : ['W S', '↑ ↓', '← →', 'A D'], rows = say(S.pRows);
+  [thr, pit, rol, yaw].forEach((v, i) => row(v !== 0, keyNames[i] + '  ' + rows[i][0], rows[i][1]));
   y += 4;
-  txt('THRUST POINTS UP THROUGH', x0, y); y += 11;
-  txt('FRAME: TILT + THR = SPEED', x0, y); y += 16;
-  txt('ACRO  STICK = SPIN RATE', x0, y); y += 11;
-  txt('      LEVEL IT YOURSELF', x0, y); y += 13;
-  txt('ANGL  STICK = TILT ANGLE', x0, y); y += 11;
-  txt('      AUTO LEVEL', x0, y);
+  say(S.pFoot).forEach((l, i) => { txt(l, x0, y); y += [11, 16, 11, 13, 11, 0][i]; });
 }
 
 // ---------------------------------------------------------------- opening sequence
-const SEQ_TEXT = {
-  t1: 'IN 2022 PUTIN LAUNCHES THE ATTEMPT FOR A FULL SCALE INVASION OF UKRAINE.',
-  t2: 'THE INVASION WAS STOPPED',
-  t3: 'BUT THE TERROR CONTINUES.',
-};
-const SEQ_TIME = { t1: 5, column: 7, t2: 3, hit: 4.6, t3: 3, swarm: 14, yes: 17, deti: 4 };
-const SEQ_NEXT = { t1: 'column', column: 't2', t2: 'hit', hit: 't3', t3: 'swarm', swarm: 'question', yes: 'deti' };
-const SEQ_BLACK = ['gate', 't1', 't2', 't3', 'question', 'deti', 'controls'];
+// the trailer: a text card (texts in S) before each scene; it ends with a rhetorical question and leads into the flight school
+const SEQ_TIME = { t1: 5, column: 5.5, t2: 3.5, hit: 4.6, t3: 6.5, swarm: 10.5, tWest: 5.5, theater: 11, deti: 3.5, tSol: 4, intercept: 7.5, tQ: 4.5, tEnd: 3.5, tTurn: 2 };
+const SEQ_NEXT = { t1: 'column', column: 't2', t2: 'hit', hit: 't3', t3: 'swarm', swarm: 'tWest', tWest: 'theater', theater: 'deti', deti: 'tSol', tSol: 'intercept', intercept: 'tQ', tQ: 'tEnd', tEnd: 'tTurn' };
+const SEQ_BLACK = ['start', 't1', 't2', 't3', 'tWest', 'deti', 'tSol', 'tQ', 'tEnd', 'tTurn'];
 // position of the white "Z" on the right side of each vehicle type
 const ZPOS = { bmp: [1.47, 1.45, -1.8], btr: [1.47, 1.45, -1.2], mtlb: [1.47, 1.3, -1.5] };
 const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const so = { col: [], swarm: [], camFrom: new THREE.Vector3(), rp: {} };
 
 function seqGo(phase){
-  if (seq.phase === 'hit'){ P.alive = true; P.armed = false; P.vel.set(0, 0, 0); }
+  if (seq.phase === 'hit' || seq.phase === 'intercept'){ P.alive = true; P.armed = false; P.vel.set(0, 0, 0); }
   seq.phase = phase; seq.t = 0;
   seq.black = SEQ_BLACK.includes(phase) ? 1 : 0;
   if (!seq.black) seq.static = 0.9;
+  if (phase === 't1'){ hold.t = 0; hold.ready = false; }
   if (phase === 'column') seqColumn();
   if (phase === 'hit') seqHitStart();
   if (phase === 'swarm') seqSwarm();
-  if (phase === 'yes') seqTheater();
+  if (phase === 'theater') seqTheater();
+  if (phase === 'intercept') seqIntercept();
 }
-function seqBegin(){ if (seq.active && seq.phase === 'gate') seqGo('t1'); }
-function seqChoose(){ seq.skips = 0; seqGo(seq.choice === 0 ? 'yes' : 'controls'); }
 
 // scene 1: a column with "Z" marks rolls towards the camera
 function seqColumn(){
@@ -2237,16 +2401,48 @@ function seqCamSwarm(){
   if (seq.t > 6.5 && !so.k1){ so.k1 = true; if (so.swarm[3].grp.parent) killGeran(so.swarm[3], 'aa'); }
   if (seq.t > 9 && !so.k2){ so.k2 = true; if (so.swarm[4].grp.parent) killGeran(so.swarm[4], 'aa'); }
 }
-// YES: Gerans hit the theatre, it burns, "ДЕТИ" stays in the middle of the image
+// scene: an interceptor (FPV view) catches up with a Geran-2 east of the town and takes it down
+function seqIntercept(){
+  for (const g of [...gerans]) g.remove();
+  const x0 = 1500, z0 = 220, g = new Geran(2, [[x0, z0], [-3000, z0]]);
+  g.wp = [[x0, z0], [-3000, z0]]; g.wi = 1; g.goal = null; g.aimP.set(-3000, 0, z0);
+  g.alt = 130; g.speed = 50; g.heading = -Math.PI / 2; g.hp = 1e9;
+  g.pos.set(x0, groundAt(x0, z0) + g.alt, z0);
+  gerans.push(g);
+  so.ig = g; so.hitDone = false; so.prev = null;
+}
+function seqCamIntercept(){
+  const g = so.ig, t = seq.t, k = clamp(t / 6, 0, 1);
+  if (!g) return;
+  if (!so.hitDone){
+    // from behind, below and to the side; the gap closes to nothing at 6 s
+    const e = Math.pow(1 - k, 1.4);
+    camera.position.set(g.pos.x + 170 * e + 0.8, g.pos.y - 35 * e - 0.4, g.pos.z + 45 * e + 0.5);
+    camera.lookAt(g.pos);
+    camera.rotateZ(Math.sin(t * 1.7) * 0.1 * (1 - k) + (rnd() - 0.5) * 0.012);
+    camera.rotateX((rnd() - 0.5) * 0.006);
+    if (so.prev && t > so.prevT) P.vel.subVectors(camera.position, so.prev).divideScalar(t - so.prevT);
+    so.prev = (so.prev || new THREE.Vector3()).copy(camera.position); so.prevT = t;
+    P.pos.copy(camera.position); P.alive = P.armed = true; P.onGround = false; P.mode = 'ANGL';
+    P.T = MAXT * (0.7 + 0.1 * Math.sin(t * 4)); P.used = 0.2; P.time = 96 + t;
+  }
+  if (k >= 1 && !so.hitDone){
+    so.hitDone = true; P.alive = P.armed = false;
+    explosion(g.pos.clone(), 2.2); g.shootDown();
+    flash = 1; boom(0, 1.6); hitMsg = 3; hitWhat = 'GERAN-2';
+  }
+  if (so.hitDone) seq.static = 1;
+}
+// the theatre: Gerans hit it, it burns, "ДЕТИ" stays in the middle of the image
 function seqTheater(){
   for (const g of [...gerans]) g.remove();
   so.th = 0; so.fireT = 0;
 }
 function seqCamTheater(dt){
   const t = seq.t, c = CENTRAL, w = central.frontWord.position;
-  // 0-8 s oblique view of the strikes, 8-11 s move to straight above the word, 11-17 s hold
-  const k = sstep(8, 11, t);
-  _v.set(c.x + 100 - Math.min(t, 8) * 1.5, central.y + 115 - Math.min(t, 8) * 1.5, 16 + Math.min(t, 8) * 0.5);
+  // 0-5.5 s oblique view of the strikes, 5.5-8.5 s move to straight above the word, then hold
+  const k = sstep(5.5, 8.5, t);
+  _v.set(c.x + 100 - Math.min(t, 5.5) * 1.5, central.y + 115 - Math.min(t, 5.5) * 1.5, 16 + Math.min(t, 5.5) * 0.5);
   camera.position.lerpVectors(_v, _w.set(w.x, w.y + 62, w.z), k);
   camera.up.set(0, 1, 0).lerp(_ev.set(-1, 0, 0), k).normalize();
   camera.lookAt(_p3.set(c.x + 12, central.y, 0).lerp(w, k));
@@ -2265,7 +2461,7 @@ function seqCamTheater(dt){
     fx(_p3.set(c.x + rr(-11, 11), central.y + rr(2, 10), rr(-18, 18)), true, rr(4, 8), rr(10, 18), rr(0.8, 1.6), _ev.set(0, rr(3, 7), 0));
   }
 }
-// where the painted word sits on the screen at the end of the YES scene
+// where the painted word sits on the screen at the end of the theatre scene
 function seqDetiSpot(){
   camera.updateMatrixWorld();
   const w = central.frontWord.position, half = central.wordSize / 2;
@@ -2296,140 +2492,264 @@ function seqBackground(dt){
 }
 function seqUpdate(dt){
   seq.t += dt;
-  if (['column', 't2', 'hit', 'swarm'].includes(seq.phase)) seqBackground(dt);
+  const ph = seq.phase;
+  if (ph !== 'start' && holdSkip(keys.Space || mouseDown || pad.hold, dt)) return startTutorial();
+  if (['column', 't2', 'hit', 'swarm'].includes(ph)) seqBackground(dt);
   noise = 0.04;
   seq.static = Math.max(0, seq.static - dt * 2.5);
-  const ph = seq.phase;
   if (ph === 'column' || ph === 't2') seqCamColumn();
   else if (ph === 'hit') seqCamHit();
   else if (ph === 'swarm') seqCamSwarm();
-  else if (ph === 'yes') seqCamTheater(dt);
-  else if (ph === 'gate' || ph === 'controls'){ camera.position.copy(P.pos); camera.quaternion.copy(P.q).multiply(UPTILT); }
-  if (ph !== 'yes') camera.up.set(0, 1, 0);
-  if (ph === 'yes' && seq.t + dt >= SEQ_TIME.yes) seqDetiSpot();
+  else if (ph === 'theater') seqCamTheater(dt);
+  else if (ph === 'intercept') seqCamIntercept();
+  else if (ph === 'start'){ camera.position.copy(P.pos); camera.quaternion.copy(P.q).multiply(UPTILT); }
+  if (ph !== 'theater') camera.up.set(0, 1, 0);
+  if (ph === 'theater' && seq.t + dt >= SEQ_TIME.theater) seqDetiSpot();
   if (SEQ_TIME[ph] && seq.t >= SEQ_TIME[ph]){
-    if (ph === 'deti'){ camera.up.set(0, 1, 0); endFeed(); }
+    if (ph === 'tTurn') startTutorial();
     else seqGo(SEQ_NEXT[ph]);
   }
 }
+function holdSkip(on, dt){
+  if (!on){ hold.ready = true; hold.t = 0; return false; }
+  if (!hold.ready) return false;
+  hold.t += dt;
+  return hold.t >= HOLD_TIME;
+}
 
-// NO (or the hidden skip): clean up the sequence and start the game in the grass
+// ---------------------------------------------------------------- resets: new round, flight school, start screen (no reload, so VR stays on)
 function restoreHouse(h){
-  h.alive = true; h.intact.visible = true;
-  scene.remove(h.ruin);
-  h.ruin = new THREE.Mesh(houseRuin(h, h.frame, false), ruinMat);
-  h.ruin.matrixAutoUpdate = false; h.ruin.visible = false;
-  scene.add(h.ruin);
+  h.alive = true; h.intact.visible = true; h.ruin.visible = false;
   h.obs.top = h.y + 6;
 }
-function startGame(){
-  seq.active = false; seq.black = 0; seq.ptr = null;
+function restoreCentral(){
+  if (!central.ruined) return;
+  central.ruined = false;
+  central.mesh.visible = true; central.ruin.visible = false; central.roofWord.visible = true;
+  central.obs.top = central.y + 21;
+}
+function resetWorld(){
+  ended = false; seq.ptr = null;
   for (const g of [...gerans]) g.remove();
   for (const v of vehicles){
     scene.remove(v.grp);
     if (v.turret.parent) v.turret.parent.remove(v.turret);
+    disposeTree(v.grp); disposeTree(v.turret);
     if (v.snd) stopSound(v.snd);
     if (v.obs) v.obs.top = -1e9;
   }
   vehicles.length = 0; flying.length = 0; rounds.length = 0; burners.length = 0; pending.length = 0;
   for (const p of fxPool) p.s.visible = false;
-  for (const h of seq.destroyed) restoreHouse(h);
-  seq.destroyed.length = 0;
+  for (const h of destroyedLog) restoreHouse(h);
+  destroyedLog.length = 0;
+  restoreCentral();
   for (const s of guns){ s.burst = 0; s.target = null; }
-  kills = leaks = aaKills = 0; hitMsg = 0; clock = 0;
-  nextGeran = 90; nextColumn = 600 - COLUMN_TIME; nextTrainer = 20; nextForest = 0;
-  respawn(); staticAmt = 1; flash = 0;
+  kills = leaks = aaKills = 0; hitMsg = killBlink = 0; clock = 0;
+  nextGeran = FIRST_GERAN; nextColumn = FIRST_COLUMN; nextTrainer = 20; nextForest = 0;
+  respawn(); P.mode = 'ANGL'; staticAmt = 1; flash = 0;
+  tut.active = false; tut.drone = null;
+  hold.t = 0; hold.ready = false; pad.block = true;
+  setVision('day');
+  setPaused(false);
+}
+function startRound(){
+  resetWorld();
+  seq.active = false; seq.black = 0;
+}
+function startTutorial(){
+  resetWorld();
+  seq.active = false; seq.black = 0;
+  tut.active = true; tutStep(1);
+}
+function resetToStart(){
+  resetWorld();
+  setLang(DEFAULT_LANG);
+  seq.active = true; seq.focus = 0; seqGo('start');
 }
 
-// input: keyboard (arrows + Enter, Space x4 skips), mouse, gamepad, Quest controllers (point and trigger, any button x4 skips)
+// ---------------------------------------------------------------- flight school: one step at a time, each waits for the action
+const tut = { active: false, step: 0, t: 0, dist: 0, turn: 0, hd: 0, drone: null };
+const _hd = new THREE.Vector3();
+const heading = () => { _hd.set(0, 0, -1).applyQuaternion(P.q); return Math.atan2(-_hd.x, -_hd.z); };
+function tutStep(n){
+  tut.step = n; tut.t = 0; tut.dist = 0; tut.turn = 0; tut.hd = heading();
+  if (n === 6) spawnPracticeDrone();
+}
+// a slow Geran-2 that circles low over the fields east of the start
+function spawnPracticeDrone(){
+  if (tut.drone && tut.drone.grp.parent && tut.drone.state !== 'down') return;
+  const cx = START.x + 330, cz = START.z, R = 220, wp = [];
+  for (let i = 0; i < 12; i++){ const a = -i / 12 * 6.2832; wp.push([cx + Math.cos(a) * R, cz + Math.sin(a) * R]); }
+  const g = new Geran(2, wp);
+  g.wp = wp; g.wi = 1; g.practice = true; g.goal = null; g.alt = 45; g.speed = 22; g.hp = 1e9;
+  g.pos.set(wp[0][0], groundAt(wp[0][0], wp[0][1]) + 50, wp[0][1]);
+  g.heading = Math.atan2(wp[1][0] - wp[0][0], wp[1][1] - wp[0][1]);
+  g.aimP.set(cx, -1e4, cz);
+  gerans.push(g); tut.drone = g;
+}
+function tutProgress(){
+  if (tut.step === 3) return (P.pos.y - groundAt(P.pos.x, P.pos.z)) / 15;
+  if (tut.step === 4) return tut.dist / 50;
+  if (tut.step === 5) return tut.turn / 6.2;
+  return -1;
+}
+function tutUpdate(dt){
+  tut.t += dt;
+  if (holdSkip(keys.Enter || pad.skip, dt)) return startRound();
+  const s = tut.step, ready = P.alive && P.armed, hd = heading(), dh = hd - tut.hd;
+  tut.hd = hd;
+  if (ready){ tut.dist += Math.hypot(P.pos.x - _p0.x, P.pos.z - _p0.z); tut.turn += Math.abs(Math.atan2(Math.sin(dh), Math.cos(dh))); }
+  if (s === 1){ if (P.armed) tutStep(3); else if (tut.t > 3.5) tutStep(2); }
+  else if (s === 2){ if (P.armed) tutStep(3); }
+  else if (s >= 3 && s <= 5){ if (ready && tutProgress() >= 1) tutStep(s + 1); }
+  else if (s === 6 || s === 7){
+    const g = tut.drone;
+    if (g && g.state === 'down') tutStep(8);
+    else if (!g || !g.grp.parent) spawnPracticeDrone();
+    else {
+      const d = g.pos.distanceTo(P.pos);
+      if (s === 6 && ready && d < 25) tutStep(7);
+      else if (s === 7 && (d > 45 || !P.alive)) tutStep(6);
+    }
+  }
+  else if (s === 8 && tut.t > 6) startRound();
+}
+function drawTutorial(){
+  if (!tut.active || ended || paused) return;
+  const d = device();
+  let s = tut.step;
+  if (s >= 3 && s <= 7 && P.alive && !P.armed) s = 2;  // after a crash: start the motors again
+  const e = TUT[s], text = say(e.kb ? (d === 'kb' ? e.kb : e.vr) : e);
+  drawBox(text, say(S.school) + ' ' + tut.step + '/8', s === tut.step && P.armed ? tutProgress() : -1);
+  drawHold(say(d === 'vr' ? S.skipTutVR : d === 'pad' ? S.skipTutPad : S.skipTutKb));
+}
+
+// ---------------------------------------------------------------- start screen: language, trailer or flight school
+const LANG_Y = 20, BTN_Y = 150, BTN_W = 200;
+const langX = i => W / 2 + (i - 1) * 34;
+// items: 0-2 the languages, 3 the trailer, 4 the flight school; -1 nothing
+function startItemAt(x, y){
+  if (Math.abs(y - LANG_Y) < 9) for (let i = 0; i < 3; i++) if (Math.abs(x - langX(i)) < 15) return i;
+  for (let i = 0; i < 2; i++) if (Math.abs(y - (BTN_Y + i * 26)) < 11 && Math.abs(x - W / 2) < BTN_W / 2) return 3 + i;
+  return -1;
+}
+function startPick(i){
+  if (i < 0) return;
+  audioInit();
+  if (i < 3) return setLang(LANGS[i]);
+  seq.focus = i - 3;
+  if (i === 3) seqGo('t1'); else startTutorial();
+}
+function startMove(dy, dx){
+  if (dx) setLang(LANGS[(LANGS.indexOf(lang) + dx + 3) % 3]);
+  if (dy) seq.focus = clamp(seq.focus + dy, 0, 1);
+}
+// keyboard: arrows and Enter on the start screen; in the trailer only holding Space does something
 function seqKey(code){
-  if (seq.phase === 'gate') seqBegin();
-  if (code === 'Space' && ++seq.skips >= 4) return startGame();
-  if (seq.phase === 'question'){
-    if (code === 'ArrowLeft') seq.choice = 0;
-    if (code === 'ArrowRight') seq.choice = 1;
-    if (code === 'Enter' && seq.choice >= 0) seqChoose();
-  } else if (seq.phase === 'controls' && code === 'Enter') startGame();
+  if (seq.phase !== 'start') return;
+  if (code === 'ArrowLeft') startMove(0, -1);
+  else if (code === 'ArrowRight') startMove(0, 1);
+  else if (code === 'ArrowUp') startMove(-1, 0);
+  else if (code === 'ArrowDown') startMove(1, 0);
+  else if (code === 'Enter' || code === 'Space') startPick(3 + seq.focus);
 }
-function seqButton(j){
-  if (seq.phase === 'gate') return seqBegin();
-  if (++seq.skips >= 4) return startGame();
-  if (seq.phase === 'question' && (j === 0 || j === 4) && seq.choice >= 0) seqChoose();
-  else if (seq.phase === 'controls' && (j === 0 || j === 4)) startGame();
+// where a Quest controller points on the head-locked goggle screen, in OSD units
+function ptrOnGoggle(c){
+  c.updateMatrixWorld(true);
+  _m.copy(renderer.xr.getCamera().matrixWorld).invert();
+  const o = _v.setFromMatrixPosition(c.matrixWorld).applyMatrix4(_m), d = _w.set(0, 0, -1).transformDirection(c.matrixWorld).transformDirection(_m);
+  if (d.z >= -1e-3) return null;
+  const t = (-1.5 - o.z) / d.z, sc = GOGGLE_SCALES[goggleSize];
+  return [((o.x + d.x * t) / (1.4 * sc) + 0.5) * W, (0.5 - (o.y + d.y * t) / (1.05 * sc)) * H];
 }
-function seqPointer(e){
-  if (seq.phase === 'gate') return seqBegin();
-  if (seq.phase === 'controls') return startGame();
-  if (seq.phase !== 'question') return;
-  const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
-  if (Math.abs(y - (H / 2 + 16)) < 16 && Math.abs(Math.abs(x - W / 2) - 40) < 26){ seq.choice = x < W / 2 ? 0 : 1; seqChoose(); }
-}
+// controllers on the start screen and in the trailer: Quest (point + trigger, sticks, A) or a gamepad (d-pad or stick, A)
 function readSeqPads(session){
+  const start = seq.phase === 'start';
+  let busy = false, held = false, trig = false, okA = false, up = false, down = false, left = false, right = false;
+  const pe = (id, on) => { const r = on && !pad.prev[id] && !pad.block; pad.prev[id] = on; return r; };
   if (session){
-    if (seq.phase === 'question') seq.ptr = null;
+    if (start) seq.ptr = null;
     session.inputSources.forEach((src, i) => {
       const gp = src.gamepad;
       if (!gp) return;
+      const b = j => !!(gp.buttons[j] && gp.buttons[j].pressed), x = gp.axes[2] || 0, y = gp.axes[3] || 0;
+      if (padBusy(gp)) busy = true;
+      if (b(0) || b(4)) held = true;
+      if (pe('st' + i, b(0))) trig = true;
+      if (pe('sa' + i, b(4))) okA = true;
+      if (pe('su' + i, y < -0.6)) up = true;
+      if (pe('sd' + i, y > 0.6)) down = true;
+      if (pe('sl' + i, x < -0.6)) left = true;
+      if (pe('sr' + i, x > 0.6)) right = true;
       const c = vrCtrls[i];
-      if (seq.phase === 'question' && c){
-        // ray from the controller onto the head-locked goggle screen
-        c.updateMatrixWorld(true);
-        _m.copy(renderer.xr.getCamera().matrixWorld).invert();
-        const o = _v.setFromMatrixPosition(c.matrixWorld).applyMatrix4(_m), d = _w.set(0, 0, -1).transformDirection(c.matrixWorld).transformDirection(_m);
-        if (d.z < -1e-3){
-          const t = (-1.5 - o.z) / d.z, sc = GOGGLE_SCALES[goggleSize];
-          const px = ((o.x + d.x * t) / (1.4 * sc) + 0.5) * W, py = (0.5 - (o.y + d.y * t) / (1.05 * sc)) * H;
-          if (src.handedness === 'right' || !seq.ptr) seq.ptr = [px, py];
-        }
-      }
-      gp.buttons.forEach((b, j) => { const id = 'sq' + i + '_' + j; if (b.pressed && !pad.prev[id]) seqButton(j); pad.prev[id] = b.pressed; });
+      if (start && c){ const p = ptrOnGoggle(c); if (p && (src.handedness === 'right' || !seq.ptr)) seq.ptr = p; }
     });
-    if (seq.ptr){ const [px, py] = seq.ptr; if (Math.abs(py - (H / 2 + 16)) < 16 && Math.abs(Math.abs(px - W / 2) - 40) < 26) seq.choice = px < W / 2 ? 0 : 1; }
   } else if (navigator.getGamepads){
     for (const gp of navigator.getGamepads()){
       if (!gp || !gp.connected || gp.mapping !== 'standard') continue;
-      if (seq.phase === 'question'){ if (gp.axes[0] < -0.5 || (gp.buttons[14] && gp.buttons[14].pressed)) seq.choice = 0; if (gp.axes[0] > 0.5 || (gp.buttons[15] && gp.buttons[15].pressed)) seq.choice = 1; }
-      gp.buttons.forEach((b, j) => { const id = 'gq' + j; if (b.pressed && !pad.prev[id]) seqButton(j === 0 ? 0 : 99); pad.prev[id] = b.pressed; });
+      const b = j => !!(gp.buttons[j] && gp.buttons[j].pressed), ax = gp.axes;
+      if (padBusy(gp)){ busy = true; pad.gp = true; }
+      if (b(0)) held = true;
+      if (pe('ga', b(0))) okA = true;
+      if (pe('gu', b(12) || ax[1] < -0.6)) up = true;
+      if (pe('gd', b(13) || ax[1] > 0.6)) down = true;
+      if (pe('gl', b(14) || ax[0] < -0.6)) left = true;
+      if (pe('gr', b(15) || ax[0] > 0.6)) right = true;
       break;
     }
   }
+  pad.block = false; pad.hold = held;
+  pad.pitch = pad.roll = pad.yaw = pad.climb = 0;
+  if (busy) noteInput();
+  if (!start) return;
+  const k = seq.ptr ? startItemAt(seq.ptr[0], seq.ptr[1]) : -1;
+  if (k >= 3) seq.focus = k - 3;
+  if (left) startMove(0, -1);
+  if (right) startMove(0, 1);
+  if (up) startMove(-1, 0);
+  if (down) startMove(1, 0);
+  if (trig && k >= 0) startPick(k);
+  else if (okA) startPick(k >= 0 ? k : 3 + seq.focus);
 }
 
-function wrapText(str, max){
-  const out = []; let line = '';
-  for (const w of str.split(' ')){ if ((line + ' ' + w).trim().length > max){ out.push(line); line = w; } else line = (line + ' ' + w).trim(); }
-  if (line) out.push(line);
-  return out;
+function drawButton(x, y, w, h, on, label){
+  if (on){ oc.fillStyle = INK; oc.fillRect(x - w / 2, y - h / 2, w, h); oc.fillStyle = '#000'; oc.textAlign = 'center'; oc.fillText(label, x, y); oc.fillStyle = INK; }
+  else { oc.lineWidth = 1; oc.strokeStyle = INK; oc.strokeRect(x - w / 2, y - h / 2, w, h); oc.lineWidth = 2.5; oc.strokeStyle = EDGE; txt(label, x, y, 'center'); }
+}
+function drawStart(){
+  oc.font = 'bold 9px monospace';
+  LANGS.forEach((l, i) => drawButton(langX(i), LANG_Y, 26, 14, l === lang, l.toUpperCase()));
+  // the title on one line if a slightly smaller size allows it
+  let fs = 14;
+  do { oc.font = 'bold ' + fs + 'px monospace'; } while (oc.measureText(say(S.title)).width > 300 && --fs > 12);
+  const tl = wrapPx(say(S.title), 300);
+  tl.forEach((l, i) => txt(l, W / 2, 66 + (i - (tl.length - 1) / 2) * 18, 'center'));
+  oc.font = 'bold 9px monospace';
+  wrapPx(say(S.sub), 296).forEach((l, i) => txt(l, W / 2, 102 + i * 12, 'center'));
+  [S.watch, S.skip].forEach((b, i) => drawButton(W / 2, BTN_Y + i * 26, BTN_W, 18, seq.focus === i, say(b)));
+  oc.font = 'bold 8px monospace';
+  const d = device();
+  txt(say(d === 'vr' ? S.hintVR : d === 'pad' ? S.hintPad : S.hintKb), W / 2, H - 14, 'center');
+  if (seq.ptr){ oc.fillStyle = INK; oc.beginPath(); oc.arc(seq.ptr[0], seq.ptr[1], 2.5, 0, 7); oc.fill(); }
 }
 function drawSeq(){
   oc.textBaseline = 'middle'; oc.lineJoin = 'round'; oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
   const ph = seq.phase;
-  if (ph === 'gate'){ oc.font = 'bold 9px monospace'; if ((performance.now() / 600 | 0) % 2 === 0) txt('[PRESS ANY KEY]', W / 2, H / 2, 'center'); return; }
-  if (SEQ_TEXT[ph]){
-    oc.font = 'bold 11px monospace';
-    const lines = wrapText(SEQ_TEXT[ph], 30);
-    lines.forEach((l, i) => txt(l, W / 2, H / 2 + (i - (lines.length - 1) / 2) * 15, 'center'));
-    return;
-  }
-  if (ph === 'question'){
-    oc.font = 'bold 11px monospace';
-    txt('AND WE REMAIN NEUTRAL?', W / 2, H / 2 - 18, 'center');
-    ['YES', 'NO'].forEach((o, i) => {
-      const x = W / 2 + (i ? 40 : -40), y = H / 2 + 16;
-      oc.lineWidth = 1; oc.strokeStyle = INK;
-      if (seq.choice === i){ oc.fillStyle = INK; oc.fillRect(x - 22, y - 9, 44, 18); oc.fillStyle = '#000'; oc.textAlign = 'center'; oc.fillText(o, x, y); oc.fillStyle = INK; }
-      else { oc.strokeRect(x - 22, y - 9, 44, 18); oc.lineWidth = 2.5; oc.strokeStyle = EDGE; txt(o, x, y, 'center'); }
-    });
-    if (seq.ptr){ oc.fillStyle = INK; oc.beginPath(); oc.arc(seq.ptr[0], seq.ptr[1], 2.5, 0, 7); oc.fill(); }
+  if (ph === 'start') return drawStart();
+  if (SEQ_BLACK.includes(ph) && S[ph]){
+    const big = ph === 'tQ' || ph === 'tEnd' || ph === 'tTurn', lh = big ? 18 : 15;
+    oc.font = (big ? 'bold 13px' : 'bold 11px') + ' monospace';
+    const lines = wrapPx(say(S[ph]), big ? 280 : 260);
+    lines.forEach((l, i) => txt(l, W / 2, H / 2 + (i - (lines.length - 1) / 2) * lh, 'center'));
     return;
   }
   if (ph === 'deti'){
     const d = seq.detiSpot || { x: W / 2, y: H / 2, size: 34 };
     oc.font = 'bold ' + d.size.toFixed(1) + 'px Arial, Helvetica, sans-serif'; oc.textAlign = 'center'; oc.fillStyle = INK;
-    oc.fillText('\u0414\u0415\u0422\u0418', d.x, d.y + d.size * 0.04);
-    return;
+    oc.fillText('ДЕТИ', d.x, d.y + d.size * 0.04);
+    oc.font = 'bold 11px monospace';
+    txt('(' + say(S.children) + ')', d.x, Math.min(H - 50, d.y + d.size * 0.55 + 12), 'center');
   }
-  if (ph === 'controls') drawPause(true);
 }
 
 // ---------------------------------------------------------------- main loop
@@ -2437,8 +2757,6 @@ const _p0 = new THREE.Vector3(), _rel = new THREE.Vector3(), _dr = new THREE.Vec
 let noise = 0;
 respawn();
 setVision('day');
-// a restart from the pause menu skips the opening sequence
-try { if (sessionStorage.getItem('interceptor-restart')){ sessionStorage.removeItem('interceptor-restart'); startGame(); } } catch (e) {}
 
 function updateSticks(dt){
   const acro = P.mode === 'ACRO';
@@ -2466,6 +2784,7 @@ function update(dt){
       if (P.armed) P.time += dt;
     } else if (!ended && clock - P.deadAt > 0.5) respawn();
     updateThreats();
+    if (tut.active && !ended) tutUpdate(dt);
   }
   for (const g of [...gerans]) g.update(dt);
   for (const v of vehicles) v.update(dt);
@@ -2544,7 +2863,7 @@ function applyQuality(){
   for (const m of [treeIM, birchIM[1], bushIM]) m.geometry = crown;
 }
 function watchQuality(rawDt){
-  if (paused || seq.phase === 'gate') return;
+  if (paused || (seq.active && seq.phase === 'start')) return;
   quality.cool -= rawDt; quality.acc += rawDt; quality.n++;
   if (quality.acc < 2) return;
   const avg = quality.acc / quality.n, limit = renderer.xr.isPresenting ? 1 / 55 : 1 / 40;
@@ -2558,14 +2877,16 @@ if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
   b.textContent = 'ENTER VR';
   b.style.cssText = 'position:absolute;right:16px;bottom:16px;z-index:2;padding:8px 14px;font:bold 14px monospace;color:#f4f2ec;background:rgba(0,0,0,0.6);border:2px solid #f4f2ec;cursor:pointer';
   b.onclick = async () => {
-    audioInit(); seqBegin();
+    audioInit(); noteInput();
     const cur = renderer.xr.getSession();
     if (cur){ cur.end(); return; }
     try {
       const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] });
       await renderer.xr.setSession(session);
       vrQuality(true); setPaused(false); b.textContent = 'EXIT VR';
-      session.addEventListener('end', () => { vrQuality(false); b.textContent = 'ENTER VR'; });
+      // event kiosk: taking the headset off sends the game back to the start screen for the next person
+      session.addEventListener('visibilitychange', () => { if (session.visibilityState === 'hidden') resetToStart(); });
+      session.addEventListener('end', () => { vrQuality(false); b.textContent = 'ENTER VR'; resetToStart(); });
     } catch (e) { b.textContent = 'VR N/A'; }
   };
   document.body.appendChild(b);
@@ -2600,6 +2921,8 @@ function render(){
   if (!inVR || t - lastFeed > 1000 / 30){
     lastFeed = t;
     drawOSD();
+    if (seq.active && seq.phase !== 'start') drawHold(say(device() === 'kb' ? S.skipTrailerKb : S.skipTrailerA));
+    drawTutorial();
     if (paused) drawPause();
     osdTex.needsUpdate = true;
     const xrTarget = renderer.getRenderTarget();
@@ -2618,14 +2941,18 @@ function frame(now){
   const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
   if (!document.hidden) watchQuality(Math.min(raw, 0.25));
   readPads();
+  if (performance.now() - lastInput > IDLE_MS){
+    if (!seq.active) resetToStart();
+    else if (seq.phase === 'start' && lang !== DEFAULT_LANG) setLang(DEFAULT_LANG);
+  }
   if (!paused) update(dt);
   render();
 }
 renderer.setAnimationLoop(frame);
-if (location.hash === '#dbg') window.__d = { seq, seqGo, startGame, groundAt, P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; }, quality, applyQuality,
+if (location.hash === '#dbg') window.__d = { seq, seqGo, startRound, startTutorial, resetToStart, tut, setLang, hold, pad, groundAt, P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; }, quality, applyQuality,
   vrPreview(){ renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(feedRT); renderer.render(postScene, postCam); renderer.setRenderTarget(null); vrCam.aspect = RW / RH; vrCam.fov = 75; vrCam.updateProjectionMatrix(); renderer.render(vrScene, vrCam); },
-  vrQuality, pad,
-  get state(){ return { clock, ended, kills, leaks, aaKills, alive: houses.filter(h => h.village && h.alive).length }; } };
+  vrQuality,
+  get state(){ return { clock, ended, endReason, kills, leaks, aaKills, lang, paused, alive: houses.filter(h => h.village && h.alive).length }; } };
 </script>
 </body>
 </html>
