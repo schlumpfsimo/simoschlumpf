@@ -126,6 +126,7 @@ button.ghost:hover{background:#000;color:#fff}
     <p class="mass" id="mass"></p>
   </div>
 </main>
+<script src="../protokoll.js"></script>
 
 <script>
 // Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
@@ -410,6 +411,7 @@ $('drucken').addEventListener('click', async () => {
   clearTimeout(warte); await laeuft;
   const c = document.createElement('canvas');
   let fertig = 0;
+  window.bonProtokoll?.warten(liste.map(gast => 'Menü' + (gast ? ' · ' + gast : '')));   // alle als «wartet» ins Protokoll
   try {
     for (const gast of liste) {
       msg(liste.length > 1 ? `Sende Karte ${fertig + 1} von ${liste.length} …` : 'Sende …');

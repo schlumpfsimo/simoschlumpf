@@ -89,6 +89,7 @@ button.ghost:hover{background:#000;color:#fff}
   <button id="reset" class="ghost">Zurück auf Anfang</button>
   <p class="hint">Neue Reihenfolge, Stand auf Nr. 1.</p>
 </main>
+<script src="../protokoll.js"></script>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -404,9 +405,11 @@ let lauf = false, halt = false;
 async function laufen(){
   lauf = true; halt = false; knoepfe();
   wach(true);
+  const ab = naechster;
+  const eintrag = window.bonProtokoll?.beginnen({ titel: `Namen ab Nr. ${zahl(ab + 1)}`, weg: 'usb' });   // ins Protokoll
   try {
     await document.fonts.ready;
-    const t0 = Date.now(), ab = naechster;
+    const t0 = Date.now();
     await senden(naechster === 0 ? join([INIT, bandRaster()]) : INIT);
     while (!halt && naechster < NAMEN.length) {
       const d = DICHTEN[dichte];
@@ -425,8 +428,10 @@ async function laufen(){
     }
     if (naechster >= NAMEN.length) { await senden(join([bandRaster(), SCHNITT])); say('Fertig. Alle Namen gedruckt.', 'ok'); }
     else say('Angehalten bei Nr. ' + zahl(naechster + 1) + '.');
+    eintrag?.gedruckt(naechster > ab ? `Namen Nr. ${zahl(ab + 1)} bis ${zahl(naechster)}` : `Namen ab Nr. ${zahl(ab + 1)} (nichts gedruckt)`);
   } catch (e) {
     say('Fehler: ' + e.message + '. Drucker prüfen, dann Weiter.', 'err');
+    eintrag?.titel(`Namen Nr. ${zahl(ab + 1)} bis ${zahl(naechster)}`); eintrag?.fehler(e.message);
   } finally {
     await freigeben();
     lauf = false; wach(false); knoepfe(); anzeigen();
@@ -451,11 +456,12 @@ window.addEventListener('keydown', e => {
 
 // ---------------------------------------------------------------- Test
 let test = false;
-async function testen(fn){
+async function testen(fn, titel){
   if (!device) return say('Zuerst Drucker verbinden.', 'err');
   test = true; knoepfe();
-  try { await document.fonts.ready; await fn(); }
-  catch (e) { say('Fehler: ' + e.message, 'err'); }
+  const eintrag = window.bonProtokoll?.beginnen({ titel, weg: 'usb' });   // ins Protokoll
+  try { await document.fonts.ready; await fn(); eintrag?.gedruckt(); }
+  catch (e) { say('Fehler: ' + e.message, 'err'); eintrag?.fehler(e.message); }
   finally { await freigeben(); test = false; knoepfe(); }
 }
 // zufällige Stelle der Liste, der Stand bleibt unberührt
@@ -470,7 +476,7 @@ $('probe').addEventListener('click', () => testen(async () => {
   teile.push(SCHNITT);
   await senden(join(teile));
   say('Probe gedruckt.', 'ok');
-}));
+}, 'Namen · Probe'));
 $('tempo').addEventListener('click', () => testen(async () => {
   const d = DICHTEN[dichte], t0 = Date.now();
   let i = irgendwo(), n = 0;
@@ -486,7 +492,7 @@ $('tempo').addEventListener('click', () => testen(async () => {
   await senden(join([bandRaster(), SCHNITT]));
   const ist = n / ((Date.now() - t0) / 1000), noetig = tempo();
   say(`${ist.toFixed(1)} Namen/s geschafft, nötig für den ganzen Abend: ${noetig.toFixed(1)}. ${ist >= noetig * 1.1 ? 'Reicht.' : 'Reicht nicht: kleinere Dichte wählen.'}`, ist >= noetig * 1.1 ? 'ok' : 'err');
-}));
+}, 'Namen · Tempotest'));
 $('reset').addEventListener('click', () => {
   if (!confirm('Wirklich zurück auf Anfang? Die Reihenfolge wird neu gemischt.')) return;
   const seed = (Math.random() * 2 ** 32) >>> 0;

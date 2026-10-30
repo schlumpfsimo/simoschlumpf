@@ -96,6 +96,7 @@ button:disabled{opacity:.4;cursor:default}
     <p class="mass" id="mass"></p>
   </div>
 </main>
+<script src="../protokoll.js"></script>
 
 <script>
 // Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
@@ -623,6 +624,7 @@ $('drucken').addEventListener('click', async () => {
     await laeuft;   // sicher genau das drucken, was die Vorschau zeigt
     if (!kekse.length) throw new Error('kein Keks da');
     const n = kekse.length;
+    window.bonProtokoll?.warten(kekse.map((_, i) => n === 1 ? 'Glückskeks' : `Glückskeks ${i + 1}/${n}`));   // alle als «wartet» ins Protokoll
     for (const k of kekse) {
       msg(n === 1 ? 'Sende …' : `Sende ${gesendet + 1} von ${n} …`);
       const d = await bonpost({ inhalt: await bonHtml(k.raster, k.canvas), titel: n === 1 ? 'Glückskeks' : `Glückskeks ${gesendet + 1}/${n}`, quelle: 'website-glueckskeks' });
