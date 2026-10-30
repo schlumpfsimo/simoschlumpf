@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>老干妈 280克</title>
+  <meta name="description" content="A jar of Laoganma, in 3D" />
+  <style>
+    html,body{ margin:0; height:100%; background:#f4f3f0; overflow:hidden; font-family:ui-monospace, Menlo, Consolas, monospace; }
+    canvas{ position:absolute; left:0; top:0; outline:none; touch-action:none; }
+    #cap{ position:absolute; left:18px; bottom:16px; font-size:12px; font-weight:bold; letter-spacing:.04em; color:#8a1a14; pointer-events:none; }
+  </style>
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+<div id="cap">老干妈 风味豆豉 油制辣椒 · 280克 · DRAG TO TURN</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ---------------------------------------------------------------- setup
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf4f3f0);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 50);
+camera.position.set(1.9, 1.05, 2.6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.52, 0); controls.enablePan = false; controls.minDistance = 1.6; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI * 0.62; controls.autoRotate = true; controls.autoRotateSpeed = 1.2; controls.enableDamping = true;
+function fit(){ renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', fit); fit();
+
+const key = new THREE.DirectionalLight(0xfff6ea, 1.6); key.position.set(2.5, 4, 2); scene.add(key);
+const fill = new THREE.DirectionalLight(0xe8f0ff, 0.5); fill.position.set(-3, 2, -2); scene.add(fill);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8cfc0, 0.5));
+
+let seed = 7;
+const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const rr = (a, b) => a + (b - a) * rnd();
+
+// ---------------------------------------------------------------- the label, drawn after the photo: red, two columns of medallions, portrait in a gold oval
+const CJK = '"Noto Sans CJK SC","Noto Sans SC","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei","WenQuanYi Micro Hei",sans-serif';
+function drawPortrait(g, cx, cy, rw, rh){
+  g.save();
+  g.beginPath(); g.ellipse(cx, cy, rw, rh, 0, 0, 6.2832); g.fillStyle = '#f4ead6'; g.fill();
+  g.lineWidth = rw * 0.1; g.strokeStyle = '#f2c21c'; g.stroke();
+  g.clip();
+  g.fillStyle = '#2b2b33'; g.beginPath(); g.ellipse(cx, cy + rh * 1.08, rw * 1.0, rh * 0.62, 0, 0, 6.2832); g.fill();
+  g.fillStyle = '#f7f7f7'; g.beginPath(); g.moveTo(cx - rw * 0.4, cy + rh * 0.56); g.lineTo(cx, cy + rh * 0.98); g.lineTo(cx + rw * 0.4, cy + rh * 0.56); g.closePath(); g.fill();
+  g.fillStyle = '#e8c39b'; g.fillRect(cx - rw * 0.16, cy + rh * 0.2, rw * 0.32, rh * 0.42);
+  g.beginPath(); g.ellipse(cx, cy - rh * 0.04, rw * 0.44, rh * 0.5, 0, 0, 6.2832); g.fill();
+  g.fillStyle = '#1b1512'; g.beginPath(); g.ellipse(cx, cy - rh * 0.28, rw * 0.47, rh * 0.34, 0, Math.PI, 2 * Math.PI); g.fill();
+  g.fillRect(cx - rw * 0.47, cy - rh * 0.28, rw * 0.11, rh * 0.3); g.fillRect(cx + rw * 0.36, cy - rh * 0.28, rw * 0.11, rh * 0.3);
+  g.strokeStyle = '#2a1a12'; g.lineWidth = Math.max(1.5, rw * 0.05); g.lineCap = 'round';
+  g.beginPath(); g.moveTo(cx - rw * 0.27, cy - rh * 0.1); g.lineTo(cx - rw * 0.1, cy - rh * 0.1); g.moveTo(cx + rw * 0.1, cy - rh * 0.1); g.lineTo(cx + rw * 0.27, cy - rh * 0.1); g.stroke();
+  g.beginPath(); g.moveTo(cx - rw * 0.12, cy + rh * 0.22); g.quadraticCurveTo(cx, cy + rh * 0.3, cx + rw * 0.12, cy + rh * 0.22); g.stroke();
+  g.restore();
+}
+function medallion(g, x, y, r, ch, fs){
+  g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fillStyle = '#f2c21c'; g.fill();
+  g.lineWidth = r * 0.08; g.strokeStyle = '#e0a800'; g.stroke();
+  g.fillStyle = '#b8121a'; g.font = 'bold ' + fs + 'px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ch, x, y + fs * 0.06);
+}
+const label = document.createElement('canvas'); label.width = 2048; label.height = 540;
+{
+  const g = label.getContext('2d'), w = label.width, h = label.height, cx = w / 2;
+  g.fillStyle = '#d4201b'; g.fillRect(0, 0, w, h);
+  // a slightly darker, printed look
+  for (let k = 0; k < 4000; k++){ g.fillStyle = 'rgba(0,0,0,' + (rnd() * 0.05).toFixed(3) + ')'; g.fillRect(rnd() * w, rnd() * h, 3, 3); }
+  g.fillStyle = '#f2c21c'; g.fillRect(0, 0, w, 10); g.fillRect(0, h - 10, w, 10);
+  // front of the label, centred on u = 0.5
+  g.fillStyle = '#fff'; g.font = 'bold 54px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('中国名牌', cx, 62);
+  ['风', '味', '豆', '豉'].forEach((c, i) => medallion(g, cx - 300, 120 + i * 100, 42, c, 56));
+  ['油', '制', '辣', '椒'].forEach((c, i) => medallion(g, cx + 300, 120 + i * 100, 42, c, 56));
+  drawPortrait(g, cx, 225, 112, 135);
+  g.fillStyle = '#fff'; g.font = 'bold 22px ' + CJK; g.textAlign = 'left'; g.fillText('中国驰名商标', cx + 128, 130);
+  g.font = 'bold 20px ' + CJK; g.fillText('®', cx + 128, 162);
+  g.textAlign = 'center'; g.fillStyle = '#111'; g.font = 'bold 118px ' + CJK; g.fillText('老干妈', cx, 440);
+  g.fillStyle = '#fff'; g.font = 'bold 30px ' + CJK; g.fillText('净含量: 280克', cx, 510);
+  // the small blue round mark top-left
+  g.beginPath(); g.arc(cx - 430, 62, 34, 0, 6.3); g.fillStyle = '#fff'; g.fill(); g.beginPath(); g.arc(cx - 430, 62, 27, 0, 6.3); g.fillStyle = '#1c4fa0'; g.fill();
+  g.fillStyle = '#fff'; g.font = 'bold 26px Arial, sans-serif'; g.fillText('S', cx - 430, 64);
+  // the back: ingredients and a barcode
+  g.fillStyle = '#fff'; g.font = 'bold 40px ' + CJK; g.fillText('贵阳南明老干妈风味食品有限责任公司', 0, 70); g.fillText('贵阳南明老干妈风味食品有限责任公司', w, 70);
+  g.font = '21px ' + CJK; g.textAlign = 'left';
+  const lines = ['配料: 食用植物油, 辣椒, 豆豉, 食用盐, 白砂糖, 味精', '保质期: 18个月  贮存: 置于阴凉干燥处', '产地: 贵州省贵阳市  食品生产许可证编号: SC10352010200012', '开封后请冷藏并尽快食用'];
+  lines.forEach((l, i) => g.fillText(l, 30, 150 + i * 44));
+  g.fillStyle = '#fff'; g.fillRect(w - 440, 300, 420, 180); g.fillStyle = '#111';
+  for (let i = 0; i < 46; i++) g.fillRect(w - 420 + i * 8.8, 320, rnd() < 0.5 ? 2 : 4, 120);
+  g.font = 'bold 22px Arial, sans-serif'; g.textAlign = 'center'; g.fillText('6 921804 700429', w - 230, 462);
+}
+const labelTex = new THREE.CanvasTexture(label); labelTex.anisotropy = 8; labelTex.colorSpace = THREE.SRGBColorSpace;
+
+// ---------------------------------------------------------------- the jar: glass body, dark contents, oil, floating beans and flakes, fluted red lid
+const jar = new THREE.Group(); scene.add(jar);
+const lathe = (pts, seg = 96) => new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg);
+const R = 0.33, H = 0.9;
+// glass: a closed profile with wall thickness, so refraction and highlights read on both surfaces
+const glassGeo = lathe([[0, 0], [0.27, 0], [0.305, 0.012], [0.32, 0.05], [R, 0.16], [R, 0.74], [0.325, 0.8], [0.31, 0.85], [0.3, 0.88], [0.3, H], [0.285, H], [0.285, 0.87], [0.296, 0.84], [0.311, 0.79], [0.315, 0.74], [0.315, 0.17], [0.305, 0.07], [0.29, 0.03], [0.25, 0.025], [0, 0.025]]);
+const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, roughness: 0.04, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.6, depthWrite: false, side: THREE.DoubleSide });
+const glass = new THREE.Mesh(glassGeo, glassMat); glass.renderOrder = 10; jar.add(glass);
+// contents: a dark core, oil around it, bits packed against the wall
+const OIL_TOP = 0.78;
+const core = new THREE.Mesh(lathe([[0, 0.03], [0.24, 0.03], [0.26, 0.06], [0.26, OIL_TOP - 0.04], [0.22, OIL_TOP - 0.02], [0, OIL_TOP - 0.02]]), new THREE.MeshStandardMaterial({ color: 0x2a0a05, roughness: 0.55 }));
+jar.add(core);
+const oil = new THREE.Mesh(lathe([[0, 0.028], [0.285, 0.028], [0.3, 0.05], [0.308, 0.17], [0.308, 0.74], [0.3, OIL_TOP], [0, OIL_TOP]]), new THREE.MeshPhysicalMaterial({ color: 0x9a1e08, transparent: true, opacity: 0.62, roughness: 0.15, clearcoat: 0.8, depthWrite: false }));
+oil.renderOrder = 5; jar.add(oil);
+// the oil surface, glossy, with bits floating in it
+const surf = new THREE.Mesh(new THREE.CircleGeometry(0.302, 64), new THREE.MeshPhysicalMaterial({ color: 0xb0300a, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.85 }));
+surf.rotation.x = -Math.PI / 2; surf.position.y = OIL_TOP + 0.001; surf.renderOrder = 6; jar.add(surf);
+{
+  const beanGeo = new THREE.SphereGeometry(1, 8, 6), flakeGeo = new THREE.BoxGeometry(1, 0.2, 1), seedGeo = new THREE.SphereGeometry(1, 6, 4);
+  const beanMat = new THREE.MeshStandardMaterial({ color: 0x120604, roughness: 0.7 });
+  const flakeMat = new THREE.MeshStandardMaterial({ color: 0x8d1a07, roughness: 0.6 });
+  const seedMat = new THREE.MeshStandardMaterial({ color: 0xd9b36a, roughness: 0.6 });
+  const put = (geo, mat, n, sx, sy, sz, rlo, rhi, ylo, yhi) => {
+    const im = new THREE.InstancedMesh(geo, mat, n), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
+    for (let i = 0; i < n; i++){
+      const a = rr(0, 6.2832), r = rr(rlo, rhi), k = rr(0.7, 1.3);
+      q.setFromEuler(e.set(rr(0, 6.3), rr(0, 6.3), rr(0, 6.3)));
+      m.compose(p.set(Math.cos(a) * r, rr(ylo, yhi), Math.sin(a) * r), q, s.set(sx * k, sy * k, sz * k));
+      im.setMatrixAt(i, m);
+    }
+    jar.add(im);
+  };
+  put(beanGeo, beanMat, 220, 0.022, 0.016, 0.018, 0.255, 0.295, 0.05, OIL_TOP - 0.03);   // fermented black beans along the wall
+  put(flakeGeo, flakeMat, 160, 0.03, 0.03, 0.02, 0.25, 0.3, 0.05, OIL_TOP - 0.02);         // chili flakes
+  put(seedGeo, seedMat, 90, 0.008, 0.005, 0.006, 0.25, 0.3, 0.05, OIL_TOP - 0.02);         // chili seeds
+  put(flakeGeo, flakeMat, 50, 0.028, 0.03, 0.02, 0.0, 0.29, OIL_TOP - 0.006, OIL_TOP + 0.004);   // flakes on the surface
+  put(beanGeo, beanMat, 30, 0.02, 0.014, 0.016, 0.0, 0.28, OIL_TOP - 0.004, OIL_TOP + 0.004);
+}
+// the label band
+const band = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.002, R + 0.002, 0.52, 96, 1, true), new THREE.MeshStandardMaterial({ map: labelTex, roughness: 0.55 }));
+band.position.y = 0.44; band.rotation.y = -2.5; jar.add(band);
+// the lid: fluted red cap, slightly wider than the neck, with a dimpled top
+const lidShape = new THREE.Shape();
+for (let i = 0; i <= 96; i++){ const a = i / 96 * Math.PI * 2, r = 0.348 + (i % 2 ? 0.008 : 0); i ? lidShape.lineTo(Math.cos(a) * r, Math.sin(a) * r) : lidShape.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+const lidGeo = new THREE.ExtrudeGeometry(lidShape, { depth: 0.13, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 3 });
+lidGeo.rotateX(-Math.PI / 2); lidGeo.translate(0, 0.88, 0);
+const lidMat = new THREE.MeshStandardMaterial({ color: 0xd21e18, roughness: 0.38, metalness: 0.15 });
+jar.add(new THREE.Mesh(lidGeo, lidMat));
+const lidTop = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.34, 0.012, 64), lidMat); lidTop.position.y = 1.013; jar.add(lidTop);
+const dimple = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.006, 48), new THREE.MeshStandardMaterial({ color: 0xb8161a, roughness: 0.45, metalness: 0.15 })); dimple.position.y = 1.02; jar.add(dimple);
+// a soft shadow on the floor
+const sh = document.createElement('canvas'); sh.width = sh.height = 256;
+{ const g = sh.getContext('2d'), r = g.createRadialGradient(128, 128, 20, 128, 128, 128); r.addColorStop(0, 'rgba(60,30,20,0.45)'); r.addColorStop(1, 'rgba(60,30,20,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); }
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sh), transparent: true, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = -0.001; scene.add(shadow);
+
+// ---------------------------------------------------------------- loop
+let last = performance.now();
+renderer.setAnimationLoop(() => {
+  const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now;
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
