@@ -84,6 +84,10 @@ const S = {
   tEnd: { de: "KEIN MATERIAL, TROTZDEM KRIEG.", fr: "PAS DE MATÉRIEL, LA GUERRE QUAND MÊME.", en: "NO MATERIEL, WAR ANYWAY." },
   tTurn: { de: "SLAVA.", fr: "SLAVA.", en: "SLAVA." },
   school: { de: "FLUGSCHULE", fr: "ÉCOLE DE PILOTAGE", en: "FLIGHT SCHOOL" },
+  // the round starts with one vehicle to practise on; the Shaheds come once it is destroyed
+  hintPractice: { de: "ÜBUNG: FLIEG ZUM MARKIERTEN FAHRZEUG UND ZERSTÖRE ES. FAHRZEUGE DÜRFEN DIE STADT NICHT ERREICHEN.", fr: "EXERCICE : VOLE JUSQU'AU VÉHICULE MARQUÉ ET DÉTRUIS-LE. LES VÉHICULES NE DOIVENT PAS ATTEINDRE LA VILLE.", en: "PRACTICE: FLY TO THE MARKED VEHICLE AND DESTROY IT. VEHICLES MUST NOT REACH THE TOWN." },
+  hintDone: { de: "GUT. JETZT KOMMEN DIE SHAHEDS. FANG SIE AB, BEVOR SIE DAS THEATER TREFFEN.", fr: "BIEN. MAINTENANT ARRIVENT LES SHAHED. INTERCEPTE-LES AVANT QU'ILS TOUCHENT LE THÉÂTRE.", en: "GOOD. NOW THE SHAHEDS ARE COMING. INTERCEPT THEM BEFORE THEY HIT THE THEATRE." },
+  hintGo: { de: "DIE SHAHEDS KOMMEN. FANG SIE AB, BEVOR SIE DAS THEATER TREFFEN.", fr: "LES SHAHED ARRIVENT. INTERCEPTE-LES AVANT QU'ILS TOUCHENT LE THÉÂTRE.", en: "THE SHAHEDS ARE COMING. INTERCEPT THEM BEFORE THEY HIT THE THEATRE." },
   // end of a round
   endTheatre: { de: "DAS THEATER WURDE GETROFFEN.", fr: "LE THÉÂTRE A ÉTÉ TOUCHÉ.", en: "THE THEATRE WAS HIT." },
   endColumn: { de: "EINE KOLONNE HAT DIE STADT ERREICHT.", fr: "UNE COLONNE A ATTEINT LA VILLE.", en: "A COLUMN REACHED THE TOWN." },
@@ -1877,14 +1881,20 @@ function updateGuns(dt){
 // ---------------------------------------------------------------- the threat: Gerans and columns arrive over time
 // a round lasts about five minutes: the waves grow and come faster, and from two minutes on more and more
 // Gerans aim at the theatre; whoever stops many of them plays a little longer
-const ROUND = 300, FIRST_GERAN = 12, FIRST_COLUMN = 150;
-let nextGeran = FIRST_GERAN, nextColumn = FIRST_COLUMN, nextTrainer = 20, nextForest = 0;
+// waveT counts from the end of the practice; the waves, columns and forest vehicles run on it
+const ROUND = 300, FIRST_GERAN = 15, FIRST_COLUMN = 150, PRACTICE_MAX = 90;
+let nextGeran = FIRST_GERAN, nextColumn = FIRST_COLUMN, nextForest = 0, waveT = 0;
+let practice = null, hintMsg = null, hintT = 0;
 const pending = [];
-// a slow vehicle on the east road to practise on: no fire for 3 min, it cannot reach the village before the first column
-function spawnTrainer(){
-  const road = ROADS[0], br = bridges.find(b => b.road === road), s0 = br ? br.s + br.L / 2 + 25 : road.len - 1500;
-  const speed = (road.len - s0) / (660 - clock), v = new Vehicle(rnd() < 0.5 ? 'bmp' : 'mtlb', road, s0);
-  v.colSpeed = speed; v.noShootUntil = clock + 180; vehicles.push(v);
+// the first vehicle is for practice: about 800 m out on the east road, slow, it never shoots;
+// the Shaheds come once it is destroyed, or after 90 s if nobody gets it
+function spawnPracticeVehicle(){
+  const road = ROADS[0], p = {};
+  let s0 = road.len - 10;
+  for (let s = road.len - 10; s > 0; s -= 10){ roadAt(road, s, p); if (Math.hypot(p.x - START.x, p.z - START.z) > 800){ s0 = s; break; } }
+  const v = new Vehicle('bmp', road, s0);
+  v.colSpeed = 2; v.noShootUntil = Infinity; vehicles.push(v);
+  practice = { v, t: 0 };
 }
 // vehicles that crawl through the forests: no recon mark, easy to see only in thermal
 function spawnForestVehicle(road = pick(ROADS.filter(r => r.forest))){
@@ -1894,28 +1904,40 @@ function spawnForestVehicle(road = pick(ROADS.filter(r => r.forest))){
   const v = new Vehicle(pick(['bmp', 'btr', 'mtlb']), road, s0);
   v.colSpeed = 3.5; v.hidden = true; vehicles.push(v);
 }
-function updateThreats(){
-  if (clock > nextTrainer){ spawnTrainer(); nextTrainer = Infinity; }
-  if (clock > nextForest){
+function updateThreats(dt){
+  if (practice){
+    practice.t += dt;
+    if (practice.v.alive && practice.t < PRACTICE_MAX) return;
+    hintMsg = practice.v.alive ? S.hintGo : S.hintDone; hintT = 7;
+    practice = null;
+  }
+  const t = waveT += dt;
+  if (t > nextForest){
     if (!nextForest) for (const r of ROADS.filter(r => r.forest)) spawnForestVehicle(r);
     else spawnForestVehicle();
-    nextForest = clock + rr(300, 420);
+    nextForest = t + rr(300, 420);
   }
-  if (clock > nextGeran){
-    const k = Math.min(1.3, clock / ROUND), c = pick(CORRIDORS);
-    const n = 1 + Math.floor(k * 3 + rnd() * 1.3), toCentral = clamp((clock - 120) / 160, 0, 0.8);
+  if (t > nextGeran){
+    const k = Math.min(1.3, t / ROUND), c = pick(CORRIDORS);
+    const n = 1 + Math.floor(k * 3 + rnd() * 1.3), toCentral = clamp((t - 120) / 160, 0, 0.8);
     for (let i = 0; i < n; i++){
-      const r = rnd(), type = clock > 180 && r < 0.25 ? 4 : clock > 80 && r < 0.45 ? 3 : 2;
+      const r = rnd(), type = t > 180 && r < 0.25 ? 4 : t > 80 && r < 0.45 ? 3 : 2;
       // they enter closer than the corridor start, so the first ones arrive after about a minute
-      pending.push({ at: clock + i * rr(3, 8), type, corr: c.slice(type === 2 ? 2 : 1), central: rnd() < toCentral });
+      pending.push({ at: t + i * rr(3, 8), type, corr: c.slice(type === 2 ? 2 : 1), central: rnd() < toCentral });
     }
-    nextGeran = clock + (40 - 26 * Math.min(1, k)) * rr(0.8, 1.2);
+    nextGeran = t + (40 - 26 * Math.min(1, k)) * rr(0.8, 1.2);
   }
   for (let i = pending.length - 1; i >= 0; i--){
     const p = pending[i];
-    if (clock >= p.at){ gerans.push(new Geran(p.type, p.corr, p.central)); pending.splice(i, 1); }
+    if (t >= p.at){ gerans.push(new Geran(p.type, p.corr, p.central)); pending.splice(i, 1); }
   }
-  if (clock > nextColumn){ spawnColumn(); nextColumn = clock + rr(240, 300); }
+  if (t > nextColumn){ spawnColumn(); nextColumn = t + rr(240, 300); }
+}
+// the practice task while it runs, then a short message when the Shaheds start
+function drawHint(){
+  if (seq.active || ended || paused) return;
+  const h = practice ? S.hintPractice : hintT > 0 ? hintMsg : null;
+  if (h) drawBox(say(h));
 }
 let endedAt = 0, endReason = 'theatre', roundTime = 0;
 const endPhase = () => ended ? (performance.now() - endedAt) / 1000 : 0;
@@ -2545,7 +2567,8 @@ function resetWorld(){
   restoreCentral();
   for (const s of guns){ s.burst = 0; s.target = null; }
   kills = leaks = aaKills = 0; hitMsg = killBlink = 0; clock = 0;
-  nextGeran = FIRST_GERAN; nextColumn = FIRST_COLUMN; nextTrainer = 20; nextForest = 0;
+  nextGeran = FIRST_GERAN; nextColumn = FIRST_COLUMN; nextForest = 0; waveT = 0;
+  practice = null; hintT = 0;
   respawn(); P.mode = 'ACRO'; staticAmt = 1; flash = 0;
   quad.visible = quadPad.visible = false; camera.fov = 100; camera.updateProjectionMatrix();
   hold.t = 0; hold.ready = false; pad.block = true;
@@ -2555,6 +2578,7 @@ function resetWorld(){
 function startRound(){
   resetWorld();
   seq.active = false; seq.black = 0;
+  spawnPracticeVehicle();
 }
 function resetToStart(){
   resetWorld();
@@ -2787,7 +2811,7 @@ function update(dt){
       for (let i = 0; i < n && P.alive; i++) simStep(dt / n);
       if (P.armed) P.time += dt;
     } else if (!ended && clock - P.deadAt > 0.5) respawn();
-    updateThreats();
+    updateThreats(dt);
   }
   for (const g of [...gerans]) g.update(dt);
   for (const v of vehicles) v.update(dt);
@@ -2827,7 +2851,7 @@ function update(dt){
 
   flash = Math.max(0, flash - dt * 6);
   if (P.alive) staticAmt = Math.max(0, staticAmt - dt * 4);
-  killBlink = Math.max(0, killBlink - dt); hitMsg = Math.max(0, hitMsg - dt);
+  killBlink = Math.max(0, killBlink - dt); hitMsg = Math.max(0, hitMsg - dt); hintT = Math.max(0, hintT - dt);
 }
 
 // ---------------------------------------------------------------- Meta Quest: head-locked goggle screen
@@ -2924,6 +2948,7 @@ function render(){
   if (!inVR || t - lastFeed > 1000 / 30){
     lastFeed = t;
     drawOSD();
+    drawHint();
     if (seq.active && seq.phase !== 'start') drawHold(say(device() === 'kb' ? S.skipTrailerKb : S.skipTrailerA));
     if (paused) drawPause();
     osdTex.needsUpdate = true;
@@ -2954,7 +2979,7 @@ renderer.setAnimationLoop(frame);
 if (location.hash === '#dbg') window.__d = { seq, seqGo, startRound, resetToStart, quad, setLang, hold, pad, groundAt, P, gerans, vehicles, houses, central, Geran, Vehicle, ROADS, camera, THREE, stats, setVision, update, render, spawnColumn, destroyHouse, noColumns(){ nextColumn = 1e9; }, quality, applyQuality,
   vrPreview(){ renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(feedRT); renderer.render(postScene, postCam); renderer.setRenderTarget(null); vrCam.aspect = RW / RH; vrCam.fov = 75; vrCam.updateProjectionMatrix(); renderer.render(vrScene, vrCam); },
   vrQuality,
-  get state(){ return { clock, ended, endReason, kills, leaks, aaKills, lang, paused, alive: houses.filter(h => h.village && h.alive).length }; } };
+  get state(){ return { clock, waveT, practice: !!practice, ended, endReason, kills, leaks, aaKills, lang, paused, alive: houses.filter(h => h.village && h.alive).length }; } };
 </script>
 </body>
 </html>
