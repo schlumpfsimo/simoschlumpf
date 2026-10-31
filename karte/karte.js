@@ -77,19 +77,27 @@
   const TON = [3, 6, 9, 12, 15].map(d => 255 * (64 - d) / 64);
   const UEBERGANG = 260;                      // ms, bis ein gewähltes Gebiet weiss ist
 
-  // Projektion. Quer: Basel bis Karlsruhe füllt die Höhe, der Rhein liegt rechts vom Text.
-  // Hoch: Basel bis knapp über Strasbourg füllt den Raum unter dem Text.
+  // Projektion, stufenlos vom Hoch- zum Querformat:
+  //   hoch  Basel bis knapp über Strasbourg füllt den Raum unter dem Text, Rhein in der Mitte
+  //   quer  Basel bis Karlsruhe füllt die Höhe, der Rhein liegt rechts vom Text
+  // Dazwischen (Seitenverhältnis 0,9 bis 1,4) werden Massstab und Lage weich überblendet.
   function projektion(W, H, inhalt) {
-    const lat0 = 48.3, k = Math.cos(lat0 * Math.PI / 180), lonR = 7.95;
-    if (W > H * 1.1) {
-      const s = Math.max(H / 2.05, 300);
-      const xRhein = Math.max(W * .62, inhalt.rechts + 260);
-      return ([lon, lat]) => [xRhein + (lon - lonR) * k * s, H * .47 - (lat - lat0) * s];
-    }
+    const k = Math.cos(48.3 * Math.PI / 180), lonR = 7.95, latB = 47.558;
+    // hoch: Massstab aus dem Raum unter dem Text
     const oben = inhalt.unten + 90, unten = H - 70;
-    const s = Math.min(Math.max((unten - oben) / (48.573 - 47.558), 260), 900);
-    return ([lon, lat]) => [W * .55 + (lon - lonR) * k * s, unten - (lat - 47.558) * s];
+    const sH = Math.min(Math.max((unten - oben) / (48.573 - latB), 260), 900);
+    const hoch = { s: sH, x: W * .55, y: unten };
+    // quer: Basel liegt dort, wo lat 48,3 auf 47 % der Höhe steht
+    const sQ = Math.max(H / 2.05, 300);
+    const quer = { s: sQ, x: Math.max(W * .62, inhalt.rechts + 260), y: H * .47 + (48.3 - latB) * sQ };
+    const v = W / H, a = Math.min(1, Math.max(0, (v - .9) / .5)), q = a * a * (3 - 2 * a);   // weich
+    const s = hoch.s + (quer.s - hoch.s) * q, x = hoch.x + (quer.x - hoch.x) * q, y = hoch.y + (quer.y - hoch.y) * q;
+    return ([lon, lat]) => [x + (lon - lonR) * k * s, y - (lat - latB) * s];
   }
+
+  // Kartenmass: Linien, Sterne und Ortsnamen wachsen mit dem Bildschirm wie die Schrift (--u in karte.css)
+  let mass = 1;
+  const kartenmass = () => Math.min(Math.max(Math.min(innerWidth / 100, innerHeight * .016) / 14.4, .85), 1.7);
 
   const ringe = (ctx, px, rs) => rs.forEach(r => r.forEach((q, i) => { const [a, b] = px(q); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }));
 
@@ -111,17 +119,17 @@
     ctx.lineCap = ctx.lineJoin = 'round';
     ctx.fillStyle = '#a8a8a8'; ctx.beginPath(); ringe(ctx, px, D.seen); ctx.fill();
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1; ctx.setLineDash([2, 3]); D.grenzen.forEach(linie); ctx.setLineDash([]);
-    ctx.lineWidth = 1.2; D.fluesse.forEach(linie);
-    ctx.lineWidth = 4.5; D.rhein.forEach(linie);
+    ctx.lineWidth = mass; ctx.setLineDash([2 * mass, 3 * mass]); D.grenzen.forEach(linie); ctx.setLineDash([]);
+    ctx.lineWidth = 1.2 * mass; D.fluesse.forEach(linie);
+    ctx.lineWidth = 4.5 * mass; D.rhein.forEach(linie);
 
     // Zwölf Sterne um Strasbourg
     const [sx, sy] = px([7.752, 48.573]);
-    const R = Math.min(Math.max((px([7.752, 47.558])[1] - sy) * .13, 36), 90);   // Radius im Verhältnis zum Massstab
+    const R = Math.min(Math.max((px([7.752, 47.558])[1] - sy) * .13, 36 * mass), 90 * mass);   // Radius im Verhältnis zum Massstab
     ctx.fillStyle = '#000';
     for (let i = 0; i < 12; i++) {
       const w = i / 12 * 2 * Math.PI;
-      ctx.save(); ctx.translate(sx + R * Math.sin(w), sy - R * Math.cos(w)); ctx.scale(6, 6); ctx.fill(STERN); ctx.restore();
+      ctx.save(); ctx.translate(sx + R * Math.sin(w), sy - R * Math.cos(w)); ctx.scale(6 * mass, 6 * mass); ctx.fill(STERN); ctx.restore();
     }
 
     // Orte: Punkt auf der Karte, Name kommt zur Schrift (scharf, mit Hof); Basel mit Ring und Wassertemperatur
@@ -133,10 +141,10 @@
       const basel = o.n === 'Basel';
       schilder.push({ t: o.n.toUpperCase(), a, b, links: LINKS.has(o.n), gross: basel, zusatz: basel ? wasser : '' });
       if (basel) {
-        ctx.beginPath(); ctx.arc(a, b, 8, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill();
-        ctx.lineWidth = 2.5; ctx.stroke();
-        ctx.beginPath(); ctx.arc(a, b, 3, 0, 2 * Math.PI); ctx.fillStyle = '#000'; ctx.fill();
-      } else { ctx.fillStyle = '#000'; ctx.fillRect(a - 2.5, b - 2.5, 5, 5); }
+        ctx.beginPath(); ctx.arc(a, b, 8 * mass, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.lineWidth = 2.5 * mass; ctx.stroke();
+        ctx.beginPath(); ctx.arc(a, b, 3 * mass, 0, 2 * Math.PI); ctx.fillStyle = '#000'; ctx.fill();
+      } else { ctx.fillStyle = '#000'; ctx.fillRect(a - 2.5 * mass, b - 2.5 * mass, 5 * mass, 5 * mass); }
     }
     ctx.restore();
   }
@@ -151,12 +159,14 @@
   let wahl = -1;                              // gewähltes Gebiet (Nummer in D.gebiete), -1 = keins
   const blass = new Map();                    // Gebiet → Anteil seines Tons, 0 = weiss, 1 = voll
 
-  function setzen() {
+  function setzen(grob = false) {
     const B = blatt.getBoundingClientRect();
     const W = B.width, H = B.height;
     if (!W || !H) return null;
+    mass = kartenmass();
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const p = dpr >= 2 ? .75 : 1;              // CSS-Pixel pro Punkt: fein, aber auf dem Schirm noch rund
+    // CSS-Pixel pro Punkt: fein, aber auf dem Schirm noch rund. Während das Fenster gezogen wird gröber, damit es mitkommt.
+    const p = (dpr >= 2 ? .75 : 1) * (grob ? 2 : 1);
     const w = Math.ceil(W / p), h = Math.ceil(H / p);
     const lage = r => ({ x: r.left - B.left, y: r.top - B.top, w: r.width, h: r.height });
     const neu = (grund = '#fff') => {
@@ -235,23 +245,23 @@
     }
     // Ortsnamen gesperrt, Zeichen für Zeichen
     for (const o of schilder) {
-      s.font = `700 ${o.gross ? 13 : 11}px Plex, sans-serif`; s.fillStyle = '#000'; s.textBaseline = 'middle';
-      const sp = 1.6, bw = [...o.t].reduce((a, ch) => a + s.measureText(ch).width + sp, 0) - sp;
-      let links = o.links;
-      if (links && o.a - 14 - bw < 8) links = false;            // am Rand auf die andere Seite
-      if (!links && o.a + 14 + bw > W - 8) links = true;
-      let x = links ? o.a - 14 - bw : o.a + 14;
+      s.font = `700 ${(o.gross ? 13 : 11) * mass}px Plex, sans-serif`; s.fillStyle = '#000'; s.textBaseline = 'middle';
+      const sp = 1.6 * mass, bw = [...o.t].reduce((a, ch) => a + s.measureText(ch).width + sp, 0) - sp;
+      let links = o.links; const ab = 14 * mass;
+      if (links && o.a - ab - bw < 8) links = false;            // am Rand auf die andere Seite
+      if (!links && o.a + ab + bw > W - 8) links = true;
+      let x = links ? o.a - ab - bw : o.a + ab;
       if (x < inhalt.rechts + 16 && o.b < inhalt.unten + 24) continue;   // nicht in den Text
       if (x < 4 || x + bw > W - 4) continue;
       const x0 = x;
       for (const ch of o.t) { s.fillText(ch, x, o.b); x += s.measureText(ch).width + sp; }
-      if (o.zusatz) { s.font = '700 15px Plex, sans-serif'; s.fillText(o.zusatz, links ? x0 + bw - s.measureText(o.zusatz).width : x0, o.b + 19); }
+      if (o.zusatz) { s.font = `700 ${15 * mass}px Plex, sans-serif`; s.fillText(o.zusatz, links ? x0 + bw - s.measureText(o.zusatz).width : x0, o.b + 19 * mass); }
     }
     const sd = s.getImageData(0, 0, w, h).data;
     const schrift = new Uint8Array(n);
     for (let i = 0, j = 0; i < n; i++, j += 4) schrift[i] = hell(sd, j) < SCHWELLE ? 1 : 0;
     // Hof um die Schrift: die Karte weicht rundherum aus
-    const hof = dehnen(schrift, w, h, Math.round(7 / p));
+    const hof = dehnen(schrift, w, h, Math.round(7 * mass / p));
 
     // Ausdehnung und Schwerpunkt je Gebiet (für Neudruck und Beschriftung)
     const anz = D ? D.gebiete.length + 1 : 1;
@@ -313,14 +323,15 @@
     if (best < 0) return null;
     const t = (LANG === 'fr' ? D.gebiete[k].fr : D.gebiete[k].de).toUpperCase();
     const c = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-    c.font = '700 13px Plex, sans-serif';
-    const sp = 1.8, bw = [...t].reduce((a, ch) => a + c.measureText(ch).width + sp, 0) - sp;
-    const rand = 8, sw = Math.ceil((bw + 2 * rand) / p), sh = Math.ceil((18 + 2 * rand) / p);
+    const fs = 13 * mass;
+    c.font = `700 ${fs}px Plex, sans-serif`;
+    const sp = 1.8 * mass, bw = [...t].reduce((a, ch) => a + c.measureText(ch).width + sp, 0) - sp;
+    const rand = 8 * mass, sw = Math.ceil((bw + 2 * rand) / p), sh = Math.ceil((fs * 1.4 + 2 * rand) / p);
     c.canvas.width = sw; c.canvas.height = sh;
     c.fillStyle = '#fff'; c.fillRect(0, 0, sw, sh); c.scale(1 / p, 1 / p);
-    c.font = '700 13px Plex, sans-serif'; c.fillStyle = '#000'; c.textBaseline = 'middle';
+    c.font = `700 ${fs}px Plex, sans-serif`; c.fillStyle = '#000'; c.textBaseline = 'middle';
     let x = rand;
-    for (const ch of t) { c.fillText(ch, x, rand + 9); x += c.measureText(ch).width + sp; }
+    for (const ch of t) { c.fillText(ch, x, rand + fs * .7); x += c.measureText(ch).width + sp; }
     const d = c.getImageData(0, 0, sw, sh).data, bits = new Uint8Array(sw * sh);
     for (let i = 0; i < sw * sh; i++) bits[i] = hell(d, i * 4) < SCHWELLE ? 1 : 0;
     const sx = Math.min(Math.max(best % w - (sw >> 1), 0), w - sw), sy = Math.min(Math.max((best / w | 0) - (sh >> 1), 0), h - sh);
@@ -376,6 +387,8 @@
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     leinwand.width = Math.round(S.W * dpr);
     leinwand.height = Math.round(S.H * dpr);
+    // feste Grösse in CSS-Pixeln: beim Ziehen am Fenster wird nichts verzerrt, bis neu gedruckt ist
+    leinwand.style.width = S.W + 'px'; leinwand.style.height = S.H + 'px';
     ctx = leinwand.getContext('2d'); ctx.fillStyle = '#000';
     gross = S.p * dpr;                         // Gerätepixel pro Punkt
     const id = ++laeuft;
@@ -392,12 +405,14 @@
     requestAnimationFrame(schritt);
   }
 
-  let breite = 0, hoehe = 0;
-  function drucken(langsam = false) {
-    if (!setzen()) return;
-    breite = S.W; hoehe = S.H;
+  let breite = 0, hoehe = 0, schaerfe = 0;
+  function drucken(langsam = false, grob = false) {
+    performance.mark('druck');
+    if (!setzen(grob)) return;
+    breite = S.W; hoehe = S.H; schaerfe = window.devicePixelRatio || 1;
     zeichnen(langsam);
     root.classList.add('gedruckt');
+    performance.measure(grob ? 'druck grob' : 'druck', 'druck');
   }
 
   // ------------------------------------------------------------ Gebiete wählen
@@ -471,11 +486,23 @@
     try { drucken(!leise); } catch (e) { root.classList.remove('js'); throw e; }
     // Kommt der Rhein später, neu drucken (Werte und Temperatur bei Basel), ohne Animation
     daten.then(() => { if (!mitRhein && wasser) drucken(false); });
-    let t;
-    new ResizeObserver(() => {
+    // Fenster ziehen, drehen, zoomen: jedes Bild grob mitdrucken, nach einer Pause fein
+    let bild = 0, ruhe = 0;
+    const nachfuehren = () => {
       const r = blatt.getBoundingClientRect();
-      if (Math.abs(r.width - breite) < .5 && Math.abs(r.height - hoehe) < .5) return;
-      clearTimeout(t); t = setTimeout(() => drucken(false), 120);
-    }).observe(blatt);
+      if (Math.abs(r.width - breite) < .5 && Math.abs(r.height - hoehe) < .5 && schaerfe === (window.devicePixelRatio || 1)) return;
+      if (!bild) bild = requestAnimationFrame(() => { bild = 0; drucken(false, true); });
+      clearTimeout(ruhe);
+      ruhe = setTimeout(() => { cancelAnimationFrame(bild); bild = 0; drucken(false); }, 160);
+    };
+    new ResizeObserver(nachfuehren).observe(blatt);
+    // anderer Bildschirm oder Browser-Zoom: die Pixeldichte ändert sich, auch wenn die Grösse bleibt
+    const dichte = () => {
+      const m = matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+      m.addEventListener('change', () => { nachfuehren(); dichte(); }, { once: true });
+    };
+    dichte();
+    addEventListener('resize', nachfuehren);
+    visualViewport?.addEventListener('resize', nachfuehren);
   })();
 })();
