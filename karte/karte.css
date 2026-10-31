@@ -43,3 +43,4 @@ body{font:500 17px/1.5 "Plex",system-ui,sans-serif;-webkit-font-smoothing:antial
 .gedruckt .satz .knopf{background:transparent;color:transparent!important}
 .gedruckt .satz .sterne svg{fill:transparent}
 .gedruckt ::selection{background:rgba(0,51,153,.22);color:transparent}
+.unsichtbar{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
