@@ -1,0 +1,60 @@
+/* Visitenkarte als Bon: der Inhalt ist echtes HTML, karte.js druckt ihn als Punkteraster darüber.
+   Ohne JavaScript bleibt der HTML-Satz sichtbar und sieht fast gleich aus. */
+@font-face{font-family:"Plex";src:url(plex-500.woff2) format("woff2");font-weight:500;font-display:block}
+@font-face{font-family:"Plex";src:url(plex-700.woff2) format("woff2");font-weight:700;font-display:block}
+
+:root{ --papier:#fff; --tisch:#ecebe7; --tinte:#000; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--tisch);color:var(--tinte);
+  font:500 15px/1.5 "Plex",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;
+  display:flex;justify-content:center;
+  padding:0 16px 48px;
+}
+
+/* Das Papier hängt oben aus dem Drucker und ist unten gezackt abgerissen */
+.bon{
+  --zacke:10px;
+  position:relative;width:min(100%,360px);
+  background:var(--papier);
+  padding:40px 24px calc(30px + var(--zacke));
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/var(--zacke) 100%;
+          mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/var(--zacke) 100%;
+}
+.druck{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.satz{position:relative}
+
+/* Satz */
+.satz p,.satz h1{margin:0}
+.satz a{color:inherit;text-decoration:none}
+.satz a:hover,.satz a:focus-visible{text-decoration:underline;text-decoration-color:var(--tinte);text-decoration-thickness:2px;text-underline-offset:3px;outline:none}
+.mitte{text-align:center}
+.sprache{font-size:13px;letter-spacing:.12em;margin-bottom:22px}
+.name{font-size:25px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1.25;text-align:center}
+.sterne{display:flex;justify-content:center;gap:10px;margin:14px 0 2px}
+.sterne svg{width:15px;height:15px;fill:var(--tinte)}
+hr{border:0;border-top:2px dashed var(--tinte);margin:20px 0}
+.zeile{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:16px}
+.zeile>*{white-space:nowrap}
+.k{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:23px}
+.kopf{font-weight:700;margin-bottom:4px}
+.kopf .k{font-weight:700}
+.kopf time{font-size:13px;line-height:23px}
+.gross{font-weight:700}
+.knopf{
+  display:block;margin-top:2px;padding:12px;text-align:center;
+  background:var(--tinte);color:var(--papier)!important;
+  font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+}
+.satz a.knopf:hover,.satz a.knopf:focus-visible{text-decoration-color:var(--papier)}
+.satz .fuss{margin-top:26px;font-size:12px;letter-spacing:.08em;text-align:center}
+
+/* Sobald gedruckt ist, wird der HTML-Satz durchsichtig: er bleibt anklick- und markierbar */
+.js .satz{visibility:hidden}
+.gedruckt .satz{visibility:visible;color:transparent}
+.gedruckt .satz .knopf{background:transparent;color:transparent!important}
+.gedruckt .satz hr{border-color:transparent}
+.gedruckt .satz .sterne svg{fill:transparent}
+.gedruckt ::selection{background:rgba(0,51,153,.22);color:transparent}
