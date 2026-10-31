@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Simo Schlumpf – Kontakt</title>
   <meta name="description" content="Simo Schlumpf" />
+  <link rel="canonical" href="https://www.simoschlumpf.ch/" />
+  <link rel="alternate" hreflang="de" href="https://www.simoschlumpf.ch/" />
+  <link rel="alternate" hreflang="fr" href="https://www.simoschlumpf.ch/fr/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.simoschlumpf.ch/" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta property="og:type" content="profile" />
+  <meta property="og:title" content="Simo Schlumpf" />
+  <meta property="og:url" content="https://www.simoschlumpf.ch/" />
+  <meta property="og:locale" content="de_CH" />
+  <meta property="og:image" content="https://www.simoschlumpf.ch/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
 
   <style>
     :root{ --bg:#fff; --ink:#000; --blue:#003399; --gold:#FFCC00; }
@@ -89,32 +105,11 @@
     </p>
 
     <p class="meta">
-      <a id="vcardLink" href="#" download="Simo-Schlumpf.vcf"><em>Kontakt hinzufügen</em></a>
+      <a href="Simo-Schlumpf.vcf" download="Simo-Schlumpf.vcf" type="text/vcard"><em>Kontakt hinzufügen</em></a>
     </p>
 
    
   </main>
 
-  <script>
-    // vCard in-browser download
-    (function () {
-      const vcard =
-`BEGIN:VCARD
-VERSION:3.0
-N:Schlumpf;Simo;;;
-FN:Simo Schlumpf
-TEL;TYPE=CELL:+41799075659
-EMAIL:schlumpfsimo@gmail.com
-END:VCARD
-`;
-      const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-
-      const link = document.getElementById("vcardLink");
-      link.href = url;
-
-      window.addEventListener("beforeunload", () => URL.revokeObjectURL(url));
-    })();
-  </script>
 </body>
 </html>
