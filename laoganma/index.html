@@ -3,136 +3,58 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>老干妈面馆</title>
-  <meta name="description" content="A first-person Laoganma noodle house: boil, fry, top with chili crisp, serve" />
+  <title>老干妈 280克</title>
+  <meta name="description" content="A jar of Laoganma, in 3D" />
   <style>
-    html,body{ margin:0; height:100%; background:#120807; overflow:hidden; font-family:monospace; }
-    canvas{ position:absolute; left:0; top:0; outline:none; touch-action:none; -webkit-user-select:none; user-select:none; }
-    #osd{ pointer-events:none; }
+    html,body{ margin:0; height:100%; background:#f4f3f0; overflow:hidden; font-family:ui-monospace, Menlo, Consolas, monospace; }
+    canvas{ position:absolute; left:0; top:0; outline:none; touch-action:none; }
+    #cap{ position:absolute; left:18px; bottom:16px; font-size:12px; font-weight:bold; letter-spacing:.04em; color:#8a1a14; pointer-events:none; }
   </style>
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
   </script>
 </head>
 <body>
+<div id="cap">老干妈 风味豆豉 油制辣椒 · 280克 · DRAG TO TURN</div>
 <script type="module">
 import * as THREE from 'three';
-THREE.ColorManagement.enabled = false;
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // ---------------------------------------------------------------- setup
-// same toolkit as the drone (merged vertex-coloured Lambert geometry, seeded world, monospace OSD), but a clean full-resolution picture
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-const cv = renderer.domElement;
-document.body.appendChild(cv);
-const osd = document.createElement('canvas'); osd.id = 'osd';
-document.body.appendChild(osd);
-const oc = osd.getContext('2d');
-const camera = new THREE.PerspectiveCamera(76, 1, 0.04, 140);
-camera.rotation.order = 'YXZ';
-let VW = 1, VH = 1, DPR = 1;
-function fit(){
-  VW = innerWidth; VH = innerHeight; DPR = Math.min(devicePixelRatio || 1, 2);
-  renderer.setPixelRatio(DPR); renderer.setSize(VW, VH);
-  osd.width = Math.round(VW * DPR); osd.height = Math.round(VH * DPR);
-  osd.style.width = VW + 'px'; osd.style.height = VH + 'px';
-  camera.aspect = VW / VH; camera.updateProjectionMatrix();
-}
-addEventListener('resize', fit);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf4f3f0);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 50);
+camera.position.set(1.9, 1.05, 2.6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.52, 0); controls.enablePan = false; controls.minDistance = 1.6; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI * 0.62; controls.autoRotate = true; controls.autoRotateSpeed = 1.2; controls.enableDamping = true;
+function fit(){ renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', fit); fit();
 
-const TOUCH = matchMedia('(pointer: coarse)').matches && 'ontouchstart' in window;
-let started = false, paused = true, last = performance.now(), clock = 0;
+const key = new THREE.DirectionalLight(0xfff6ea, 1.6); key.position.set(2.5, 4, 2); scene.add(key);
+const fill = new THREE.DirectionalLight(0xe8f0ff, 0.5); fill.position.set(-3, 2, -2); scene.add(fill);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8cfc0, 0.5));
 
-// ---------------------------------------------------------------- languages: English (default), German, French; ?lang=de or ?lang=fr sets another default
-const LANGS = ['en', 'de', 'fr'];
-const DEFAULT_LANG = (() => { const q = new URLSearchParams(location.search).get('lang'); return LANGS.includes(q) ? q : 'en'; })();
-let lang = DEFAULT_LANG;
-function setLang(l){ lang = l; document.documentElement.lang = l; }
-setLang(lang);
-const say = o => typeof o === 'string' ? o : (o[lang] || o.en);
-const S = {
-  title: '老干妈面馆',
-  sub: { en: 'LAOGANMA NOODLE HOUSE', de: 'LAOGANMA-NUDELHAUS', fr: 'MAISON DE NOUILLES LAOGANMA' },
-  start: { en: 'CLICK TO START', de: 'KLICKEN ZUM STARTEN', fr: 'CLIQUER POUR COMMENCER' },
-  startTouch: { en: 'TAP TO START', de: 'TIPPEN ZUM STARTEN', fr: 'TOUCHER POUR COMMENCER' },
-  resume: { en: 'PAUSED · CLICK TO CONTINUE', de: 'PAUSE · KLICKEN ZUM WEITERSPIELEN', fr: 'PAUSE · CLIQUER POUR CONTINUER' },
-  resumeTouch: { en: 'PAUSED · TAP TO CONTINUE', de: 'PAUSE · TIPPEN ZUM WEITERSPIELEN', fr: 'PAUSE · TOUCHER POUR CONTINUER' },
-  ctrlKb: { en: 'WASD MOVE · MOUSE LOOK · E USE · SHIFT RUN · ESC MENU', de: 'WASD GEHEN · MAUS SCHAUEN · E BENUTZEN · SHIFT RENNEN · ESC MENÜ', fr: 'WASD MARCHER · SOURIS REGARDER · E UTILISER · MAJ COURIR · ÉCHAP MENU' },
-  ctrlPad: { en: 'LEFT STICK MOVE · RIGHT STICK LOOK · A USE · START MENU', de: 'LINKER STICK GEHEN · RECHTER STICK SCHAUEN · A BENUTZEN · START MENÜ', fr: 'STICK GAUCHE MARCHER · STICK DROIT REGARDER · A UTILISER · START MENU' },
-  ctrlTouch: { en: 'LEFT HALF: MOVE · RIGHT HALF: LOOK · BUTTON: USE', de: 'LINKE HÄLFTE: GEHEN · RECHTE HÄLFTE: SCHAUEN · KNOPF: BENUTZEN', fr: 'MOITIÉ GAUCHE : MARCHER · MOITIÉ DROITE : REGARDER · BOUTON : UTILISER' },
-  langHint: { en: '← → LANGUAGE', de: '← → SPRACHE', fr: '← → LANGUE' },
-  job: { en: 'YOU ARE THE COOK. BOIL, FRY, TOP WITH 老干妈, SERVE.', de: 'DU BIST DER KOCH. KOCHEN, BRATEN, 老干妈 DRAUF, SERVIEREN.', fr: 'TU ES LE CUISINIER. BOUILLIR, SAUTER, 老干妈 DESSUS, SERVIR.' },
-  served: { en: 'SERVED', de: 'SERVIERT', fr: 'SERVIS' },
-  steps: [
-    { en: 'NOODLES', de: 'NUDELN', fr: 'NOUILLES' }, { en: 'BOIL', de: 'KOCHEN', fr: 'BOUILLIR' }, { en: 'WOK', de: 'WOK', fr: 'WOK' },
-    { en: 'BOWL', de: 'SCHALE', fr: 'BOL' }, '老干妈', { en: 'SERVE', de: 'SERVIEREN', fr: 'SERVIR' },
-  ],
-  takeNoodles: { en: 'TAKE A NEST OF NOODLES', de: 'EIN NUDELNEST NEHMEN', fr: 'PRENDRE UN NID DE NOUILLES' },
-  dropNoodles: { en: 'NOODLES INTO THE BOILER', de: 'NUDELN IN DEN KOCHER', fr: 'NOUILLES DANS LE CUISEUR' },
-  boiling: { en: 'BOILING', de: 'KOCHT', fr: 'ÇA BOUT' },
-  liftNoodles: { en: 'LIFT THE NOODLES', de: 'NUDELN HERAUSHEBEN', fr: 'SORTIR LES NOUILLES' },
-  handsFull: { en: 'HANDS FULL', de: 'HÄNDE VOLL', fr: 'MAINS PLEINES' },
-  toWok: { en: 'NOODLES INTO THE WOK', de: 'NUDELN IN DEN WOK', fr: 'NOUILLES DANS LE WOK' },
-  stir: { en: 'HOLD · STIR-FRY', de: 'HALTEN · BRATEN', fr: 'MAINTENIR · SAUTER' },
-  wokDone: { en: 'READY · GET A BOWL', de: 'FERTIG · HOL EINE SCHALE', fr: 'PRÊT · PRENDS UN BOL' },
-  wokBusy: { en: 'THE WOK IS BUSY', de: 'DER WOK IST BESETZT', fr: 'LE WOK EST OCCUPÉ' },
-  add: { en: 'ADD', de: 'DAZU:', fr: 'AJOUTER' },
-  takeBowl: { en: 'TAKE A BOWL', de: 'EINE SCHALE NEHMEN', fr: 'PRENDRE UN BOL' },
-  plate: { en: 'NOODLES INTO THE BOWL', de: 'NUDELN IN DIE SCHALE', fr: 'NOUILLES DANS LE BOL' },
-  spoon: { en: 'SPOON ON THE 老干妈', de: '老干妈 DRAUFLÖFFELN', fr: 'UNE CUILLÈRE DE 老干妈' },
-  needNoodles: { en: 'NOODLES FIRST', de: 'ZUERST DIE NUDELN', fr: "D'ABORD LES NOUILLES" },
-  serve: { en: 'SERVE', de: 'SERVIEREN', fr: 'SERVIR' },
-  mustFinish: { en: 'NOT WITHOUT 老干妈', de: 'NICHT OHNE 老干妈', fr: 'PAS SANS 老干妈' },
-  eating: { en: 'EATING', de: 'ISST', fr: 'MANGE' },
-  waiting: { en: 'WAITING', de: 'WARTET', fr: 'ATTEND' },
-  scallion: { en: 'SCALLIONS', de: 'FRÜHLINGSZWIEBELN', fr: 'CIBOULE' },
-  bokchoy: { en: 'BOK CHOY', de: 'PAK CHOI', fr: 'BOK CHOY' },
-  garlic: { en: 'GARLIC', de: 'KNOBLAUCH', fr: 'AIL' },
-  egg: { en: 'EGG', de: 'EI', fr: 'ŒUF' },
-  peanuts: { en: 'PEANUTS', de: 'ERDNÜSSE', fr: 'CACAHUÈTES' },
-  holding: { en: 'IN HAND', de: 'IN DER HAND', fr: 'EN MAIN' },
-  hNest: { en: 'RAW NOODLES', de: 'ROHE NUDELN', fr: 'NOUILLES CRUES' },
-  hCooked: { en: 'BOILED NOODLES', de: 'GEKOCHTE NUDELN', fr: 'NOUILLES BOUILLIES' },
-  hBowl: { en: 'EMPTY BOWL', de: 'LEERE SCHALE', fr: 'BOL VIDE' },
-  hDish: { en: 'FRIED NOODLES', de: 'GEBRATENE NUDELN', fr: 'NOUILLES SAUTÉES' },
-  hFinal: '老干妈拌面',
-};
-
-// ---------------------------------------------------------------- helpers
-let seed = 20261;
-function rnd(){ seed = (seed + 0x6D2B79F5) | 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+let seed = 7;
+const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const rr = (a, b) => a + (b - a) * rnd();
-const pick = a => a[Math.floor(rnd() * a.length)];
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const lerp = (a, b, t) => a + (b - a) * t;
-const _m = new THREE.Matrix4(), _t = new THREE.Matrix4(), _qq = new THREE.Quaternion(), _ee = new THREE.Euler(), _p3 = new THREE.Vector3(), _s3 = new THREE.Vector3();
-const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _nm = new THREE.Matrix3();
-const shade = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
-const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
-// ---------------------------------------------------------------- palette (raw values, colour management is off like in the drone)
-const RED = [0.82, 0.10, 0.08], RED_D = [0.52, 0.07, 0.05], YEL = [0.98, 0.78, 0.12], GOLD = [0.85, 0.62, 0.15];
-const STEEL = [0.66, 0.68, 0.70], STEEL_D = [0.42, 0.44, 0.47], WHITE = [0.93, 0.92, 0.88], CREAM = [0.88, 0.82, 0.68];
-const BLACK = [0.07, 0.07, 0.07], IRON = [0.17, 0.16, 0.15], WOOD = [0.56, 0.38, 0.22], CARD = [0.66, 0.52, 0.34];
-const SKIN = [0.90, 0.72, 0.56], OIL = [0.36, 0.08, 0.03], OIL_L = [0.70, 0.18, 0.05], GREEN = [0.25, 0.60, 0.22], PALE = [0.93, 0.85, 0.58];
-const WALL = [0.74, 0.14, 0.11], FLOOR_T = [0.80, 0.74, 0.60], AL = [0.58, 0.59, 0.61], GLASS = [0.70, 0.84, 0.90];
-const PLASTIC = [[0.86, 0.12, 0.10], [0.10, 0.36, 0.82], [0.14, 0.60, 0.26], [0.95, 0.42, 0.60], [0.98, 0.76, 0.10], [0.95, 0.50, 0.12]];
-
-// ---------------------------------------------------------------- canvas textures
+// ---------------------------------------------------------------- the label, drawn after the photo: red, two columns of medallions, portrait in a gold oval
 const CJK = '"Noto Sans CJK SC","Noto Sans SC","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei","WenQuanYi Micro Hei",sans-serif';
-function canvasTex(w, h, draw, rep){
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  draw(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c);
-  t.anisotropy = 4;
-  if (rep){ t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); }
-  return t;
-}
-// the portrait medallion: a stylised auntie in a white apron, drawn, not a photo
 function drawPortrait(g, cx, cy, rw, rh){
   g.save();
   g.beginPath(); g.ellipse(cx, cy, rw, rh, 0, 0, 6.2832); g.fillStyle = '#f4ead6'; g.fill();
-  g.lineWidth = rw * 0.09; g.strokeStyle = '#f2c21c'; g.stroke();
+  g.lineWidth = rw * 0.1; g.strokeStyle = '#f2c21c'; g.stroke();
   g.clip();
   g.fillStyle = '#2b2b33'; g.beginPath(); g.ellipse(cx, cy + rh * 1.08, rw * 1.0, rh * 0.62, 0, 0, 6.2832); g.fill();
   g.fillStyle = '#f7f7f7'; g.beginPath(); g.moveTo(cx - rw * 0.4, cy + rh * 0.56); g.lineTo(cx, cy + rh * 0.98); g.lineTo(cx + rw * 0.4, cy + rh * 0.56); g.closePath(); g.fill();
@@ -147,863 +69,102 @@ function drawPortrait(g, cx, cy, rw, rh){
 }
 function medallion(g, x, y, r, ch, fs){
   g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fillStyle = '#f2c21c'; g.fill();
+  g.lineWidth = r * 0.08; g.strokeStyle = '#e0a800'; g.stroke();
   g.fillStyle = '#b8121a'; g.font = 'bold ' + fs + 'px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ch, x, y + fs * 0.06);
 }
-const TEX_SIGN = canvasTex(1024, 576, (g, w, h) => {
-  g.fillStyle = '#d41f1a'; g.fillRect(0, 0, w, h);
-  ['香', '辣', '脆'].forEach((c, i) => medallion(g, 190, 118 + i * 150, 62, c, 80));
-  ['油', '辣', '椒'].forEach((c, i) => medallion(g, 834, 118 + i * 150, 62, c, 80));
-  drawPortrait(g, 512, 215, 118, 148);
-  g.fillStyle = '#fff'; g.font = 'bold 28px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('正宗风味', 512, 390);
-  g.fillStyle = '#111'; g.font = 'bold 118px ' + CJK; g.fillText('老干妈', 512, 462);
-  g.fillStyle = '#f2c21c'; g.font = 'bold 42px Arial, Helvetica, sans-serif'; g.fillText('LAOGANMA', 512, 536);
-});
-// the jar label wraps once around the glass; the seam sits at the back
-const TEX_LABEL = canvasTex(512, 160, (g, w, h) => {
-  g.fillStyle = '#d41f1a'; g.fillRect(0, 0, w, h);
-  g.fillStyle = '#f2c21c'; g.fillRect(0, 0, w, 4); g.fillRect(0, h - 4, w, 4);
-  ['风', '味', '豆', '豉'].forEach((c, i) => medallion(g, 150, 30 + i * 34, 15, c, 20));
-  ['油', '制', '辣', '椒'].forEach((c, i) => medallion(g, 362, 30 + i * 34, 15, c, 20));
-  g.fillStyle = '#fff'; g.font = 'bold 18px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('中国名牌', 256, 16);
-  drawPortrait(g, 256, 68, 34, 42);
-  g.fillStyle = '#111'; g.font = 'bold 36px ' + CJK; g.fillText('老干妈', 256, 136);
-  g.fillStyle = '#fff'; g.font = '11px ' + CJK; g.fillText('净含量 280克', 256, 154);
-  g.fillStyle = '#fff'; g.font = 'bold 9px Arial, sans-serif'; g.fillText('LAOGANMA', 40, 150); g.fillText('LAOGANMA', 472, 150);
-});
-const TEX_FLOOR = canvasTex(256, 256, (g, w, h) => {
-  g.fillStyle = '#7d7260'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++){ g.fillStyle = (i + j) % 2 ? '#cfc3a6' : '#c6b99b'; g.fillRect(i * 128 + 3, j * 128 + 3, 122, 122); }
-  for (let k = 0; k < 500; k++){ g.fillStyle = 'rgba(80,55,35,' + (rnd() * 0.22).toFixed(2) + ')'; g.fillRect(rnd() * w, rnd() * h, 2, 2); }
-  for (let k = 0; k < 7; k++){ g.fillStyle = 'rgba(130,30,10,' + (0.06 + rnd() * 0.14).toFixed(2) + ')'; g.beginPath(); g.ellipse(rnd() * w, rnd() * h, 6 + rnd() * 22, 4 + rnd() * 12, rnd() * 3, 0, 6.3); g.fill(); }
-}, [14, 10]);
-const TEX_TILE = canvasTex(256, 256, (g, w, h) => {
-  g.fillStyle = '#9b9890'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++){ g.fillStyle = rnd() < 0.85 ? '#e9e6dc' : '#dcd6c4'; g.fillRect(i * 64 + 2, j * 64 + 2, 60, 60); }
-  for (let k = 0; k < 10; k++){ g.fillStyle = 'rgba(120,70,20,' + (0.05 + rnd() * 0.12).toFixed(2) + ')'; g.beginPath(); g.ellipse(rnd() * w, rnd() * h, 10 + rnd() * 30, 6 + rnd() * 16, rnd() * 3, 0, 6.3); g.fill(); }
-}, [15, 3]);
-const TEX_MENU = canvasTex(512, 384, (g, w, h) => {
-  g.fillStyle = '#5c0d0b'; g.fillRect(0, 0, w, h);
-  g.strokeStyle = '#f2c21c'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 20);
-  g.fillStyle = '#f2c21c'; g.font = 'bold 40px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('菜 单  MENU', w / 2, 44);
-  const items = [['老干妈拌面', '12'], ['老干妈炒饭', '15'], ['豆豉辣椒面', '14'], ['干妈鸡丁饭', '18'], ['香辣脆凉粉', '10'], ['老干妈 一罐', '9'], ['青岛啤酒', '8'], ['老干妈 一杯', '6']];
-  g.font = 'bold 26px ' + CJK;
-  items.forEach(([n, p], i) => { const y = 92 + i * 36; g.textAlign = 'left'; g.fillStyle = '#fff5dc'; g.fillText(n, 40, y); g.textAlign = 'right'; g.fillStyle = '#f2c21c'; g.fillText('¥' + p, w - 40, y); });
-});
-const TEX_NEON = canvasTex(512, 192, (g, w, h) => {
-  g.clearRect(0, 0, w, h);
-  g.shadowColor = '#ff3a2a'; g.shadowBlur = 28; g.fillStyle = '#ffd6c8'; g.font = 'bold 110px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle';
-  for (let i = 0; i < 3; i++) g.fillText('老干妈', w / 2, 72);
-  g.shadowColor = '#ffd200'; g.shadowBlur = 18; g.fillStyle = '#fff6c0'; g.font = 'bold 34px ' + CJK;
-  for (let i = 0; i < 2; i++) g.fillText('拌 面 · 炒 饭 · 24 小 时', w / 2, 158);
-});
-const TEX_FU = canvasTex(256, 256, (g, w, h) => {
-  g.clearRect(0, 0, w, h);
-  g.save(); g.translate(128, 128); g.rotate(Math.PI / 4); g.fillStyle = '#d41f1a'; g.fillRect(-80, -80, 160, 160); g.strokeStyle = '#f2c21c'; g.lineWidth = 8; g.strokeRect(-72, -72, 144, 144); g.restore();
-  g.fillStyle = '#f2c21c'; g.font = 'bold 120px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('福', 128, 136);
-});
-const TEX_BOX = canvasTex(256, 128, (g, w, h) => {
-  g.fillStyle = '#b08a5a'; g.fillRect(0, 0, w, h);
-  g.fillStyle = '#d41f1a'; g.fillRect(0, 38, w, 52);
-  g.fillStyle = '#f2c21c'; g.font = 'bold 40px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('老干妈', 128, 64);
-  g.fillStyle = '#3a2a18'; g.font = 'bold 14px Arial, sans-serif'; g.fillText('24 × 280g · 小心轻放', 128, 110);
-});
-const TEX_TV = canvasTex(256, 192, (g, w, h) => {
-  g.fillStyle = '#163a6e'; g.fillRect(0, 0, w, h);
-  g.fillStyle = '#d41f1a'; g.fillRect(0, h - 40, w, 40);
-  g.fillStyle = '#fff'; g.font = 'bold 22px ' + CJK; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('新闻联播 · 贵阳 晚间', 12, h - 20);
-  g.fillStyle = '#9db6d8'; g.fillRect(16, 20, 100, 110); g.fillStyle = '#c4a07a'; g.beginPath(); g.ellipse(66, 70, 26, 32, 0, 0, 6.3); g.fill();
-  g.fillStyle = '#1b1512'; g.beginPath(); g.ellipse(66, 50, 28, 18, 0, Math.PI, 6.3); g.fill();
-  g.fillStyle = '#eef'; for (let i = 0; i < 5; i++) g.fillRect(132, 28 + i * 20, 60 + (i * 37) % 50, 8);
-});
-const TEX_BUBBLE = canvasTex(128, 128, (g, w, h) => {
-  g.clearRect(0, 0, w, h);
-  g.fillStyle = '#fff'; g.beginPath(); g.arc(64, 54, 44, 0, 6.3); g.fill();
-  g.beginPath(); g.moveTo(50, 92); g.lineTo(64, 118); g.lineTo(78, 92); g.closePath(); g.fill();
-  g.fillStyle = '#d41f1a'; g.font = 'bold 46px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('面', 64, 56);
-});
-const TEX_SOFT = canvasTex(64, 64, g => { const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.5, 'rgba(255,255,255,0.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); });
-const TEX_FLAME = canvasTex(64, 64, g => { const r = g.createRadialGradient(32, 36, 0, 32, 36, 30); r.addColorStop(0, 'rgba(255,240,200,1)'); r.addColorStop(0.35, 'rgba(255,150,40,0.9)'); r.addColorStop(0.7, 'rgba(255,60,10,0.35)'); r.addColorStop(1, 'rgba(255,40,0,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); });
-const TEX_WIN = canvasTex(64, 64, g => { g.fillStyle = '#ffd98a'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#5a3a10'; g.fillRect(30, 0, 4, 64); g.fillRect(0, 30, 64, 4); });
+const label = document.createElement('canvas'); label.width = 2048; label.height = 540;
+{
+  const g = label.getContext('2d'), w = label.width, h = label.height, cx = w / 2;
+  g.fillStyle = '#d4201b'; g.fillRect(0, 0, w, h);
+  // a slightly darker, printed look
+  for (let k = 0; k < 4000; k++){ g.fillStyle = 'rgba(0,0,0,' + (rnd() * 0.05).toFixed(3) + ')'; g.fillRect(rnd() * w, rnd() * h, 3, 3); }
+  g.fillStyle = '#f2c21c'; g.fillRect(0, 0, w, 10); g.fillRect(0, h - 10, w, 10);
+  // front of the label, centred on u = 0.5
+  g.fillStyle = '#fff'; g.font = 'bold 54px ' + CJK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('中国名牌', cx, 62);
+  ['风', '味', '豆', '豉'].forEach((c, i) => medallion(g, cx - 300, 120 + i * 100, 42, c, 56));
+  ['油', '制', '辣', '椒'].forEach((c, i) => medallion(g, cx + 300, 120 + i * 100, 42, c, 56));
+  drawPortrait(g, cx, 225, 112, 135);
+  g.fillStyle = '#fff'; g.font = 'bold 22px ' + CJK; g.textAlign = 'left'; g.fillText('中国驰名商标', cx + 128, 130);
+  g.font = 'bold 20px ' + CJK; g.fillText('®', cx + 128, 162);
+  g.textAlign = 'center'; g.fillStyle = '#111'; g.font = 'bold 118px ' + CJK; g.fillText('老干妈', cx, 440);
+  g.fillStyle = '#fff'; g.font = 'bold 30px ' + CJK; g.fillText('净含量: 280克', cx, 510);
+  // the small blue round mark top-left
+  g.beginPath(); g.arc(cx - 430, 62, 34, 0, 6.3); g.fillStyle = '#fff'; g.fill(); g.beginPath(); g.arc(cx - 430, 62, 27, 0, 6.3); g.fillStyle = '#1c4fa0'; g.fill();
+  g.fillStyle = '#fff'; g.font = 'bold 26px Arial, sans-serif'; g.fillText('S', cx - 430, 64);
+  // the back: ingredients and a barcode
+  g.fillStyle = '#fff'; g.font = 'bold 40px ' + CJK; g.fillText('贵阳南明老干妈风味食品有限责任公司', 0, 70); g.fillText('贵阳南明老干妈风味食品有限责任公司', w, 70);
+  g.font = '21px ' + CJK; g.textAlign = 'left';
+  const lines = ['配料: 食用植物油, 辣椒, 豆豉, 食用盐, 白砂糖, 味精', '保质期: 18个月  贮存: 置于阴凉干燥处', '产地: 贵州省贵阳市  食品生产许可证编号: SC10352010200012', '开封后请冷藏并尽快食用'];
+  lines.forEach((l, i) => g.fillText(l, 30, 150 + i * 44));
+  g.fillStyle = '#fff'; g.fillRect(w - 440, 300, 420, 180); g.fillStyle = '#111';
+  for (let i = 0; i < 46; i++) g.fillRect(w - 420 + i * 8.8, 320, rnd() < 0.5 ? 2 : 4, 120);
+  g.font = 'bold 22px Arial, sans-serif'; g.textAlign = 'center'; g.fillText('6 921804 700429', w - 230, 462);
+}
+const labelTex = new THREE.CanvasTexture(label); labelTex.anisotropy = 8; labelTex.colorSpace = THREE.SRGBColorSpace;
 
-// ---------------------------------------------------------------- geometry builder (merges parts with vertex colours, like the drone)
-const clean = g => { g = g.index ? g.toNonIndexed() : g; g.deleteAttribute('uv'); return g; };
-const G_BOX = clean(new THREE.BoxGeometry(1, 1, 1));
-const G_CYL = clean(new THREE.CylinderGeometry(0.5, 0.5, 1, 12));
-const G_CYL6 = clean(new THREE.CylinderGeometry(0.5, 0.5, 1, 6));
-const G_CONE = clean(new THREE.CylinderGeometry(0, 0.5, 1, 10));
-const G_SPH = clean(new THREE.SphereGeometry(0.5, 10, 7));
-const G_TOR = clean(new THREE.TorusGeometry(0.5, 0.12, 6, 14));
-const G_RIM = clean(new THREE.TorusGeometry(0.5, 0.035, 5, 16));
-const lathe = pts => clean(new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 14));
-// closed profiles (outer surface up, inner surface back down) so the front side alone is enough
-const G_BOWL = lathe([[0, 0], [0.3, 0], [0.33, 0.04], [0.44, 0.45], [0.5, 1], [0.46, 1], [0.4, 0.5], [0.3, 0.12], [0, 0.12]]);
-const G_WOK = lathe([[0, 0], [0.22, 0.05], [0.4, 0.25], [0.5, 0.5], [0.47, 0.5], [0.38, 0.27], [0.21, 0.09], [0, 0.04]]);
-const G_GLASS = lathe([[0, 0], [0.42, 0], [0.5, 1], [0.46, 1], [0.39, 0.08], [0, 0.08]]);
-const G_POT = lathe([[0, 0], [0.5, 0], [0.5, 1], [0.46, 1], [0.46, 0.05], [0, 0.05]]);
-class Builder {
-  constructor(){ this.p = []; this.n = []; this.c = []; this.frames = []; this.frame = null; }
-  push(x, y, z, ry = 0){
-    const f = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1));
-    if (this.frame) f.premultiply(this.frame);
-    this.frames.push(this.frame); this.frame = f; return this;
-  }
-  pop(){ this.frame = this.frames.pop(); return this; }
-  world(x, y, z){ const v = new THREE.Vector3(x, y, z); if (this.frame) v.applyMatrix4(this.frame); return v; }
-  add(geo, x, y, z, sx, sy, sz, ry, col, rx = 0, rz = 0){
-    _qq.setFromEuler(_ee.set(rx, ry, rz));
-    _m.compose(_p3.set(x, y, z), _qq, _s3.set(sx, sy, sz));
-    if (this.frame) _m.premultiply(this.frame);
-    _nm.getNormalMatrix(_m);
-    const P = geo.attributes.position, N = geo.attributes.normal;
-    for (let i = 0; i < P.count; i++){
-      _v.fromBufferAttribute(P, i).applyMatrix4(_m); this.p.push(_v.x, _v.y, _v.z);
-      _w.fromBufferAttribute(N, i).applyMatrix3(_nm).normalize(); this.n.push(_w.x, _w.y, _w.z);
-      this.c.push(col[0], col[1], col[2]);
+// ---------------------------------------------------------------- the jar: glass body, dark contents, oil, floating beans and flakes, fluted red lid
+const jar = new THREE.Group(); scene.add(jar);
+const lathe = (pts, seg = 96) => new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg);
+const R = 0.33, H = 0.9;
+// glass: a closed profile with wall thickness, so refraction and highlights read on both surfaces
+const glassGeo = lathe([[0, 0], [0.27, 0], [0.305, 0.012], [0.32, 0.05], [R, 0.16], [R, 0.74], [0.325, 0.8], [0.31, 0.85], [0.3, 0.88], [0.3, H], [0.285, H], [0.285, 0.87], [0.296, 0.84], [0.311, 0.79], [0.315, 0.74], [0.315, 0.17], [0.305, 0.07], [0.29, 0.03], [0.25, 0.025], [0, 0.025]]);
+const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, roughness: 0.04, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.6, depthWrite: false, side: THREE.DoubleSide });
+const glass = new THREE.Mesh(glassGeo, glassMat); glass.renderOrder = 10; jar.add(glass);
+// contents: a dark core, oil around it, bits packed against the wall
+const OIL_TOP = 0.78;
+const core = new THREE.Mesh(lathe([[0, 0.03], [0.24, 0.03], [0.26, 0.06], [0.26, OIL_TOP - 0.04], [0.22, OIL_TOP - 0.02], [0, OIL_TOP - 0.02]]), new THREE.MeshStandardMaterial({ color: 0x2a0a05, roughness: 0.55 }));
+jar.add(core);
+const oil = new THREE.Mesh(lathe([[0, 0.028], [0.285, 0.028], [0.3, 0.05], [0.308, 0.17], [0.308, 0.74], [0.3, OIL_TOP], [0, OIL_TOP]]), new THREE.MeshPhysicalMaterial({ color: 0x9a1e08, transparent: true, opacity: 0.62, roughness: 0.15, clearcoat: 0.8, depthWrite: false }));
+oil.renderOrder = 5; jar.add(oil);
+// the oil surface, glossy, with bits floating in it
+const surf = new THREE.Mesh(new THREE.CircleGeometry(0.302, 64), new THREE.MeshPhysicalMaterial({ color: 0xb0300a, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.85 }));
+surf.rotation.x = -Math.PI / 2; surf.position.y = OIL_TOP + 0.001; surf.renderOrder = 6; jar.add(surf);
+{
+  const beanGeo = new THREE.SphereGeometry(1, 8, 6), flakeGeo = new THREE.BoxGeometry(1, 0.2, 1), seedGeo = new THREE.SphereGeometry(1, 6, 4);
+  const beanMat = new THREE.MeshStandardMaterial({ color: 0x120604, roughness: 0.7 });
+  const flakeMat = new THREE.MeshStandardMaterial({ color: 0x8d1a07, roughness: 0.6 });
+  const seedMat = new THREE.MeshStandardMaterial({ color: 0xd9b36a, roughness: 0.6 });
+  const put = (geo, mat, n, sx, sy, sz, rlo, rhi, ylo, yhi) => {
+    const im = new THREE.InstancedMesh(geo, mat, n), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
+    for (let i = 0; i < n; i++){
+      const a = rr(0, 6.2832), r = rr(rlo, rhi), k = rr(0.7, 1.3);
+      q.setFromEuler(e.set(rr(0, 6.3), rr(0, 6.3), rr(0, 6.3)));
+      m.compose(p.set(Math.cos(a) * r, rr(ylo, yhi), Math.sin(a) * r), q, s.set(sx * k, sy * k, sz * k));
+      im.setMatrixAt(i, m);
     }
-    return this;
-  }
-  box(x, y, z, sx, sy, sz, ry, col, rx, rz){ return this.add(G_BOX, x, y, z, sx, sy, sz, ry, col, rx, rz); }
-  cyl(x, y, z, r, h, col, ry = 0, rx = 0, rz = 0){ return this.add(G_CYL, x, y, z, r * 2, h, r * 2, ry, col, rx, rz); }
-  sph(x, y, z, r, col, sy = 1){ return this.add(G_SPH, x, y, z, r * 2, r * 2 * sy, r * 2, 0, col); }
-  build(){
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
-    g.computeBoundingSphere();
-    return g;
-  }
-  mesh(mat){ return new THREE.Mesh(this.build(), mat); }
+    jar.add(im);
+  };
+  put(beanGeo, beanMat, 220, 0.022, 0.016, 0.018, 0.255, 0.295, 0.05, OIL_TOP - 0.03);   // fermented black beans along the wall
+  put(flakeGeo, flakeMat, 160, 0.03, 0.03, 0.02, 0.25, 0.3, 0.05, OIL_TOP - 0.02);         // chili flakes
+  put(seedGeo, seedMat, 90, 0.008, 0.005, 0.006, 0.25, 0.3, 0.05, OIL_TOP - 0.02);         // chili seeds
+  put(flakeGeo, flakeMat, 50, 0.028, 0.03, 0.02, 0.0, 0.29, OIL_TOP - 0.006, OIL_TOP + 0.004);   // flakes on the surface
+  put(beanGeo, beanMat, 30, 0.02, 0.014, 0.016, 0.0, 0.28, OIL_TOP - 0.004, OIL_TOP + 0.004);
 }
-const matOpaque = new THREE.MeshLambertMaterial({ vertexColors: true });
-const matGlow = new THREE.MeshBasicMaterial({ vertexColors: true });
-const matGlass = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.26, side: THREE.DoubleSide, depthWrite: false });
-const bO = new Builder(), bG = new Builder(), bX = new Builder();
-
-// ---------------------------------------------------------------- scene, lights
-const scene = new THREE.Scene();
-const FOG = new THREE.Color(0.09, 0.045, 0.04);
-scene.background = FOG;
-scene.fog = new THREE.FogExp2(FOG, 0.02);
-scene.add(camera);
-scene.add(new THREE.HemisphereLight(0xffe6c4, 0x6e3c30, 1.2));
-const sun = new THREE.DirectionalLight(0xfff1dc, 0.5); sun.position.set(2, 6, 3); scene.add(sun);
-const wokLight = new THREE.PointLight(0xff8a30, 0.5, 5, 1.6); wokLight.position.set(-3.1, 1.5, -3.9); scene.add(wokLight);
-const kitLight = new THREE.PointLight(0xf4f8ff, 0.55, 9, 1.3); kitLight.position.set(-3, 2.9, -3.4); scene.add(kitLight);
-for (const x of [-3, 3]){ const l = new THREE.PointLight(0xff9a60, 0.55, 9, 1.3); l.position.set(x, 2.5, 1.4); scene.add(l); }
-
-// ---------------------------------------------------------------- collision and item lists
-const RX = 7, RZ = 5, CH = 3.2;
-const blocks = [];                        // {x,z,hw,hl} boxes or {x,z,r} circles, in the floor plane
-const jars = [], jarsOpen = [], glasses = [];   // Laoganma jars (lid on / lid off) and drinking glasses full of it
-const JR = 0.037, JH = 0.115;
-const addJar = (x, y, z, ry = rr(0, 6.3), s = 1, open = false) => (open ? jarsOpen : jars).push({ x, y, z, ry, s });
-const addGlass = (x, y, z, s = 1) => glasses.push({ x, y, z, ry: rr(0, 6.3), s });
-// a row of jars along a line, two deep where asked, with a little jitter
-function jarRow(x0, y, z0, n, dx, dz, rows = 1, gap = JR * 2.25){
-  for (let r = 0; r < rows; r++) for (let i = 0; i < n; i++){
-    if (rnd() < 0.06) continue;
-    const j = rr(-0.004, 0.004);
-    addJar(x0 + dx * i * gap - dz * r * gap + j, y, z0 + dz * i * gap + dx * r * gap + j, rr(0, 6.3));
-  }
-}
-function pyramid(x, z, n, y = 0){
-  const g = JR * 2.2;
-  for (let l = 0; l < n; l++){
-    const k = n - l, off = -(k - 1) * g / 2;
-    for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) addJar(x + off + i * g, y + l * (JH + 0.018), z + off + j * g, rr(-0.3, 0.3));
-  }
-  blocks.push({ x, z, hw: n * g / 2 + 0.05, hl: n * g / 2 + 0.05 });
-}
-
-// ---------------------------------------------------------------- room shell
-scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2 * RX, 2 * RZ), new THREE.MeshLambertMaterial({ map: TEX_FLOOR })).rotateX(-Math.PI / 2));
-bO.box(0, CH + 0.05, 0, 2 * RX + 0.4, 0.1, 2 * RZ + 0.4, 0, [0.74, 0.68, 0.56]);
-bO.box(-RX - 0.1, CH / 2, 0, 0.2, CH, 2 * RZ + 0.4, 0, WALL);
-bO.box(RX + 0.1, CH / 2, 0, 0.2, CH, 2 * RZ + 0.4, 0, WALL);
-bO.box(0, CH / 2, -RZ - 0.1, 2 * RX + 0.4, CH, 0.2, 0, WALL);
-// skirting and a gold stripe at chest height
-for (const [x, z, w, d] of [[-RX + 0.02, 0, 0.04, 2 * RZ], [RX - 0.02, 0, 0.04, 2 * RZ], [0, -RZ + 0.02, 2 * RX, 0.04]]){
-  bO.box(x, 0.06, z, w, 0.12, d, 0, [0.25, 0.1, 0.08]);
-  bO.box(x, 1.25, z, w, 0.05, d, 0, GOLD);
-}
-// kitchen back wall: white tiles with grease, the big sign above
-const tiles = new THREE.Mesh(new THREE.PlaneGeometry(9.2, 1.75), new THREE.MeshLambertMaterial({ map: TEX_TILE }));
-tiles.position.set(-2.4, 0.875, -RZ + 0.01); scene.add(tiles);
-const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.46), new THREE.MeshLambertMaterial({ map: TEX_SIGN }));
-sign.position.set(-2.6, 2.42, -RZ + 0.035); scene.add(sign);
-bO.box(-2.6, 2.42, -RZ + 0.01, 2.7, 1.56, 0.03, 0, GOLD);
-// exhaust hood over range and boiler, with a duct into the ceiling
-bO.box(-2.6, 2.05, -4.45, 2.6, 0.08, 1.0, 0, STEEL_D);
-bO.add(G_BOX, -2.6, 2.3, -4.55, 2.4, 0.42, 0.8, 0, STEEL);
-bO.cyl(-2.6, 2.85, -4.6, 0.16, 0.7, STEEL_D);
-bO.box(-2.6, 1.98, -4.0, 2.4, 0.04, 0.06, 0, [0.35, 0.3, 0.2]);   // grease edge
-
-// ---------------------------------------------------------------- kitchen (back wall line z = -4.3, aisle in front, pass counter at z = -2.6)
-const KZ = -4.3;
-function steelCabinet(x, w, h = 0.86){
-  bO.box(x, h / 2, KZ, w, h, 0.8, 0, STEEL);
-  bO.box(x, h - 0.02, KZ, w + 0.02, 0.04, 0.84, 0, shade(STEEL, 1.08));
-  bO.box(x, 0.05, KZ, w - 0.1, 0.1, 0.7, 0, STEEL_D);
-  bO.box(x, h * 0.45, KZ + 0.41, w - 0.12, 0.03, 0.02, 0, STEEL_D);   // door line
-  blocks.push({ x, z: KZ, hw: w / 2, hl: 0.42 });
-}
-// fridge with a glass door, full of jars
-bO.box(-6.4, 0.98, KZ - 0.37, 0.8, 1.96, 0.06, 0, WHITE); bO.box(-6.4, 0.06, KZ - 0.05, 0.8, 0.12, 0.7, 0, WHITE); bO.box(-6.4, 1.93, KZ - 0.05, 0.8, 0.06, 0.7, 0, WHITE);
-for (const sx of [-1, 1]) bO.box(-6.4 + sx * 0.37, 0.98, KZ - 0.05, 0.06, 1.96, 0.7, 0, WHITE);
-bO.box(-6.4, 1.15, KZ - 0.36, 0.7, 1.5, 0.02, 0, [0.6, 0.62, 0.66]);
-for (const sy of [0.14, 1.88]) bO.box(-6.4, sy, KZ + 0.3, 0.72, 0.06, 0.06, 0, [0.25, 0.25, 0.28]); for (const sx of [-1, 1]) bO.box(-6.4 + sx * 0.34, 0.98, KZ + 0.3, 0.04, 1.7, 0.06, 0, [0.25, 0.25, 0.28]);
-bX.box(-6.4, 0.98, KZ + 0.335, 0.64, 1.6, 0.01, 0, GLASS); bG.box(-6.4, 1.84, KZ + 0.1, 0.5, 0.02, 0.05, 0, [0.9, 0.95, 1]);
-bO.box(-6.4, 2.0, KZ + 0.3, 0.78, 0.12, 0.08, 0, RED);
-bG.box(-6.4, 2.0, KZ + 0.345, 0.5, 0.05, 0.005, 0, [1, 0.95, 0.7]);
-for (let s = 0; s < 4; s++){ const y = 0.3 + s * 0.4; bO.box(-6.4, y, KZ, 0.66, 0.02, 0.6, 0, STEEL); jarRow(-6.62, y + 0.01, KZ - 0.24, 6, 1, 0, 4, JR * 2.1); }
-blocks.push({ x: -6.4, z: KZ, hw: 0.42, hl: 0.4 });
-// prep table: noodle nests, ingredient bowls, rice cooker
-steelCabinet(-4.75, 1.7);
-bO.box(-5.25, 0.9, KZ + 0.05, 0.5, 0.08, 0.5, 0, [0.55, 0.57, 0.6]);        // noodle tray
-bO.box(-5.25, 0.94, KZ + 0.05, 0.46, 0.02, 0.46, 0, [0.4, 0.42, 0.45]);
-for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) bO.add(G_TOR, -5.4 + i * 0.15, 0.965, KZ - 0.1 + j * 0.15, 0.13, 0.13, 0.13, rr(0, 3), PALE, Math.PI / 2 + rr(-0.15, 0.15), 0);
-const VEG = [['scallion', [0.3, 0.7, 0.25]], ['bokchoy', [0.55, 0.78, 0.35]], ['garlic', [0.92, 0.9, 0.82]], ['egg', [0.98, 0.78, 0.2]], ['peanuts', [0.72, 0.5, 0.3]]];
-const vegPos = [];
-VEG.forEach(([id, col], i) => {
-  const x = -4.65 + i * 0.26, z = KZ + 0.16 - (i % 2) * 0.3;
-  bO.add(G_BOWL, x, 0.86, z, 0.22, 0.09, 0.22, 0, STEEL);
-  bO.sph(x, 0.93, z, 0.085, col, 0.5);
-  vegPos.push({ id, pos: v3(x, 0.95, z) });
-});
-bO.cyl(-4.05, 1.0, KZ - 0.15, 0.17, 0.28, WHITE); bO.cyl(-4.05, 1.15, KZ - 0.15, 0.16, 0.03, STEEL); bO.box(-4.05, 1.0, KZ + 0.02, 0.1, 0.03, 0.02, 0, BLACK);   // rice cooker
-for (let i = 0; i < 3; i++) bO.box(-5.5 + i * 0.1, 0.92, KZ - 0.32, 0.07, 0.12, 0.05, rr(-0.2, 0.2), i === 1 ? [0.2, 0.12, 0.08] : [0.5, 0.1, 0.06]);   // soy sauce, vinegar
-// wok range: gas ring, orange gas bottle beside it
-steelCabinet(-3.1, 1.0, 0.82);
-bO.cyl(-3.1, 0.85, KZ, 0.26, 0.06, BLACK); bO.add(G_TOR, -3.1, 0.89, KZ, 0.32, 0.32, 0.32, 0, IRON, Math.PI / 2, 0);
-bO.box(-3.1, 0.9, KZ + 0.36, 0.5, 0.06, 0.08, 0, STEEL_D); bO.cyl(-3.3, 0.9, KZ + 0.42, 0.02, 0.06, RED, 0, Math.PI / 2, 0); bO.cyl(-3.1, 0.9, KZ + 0.42, 0.02, 0.06, RED, 0, Math.PI / 2, 0);
-bO.cyl(-3.75, 0.4, KZ - 0.1, 0.15, 0.8, [0.9, 0.45, 0.1]); bO.cyl(-3.75, 0.84, KZ - 0.1, 0.05, 0.1, STEEL_D); bO.cyl(-3.75, 0.9, KZ - 0.1, 0.1, 0.06, [0.7, 0.3, 0.05]);
-// wok ladle and spatula on a hook
-bO.cyl(-2.45, 1.35, KZ - 0.46, 0.012, 0.5, WOOD, 0, 0.1, 0); bO.add(G_BOWL, -2.45, 1.08, KZ - 0.45, 0.1, 0.05, 0.1, 0, STEEL_D, 0.3, 0);
-bO.cyl(-2.3, 1.38, KZ - 0.46, 0.012, 0.5, WOOD, 0, 0.1, 0); bO.box(-2.3, 1.1, KZ - 0.44, 0.09, 0.08, 0.01, 0, STEEL);
-// noodle boiler: a tall stainless pot on its own burner
-steelCabinet(-2.1, 0.8, 0.82);
-bO.add(G_POT, -2.1, 0.82, KZ, 0.5, 0.36, 0.5, 0, STEEL);
-bO.cyl(-2.1, 1.14, KZ, 0.22, 0.01, [0.6, 0.55, 0.42]);
-bO.add(G_TOR, -2.1, 1.0, KZ, 0.56, 0.56, 0.56, 0, STEEL_D, Math.PI / 2, 0);
-bO.box(-2.1, 1.19, KZ, 0.5, 0.01, 0.02, 0, STEEL_D);
-for (const sx of [-1, 1]) bO.box(-2.1 + sx * 0.27, 1.05, KZ, 0.06, 0.04, 0.12, 0, STEEL_D);   // handles
-// sink with a tap and a drying rack full of bowls
-steelCabinet(-1.1, 0.9);
-bO.box(-1.1, 0.78, KZ, 0.7, 0.14, 0.5, 0, [0.5, 0.52, 0.55]); bO.box(-1.1, 0.74, KZ, 0.6, 0.02, 0.4, 0, [0.35, 0.37, 0.4]);
-bO.cyl(-1.1, 1.0, KZ - 0.3, 0.015, 0.3, STEEL); bO.cyl(-1.1, 1.14, KZ - 0.22, 0.012, 0.2, STEEL, 0, Math.PI / 2, 0);
-bO.box(-0.65, 0.95, KZ - 0.2, 0.26, 0.18, 0.34, 0, STEEL_D);
-for (let i = 0; i < 6; i++) bO.add(G_BOWL, -0.76 + i * 0.045, 1.08, KZ - 0.2, 0.17, 0.08, 0.17, 0, WHITE, 0, Math.PI / 2 - 0.2);
-// shelf rack of bowls, bottles and jars beside the sink
-bO.box(-0.1, 0.88, KZ, 0.9, 1.76, 0.5, 0, STEEL_D);
-for (let s = 0; s < 4; s++){ const y = 0.12 + s * 0.44; bO.box(-0.1, y, KZ, 0.86, 0.03, 0.48, 0, STEEL); if (s === 0 || s === 2) jarRow(-0.5, y + 0.015, KZ - 0.12, 10, 1, 0, 3, JR * 2.1); }
-for (let i = 0; i < 4; i++) for (let k = 0; k < 4; k++) bO.add(G_BOWL, -0.44 + i * 0.22, 0.58 + k * 0.045, KZ + 0.1, 0.19, 0.06, 0.19, 0, WHITE);
-for (let i = 0; i < 5; i++) bO.cyl(-0.46 + i * 0.18, 1.6, KZ + 0.1, 0.04, 0.28, i % 2 ? [0.2, 0.12, 0.08] : [0.75, 0.6, 0.2]);
-blocks.push({ x: -0.1, z: KZ, hw: 0.46, hl: 0.26 });
-// wall shelves above the prep table, with jars and a wall clock
-for (const y of [1.55, 1.95]){ bO.box(-4.8, y, KZ - 0.35, 2.4, 0.03, 0.26, 0, WOOD); jarRow(-5.9, y + 0.015, KZ - 0.42, 28, 1, 0, 2, JR * 2.2); }
-bO.cyl(-0.3, 2.5, -RZ + 0.02, 0.22, 0.04, BLACK, 0, Math.PI / 2, 0); bO.cyl(-0.3, 2.5, -RZ + 0.045, 0.2, 0.02, WHITE, 0, Math.PI / 2, 0);
-bO.box(-0.3, 2.56, -RZ + 0.06, 0.015, 0.14, 0.01, 0, BLACK); bO.box(-0.25, 2.5, -RZ + 0.06, 0.1, 0.015, 0.01, 0, BLACK);
-// cardboard boxes and a crate of empties at the east end of the kitchen line
-const matBox = new THREE.MeshLambertMaterial({ map: TEX_BOX });
-function cardboard(x, y, z, ry, open){
-  const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.26, 0.36), matBox); m.position.set(x, y + 0.13, z); m.rotation.y = ry; scene.add(m);
-  if (open){ for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++){ const lx = -0.17 + i * 0.113, lz = -0.11 + j * 0.11; addJar(x + lx * Math.cos(ry) + lz * Math.sin(ry), y + 0.16, z - lx * Math.sin(ry) + lz * Math.cos(ry), ry + rr(-0.2, 0.2)); } }
-  return m;
-}
-cardboard(0.9, 0, KZ - 0.1, 0.1, false); cardboard(0.9, 0.26, KZ - 0.1, -0.15, false); cardboard(0.95, 0.52, KZ - 0.05, 0.3, true);
-cardboard(0.75, 0, KZ + 0.35, 0.6, true);
-blocks.push({ x: 0.85, z: KZ + 0.1, hw: 0.4, hl: 0.5 });
-// the pass counter: red laminate front, stainless top, bowl stack and the big open jar
-bO.box(-3.0, 0.45, -2.6, 8.0, 0.9, 0.5, 0, RED_D);
-bO.box(-3.0, 0.91, -2.6, 8.1, 0.04, 0.6, 0, STEEL);
-bO.box(-3.0, 0.2, -2.33, 8.0, 0.4, 0.02, 0, RED); bO.box(-3.0, 0.7, -2.33, 8.0, 0.3, 0.02, 0, RED);
-bO.box(-3.0, 0.45, -2.33, 8.0, 0.08, 0.025, 0, GOLD);
-blocks.push({ x: -3.0, z: -2.6, hw: 4.05, hl: 0.32 });
-const frontSign = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.72), new THREE.MeshLambertMaterial({ map: TEX_SIGN })); frontSign.position.set(-3.0, 0.45, -2.315); scene.add(frontSign);
-for (let k = 0; k < 7; k++) bO.add(G_BOWL, -0.3, 0.93 + k * 0.045, -2.6, 0.2, 0.08, 0.2, 0, WHITE);
-for (let k = 0; k < 7; k++) bO.add(G_RIM, -0.3, 1.01 + k * 0.045, -2.6, 0.2, 0.2, 0.2, 0, [0.2, 0.3, 0.72], Math.PI / 2, 0);
-bO.add(G_BOWL, -0.3, 0.93, -2.6, 0.2, 0.08, 0.2, 0, WHITE);
-addJar(-1.6, 0.93, -2.6, 0.2, 4.3, true);                                     // the catering jar, lid off
-bO.cyl(-1.6, 1.3, -2.6, 0.02, 0.5, STEEL, 0, 0.35, 0.45); bO.add(G_BOWL, -1.68, 1.08, -2.5, 0.1, 0.05, 0.1, 0, STEEL);   // ladle in the jar
-bO.cyl(-1.15, 0.94, -2.45, 0.17, 0.03, RED);                                  // the lid, lying beside it
-bO.cyl(-2.1, 0.985, -2.65, 0.06, 0.13, STEEL); for (let i = 0; i < 10; i++) bO.cyl(-2.1 + rr(-0.03, 0.03), 1.12, -2.65 + rr(-0.03, 0.03), 0.005, 0.26, WOOD, 0, rr(-0.1, 0.1), rr(-0.1, 0.1));
-jarRow(-6.6, 0.93, -2.8, 24, 1, 0, 1, JR * 2.3);
-for (let i = 0; i < 4; i++) addGlass(-5.2 + i * 0.12, 0.93, -2.5);
-bO.box(-6.2, 1.03, -2.6, 0.3, 0.2, 0.25, 0.1, [0.2, 0.2, 0.22]); bG.box(-6.2, 1.06, -2.47, 0.2, 0.06, 0.01, 0.1, [0.2, 1, 0.4]);   // cash register
-// a plastic bin and a mop in the corner, a crate of beer under the pass
-bO.cyl(-6.6, 0.3, -3.4, 0.2, 0.6, [0.2, 0.35, 0.8]); bO.cyl(-6.6, 0.61, -3.4, 0.21, 0.03, [0.15, 0.28, 0.65]);
-bO.cyl(-6.8, 0.75, -3.0, 0.015, 1.5, WOOD, 0, 0.12, 0.05); bO.box(-6.85, 0.05, -2.95, 0.22, 0.1, 0.16, 0.4, [0.75, 0.75, 0.7]);
-blocks.push({ x: -6.6, z: -3.4, r: 0.3 });
-
-// ---------------------------------------------------------------- low plastic furniture
-// the square plastic stool: tapered splayed legs, an apron under the seat, a cross brace lower down
-const ST_H = 0.42, ST_T = 0.12, TH = 0.62;   // stool height, leg splay angle, table height
-function stoolParts(b, col){
-  const d = shade(col, 0.82);
-  b.box(0, ST_H - 0.015, 0, 0.3, 0.03, 0.3, 0, col);
-  b.box(0, ST_H - 0.045, 0, 0.27, 0.03, 0.27, 0, d);
-  b.cyl(0, ST_H + 0.001, 0, 0.012, 0.004, d);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(sx * 0.135, ST_H / 2, sz * 0.135, 0.042, ST_H, 0.042, 0, col, sz * ST_T, -sx * ST_T);
-  for (const sz of [-1, 1]){ b.box(0, ST_H - 0.07, sz * 0.118, 0.25, 0.07, 0.02, 0, col, sz * ST_T, 0); b.box(0, 0.15, sz * 0.143, 0.3, 0.05, 0.02, 0, d, sz * ST_T, 0); }
-  for (const sx of [-1, 1]){ b.box(sx * 0.118, ST_H - 0.07, 0, 0.02, 0.07, 0.25, 0, col, 0, -sx * ST_T); b.box(sx * 0.143, 0.15, 0, 0.02, 0.05, 0.3, 0, d, 0, -sx * ST_T); }
-}
-function stool(x, z, col, ry = 0){
-  bO.push(x, 0, z, ry); stoolParts(bO, col); bO.pop();
-  blocks.push({ x, z, r: 0.2 });
-}
-const tables = [];
-function lowTable(x, z, ry, col, seats = 4){
-  bO.push(x, 0, z, ry);
-  bO.box(0, TH - 0.02, 0, 0.66, 0.035, 0.66, 0, col);
-  bO.box(0, TH - 0.055, 0, 0.6, 0.04, 0.6, 0, shade(col, 0.8));
-  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) bO.cyl(sx * 0.28, TH / 2 - 0.03, sz * 0.28, 0.02, TH - 0.06, shade(col, 0.9), 0, sz * 0.04, -sx * 0.04);
-  bO.box(0, 0.16, 0, 0.56, 0.02, 0.02, 0, shade(col, 0.9)); bO.box(0, 0.16, 0, 0.02, 0.02, 0.56, 0, shade(col, 0.9));
-  bO.push(0, TH - 0.46, 0);
-  // every table gets its jar, its glass of Laoganma, chopsticks and tissues
-  const jp = bO.world(0.2, 0.46, -0.2); addJar(jp.x, jp.y, jp.z, ry + rr(-1, 1));
-  const gp = bO.world(-0.2, 0.46, 0.17); addGlass(gp.x, gp.y, gp.z);
-  if (rnd() < 0.5){ const g2 = bO.world(0.05, 0.46, 0.22); addGlass(g2.x, g2.y, g2.z); }
-  bO.cyl(-0.21, 0.5, -0.19, 0.045, 0.09, STEEL); for (let i = 0; i < 7; i++) bO.cyl(-0.21 + rr(-0.02, 0.02), 0.6, -0.19 + rr(-0.02, 0.02), 0.005, 0.22, WOOD, 0, rr(-0.12, 0.12), rr(-0.12, 0.12));
-  bO.box(0.16, 0.49, 0.2, 0.11, 0.06, 0.2, rr(-0.3, 0.3), [0.95, 0.93, 0.9]); bO.box(0.16, 0.52, 0.2, 0.05, 0.01, 0.1, 0, [0.9, 0.4, 0.5]);
-  bO.pop(); bO.pop();
-  blocks.push({ x, z, hw: 0.4, hl: 0.4 });
-  const t = { x, z, ry, seats: [] };
-  for (let k = 0; k < seats; k++){
-    const a = ry + k * Math.PI / 2, sx = x + Math.sin(a) * 0.66, sz = z + Math.cos(a) * 0.66;
-    stool(sx, sz, rnd() < 0.7 ? PLASTIC[0] : pick(PLASTIC), a + rr(-0.2, 0.2));
-    t.seats.push({ x: sx, z: sz, a });
-  }
-  tables.push(t);
-  return t;
-}
-const T = [
-  lowTable(-5.0, -0.4, 0.05, PLASTIC[0]), lowTable(-2.6, 0.9, -0.1, PLASTIC[1]), lowTable(0.1, -0.2, 0.2, PLASTIC[0]),
-  lowTable(2.6, 1.3, 0, PLASTIC[4]), lowTable(5.0, -0.6, -0.15, PLASTIC[1]), lowTable(-4.6, 2.9, 0.1, PLASTIC[0]),
-  lowTable(1.1, 3.1, -0.2, PLASTIC[2]), lowTable(3.5, 3.3, 0.1, PLASTIC[0]),
-];
-// spare stools stacked in a corner, some with a jar on them
-for (let k = 0; k < 5; k++){ bO.push(-6.5, k * 0.055, 4.4, 0.3 + k * 0.03); stoolParts(bO, k % 4 ? PLASTIC[0] : PLASTIC[1]); bO.pop(); }
-blocks.push({ x: -6.5, z: 4.4, r: 0.25 });
-stool(-6.0, 1.3, PLASTIC[0], 0.4); addJar(-6.0, ST_H, 1.3); stool(6.2, 2.6, PLASTIC[2], -0.3); addJar(6.17, ST_H, 2.62); addJar(6.25, ST_H, 2.55);
-
-// ---------------------------------------------------------------- east wall: shelving full of jars; the giant jar by the entrance
-function shelfUnit(x, z){
-  for (const [dx, dz] of [[-0.45, -0.19], [0.45, -0.19], [-0.45, 0.19], [0.45, 0.19]]) bO.box(x + dx, 0.95, z + dz, 0.035, 1.9, 0.035, 0, STEEL_D);
-  for (let s = 0; s < 5; s++){ const y = 0.1 + s * 0.42; bO.box(x, y, z, 0.92, 0.03, 0.42, 0, STEEL); jarRow(x - 0.42, y + 0.015, z - 0.14, 11, 1, 0, 3, JR * 2.15); }
-  bO.box(x, 1.95, z, 0.95, 0.03, 0.44, 0, STEEL); jarRow(x - 0.4, 1.965, z - 0.12, 10, 1, 0, 2, JR * 2.3);
-  blocks.push({ x, z, hw: 0.48, hl: 0.24 });
-}
-for (let k = 0; k < 7; k++) shelfUnit(6.52, -4.4 + k * 1.0);
-// the giant jar on a red plinth, with a lucky cat and a velvet rope
-bO.box(5.4, 0.25, 4.1, 0.9, 0.5, 0.9, 0, RED_D); bO.box(5.4, 0.52, 4.1, 0.96, 0.04, 0.96, 0, GOLD);
-addJar(5.4, 0.54, 4.1, 0.3, 7.2);
-for (const [x, z] of [[4.6, 3.4], [6.2, 3.4]]){ bO.cyl(x, 0.45, z, 0.02, 0.9, GOLD); bO.sph(x, 0.92, z, 0.035, GOLD); bO.cyl(x, 0.02, z, 0.12, 0.04, GOLD); }
-bO.cyl(5.4, 0.78, 3.4, 0.012, 1.55, RED, 0, 0, Math.PI / 2);
-blocks.push({ x: 5.4, z: 4.1, hw: 0.5, hl: 0.5 }); blocks.push({ x: 5.4, z: 3.4, hw: 0.85, hl: 0.08 });
-pyramid(4.4, -4.1, 5, 0);
-// posters along the east wall above the shelves
-const matPoster = new THREE.MeshLambertMaterial({ map: TEX_SIGN });
-for (const z of [-3.4, -0.4, 2.6]){ const p = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.5), matPoster); p.position.set(RX - 0.012, 2.55, z); p.rotation.y = -Math.PI / 2; scene.add(p); }
-
-// ---------------------------------------------------------------- west wall: menu, TV, water cooler, drinks fridge, fan
-const menu = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.2), new THREE.MeshLambertMaterial({ map: TEX_MENU })); menu.position.set(-RX + 0.012, 2.1, -1.6); menu.rotation.y = Math.PI / 2; scene.add(menu);
-bO.box(-RX + 0.1, 2.3, 1.6, 0.14, 0.62, 1.0, 0, BLACK);
-const tv = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.54), new THREE.MeshBasicMaterial({ map: TEX_TV })); tv.position.set(-RX + 0.175, 2.3, 1.6); tv.rotation.y = Math.PI / 2; scene.add(tv);
-bO.box(-6.65, 0.5, 2.3, 0.32, 1.0, 0.32, 0, WHITE); bO.cyl(-6.65, 1.2, 2.3, 0.14, 0.4, [0.55, 0.75, 0.9]); bO.box(-6.52, 0.85, 2.3, 0.04, 0.06, 0.06, 0, [0.2, 0.4, 0.9]); bO.box(-6.52, 0.85, 2.42, 0.04, 0.06, 0.06, 0, RED);
-blocks.push({ x: -6.65, z: 2.3, hw: 0.2, hl: 0.2 });
-bO.box(-6.93, 0.9, 3.5, 0.06, 1.8, 0.7, 0, [0.85, 0.86, 0.88]); bO.box(-6.6, 0.06, 3.5, 0.7, 0.12, 0.7, 0, [0.85, 0.86, 0.88]); bO.box(-6.6, 1.77, 3.5, 0.7, 0.06, 0.7, 0, [0.85, 0.86, 0.88]);
-for (const sz of [-1, 1]) bO.box(-6.6, 0.9, 3.5 + sz * 0.33, 0.7, 1.8, 0.04, 0, [0.85, 0.86, 0.88]);
-bO.box(-6.9, 1.0, 3.5, 0.02, 1.4, 0.62, 0, [0.6, 0.62, 0.66]);
-for (const sz of [-1, 1]) bO.box(-6.26, 0.95, 3.5 + sz * 0.3, 0.05, 1.62, 0.04, 0, [0.25, 0.25, 0.28]); bO.box(-6.26, 1.75, 3.5, 0.05, 0.05, 0.64, 0, [0.25, 0.25, 0.28]); bO.box(-6.26, 0.15, 3.5, 0.05, 0.05, 0.64, 0, [0.25, 0.25, 0.28]);
-bX.box(-6.24, 0.95, 3.5, 0.01, 1.5, 0.6, 0, GLASS); bG.box(-6.6, 1.7, 3.5, 0.5, 0.02, 0.05, 0, [1, 0.95, 0.7]);
-for (let s = 0; s < 4; s++){ const y = 0.3 + s * 0.38; bO.box(-6.6, y, 3.5, 0.6, 0.02, 0.6, 0, STEEL); if (s % 2) jarRow(-6.8, y + 0.01, 3.27, 6, 0, 1, 2, JR * 2.1); else for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++){ bO.cyl(-6.75 + j * 0.2, y + 0.11, 3.28 + i * 0.09, 0.03, 0.2, [0.1, 0.35, 0.12]); bO.cyl(-6.75 + j * 0.2, y + 0.24, 3.28 + i * 0.09, 0.012, 0.06, [0.1, 0.35, 0.12]); bO.cyl(-6.75 + j * 0.2, y + 0.275, 3.28 + i * 0.09, 0.014, 0.01, GOLD); } }
-blocks.push({ x: -6.6, z: 3.5, hw: 0.37, hl: 0.37 });
-bO.cyl(-6.75, 2.55, 0.3, 0.03, 0.3, STEEL_D, 0, 0, Math.PI / 2); bO.cyl(-6.6, 2.55, 0.3, 0.22, 0.04, [0.3, 0.6, 0.65], 0, 0, Math.PI / 2); bO.add(G_TOR, -6.55, 2.55, 0.3, 0.5, 0.5, 0.5, Math.PI / 2, STEEL_D, 0, 0);
-for (const z of [-4.2, 4.3]){ const p = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.45), matPoster); p.position.set(-RX + 0.012, 2.3, z); p.rotation.y = Math.PI / 2; scene.add(p); }
-// a plastic plant and more boxes with the sleeping cat
-bO.cyl(-6.5, 0.2, -0.8, 0.18, 0.4, [0.5, 0.3, 0.25]); bO.cyl(-6.5, 0.45, -0.8, 0.02, 0.5, [0.3, 0.25, 0.15]); for (let k = 0; k < 9; k++) bO.add(G_CONE, -6.5 + rr(-0.2, 0.2), 0.85 + rr(-0.1, 0.25), -0.8 + rr(-0.2, 0.2), 0.14, 0.5, 0.05, rr(0, 3), [0.15, 0.5, 0.2], rr(-0.5, 0.5), rr(-0.6, 0.6));
-blocks.push({ x: -6.5, z: -0.8, r: 0.25 });
-cardboard(2.3, 0, -4.6, 0.05, false); cardboard(2.3, 0.26, -4.6, -0.05, false); cardboard(2.3, 0.52, -4.6, 0.08, false);
-cardboard(2.85, 0, -4.6, -0.1, false); cardboard(2.85, 0.26, -4.6, 0.12, true);
-blocks.push({ x: 2.6, z: -4.6, hw: 0.6, hl: 0.3 });
-// the cat
-bO.push(2.3, 0.78, -4.6, 0.6);
-bO.box(0, 0.08, 0, 0.32, 0.16, 0.2, 0, [0.9, 0.55, 0.2]); bO.box(0, 0.06, 0, 0.33, 0.06, 0.21, 0, [0.95, 0.75, 0.45]);
-bO.sph(0.17, 0.16, 0, 0.09, [0.9, 0.55, 0.2]); bO.add(G_CONE, 0.2, 0.26, -0.05, 0.05, 0.07, 0.03, 0, [0.9, 0.55, 0.2]); bO.add(G_CONE, 0.2, 0.26, 0.05, 0.05, 0.07, 0.03, 0, [0.9, 0.55, 0.2]);
-bO.box(0.25, 0.14, -0.03, 0.02, 0.01, 0.02, 0, BLACK); bO.box(0.25, 0.14, 0.03, 0.02, 0.01, 0.02, 0, BLACK); bO.box(0.26, 0.11, 0, 0.015, 0.012, 0.02, 0, [0.95, 0.5, 0.5]);
-bO.cyl(-0.17, 0.05, 0.1, 0.025, 0.22, [0.9, 0.55, 0.2], 0, 0, Math.PI / 2 - 0.3);
-bO.pop();
-
-// ---------------------------------------------------------------- south: glass front, door with 福, lanterns, neon
-for (const sx of [-1, 1]){ bO.box(sx * 3.975, 0.4, RZ + 0.05, 6.05, 0.8, 0.1, 0, WALL); bO.box(sx * 3.975, 0.06, RZ - 0.04, 6.05, 0.12, 0.04, 0, [0.25, 0.1, 0.08]); }
-bO.box(0, (CH + 2.75) / 2, RZ + 0.05, 2 * RX + 0.4, CH - 2.75, 0.1, 0, WALL);
-for (const x of [-RX, -4.7, -2.4, -0.95, 0.95, 2.4, 4.7, RX]) bO.box(x, 1.775, RZ, 0.08, 1.95, 0.12, 0, AL);
-for (const sx of [-1, 1]){ bO.box(sx * 3.975, 0.8, RZ, 6.05, 0.08, 0.12, 0, AL); bO.box(sx * 3.975, 2.75, RZ, 6.05, 0.08, 0.12, 0, AL); }
-bO.box(0, 2.75, RZ, 1.9, 0.08, 0.12, 0, AL); bO.box(0, 0.03, RZ, 1.9, 0.06, 0.12, 0, AL);
-for (const [a, b] of [[-RX, -4.7], [-4.7, -2.4], [-2.4, -0.95], [0.95, 2.4], [2.4, 4.7], [4.7, RX]]) bX.box((a + b) / 2, 1.775, RZ, b - a - 0.08, 1.9, 0.015, 0, GLASS);
-bX.box(0, 1.4, RZ, 1.82, 2.68, 0.015, 0, GLASS);
-bO.cyl(0.7, 1.05, RZ - 0.04, 0.015, 0.3, GOLD); bO.cyl(0.7, 1.05, RZ + 0.04, 0.015, 0.3, GOLD);
-const fu = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6), new THREE.MeshBasicMaterial({ map: TEX_FU, transparent: true })); fu.position.set(0, 1.9, RZ - 0.012); fu.rotation.y = Math.PI; scene.add(fu);
-const neon = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.82), new THREE.MeshBasicMaterial({ map: TEX_NEON, transparent: true, side: THREE.DoubleSide })); neon.position.set(-3.5, 2.2, RZ - 0.06); neon.rotation.y = Math.PI; scene.add(neon);
-const neonLight = new THREE.PointLight(0xff4030, 0.5, 5, 1.5); neonLight.position.set(-3.5, 2.1, RZ - 0.6); scene.add(neonLight);
-bO.box(0, 0.005, RZ - 0.9, 1.6, 0.01, 1.4, 0, [0.5, 0.08, 0.06]);   // the doormat
-// red lanterns hanging from the ceiling, lit from inside
-function lantern(x, z, y = 2.45){
-  bO.cyl(x, (CH + y + 0.25) / 2, z, 0.004, CH - y - 0.25, BLACK);
-  bO.cyl(x, y + 0.24, z, 0.08, 0.04, GOLD); bO.cyl(x, y - 0.24, z, 0.08, 0.04, GOLD);
-  bG.sph(x, y, z, 0.24, [1.0, 0.22, 0.12], 0.85);
-  for (let k = 0; k < 6; k++) bO.box(x + Math.cos(k) * 0.245, y, z + Math.sin(k) * 0.245, 0.01, 0.42, 0.01, 0, [0.6, 0.1, 0.05]);
-  bO.cyl(x, y - 0.42, z, 0.02, 0.32, [0.95, 0.75, 0.1]);
-}
-for (const [x, z] of [[-3, 1.4], [3, 1.4], [-1.3, 4.3], [1.3, 4.3], [-5.5, -2.0], [1.8, -2.0]]) lantern(x, z);
-// fluorescent tubes on the ceiling
-for (const x of [-4.5, -1.5, 1.5, 4.5]) for (const z of [-3.6, -0.5, 2.6]){ bO.box(x, CH - 0.04, z, 1.25, 0.08, 0.14, 0, WHITE); bG.box(x, CH - 0.085, z, 1.2, 0.02, 0.05, 0, [1.0, 0.98, 0.9]); }
-// strings of dried chilis and garlic along the sign
-for (let i = 0; i < 16; i++){ const t = i / 15, x = 1.9 + t * 1.6, y = 2.35 - Math.sin(t * Math.PI) * 0.35; bO.add(G_CONE, x, y - 0.07, -RZ + 0.08, 0.03, 0.14, 0.03, 0, [0.75, 0.08, 0.04], Math.PI + rr(-0.35, 0.35), rr(-0.35, 0.35)); bO.cyl(x, y + 0.02, -RZ + 0.08, 0.004, 0.06, [0.3, 0.25, 0.1]); }
-for (let i = 0; i < 7; i++){ const t = i / 6, x = 3.9 + t * 1.2, y = 2.3 - Math.sin(t * Math.PI) * 0.25; bO.sph(x, y, -RZ + 0.09, 0.05, [0.92, 0.9, 0.82]); bO.sph(x + 0.03, y - 0.06, -RZ + 0.1, 0.04, [0.88, 0.85, 0.76]); }
-bO.cyl(2.7, 2.2, -RZ + 0.08, 0.004, 1.7, [0.3, 0.25, 0.1], 0, 0, Math.PI / 2); bO.cyl(4.5, 2.2, -RZ + 0.08, 0.004, 1.3, [0.3, 0.25, 0.1], 0, 0, Math.PI / 2);
-
-// ---------------------------------------------------------------- outside: sidewalk, street, the block across, scooters
-bO.box(0, -0.1, RZ + 1.6, 60, 0.2, 3.2, 0, [0.44, 0.42, 0.4]);
-bO.box(0, -0.2, RZ + 10.6, 60, 0.2, 15, 0, [0.2, 0.19, 0.19]);
-for (let i = -14; i <= 14; i++) bO.box(i * 2, -0.098, RZ + 7.3, 1.0, 0.004, 0.14, 0, [0.6, 0.58, 0.5]);
-bO.box(0, 2.95, RZ + 0.5, 3.2, 0.16, 0.9, 0, RED_D); bO.box(0, 2.72, RZ + 0.92, 3.2, 0.3, 0.06, 0, RED);
-const awning = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.0), matPoster); awning.position.set(0, 3.0, RZ + 0.96); scene.add(awning);
-bO.box(0, 3.0, RZ + 0.95, 2.0, 1.1, 0.04, 0, GOLD);
-for (const x of [-9, 9]){ bO.cyl(x, 2.5, RZ + 2.6, 0.06, 5, STEEL_D); bO.box(x, 5.0, RZ + 2.9, 0.1, 0.1, 0.7, 0, STEEL_D); bG.box(x, 4.95, RZ + 3.2, 0.5, 0.12, 0.3, 0, [1, 0.9, 0.6]); }
-for (const [x, ry] of [[-3.2, 0.3], [-4.1, 0.1], [3.6, -0.2]]){
-  bO.push(x, 0, RZ + 1.5, ry);
-  const c = pick(PLASTIC);
-  bO.box(0, 0.45, 0, 0.5, 0.3, 1.2, 0, c); bO.box(0, 0.68, 0.1, 0.4, 0.12, 0.6, 0, BLACK); bO.cyl(0, 0.95, -0.55, 0.015, 0.6, STEEL_D, 0, 0, Math.PI / 2); bO.box(0, 0.75, -0.55, 0.2, 0.3, 0.08, 0, c, 0.3, 0);
-  bO.cyl(0, 0.22, -0.65, 0.22, 0.08, BLACK, 0, 0, Math.PI / 2); bO.cyl(0, 0.22, 0.65, 0.22, 0.08, BLACK, 0, 0, Math.PI / 2);
-  bO.pop();
-}
-bO.push(1.5, 0, RZ + 1.5, 0.1); bO.cyl(0, 0.3, 0, 0.2, 0.5, [0.95, 0.4, 0.1]); bO.cyl(0, 0.56, 0, 0.21, 0.04, [0.9, 0.3, 0.05]); bO.pop();
-bO.push(7.5, 0, RZ + 8.5, 0.05); bO.box(0, 0.5, 0, 1.8, 0.6, 4.3, 0, [0.75, 0.75, 0.78]); bO.box(0, 1.0, -0.2, 1.6, 0.5, 2.3, 0, [0.2, 0.22, 0.26]); for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) bO.cyl(sx * 0.85, 0.3, sz * 1.4, 0.3, 0.2, BLACK, 0, 0, Math.PI / 2); bO.pop();
-bO.cyl(-7, 1.6, RZ + 2.4, 0.1, 3.2, [0.3, 0.22, 0.14]); bO.sph(-7, 3.7, RZ + 2.4, 1.3, [0.12, 0.3, 0.14]); bO.sph(-6.4, 3.2, RZ + 2.9, 0.9, [0.14, 0.34, 0.16]);
-// the block across the street: drab facades, lit windows, shop signs
-for (let x = -24; x <= 24; x += 6.2){
-  const w = rr(5.2, 6.0), h = rr(9, 17), z0 = RZ + 18.5, col = pick([[0.5, 0.46, 0.4], [0.42, 0.42, 0.42], [0.58, 0.5, 0.4], [0.36, 0.38, 0.42]]);
-  bO.box(x, h / 2, z0 + 6, w, h, 12, 0, col);
-  for (let fy = 1.6; fy < h - 1; fy += 3.0) for (let fx = -w / 2 + 0.9; fx < w / 2 - 0.6; fx += 1.5) if (rnd() < 0.55) bG.box(x + fx, fy + 1.6, z0 - 0.03, 0.9, 1.2, 0.04, 0, pick([[1, 0.85, 0.5], [0.9, 0.95, 1], [1, 0.7, 0.4]]));
-  for (let fy = 1.6; fy < h - 1; fy += 3.0) bO.box(x, fy + 2.4, z0 - 0.15, w, 0.1, 0.3, 0, shade(col, 0.7));
-  bG.box(x, 2.9, z0 - 0.1, w * 0.8, 0.6, 0.1, 0, pick([[1, 0.2, 0.15], [0.2, 0.6, 1], [1, 0.8, 0.1], [0.3, 1, 0.5]]));
-  for (let k = 0; k < 4; k++) bO.box(x - w / 2 + 0.6 + k * 1.3, 4.8 + (k % 2) * 3, z0 - 0.4, 0.8, 0.4, 0.7, 0, [0.7, 0.7, 0.68]);   // air conditioners
-}
-
-// ---------------------------------------------------------------- the jars (instanced: contents, label, lid, glass) and the glasses of Laoganma
-function instanced(list, parts){
-  const n = list.length; if (!n) return;
-  for (const [geo, mat, local] of parts){
-    const im = new THREE.InstancedMesh(geo, mat, n);
-    list.forEach((j, i) => { _qq.setFromEuler(_ee.set(0, j.ry, 0)); _m.compose(_p3.set(j.x, j.y, j.z), _qq, _s3.set(j.s, j.s, j.s)).multiply(local); im.setMatrixAt(i, _m); });
-    im.instanceMatrix.needsUpdate = true;
-    scene.add(im);
-  }
-}
-const at = (x, y, z, rx = 0, ry = 0, rz = 0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1));
-const matFill = new THREE.MeshLambertMaterial({ color: new THREE.Color(0.33, 0.07, 0.03) });
-const matLabel = new THREE.MeshLambertMaterial({ map: TEX_LABEL });
-const matLid = new THREE.MeshLambertMaterial({ color: new THREE.Color(0.82, 0.1, 0.08) });
-const matJarGlass = new THREE.MeshLambertMaterial({ color: 0xd8ecf4, transparent: true, opacity: 0.2, depthWrite: false });
-const jarParts = lid => [
-  [new THREE.CylinderGeometry(JR * 0.93, JR * 0.88, JH * 0.86, 12), matFill, at(0, JH * 0.43, 0)],
-  [new THREE.CylinderGeometry(JR * 1.005, JR * 0.965, JH * 0.6, 12, 1, true), matLabel, at(0, JH * 0.33, 0)],
-  ...(lid ? [[new THREE.CylinderGeometry(JR * 1.07, JR * 1.07, 0.02, 12), matLid, at(0, JH + 0.01, 0)]] : []),
-  [new THREE.CylinderGeometry(JR, JR * 0.95, JH, 12), matJarGlass, at(0, JH / 2, 0)],
-];
-instanced(jars, jarParts(true));
-instanced(jarsOpen, jarParts(false));
-const GR = 0.032, GH = 0.095;
-instanced(glasses, [
-  [new THREE.CylinderGeometry(GR * 0.9, GR * 0.78, GH * 0.8, 12), matFill, at(0, GH * 0.41, 0)],
-  [new THREE.CylinderGeometry(0.003, 0.003, 0.15, 5), new THREE.MeshLambertMaterial({ color: new THREE.Color(0.95, 0.95, 0.95) }), at(0.012, GH * 0.75, 0, 0.1, 0, -0.25)],
-  [new THREE.LatheGeometry([[0, 0], [0.42, 0], [0.5, 1], [0.46, 1], [0.39, 0.08], [0, 0.08]].map(p => new THREE.Vector2(p[0], p[1])), 14), new THREE.MeshLambertMaterial({ color: 0xe0f0f8, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide }), new THREE.Matrix4().makeScale(GR * 2, GH, GR * 2)],
-]);
-// the merged static world
-scene.add(bO.mesh(matOpaque), bG.mesh(matGlow), bX.mesh(matGlass));
-
-// ---------------------------------------------------------------- live kitchen objects: wok, food, boiler, flames, steam
-const wok = new THREE.Mesh(G_WOK, new THREE.MeshLambertMaterial({ color: new THREE.Color(0.2, 0.19, 0.18), side: THREE.DoubleSide }));
-wok.position.set(-3.1, 0.92, KZ); wok.scale.set(0.66, 0.5, 0.66); scene.add(wok);
-const wokHandle = new THREE.Mesh(G_CYL, new THREE.MeshLambertMaterial({ color: new THREE.Color(0.56, 0.38, 0.22) }));
-wokHandle.scale.set(0.04, 0.3, 0.04); wokHandle.position.set(-2.63, 1.15, KZ); wokHandle.rotation.z = -1.22; scene.add(wokHandle);
-const wokFood = new THREE.Group(); wokFood.position.set(-3.1, 1.0, KZ); scene.add(wokFood);
-const noodleMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(0.9, 0.82, 0.52) });
-const wokNoodles = new THREE.Mesh(G_SPH, noodleMat); wokNoodles.scale.set(0.38, 0.11, 0.38); wokFood.add(wokNoodles);
-for (let k = 0; k < 6; k++){ const t = new THREE.Mesh(G_TOR, noodleMat); t.scale.setScalar(0.11); t.rotation.x = Math.PI / 2 + rr(-0.3, 0.3); t.position.set(rr(-0.12, 0.12), 0.05, rr(-0.12, 0.12)); wokFood.add(t); }
-const vegMeshes = {};
-VEG.forEach(([id, col]) => {
-  const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color: new THREE.Color(col[0], col[1], col[2]) });
-  for (let k = 0; k < 7; k++){ const s = new THREE.Mesh(G_SPH, m); s.scale.setScalar(id === 'egg' ? 0.05 : 0.032); s.position.set(rr(-0.15, 0.15), 0.06 + rr(0, 0.03), rr(-0.15, 0.15)); g.add(s); }
-  g.visible = false; vegMeshes[id] = g; wokFood.add(g);
-});
-const boilNoodles = new THREE.Mesh(G_TOR, noodleMat); boilNoodles.position.set(-2.1, 1.15, KZ); boilNoodles.scale.setScalar(0.32); boilNoodles.rotation.x = Math.PI / 2; boilNoodles.visible = false; scene.add(boilNoodles);
-const flameMat = new THREE.SpriteMaterial({ map: TEX_FLAME, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, color: 0xff9a40 });
-const flames = [];
-for (let k = 0; k < 9; k++){ const s = new THREE.Sprite(flameMat); s.position.set(-3.1, 0.93, KZ); scene.add(s); flames.push(s); }
-const steam = [];
-for (let k = 0; k < 110; k++){
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX_SOFT, transparent: true, opacity: 0, depthWrite: false, color: 0xe6e2da }));
-  s.visible = false; s.userData = { life: 0, vx: 0, vy: 0, vz: 0, grow: 0, max: 1 }; scene.add(s); steam.push(s);
-}
-let steamIdx = 0;
-function puff(x, y, z, spread, rise, size, max = 1){
-  const s = steam[steamIdx = (steamIdx + 1) % steam.length], u = s.userData;
-  s.position.set(x + rr(-spread, spread), y, z + rr(-spread, spread));
-  s.scale.setScalar(size); s.visible = true;
-  u.life = 1; u.vx = rr(-0.06, 0.06); u.vz = rr(-0.06, 0.06); u.vy = rise; u.grow = size * 0.9; u.max = max;
-}
-function updateSteam(dt){
-  for (const s of steam){
-    const u = s.userData; if (u.life <= 0) continue;
-    u.life -= dt * 0.45; if (u.life <= 0){ s.visible = false; s.material.opacity = 0; continue; }
-    s.position.x += u.vx * dt; s.position.y += u.vy * dt; s.position.z += u.vz * dt;
-    s.scale.addScalar(u.grow * dt);
-    s.material.opacity = Math.sin(u.life * Math.PI) * 0.32 * u.max;
-  }
-}
-
-// ---------------------------------------------------------------- orders: a ticket floats over a table; the bowl goes there
-const bubbleMat = new THREE.SpriteMaterial({ map: TEX_BUBBLE, transparent: true, depthWrite: false });
-const spots = T.map(t => {
-  const bubble = new THREE.Sprite(bubbleMat); bubble.scale.setScalar(0.38); bubble.visible = false; scene.add(bubble);
-  return { x: t.x, z: t.z, wants: false, eating: 0, t: rr(0, 9), bubble, bowl: null, bowlPos: v3(t.x, TH + 0.02, t.z) };
-});
-let nextOrderIn = 0;
-function openOrder(){
-  const free = spots.filter(c => !c.wants && !c.eating);
-  if (!free.length) return;
-  const c = free[Math.floor(Math.random() * free.length)];
-  c.wants = true; c.bubble.visible = true;
-}
-function updateOrders(dt){
-  for (const c of spots){
-    c.t += dt;
-    if (c.eating > 0){
-      c.eating -= dt;
-      if (Math.random() < dt * 2) puff(c.bowlPos.x, c.bowlPos.y + 0.08, c.bowlPos.z, 0.04, 0.12, 0.08, 0.5);
-      if (c.eating <= 0 && c.bowl){ scene.remove(c.bowl); c.bowl = null; nextOrderIn = 2 + Math.random() * 3; }
-    }
-    if (c.wants) c.bubble.position.set(c.x, TH + 0.6 + Math.sin(c.t * 3) * 0.04, c.z);
-  }
-  if (!spots.some(c => c.wants)){ nextOrderIn -= dt; if (nextOrderIn <= 0) openOrder(); }
-}
-
-// ---------------------------------------------------------------- what the cook holds
-function makeNest(){ const b = new Builder(); for (let k = 0; k < 4; k++) b.add(G_TOR, rr(-0.02, 0.02), k * 0.012, rr(-0.02, 0.02), 0.15, 0.15, 0.15, rr(0, 3), PALE, Math.PI / 2 + rr(-0.1, 0.1), 0); return b.mesh(matOpaque); }
-function makeStrainer(){
-  const b = new Builder();
-  b.add(G_BOWL, 0, 0, 0, 0.22, 0.1, 0.22, 0, STEEL_D); b.cyl(0.2, 0.06, 0, 0.012, 0.3, WOOD, 0, 0, -1.3);
-  b.sph(0, 0.07, 0, 0.09, PALE, 0.5); for (let k = 0; k < 3; k++) b.add(G_TOR, rr(-0.04, 0.04), 0.1, rr(-0.04, 0.04), 0.1, 0.1, 0.1, rr(0, 3), PALE, Math.PI / 2, 0);
-  return b.mesh(matOpaque);
-}
-// stage 0: empty bowl; 1: fried noodles with whatever went into the wok; 2: with the Laoganma on top (a separate part, so it can be spooned on)
-function makeBowl(stage, veg = []){
-  const b = new Builder();
-  b.add(G_BOWL, 0, 0, 0, 0.2, 0.085, 0.2, 0, WHITE); b.add(G_RIM, 0, 0.085, 0, 0.2, 0.2, 0.2, 0, [0.2, 0.3, 0.72], Math.PI / 2, 0);
-  if (stage >= 1){
-    b.sph(0, 0.075, 0, 0.085, [0.88, 0.72, 0.42], 0.55);
-    for (let k = 0; k < 4; k++) b.add(G_TOR, rr(-0.04, 0.04), 0.1, rr(-0.04, 0.04), 0.08, 0.08, 0.08, rr(0, 3), [0.9, 0.76, 0.46], Math.PI / 2 + rr(-0.3, 0.3), 0);
-    for (const [id, col] of VEG) if (veg.includes(id)) for (let k = 0; k < 3; k++) b.sph(rr(-0.06, 0.06), 0.11, rr(-0.06, 0.06), id === 'egg' ? 0.016 : 0.011, col);
-  }
-  const m = b.mesh(matOpaque);
-  if (stage >= 2){
-    const tb = new Builder(); tb.sph(0, 0.115, 0, 0.055, OIL, 0.5);
-    for (let k = 0; k < 9; k++) tb.sph(rr(-0.05, 0.05), 0.125 + rr(0, 0.01), rr(-0.05, 0.05), 0.011, k % 3 ? OIL_L : [0.25, 0.12, 0.06]);
-    const top = tb.mesh(matOpaque); top.name = 'top'; m.add(top);
-  }
-  return m;
-}
-const hand = new THREE.Group(); hand.position.set(0.3, -0.27, -0.5); hand.rotation.set(0.12, -0.25, 0.04); camera.add(hand);
-let handItem = null;
-function setHeld(state){
-  G.held = state;
-  if (handItem){ hand.remove(handItem); handItem.geometry.dispose(); handItem = null; }
-  if (!state) return;
-  handItem = state === 'nest' ? makeNest() : state === 'cooked' ? makeStrainer() : state === 'bowl' ? makeBowl(0) : state === 'dish' ? makeBowl(1, G.veg) : makeBowl(2, G.veg);
-  hand.add(handItem);
-}
-
-// ---------------------------------------------------------------- sound: sizzle, bubbling, a hum, the serving bell
-const AU = { ctx: null };
-function audioInit(){
-  if (AU.ctx) return;
-  const C = AU.ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const buf = C.createBuffer(1, C.sampleRate * 2, C.sampleRate), d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  const mk = (type, freq, q) => { const src = C.createBufferSource(); src.buffer = buf; src.loop = true; const f = C.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q; const g = C.createGain(); g.gain.value = 0; src.connect(f).connect(g).connect(C.destination); src.start(); return g; };
-  AU.sizzle = mk('bandpass', 4200, 0.6); AU.bubble = mk('lowpass', 240, 1.5); AU.hum = mk('bandpass', 100, 10); AU.hum.gain.value = 0.03; AU.fan = mk('lowpass', 900, 0.5); AU.fan.gain.value = 0.012;
-}
-function ding(){
-  if (!AU.ctx) return;
-  const C = AU.ctx;
-  for (const [f, t0] of [[1320, 0], [1760, 0.12]]){ const o = C.createOscillator(), g = C.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, C.currentTime + t0); g.gain.exponentialRampToValueAtTime(0.18, C.currentTime + t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.001, C.currentTime + t0 + 0.7); o.connect(g).connect(C.destination); o.start(C.currentTime + t0); o.stop(C.currentTime + t0 + 0.75); }
-}
-
-// ---------------------------------------------------------------- game state and the stations the cook can use
-const G = { held: null, served: 0, veg: [], boil: { on: false, t: 0, done: false }, wok: { has: false, t: 0, done: false, flame: 0.15 }, pour: 0, flash: 0 };
-const BOIL_T = 5, STIR_T = 4;
-let stirring = false, active = null, activeText = '';
-const stations = [];
-const station = (x, y, z, r, prompt, act, hold = false) => stations.push({ pos: v3(x, y, z), r, prompt, act, hold });
-station(-5.25, 0.95, KZ, 1.3, () => G.held ? null : S.takeNoodles, () => setHeld('nest'));
-station(-2.1, 1.1, KZ, 1.4, () => {
-  const b = G.boil;
-  if (b.on) return say(S.boiling) + ' ' + Math.ceil(BOIL_T - b.t) + 's';
-  if (b.done) return G.held ? S.handsFull : S.liftNoodles;
-  return G.held === 'nest' ? S.dropNoodles : null;
-}, () => {
-  const b = G.boil;
-  if (b.on) return;
-  if (b.done && !G.held){ b.done = false; boilNoodles.visible = false; setHeld('cooked'); }
-  else if (G.held === 'nest'){ b.on = true; b.t = 0; boilNoodles.visible = true; setHeld(null); }
-});
-station(-3.1, 1.0, KZ, 1.4, () => {
-  const w = G.wok;
-  if (!w.has) return G.held === 'cooked' ? S.toWok : null;
-  if (!w.done) return S.stir;
-  return G.held === 'bowl' ? S.plate : S.wokDone;
-}, () => {
-  const w = G.wok;
-  if (!w.has && G.held === 'cooked'){ w.has = true; w.t = 0; w.done = false; G.veg = []; for (const id in vegMeshes) vegMeshes[id].visible = false; setHeld(null); }
-  else if (w.done && G.held === 'bowl'){ w.has = false; w.done = false; setHeld('dish'); }
-}, true);
-for (const { id, pos } of vegPos) station(pos.x, pos.y, pos.z, 1.2, () => (G.wok.has && !G.wok.done && !G.veg.includes(id)) ? say(S.add) + ' ' + say(S[id]) : null, () => { G.veg.push(id); vegMeshes[id].visible = true; });
-station(-0.3, 1.0, -2.6, 1.3, () => G.held ? null : S.takeBowl, () => setHeld('bowl'));
-station(-1.6, 1.1, -2.6, 1.3, () => G.held === 'dish' ? S.spoon : G.held === 'bowl' ? S.needNoodles : null, () => { if (G.held === 'dish'){ setHeld('final'); G.pour = 1; } });
-for (const c of spots) station(c.x, TH + 0.1, c.z, 1.8, () => !c.wants ? null : G.held === 'final' ? S.serve : G.held === 'dish' ? S.mustFinish : S.waiting, () => {
-  if (!c.wants || G.held !== 'final') return;
-  c.wants = false; c.bubble.visible = false; c.eating = 14 + Math.random() * 6;
-  const bowl = makeBowl(2, G.veg); bowl.position.copy(c.bowlPos); scene.add(bowl); c.bowl = bowl;
-  setHeld(null); G.served++; G.flash = 1.2; nextOrderIn = 4 + Math.random() * 4; ding();
-});
-function currentStep(){
-  const h = G.held, w = G.wok, b = G.boil;
-  if (h === 'final') return 5;
-  if (h === 'dish') return 4;
-  if (h === 'bowl') return w.done ? 2 : 3;
-  if (w.done) return 3;
-  if (w.has || h === 'cooked') return 2;
-  if (b.on || b.done || h === 'nest') return 1;
-  return 0;
-}
-function pickStation(){
-  const fx = -Math.sin(P.yaw) * Math.cos(P.pitch), fy = Math.sin(P.pitch), fz = -Math.cos(P.yaw) * Math.cos(P.pitch);
-  let best = null, bestCos = 0.7;
-  for (const s of stations){
-    const dx = s.pos.x - P.x, dy = s.pos.y - 1.62, dz = s.pos.z - P.z, d = Math.hypot(dx, dy, dz);
-    if (d > s.r) continue;
-    const cos = (dx * fx + dy * fy + dz * fz) / d;
-    if (cos <= bestCos) continue;
-    const p = s.prompt(); if (!p) continue;
-    best = s; bestCos = cos; activeText = say(p);
-  }
-  return best;
-}
-
-// ---------------------------------------------------------------- input: keyboard and mouse, gamepad, touch
-const P = { x: -2.4, z: -3.3, yaw: Math.PI + 0.35, pitch: -0.08, bob: 0, speed: 0 };
-const keys = {};
-const input = { act: false, held: false, padF: 0, padS: 0, padRun: false, padPrev: {} };
-let padMode = false;
-const ui = () => clamp(Math.min(VW, VH) / 40, 10, 20);
-function cycleLang(d){ setLang(LANGS[(LANGS.indexOf(lang) + d + LANGS.length) % LANGS.length]); }
-function begin(){ started = true; paused = false; last = performance.now(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); }
-function pause(){ paused = true; if (document.pointerLockElement === cv) document.exitPointerLock(); }
-addEventListener('keydown', e => {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
-  if (e.repeat) return;
-  keys[e.code] = true; padMode = false;
-  if (paused){
-    if (e.code === 'ArrowLeft') cycleLang(-1);
-    if (e.code === 'ArrowRight') cycleLang(1);
-    if (e.code === 'Enter' || e.code === 'Space'){ audioInit(); if (TOUCH) begin(); else cv.requestPointerLock(); }
-    return;
-  }
-  if (e.code === 'KeyE' || e.code === 'Space') input.act = true;
-  if (e.code === 'KeyP') pause();
-});
-addEventListener('keyup', e => { keys[e.code] = false; });
-addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (started) paused = true; });
-cv.addEventListener('click', () => { if (TOUCH) return; audioInit(); if (paused) cv.requestPointerLock(); });
-document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement === cv) begin(); else if (!padMode) paused = true; });
-addEventListener('mousemove', e => {
-  if (document.pointerLockElement !== cv || paused) return;
-  P.yaw -= e.movementX * 0.0021; P.pitch = clamp(P.pitch - e.movementY * 0.0021, -1.45, 1.45);
-});
-function readPad(dt){
-  if (!navigator.getGamepads) return;
-  for (const gp of navigator.getGamepads()){
-    if (!gp || !gp.connected || gp.mapping !== 'standard') continue;
-    const dead = v => Math.abs(v) < 0.1 ? 0 : (v - Math.sign(v) * 0.1) / 0.9;
-    const ax = gp.axes, bt = gp.buttons;
-    const busy = bt.some(b => b.pressed) || ax.some(v => Math.abs(v) > 0.2);
-    if (busy) padMode = true;
-    input.padF = -dead(ax[1] || 0); input.padS = dead(ax[0] || 0); input.padRun = bt[10] && bt[10].pressed;
-    if (!paused){ P.yaw -= dead(ax[2] || 0) * dt * 2.8; P.pitch = clamp(P.pitch - dead(ax[3] || 0) * dt * 2.2, -1.45, 1.45); }
-    const a = bt[0] && bt[0].pressed, st = bt[9] && bt[9].pressed;
-    if (a && !input.padPrev.a){ if (paused) begin(); else input.act = true; }
-    if (st && !input.padPrev.st){ if (paused) begin(); else pause(); }
-    if (bt[14] && bt[14].pressed && !input.padPrev.l && paused) cycleLang(-1);
-    if (bt[15] && bt[15].pressed && !input.padPrev.r && paused) cycleLang(1);
-    input.padPrev = { a, st, l: bt[14] && bt[14].pressed, r: bt[15] && bt[15].pressed };
-    if (a) input.held = true;
-    break;
-  }
-}
-const touch = { move: null, look: null, actId: null, f: 0, s: 0 };
-const touchBtn = () => { const u = ui(); return { x: VW - u * 4, y: VH - u * 4.4, r: u * 2.3 }; };
-cv.addEventListener('pointerdown', e => {
-  if (!TOUCH || e.pointerType === 'mouse') return;
-  audioInit();
-  if (paused){ if (e.clientY > VH * 0.84) cycleLang(1); else begin(); return; }
-  const b = touchBtn();
-  if (Math.hypot(e.clientX - b.x, e.clientY - b.y) < b.r){ touch.actId = e.pointerId; input.act = true; return; }
-  if (e.clientX < VW / 2) touch.move = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY };
-  else touch.look = { id: e.pointerId, x: e.clientX, y: e.clientY };
-});
-cv.addEventListener('pointermove', e => {
-  if (!TOUCH || e.pointerType === 'mouse') return;
-  if (touch.move && touch.move.id === e.pointerId){ touch.move.x = e.clientX; touch.move.y = e.clientY; }
-  if (touch.look && touch.look.id === e.pointerId){ P.yaw -= (e.clientX - touch.look.x) * 0.006; P.pitch = clamp(P.pitch - (e.clientY - touch.look.y) * 0.006, -1.45, 1.45); touch.look.x = e.clientX; touch.look.y = e.clientY; }
-});
-for (const ev of ['pointerup', 'pointercancel']) cv.addEventListener(ev, e => {
-  if (touch.move && touch.move.id === e.pointerId) touch.move = null;
-  if (touch.look && touch.look.id === e.pointerId) touch.look = null;
-  if (touch.actId === e.pointerId) touch.actId = null;
-});
-
-// ---------------------------------------------------------------- the cook walks
-function collide(){
-  const R = 0.28;
-  P.x = clamp(P.x, -RX + R + 0.02, RX - R - 0.02); P.z = clamp(P.z, -RZ + R + 0.02, RZ - R - 0.1);
-  for (const b of blocks){
-    const dx = P.x - b.x, dz = P.z - b.z;
-    if (b.r !== undefined){ const d = Math.hypot(dx, dz), m = b.r + R; if (d < m && d > 1e-6){ P.x = b.x + dx / d * m; P.z = b.z + dz / d * m; } }
-    else { const ox = b.hw + R - Math.abs(dx), oz = b.hl + R - Math.abs(dz); if (ox > 0 && oz > 0){ if (ox < oz) P.x += Math.sign(dx || 1) * ox; else P.z += Math.sign(dz || 1) * oz; } }
-  }
-}
-function placeCamera(){
-  const m = Math.min(1, P.speed / 2);
-  camera.position.set(P.x, 1.62 + Math.sin(P.bob) * 0.022 * m, P.z);
-  camera.rotation.set(P.pitch, P.yaw, 0);
-  hand.position.set(0.3 + Math.sin(P.bob * 0.5) * 0.012 * m, -0.27 + Math.sin(P.bob) * 0.014 * m, -0.5);
-}
-function update(dt){
-  readPad(dt);
-  touch.f = touch.move ? clamp(-(touch.move.y - touch.move.y0) / 70, -1, 1) : 0;
-  touch.s = touch.move ? clamp((touch.move.x - touch.move.x0) / 70, -1, 1) : 0;
-  let fwd = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + input.padF + touch.f;
-  let str = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + input.padS + touch.s;
-  const len = Math.hypot(fwd, str); if (len > 1){ fwd /= len; str /= len; }
-  const sp = (keys.ShiftLeft || keys.ShiftRight || input.padRun) ? 3.4 : 2.1;
-  const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
-  const vx = (fx * fwd + rx * str) * sp, vz = (fz * fwd + rz * str) * sp;
-  P.x += vx * dt; P.z += vz * dt; collide(); collide();
-  P.speed = Math.hypot(vx, vz); P.bob += dt * P.speed * 3.4;
-  placeCamera();
-  // stations
-  active = pickStation();
-  const held = input.held || keys.KeyE || keys.Space || touch.actId !== null;
-  input.held = false;
-  if (active && input.act) active.act();
-  if (active && active.hold && held && G.wok.has && !G.wok.done){ stirring = true; G.wok.t += dt; if (G.wok.t >= STIR_T) G.wok.done = true; }
-  input.act = false;
-  if (active) active = pickStation();   // the prompt may have changed with the action
-  // cooking timers
-  if (G.boil.on){ G.boil.t += dt; if (G.boil.t >= BOIL_T){ G.boil.on = false; G.boil.done = true; } }
-  const w = G.wok, tgt = w.has && !w.done ? 1 : w.has ? 0.4 : 0.15; w.flame += (tgt - w.flame) * Math.min(1, dt * 4);
-  if (G.pour > 0) G.pour = Math.max(0, G.pour - dt * 1.3);
-  if (G.flash > 0) G.flash -= dt * 0.6;
-  updateOrders(dt);
-}
-const boilMat = noodleMat.clone(); boilNoodles.material = boilMat;
-function animate(dt){
-  clock += dt;
-  const f = G.wok.flame;
-  flames.forEach((s, i) => {
-    const a = i / flames.length * 6.283 + clock * 3;
-    s.position.set(-3.1 + Math.cos(a) * 0.13, 0.9 + Math.random() * 0.04 + f * 0.05, KZ + Math.sin(a) * 0.13);
-    s.scale.setScalar((0.07 + f * 0.17) * (0.8 + Math.random() * 0.4)); s.visible = f > 0.02;
-  });
-  wokLight.intensity = 0.25 + f * 0.9 + Math.random() * 0.2 * f;
-  wokFood.visible = G.wok.has;
-  if (G.wok.has){
-    const k = clamp(G.wok.t / STIR_T, 0, 1);
-    noodleMat.color.setRGB(lerp(0.9, 0.82, k), lerp(0.82, 0.56, k), lerp(0.52, 0.24, k));
-    wokFood.position.y = 1.0 + (stirring ? Math.abs(Math.sin(clock * 14)) * 0.07 : 0);
-    wokFood.rotation.y += (stirring ? 3.5 : 0.2) * dt;
-    if (Math.random() < dt * (stirring ? 28 : 6)) puff(-3.1, 1.12, KZ, 0.2, stirring ? 0.6 : 0.4, 0.14, stirring ? 0.7 : 0.4);
-  }
-  wok.rotation.z = stirring ? Math.sin(clock * 14) * 0.05 : 0;
-  if (Math.random() < dt * (G.boil.on ? 20 : 5)) puff(-2.1, 1.22, KZ, 0.16, 0.5, 0.13, G.boil.on ? 0.8 : 0.4);
-  boilNoodles.position.y = 1.15 + Math.sin(clock * 9) * 0.012;
-  neon.material.opacity = 0.9 + Math.sin(clock * 31) * 0.05 - (Math.random() < 0.012 ? 0.5 : 0);
-  neonLight.intensity = neon.material.opacity * 0.55;
-  if (handItem && G.held === 'final'){ const top = handItem.getObjectByName('top'); if (top){ const s = 1 - G.pour; top.scale.set(s, s * s, s); top.visible = s > 0.02; if (G.pour > 0 && Math.random() < dt * 20) puff(-1.6, 1.3, -2.55, 0.08, 0.3, 0.06, 0.4); } }
-  updateSteam(dt);
-  if (AU.ctx){
-    AU.sizzle.gain.value = paused ? 0 : (0.015 + f * 0.09 + (stirring ? 0.09 : 0)) * (0.7 + Math.random() * 0.3);
-    AU.bubble.gain.value = paused ? 0 : (G.boil.on ? 0.13 : 0.04) * (0.5 + Math.random() * 0.5);
-  }
-}
-
-// ---------------------------------------------------------------- OSD: sharp text on its own canvas, bold monospace like the drone
-const INK = '#f6f1e6', EDGE = 'rgba(0,0,0,0.8)';
-function txt(s, x, y, align = 'left'){ oc.textAlign = align; oc.strokeText(s, x, y); oc.fillText(s, x, y); }
-const HELD_NAME = { nest: 'hNest', cooked: 'hCooked', bowl: 'hBowl', dish: 'hDish', final: 'hFinal' };
-function drawOSD(){
-  oc.setTransform(DPR, 0, 0, DPR, 0, 0); oc.clearRect(0, 0, VW, VH);
-  const u = ui();
-  const mono = s => 'bold ' + (u * s).toFixed(1) + 'px ui-monospace, Menlo, Consolas, "Courier New", monospace';
-  oc.lineJoin = 'round'; oc.lineWidth = u * 0.28; oc.strokeStyle = EDGE; oc.fillStyle = INK; oc.textBaseline = 'middle';
-  if (paused){
-    oc.fillStyle = 'rgba(12,4,3,0.55)'; oc.fillRect(0, 0, VW, VH); oc.fillStyle = INK;
-    oc.font = 'bold ' + (u * 4.4).toFixed(1) + 'px ' + CJK; txt(S.title, VW / 2, VH * 0.28, 'center');
-    oc.font = mono(1.3); txt(say(S.sub), VW / 2, VH * 0.28 + u * 3.8, 'center');
-    oc.font = mono(0.85); txt(say(S.job), VW / 2, VH * 0.28 + u * 5.8, 'center');
-    if (Math.floor(clock * 2) % 2 === 0){ oc.font = mono(1.15); txt(say(started ? (TOUCH ? S.resumeTouch : S.resume) : (TOUCH ? S.startTouch : S.start)), VW / 2, VH * 0.62, 'center'); }
-    oc.font = mono(0.8); txt(say(TOUCH ? S.ctrlTouch : padMode ? S.ctrlPad : S.ctrlKb), VW / 2, VH * 0.62 + u * 2.4, 'center');
-    const langs = LANGS.map(l => l === lang ? '[' + l.toUpperCase() + ']' : l.toUpperCase()).join('  ');
-    txt((TOUCH ? '' : say(S.langHint) + ' · ') + langs, VW / 2, TOUCH ? VH * 0.92 : VH * 0.62 + u * 4.0, 'center');
-    return;
-  }
-  oc.font = mono(1.0); txt(say(S.served) + ' ' + G.served, u, u * 1.3);
-  if (G.held){ oc.font = mono(0.8); txt(say(S.holding) + ': ' + say(S[HELD_NAME[G.held]]), u, u * 2.8); }
-  const step = currentStep();
-  oc.font = mono(0.8);
-  S.steps.forEach((s, i) => { oc.globalAlpha = i === step ? 1 : 0.5; txt((i < step ? '✓ ' : (i + 1) + ' ') + say(s), VW - u, u * 1.3 + i * u * 1.35, 'right'); });
-  oc.globalAlpha = 1;
-  oc.beginPath(); oc.arc(VW / 2, VH / 2, u * 0.16, 0, 6.3); oc.lineWidth = u * 0.14; oc.stroke(); oc.fill(); oc.lineWidth = u * 0.28;
-  if (active){
-    oc.font = mono(1.05); txt((TOUCH ? '' : padMode ? '[A] ' : '[E] ') + activeText, VW / 2, VH / 2 + u * 3.2, 'center');
-    if (active.hold && G.wok.has && !G.wok.done){
-      const w = u * 12, h = u * 0.6, x = VW / 2 - w / 2, y = VH / 2 + u * 4.4;
-      oc.fillStyle = 'rgba(0,0,0,0.55)'; oc.fillRect(x, y, w, h); oc.fillStyle = INK; oc.fillRect(x + 2, y + 2, (w - 4) * clamp(G.wok.t / STIR_T, 0, 1), h - 4);
-    }
-  }
-  if (G.flash > 0){ oc.font = 'bold ' + (u * 1.8).toFixed(1) + 'px ' + CJK; oc.globalAlpha = Math.min(1, G.flash * 1.5); txt('老干妈拌面 +1', VW / 2, VH * 0.3, 'center'); oc.globalAlpha = 1; }
-  if (TOUCH){
-    const b = touchBtn();
-    oc.beginPath(); oc.arc(b.x, b.y, b.r, 0, 6.3); oc.fillStyle = active ? 'rgba(246,241,230,0.85)' : 'rgba(246,241,230,0.28)'; oc.fill();
-    oc.fillStyle = active ? '#2a0806' : INK; oc.font = mono(1.5); oc.textAlign = 'center'; oc.fillText('E', b.x, b.y); oc.fillStyle = INK;
-  }
-}
+// the label band
+const band = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.002, R + 0.002, 0.52, 96, 1, true), new THREE.MeshStandardMaterial({ map: labelTex, roughness: 0.55 }));
+band.position.y = 0.44; band.rotation.y = -2.5; jar.add(band);
+// the lid: fluted red cap, slightly wider than the neck, with a dimpled top
+const lidShape = new THREE.Shape();
+for (let i = 0; i <= 96; i++){ const a = i / 96 * Math.PI * 2, r = 0.348 + (i % 2 ? 0.008 : 0); i ? lidShape.lineTo(Math.cos(a) * r, Math.sin(a) * r) : lidShape.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+const lidGeo = new THREE.ExtrudeGeometry(lidShape, { depth: 0.13, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 3 });
+lidGeo.rotateX(-Math.PI / 2); lidGeo.translate(0, 0.88, 0);
+const lidMat = new THREE.MeshStandardMaterial({ color: 0xd21e18, roughness: 0.38, metalness: 0.15 });
+jar.add(new THREE.Mesh(lidGeo, lidMat));
+const lidTop = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.34, 0.012, 64), lidMat); lidTop.position.y = 1.013; jar.add(lidTop);
+const dimple = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.006, 48), new THREE.MeshStandardMaterial({ color: 0xb8161a, roughness: 0.45, metalness: 0.15 })); dimple.position.y = 1.02; jar.add(dimple);
+// a soft shadow on the floor
+const sh = document.createElement('canvas'); sh.width = sh.height = 256;
+{ const g = sh.getContext('2d'), r = g.createRadialGradient(128, 128, 20, 128, 128, 128); r.addColorStop(0, 'rgba(60,30,20,0.45)'); r.addColorStop(1, 'rgba(60,30,20,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); }
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sh), transparent: true, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = -0.001; scene.add(shadow);
 
 // ---------------------------------------------------------------- loop
-fit(); placeCamera(); openOrder();
-if (new URLSearchParams(location.search).has('debug')) window.LG = { P, G, begin, pause, setHeld, placeCamera, spots };
-function frame(){
+let last = performance.now();
+renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now;
-  stirring = false;
-  if (!paused) update(dt);
-  animate(dt);
+  controls.update();
   renderer.render(scene, camera);
-  drawOSD();
-}
-renderer.setAnimationLoop(frame);
+});
 </script>
 </body>
 </html>
