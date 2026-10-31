@@ -27,6 +27,10 @@ Startprompt für einen neuen Chat:
     Punkten zeichnen, Linien 2 Punkte, Rahmen 4 Punkte, Kästchen zum Schreiben mindestens 6–7 mm.
   - bon/vokabeln/: Text auf dem Kopf (translate + rotate(π) auf der Leinwand) und Falzkarten.
   - bon/postkarte/: Foto, Briefmarke, Poststempel. bon/spaziergang/: selbst gezeichnete Karte.
+  - bon/visitenkarte/: Karten in Originalgrösse (85 × 55 mm = 680 × 440 Punkte), quer um 90° gedreht auf den
+    Bon, mehrere aneinander mit Schnittmarken. QR-Code mit qrcode-generator (MIT, bon/visitenkarte/qrcode.js),
+    ein Modul ganze 3–6 Punkte. Die Satz-Funktion `setzen()` verteilt Zeilen mit «Federn» in ein Feld und
+    verkleinert, was nicht passt.
   - bon/rezept/: eigene Datensammlung (200 Rezepte in rezepte.js), Filter, Mengen umrechnen, Liste
     mit Kästchen zum Abhaken. Bettet das PNG schon nach der Regel mit 272 px und H × 17/36 px ein.
 - Schriften (alle OFL) relativ einbinden statt kopieren: IBM Plex Sans (bon/text/), IBM Plex Serif
