@@ -48,7 +48,9 @@ Startprompt für einen neuen Chat:
   `e?.fehler(text)`. Ob der Mac einen eingereichten Bon schon gedruckt hat, weiss die Website nicht
   (der Web-Schlüssel darf nicht abholen).
 - Jede App hat oben links einen Knopf «← Zurück» zur Startseite (`href="../"`) und
-  `<meta name="robots" content="noindex, nofollow">`. Sie ist von nirgends sonst verlinkt.
+  `<meta name="robots" content="noindex, nofollow">`.
+  Das Tab-Icon (`<link rel="icon">`, SVG direkt in der Datei) zeigt den Anfangsbuchstaben der App; ist er
+  schon vergeben, zwei Buchstaben (Rh, Re, Sp, Sv). Die Startseite hat einen Bon mit Zackenrand. Sie ist von nirgends sonst verlinkt.
 - Vor allem am Handy benutzt: Felder mit 16 px Schrift, damit iOS nicht zoomt, grosse Knöpfe,
   nichts darf über den Rand ragen.
 - Sprache Deutsch, Schweizer Schreibweise («ss» statt «ß»). Mit mir in einfachen Worten reden,
