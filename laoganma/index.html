@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>老干妈 280克</title>
+  <meta name="description" content="A jar of Laoganma, spun up from one photo" />
+  <link rel="icon" href="./icon-192.png" type="image/png" />
+  <link rel="icon" href="./favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="./icon-180.png" />
+  <meta name="theme-color" content="#d41f1a" />
+  <style>
+    html,body{ margin:0; height:100%; background:#f4f3f0; overflow:hidden; font-family:ui-monospace, Menlo, Consolas, monospace; }
+    canvas{ position:absolute; left:0; top:0; outline:none; touch-action:none; }
+    #cap{ position:absolute; left:18px; bottom:16px; font-size:12px; font-weight:bold; letter-spacing:.04em; color:#8a1a14; pointer-events:none; }
+  </style>
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+<div id="cap">老干妈 · 280克 · BUILT FROM THE PHOTO · DRAG TO TURN</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ---------------------------------------------------------------- setup
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf4f3f0);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 50);
+camera.position.set(0.0, 0.75, 3.2);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.5, 0); controls.enablePan = false; controls.minDistance = 1.6; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI * 0.62; controls.autoRotate = true; controls.autoRotateSpeed = 1.2; controls.enableDamping = true;
+function fit(){ renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', fit); fit();
+const key = new THREE.DirectionalLight(0xfff6ea, 1.2); key.position.set(2.5, 4, 2); scene.add(key);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8cfc0, 0.6));
+
+// ---------------------------------------------------------------- the photo: read its outline and wrap it around that shape
+const img = new Image(); img.src = './jar.jpg';
+await img.decode();
+const W = img.width, H = img.height;
+const pc = document.createElement('canvas'); pc.width = W; pc.height = H;
+const pg = pc.getContext('2d', { willReadFrequently: true }); pg.drawImage(img, 0, 0);
+const px = pg.getImageData(0, 0, W, H).data;
+const at = (x, y) => { const i = (Math.max(0, Math.min(H - 1, y)) * W + Math.max(0, Math.min(W - 1, x))) * 4; return [px[i], px[i + 1], px[i + 2]]; };
+const isJar = (x, y) => { const [r, g, b] = at(x, y); return Math.min(r, g, b) < 228; };   // anything that is not the white backdrop
+// the outline: left and right edge of every row
+const rows = [];
+for (let y = 0; y < H; y++){
+  let l = -1, r = -1;
+  for (let x = 0; x < W; x++) if (isJar(x, y)){ if (l < 0) l = x; r = x; }
+  if (l >= 0 && r - l > 4) rows.push({ y, l, r });
+  else if (rows.length) break;   // the outline ends at the first empty row below the jar; the border and shadow further down are not part of it
+}
+const cxs = rows.map(o => (o.l + o.r) / 2).sort((a, b) => a - b), CX = cxs[cxs.length >> 1];
+const yTop = rows[0].y, yBot = rows[rows.length - 1].y;
+// radius per row: the wider side (the lid's top ellipse makes the first rows asymmetric), smoothed with a small median
+const raw = rows.map(o => Math.max(o.r - CX, CX - o.l));
+const hw = rows.map((o, i) => { const s = raw.slice(Math.max(0, i - 3), i + 4).sort((a, b) => a - b); return s[s.length >> 1]; });
+const hwAt = y => { const i = Math.max(0, Math.min(rows.length - 1, Math.round(y - yTop))); return hw[i]; };
+const RMAX = Math.max(...hw), JAR_H = 1.0, SCALE = JAR_H / (yBot - yTop);
+
+// ---------------------------------------------------------------- geometry: revolve the outline, v follows height so the photo maps straight on
+const SEG = 128, STEP = 3;
+const prof = [];
+for (let y = yBot; y >= yTop; y -= STEP) prof.push({ r: hwAt(y) * SCALE, h: (yBot - y) * SCALE, y });
+prof.push({ r: hwAt(yTop) * SCALE, h: JAR_H, y: yTop });
+const pos = [], uv = [], idx = [];
+prof.forEach((p, i) => { for (let j = 0; j <= SEG; j++){ const a = j / SEG * Math.PI * 2; pos.push(Math.sin(a) * p.r, p.h, Math.cos(a) * p.r); uv.push(j / SEG, p.h / JAR_H); } });
+for (let i = 0; i < prof.length - 1; i++) for (let j = 0; j < SEG; j++){ const a = i * (SEG + 1) + j, b = a + SEG + 1; idx.push(a, a + 1, b, a + 1, b + 1, b); }
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+geo.setIndex(idx); geo.computeVertexNormals();
+
+// ---------------------------------------------------------------- texture: a cylindrical unwrap of the photo
+// u = 0.5 is the front. Column = CX + hw(y) * sin(angle) on the front; the back repeats the front the right way round, with a seam at each side.
+// White backdrop seen through the clear glass becomes translucent, so the far wall shows through.
+const TW = 2048, TH = 1024;
+const tc = document.createElement('canvas'); tc.width = TW; tc.height = TH;
+const tg = tc.getContext('2d'); const out = tg.createImageData(TW, TH), od = out.data;
+for (let py = 0; py < TH; py++){
+  const v = 1 - (py + 0.5) / TH, y = yBot - v * (yBot - yTop), h = hwAt(y);
+  for (let pxl = 0; pxl < TW; pxl++){
+    const a = ((pxl + 0.5) / TW - 0.5) * Math.PI * 2, front = Math.abs(a) <= Math.PI / 2;
+    const x = CX + h * (front ? Math.sin(a) : -Math.sin(a)) * 0.96;
+    const [r, g, b] = at(Math.round(x), Math.round(y));
+    const i = (py * TW + pxl) * 4, mn = Math.min(r, g, b), mx = Math.max(r, g, b);
+    const white = mn > 215 && mx - mn < 22;
+    od[i] = r; od[i + 1] = g; od[i + 2] = b; od[i + 3] = white ? 70 : 255;
+  }
+}
+tg.putImageData(out, 0, 0);
+const tex = new THREE.CanvasTexture(tc); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.wrapS = THREE.RepeatWrapping;
+
+// ---------------------------------------------------------------- the jar: back faces first, then front faces, so the clear parts show the far wall
+const jar = new THREE.Group(); scene.add(jar);
+const mk = side => new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, side, roughness: 0.28, clearcoat: 0.7, clearcoatRoughness: 0.15, envMapIntensity: 0.9, depthWrite: side === THREE.FrontSide });
+const back = new THREE.Mesh(geo, mk(THREE.BackSide)); back.renderOrder = 1; jar.add(back);
+const front = new THREE.Mesh(geo, mk(THREE.FrontSide)); front.renderOrder = 2; jar.add(front);
+// caps: the lid top in the lid's colour, the base in the colour of the bottom rows
+const avg = (y0, y1) => { let r = 0, g = 0, b = 0, n = 0; for (let y = y0; y <= y1; y++) for (let x = CX - 20; x <= CX + 20; x++){ const c = at(x, y); r += c[0]; g += c[1]; b += c[2]; n++; } return new THREE.Color(r / n / 255, g / n / 255, b / n / 255); };
+const lidCol = avg(yTop + 8, yTop + 20), baseCol = avg(yBot - 12, yBot - 2);
+const lidTop = new THREE.Mesh(new THREE.CircleGeometry(prof[prof.length - 1].r, SEG), new THREE.MeshPhysicalMaterial({ color: lidCol, roughness: 0.35, clearcoat: 0.6 }));
+lidTop.rotation.x = -Math.PI / 2; lidTop.position.y = JAR_H; lidTop.renderOrder = 3; jar.add(lidTop);
+const base = new THREE.Mesh(new THREE.CircleGeometry(prof[0].r, SEG), new THREE.MeshStandardMaterial({ color: baseCol, roughness: 0.6, side: THREE.DoubleSide }));
+base.rotation.x = -Math.PI / 2; base.position.y = 0.002; jar.add(base);
+// a soft shadow on the floor
+const sh = document.createElement('canvas'); sh.width = sh.height = 256;
+{ const g = sh.getContext('2d'), r = g.createRadialGradient(128, 128, 20, 128, 128, 128); r.addColorStop(0, 'rgba(60,30,20,0.45)'); r.addColorStop(1, 'rgba(60,30,20,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); }
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(RMAX * SCALE * 4.2, RMAX * SCALE * 4.2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sh), transparent: true, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = -0.001; scene.add(shadow);
+
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
+</body>
+</html>

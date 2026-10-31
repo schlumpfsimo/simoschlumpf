@@ -27,6 +27,12 @@ Startprompt für einen neuen Chat:
     Punkten zeichnen, Linien 2 Punkte, Rahmen 4 Punkte, Kästchen zum Schreiben mindestens 6–7 mm.
   - bon/vokabeln/: Text auf dem Kopf (translate + rotate(π) auf der Leinwand) und Falzkarten.
   - bon/postkarte/: Foto, Briefmarke, Poststempel. bon/spaziergang/: selbst gezeichnete Karte.
+  - bon/visitenkarte/: Visitenkarten 80 × 55 mm, jede ein eigener Bon, das Messer schneidet direkt
+    darüber und darunter. Länge eines Bons = Bildhöhe + Vorschub des Macs; oben bleibt der Weg vom Druckkopf
+    zum Messer leer. Beides misst man einmal mit dem Mess-Bon der App (Bild genau 31,5 mm). Dafür ist das
+    Bild genau so hoch wie nötig statt ein Vielfaches von 36 (Chrome zeichnet dann höchstens eine Punktzeile
+    doppelt, die Länge stimmt). QR-Code mit qrcode-generator (MIT, bon/visitenkarte/qrcode.js), ein Modul
+    ganze 3–6 Punkte. `setzen()` verteilt Zeilen mit «Federn» in ein Feld und verkleinert, was nicht passt.
   - bon/rezept/: eigene Datensammlung (200 Rezepte in rezepte.js), Filter, Mengen umrechnen, Liste
     mit Kästchen zum Abhaken. Bettet das PNG schon nach der Regel mit 272 px und H × 17/36 px ein.
 - Schriften (alle OFL) relativ einbinden statt kopieren: IBM Plex Sans (bon/text/), IBM Plex Serif
@@ -38,8 +44,19 @@ Startprompt für einen neuen Chat:
   jedes Safari.
 - Stil wie /euroturbo: weiss, schwarz, Monospace, eckig, keine Schatten, keine Rundungen.
   Kopf, Knöpfe und Farben aus bon/text/ übernehmen.
+- Jede App bindet gleich nach `</main>` und vor dem eigenen Skript `<script src="../protokoll.js"></script>`
+  ein. Das zeigt unten das aufklappbare Feld «Druckaufträge»: alle Bons, die von diesem Gerät eingereicht
+  wurden (localStorage `bon.protokoll`, gemeinsam für alle Apps), mit Stand wartet, wird gesendet,
+  eingereicht, Fehler, abgebrochen. Das Skript fängt den `fetch` an die Bon-Post selbst ab, die App muss
+  nichts tun. Nur bei mehreren Bons nacheinander vorher `window.bonProtokoll?.warten([titel, …])` aufrufen,
+  dann stehen die noch nicht gesendeten als «wartet» drin. Druck direkt per USB (bon/namen/):
+  `const e = window.bonProtokoll?.beginnen({ titel, weg: 'usb' })`, dann `e?.gedruckt()` oder
+  `e?.fehler(text)`. Ob der Mac einen eingereichten Bon schon gedruckt hat, weiss die Website nicht
+  (der Web-Schlüssel darf nicht abholen).
 - Jede App hat oben links einen Knopf «← Zurück» zur Startseite (`href="../"`) und
-  `<meta name="robots" content="noindex, nofollow">`. Sie ist von nirgends sonst verlinkt.
+  `<meta name="robots" content="noindex, nofollow">`.
+  Das Tab-Icon (`<link rel="icon">`, SVG direkt in der Datei) zeigt den Anfangsbuchstaben der App; ist er
+  schon vergeben, zwei Buchstaben (Rh, Re, Sp, Sv). Die Startseite hat einen Bon mit Zackenrand. Sie ist von nirgends sonst verlinkt.
 - Vor allem am Handy benutzt: Felder mit 16 px Schrift, damit iOS nicht zoomt, grosse Knöpfe,
   nichts darf über den Rand ragen.
 - Sprache Deutsch, Schweizer Schreibweise («ss» statt «ß»). Mit mir in einfachen Worten reden,

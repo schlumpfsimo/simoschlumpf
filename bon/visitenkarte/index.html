@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · VISITENKARTE</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3EVk%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Schriften (alle SIL Open Font License) aus den anderen Bon-Apps: IBM Plex Sans und Serif, Playfair Display */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"PSerif";src:url(../depeche/serif-500-italic-ext.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Titel";src:url(../depeche/titel.woff2) format("woff2");font-weight:900;font-display:block}
+@font-face{font-family:"Playfair";src:url(../menu/playfair-700-italic.woff2) format("woff2");font-weight:700;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Playfair";src:url(../menu/playfair-700-italic-ext.woff2) format("woff2");font-weight:700;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Stil wie Turbo: weiss, schwarz, Monospace, eckig */
+:root{ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace; --muted:#666; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--mono);font-size:14px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,main{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"felder" "vorschau" "knoepfe";column-gap:32px}
+.felder,.knoepfe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.felder{grid-area:felder} .knoepfe{grid-area:knoepfe} .vorschau{grid-area:vorschau}
+label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+/* 16px in Feldern, sonst zoomt iOS beim Antippen */
+input{font-family:"Plex",system-ui,sans-serif;font-weight:500;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:100%;min-width:0}
+input:focus{outline:2px solid #000;outline-offset:-1px}
+.paar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 10px}
+.paar>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hint{margin:0;font-size:.78rem;color:var(--muted)}
+.seg{display:flex;border:1px solid #000}
+.seg button{flex:1;margin:0;padding:10px 4px;background:#fff;color:#000;border:0;border-left:1px solid #000;letter-spacing:.04em;font-size:.8rem;text-transform:none;min-width:0}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+.zahl{display:flex;border:1px solid #000;align-items:stretch}
+.zahl button{width:56px;flex:none;margin:0;padding:10px 0;font-size:1.1rem;letter-spacing:0}
+.zahl output{flex:1;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700}
+button{font:inherit;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.1em;padding:14px;width:100%;cursor:pointer;margin-top:8px}
+button:hover{background:#fff;color:#000}
+button:disabled{opacity:.4;cursor:default}
+button.leise{background:#fff;color:#000;padding:8px;font-size:.75rem}
+button.leise:hover{background:#000;color:#fff}
+.msg{min-height:1.45em;margin:4px 0 0;font-size:.85rem;letter-spacing:.05em;text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+/* Vorschau: genau die Punkte, die gedruckt werden (schon schwarz-weiss) */
+.vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vorschau .label{align-self:stretch;margin-top:8px}
+.karte{width:min(100%,340px);border:1px dashed #000;background:#fff;line-height:0}
+.karte canvas{display:block;width:100%;height:auto}
+.mass{margin:0;font-size:.78rem;color:var(--muted);text-align:center}
+details{margin-top:14px;border-top:1px solid #000;padding-top:8px}
+.innen{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+summary{cursor:pointer;font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+@media (min-width:860px){
+  main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
+  .vorschau{position:sticky;top:64px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Visitenkarten · über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="felder">
+    <label for="name">Name</label>
+    <input id="name" autocomplete="name" enterkeyhint="next" maxlength="60" placeholder="Vorname Nachname">
+    <label for="funktion">Beruf oder Funktion</label>
+    <input id="funktion" autocomplete="organization-title" enterkeyhint="next" maxlength="60">
+    <label for="firma">Firma</label>
+    <input id="firma" autocomplete="organization" enterkeyhint="next" maxlength="60">
+    <div class="paar">
+      <div><label for="tel">Telefon</label><input id="tel" type="tel" autocomplete="tel" enterkeyhint="next" maxlength="40"></div>
+      <div><label for="mail">E-Mail</label><input id="mail" type="email" autocomplete="email" autocapitalize="off" enterkeyhint="next" maxlength="60"></div>
+    </div>
+    <label for="web">Website</label>
+    <input id="web" type="url" autocomplete="url" autocapitalize="off" enterkeyhint="next" maxlength="60" placeholder="beispiel.ch">
+    <div class="paar">
+      <div><label for="adr1">Strasse</label><input id="adr1" autocomplete="address-line1" enterkeyhint="next" maxlength="60"></div>
+      <div><label for="adr2">PLZ Ort</label><input id="adr2" autocomplete="off" enterkeyhint="done" maxlength="60"></div>
+    </div>
+    <p class="hint">Leere Felder fallen weg. Alles bleibt auf diesem Gerät gespeichert.</p>
+    <button type="button" class="leise" id="leeren">Felder leeren</button>
+  </div>
+  <div class="knoepfe">
+    <span class="label" id="stilLabel">Stil</span>
+    <div class="seg" id="stil" role="group" aria-labelledby="stilLabel">
+      <button type="button" data-v="klassisch">Klassisch</button><button type="button" data-v="modern">Modern</button><button type="button" data-v="kraeftig">Kräftig</button><button type="button" data-v="elegant">Elegant</button>
+    </div>
+    <span class="label" id="qrLabel">QR-Code</span>
+    <div class="seg" id="qr" role="group" aria-labelledby="qrLabel">
+      <button type="button" data-v="kein">Keiner</button><button type="button" data-v="kontakt">Kontakt</button><button type="button" data-v="web">Website</button>
+    </div>
+    <p class="hint" id="qrHint">«Kontakt» speichert die Karte beim Scannen direkt im Adressbuch.</p>
+    <span class="label" id="anzahlLabel">Anzahl Karten</span>
+    <div class="zahl" role="group" aria-labelledby="anzahlLabel">
+      <button type="button" id="weniger" aria-label="Eine weniger">−</button><output id="anzahl">4</output><button type="button" id="mehr" aria-label="Eine mehr">+</button>
+    </div>
+    <p class="hint">Jede Karte ist ein eigener Bon, 80 × 55 mm. Das Messer schneidet direkt darüber und darunter, die Karte ist sofort fertig.</p>
+    <button id="drucken">Drucken</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <details id="mess">
+      <summary>Länge einstellen</summary>
+      <div class="innen">
+      <p class="hint">Oben an jedem Bon bleibt Papier leer, und am Schluss schiebt der Drucker noch etwas nach. Damit der Zettel genau 55 mm lang wird, einmal den Mess-Bon drucken und messen.</p>
+      <button type="button" class="leise" id="messDrucken">Mess-Bon drucken</button>
+      <div class="paar">
+        <div><label for="zettel">Ganzer Zettel (mm)</label><input id="zettel" inputmode="decimal" autocomplete="off" placeholder="z. B. 57"></div>
+        <div><label for="oben">Oben leer (mm)</label><input id="oben" inputmode="decimal" autocomplete="off" placeholder="z. B. 15"></div>
+      </div>
+      <p class="hint" id="messStand"></p>
+      </div>
+    </details>
+  </div>
+  <div class="vorschau">
+    <span class="label" id="vorschauLabel">So wird die Karte</span>
+    <div class="karte"><canvas id="karte"></canvas></div>
+    <p class="mass" id="mass"></p>
+  </div>
+</main>
+<script src="../protokoll.js"></script>
+<script src="qrcode.js"></script>
+
+<script>
+// Bon-Post: SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier.
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+const BREITE = 576;          // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
+const SCHWELLE = 170;        // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
+const MAX_ANZAHL = 10;
+const FELDER = ['name', 'funktion', 'firma', 'tel', 'mail', 'web', 'adr1', 'adr2'];
+const BEISPIEL = { name: 'Anna Muster', funktion: 'Gestalterin', firma: 'Atelier Rhein', tel: '+41 61 123 45 67', mail: 'anna@atelier-rhein.ch', web: 'atelier-rhein.ch', adr1: 'Rheingasse 12', adr2: '4058 Basel' };
+
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.' + k, v); } catch {} }
+};
+
+// ---------------------------------------------------------------- Einstellungen
+const wahl = { stil: 'klassisch', qr: 'kein' };
+let anzahl = 4;
+try {
+  const s = JSON.parse(store.get('visitenkarte', '{}'));
+  for (const f of FELDER) if (typeof s[f] === 'string') $(f).value = s[f];
+  for (const k of Object.keys(wahl)) if (s[k] && $(k).querySelector(`[data-v="${s[k]}"]`)) wahl[k] = s[k];
+  if (s.anzahl >= 1 && s.anzahl <= MAX_ANZAHL) anzahl = s.anzahl | 0;
+} catch {}
+function speichern(){
+  const s = { ...wahl, anzahl };
+  for (const f of FELDER) s[f] = $(f).value;
+  store.set('visitenkarte', JSON.stringify(s));
+}
+function daten(){
+  const d = {};
+  for (const f of FELDER) d[f] = $(f).value.replace(/\s+/g, ' ').trim();
+  return d;
+}
+const leer = d => FELDER.every(f => !d[f]);
+
+// ---------------------------------------------------------------- QR-Code
+const esc = s => s.replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1');
+const webAdresse = w => /^[a-z]+:\/\//i.test(w) ? w : 'https://' + w;
+const webKurz = w => w.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+
+function vcard(d){
+  const teile = d.name ? d.name.split(' ') : [], nach = teile.pop() || '', vor = teile.join(' ');
+  const z = ['BEGIN:VCARD', 'VERSION:3.0', `N:${esc(nach)};${esc(vor)};;;`, `FN:${esc(d.name || d.firma)}`];
+  if (d.firma) z.push(`ORG:${esc(d.firma)}`);
+  if (d.funktion) z.push(`TITLE:${esc(d.funktion)}`);
+  if (d.tel) z.push(`TEL;TYPE=VOICE:${d.tel}`);
+  if (d.mail) z.push(`EMAIL:${d.mail}`);
+  if (d.web) z.push(`URL:${webAdresse(d.web)}`);
+  if (d.adr1 || d.adr2) {
+    const m = d.adr2.match(/^(\d{4,5})\s+(.+)$/);
+    z.push(`ADR;TYPE=WORK:;;${esc(d.adr1)};${esc(m ? m[2] : d.adr2)};;${m ? m[1] : ''};`);
+  }
+  z.push('END:VCARD');
+  return z.join('\r\n');
+}
+
+function qrModule(d){
+  const text = wahl.qr === 'kontakt' ? vcard(d) : wahl.qr === 'web' && d.web ? webAdresse(d.web) : '';
+  if (!text) return null;
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+  const q = qrcode(0, 'M');
+  q.addData(text, 'Byte');
+  q.make();
+  return q;
+}
+
+// ---------------------------------------------------------------- Satz: Zeilen in ein Feld verteilen
+const F = {
+  sans: (px, fett) => `${fett ? 700 : 500} ${px}px "Plex", system-ui, sans-serif`,
+  serif: (px, fett) => `${fett ? 700 : 500} ${px}px "PSerif", Georgia, serif`,
+  kursiv: px => `italic 500 ${px}px "PSerif", Georgia, serif`,
+  playfair: px => `italic 700 ${px}px "Playfair", Georgia, serif`,
+  titel: px => `900 ${px}px "Titel", Georgia, serif`,
+};
+
+// Breite mit Sperrung, Zeichen für Zeichen (ctx.letterSpacing kann nicht jedes Safari)
+function breite(g, t, font, sp){
+  g.font = font;
+  if (!sp) return g.measureText(t).width;
+  let w = 0; for (const c of t) w += g.measureText(c).width;
+  return w + sp * Math.max(0, [...t].length - 1);
+}
+function schreiben(g, t, x, y, font, sp){
+  g.font = font;
+  if (!sp) { g.fillText(t, x, y); return; }
+  for (const c of t) { g.fillText(c, x, y); x += g.measureText(c).width + sp; }
+}
+
+// Elemente: { t, f, px, sp, lh, label, lf } Text · { linie, w, h, luft } · { raute, luft } · { abstand } · { feder }
+// Ist alles zu hoch, wird alles kleiner. Ist eine Zeile zu breit, nur diese.
+function setzen(g, liste, r, ausrichtung, farbe = '#000'){
+  liste = liste.filter(Boolean);
+  let k = 1, masse;
+  for (let runde = 0; runde < 20; runde++) {
+    masse = liste.map(e => {
+      if (e.feder) return { h: 0 };
+      if (e.abstand) return { h: Math.round(e.abstand * k) };
+      if (e.linie) return { h: e.h + 2 * Math.round((e.luft || 0) * k), w: e.w };
+      if (e.raute) return { h: Math.round(14 * k) + 2 * Math.round((e.luft || 0) * k), w: Math.round(90 * k) };
+      let px = Math.max(8, Math.round(e.px * k)), sp = e.sp ? Math.max(1, Math.round(e.sp * k)) : 0;
+      const lw = e.label != null ? Math.round(px * 1.5) : 0;
+      let w = lw + breite(g, e.t, e.f(px), sp);
+      while (w > r.w && px > 8) { px--; w = lw + breite(g, e.t, e.f(px), sp); }
+      return { px, sp, lw, w, h: Math.round(px * (e.lh || 1.3)) };
+    });
+    const summe = masse.reduce((a, m) => a + m.h, 0);
+    if (summe <= r.h || k < 0.3) break;
+    k *= Math.max(0.5, r.h / summe) * 0.99;
+  }
+  const summe = masse.reduce((a, m) => a + m.h, 0), federn = liste.filter(e => e.feder).length;
+  const rest = Math.max(0, r.h - summe);
+  let y = r.y + (federn ? 0 : Math.round(rest / 2));
+  const xVon = w => ausrichtung === 'mitte' ? Math.round(r.x + (r.w - w) / 2) : r.x;
+  g.fillStyle = farbe; g.textBaseline = 'alphabetic';
+  liste.forEach((e, i) => {
+    const m = masse[i];
+    if (e.feder) { y += Math.round(rest / federn); return; }
+    if (e.linie) { g.fillRect(xVon(m.w), y + Math.round((m.h - e.h) / 2), m.w, e.h); }
+    else if (e.raute) {
+      const mx = Math.round(r.x + (ausrichtung === 'mitte' ? r.w / 2 : m.w / 2)), my = y + Math.round(m.h / 2), a = Math.round(m.w * 0.07);
+      g.fillRect(mx - Math.round(m.w / 2), my - 1, Math.round(m.w / 2) - a - 6, 2);
+      g.fillRect(mx + a + 6, my - 1, Math.round(m.w / 2) - a - 6, 2);
+      g.beginPath(); g.moveTo(mx, my - a); g.lineTo(mx + a, my); g.lineTo(mx, my + a); g.lineTo(mx - a, my); g.closePath(); g.fill();
+    }
+    else if (e.t) {
+      const x = xVon(m.w), base = y + Math.round((m.h - m.px) / 2 + m.px * 0.8);
+      if (e.label) schreiben(g, e.label, x, base, (e.lf || e.f)(m.px), 0);
+      schreiben(g, e.t, x + m.lw, base, e.f(m.px), m.sp);
+    }
+    y += m.h;
+  });
+}
+
+// ---------------------------------------------------------------- Länge des Zettels
+// Jede Karte ist ein eigener Bon: Das Messer schneidet direkt darüber und darunter, die Karte ist sofort fertig.
+// Die Website bestimmt nur die Höhe des Bildes. Dazu kommt Papier, das sie nicht steuern kann:
+//   oben: der Weg vom Druckkopf zum Messer (bleibt leer, «oben»)
+//   gesamt: der Vorschub des Macs vor dem Schnitt (ESC d 6), «vorschub» = Zettel − Bild
+// Beides misst man einmal mit dem Mess-Bon. Bildhöhe = Kartenhöhe − Vorschub.
+const KARTE_W = 640, KARTE_H = 440;   // Karte 80 × 55 mm (Rollenbreite × Kartenhöhe), 8 Punkte pro mm
+const RAND_X = (KARTE_W - BREITE) / 2; // links und rechts je 4 mm, die der Drucker nicht erreicht
+const MESS_H = 252;                    // Mess-Bon: Bild genau 31,5 mm hoch (Vielfaches von 36)
+const MESS_STANDARD = { zettel: 57, oben: 15 };   // geschätzt, bis ausgemessen
+
+function messwerte(){
+  try { const m = JSON.parse(store.get('visitenkarte.mess', 'null')); if (m && m.zettel > 0 && m.oben >= 0) return { ...m, gemessen: true }; } catch {}
+  return { ...MESS_STANDARD, gemessen: false };
+}
+const zahl = s => parseFloat(String(s).replace(',', '.'));
+
+// Welcher Streifen der Karte bedruckt wird, in Punkten von oben
+function streifen(){
+  const m = messwerte(), vorschub = m.zettel - MESS_H / 8;
+  const von = Math.round(m.oben * 8), hoehe = Math.round((KARTE_H / 8 - vorschub) * 8);
+  return { von, hoehe, bis: von + hoehe, ok: hoehe >= 120 && von + hoehe <= KARTE_H };
+}
+
+// ---------------------------------------------------------------- Die vier Stile
+// Jeder Stil zeichnet in die Karte (576 Punkte breit, so weit der Drucker reicht) innerhalb des Streifens S
+// und setzt den Text ins Feld r (ohne den Platz des QR-Codes).
+const STILE = {
+  klassisch: {
+    rand: { x: 24, y: 4 },
+    zeichnen(g, d, r){
+      const k = [[d.tel, d.mail].filter(Boolean).join('  ·  '), d.web && webKurz(d.web), [d.adr1, d.adr2].filter(Boolean).join(', ')].filter(Boolean);
+      setzen(g, [
+        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 15, sp: 4, lh: 1.2 },
+        { feder: 1 },
+        d.name && { t: d.name, f: px => F.serif(px, true), px: 42, lh: 1.15 },
+        d.funktion && { t: d.funktion, f: F.kursiv, px: 22, lh: 1.25 },
+        k.length && (d.name || d.funktion) && { linie: 1, w: 56, h: 2, luft: 8 },
+        { feder: 1 },
+        ...k.map(t => ({ t, f: px => F.sans(px, false), px: 18, lh: 1.3 })),
+      ], r, 'mitte');
+    },
+  },
+  modern: {
+    rand: { x: 24, y: 4 },
+    zeichnen(g, d, r){
+      const k = [['T', d.tel], ['E', d.mail], ['W', d.web && webKurz(d.web)], ['A', [d.adr1, d.adr2].filter(Boolean).join(', ')]].filter(([, t]) => t);
+      setzen(g, [
+        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 16, sp: 3, lh: 1.2 },
+        d.firma && { linie: 1, w: 48, h: 6, luft: 3 },
+        { feder: 1 },
+        d.name && { t: d.name, f: px => F.sans(px, true), px: 40, lh: 1.1 },
+        d.funktion && { t: d.funktion, f: px => F.sans(px, false), px: 20, lh: 1.25 },
+        k.length && (d.name || d.funktion) && { abstand: 10 },
+        ...k.map(([l, t]) => ({ t, label: l, f: px => F.sans(px, false), lf: px => F.sans(px, true), px: 18, lh: 1.3 })),
+      ], r, 'links');
+    },
+  },
+  kraeftig: {
+    rand: { x: 24, y: 0 },
+    zeichnen(g, d, r, S){
+      // Schwarzer Balken über die ganze Druckbreite, darunter die Angaben
+      const bh = Math.round(S.h * 0.46);
+      g.fillStyle = '#000'; g.fillRect(0, S.y, BREITE, bh);
+      setzen(g, [
+        { feder: 1 },
+        d.name && { t: d.name, f: F.titel, px: 48, lh: 1.1 },
+        d.funktion && { t: d.funktion.toUpperCase(), f: px => F.sans(px, true), px: 16, sp: 2, lh: 1.35 },
+        { feder: 1 },
+      ], { x: r.x, y: S.y + 10, w: r.w, h: bh - 20 }, 'links', '#fff');
+      const k = [[d.tel, d.mail].filter(Boolean).join('  ·  '), [d.web && webKurz(d.web), [d.adr1, d.adr2].filter(Boolean).join(', ')].filter(Boolean).join('  ·  ')].filter(Boolean);
+      const oben = S.y + bh + 10;
+      setzen(g, [
+        d.firma && { t: d.firma, f: px => F.sans(px, true), px: 20, lh: 1.3 },
+        ...k.map(t => ({ t, f: px => F.sans(px, false), px: 18, lh: 1.3 })),
+      ], { x: r.x, y: oben, w: r.w, h: S.y + S.h - oben }, 'links');
+    },
+  },
+  elegant: {
+    rand: { x: 44, y: 22 },
+    zeichnen(g, d, r, S){
+      rahmen(g, 8, S.y, BREITE - 16, S.h, 4);
+      rahmen(g, 18, S.y + 10, BREITE - 36, S.h - 20, 2);
+      const k = [[d.tel, d.mail].filter(Boolean).join('  ·  '), d.web && webKurz(d.web), [d.adr1, d.adr2].filter(Boolean).join(', ')].filter(Boolean);
+      setzen(g, [
+        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 13, sp: 4, lh: 1.2 },
+        { feder: 1 },
+        d.name && { t: d.name, f: F.playfair, px: 44, lh: 1.15 },
+        d.funktion && { t: d.funktion, f: F.kursiv, px: 20, lh: 1.25 },
+        k.length && (d.name || d.funktion) && { raute: 1, luft: 5 },
+        { feder: 1 },
+        ...k.map(t => ({ t, f: px => F.serif(px, false), px: 17, lh: 1.3 })),
+      ], r, 'mitte');
+    },
+  },
+};
+function rahmen(g, x, y, w, h, s){
+  g.fillStyle = '#000';
+  g.fillRect(x, y, w, s); g.fillRect(x, y + h - s, w, s); g.fillRect(x, y, s, h); g.fillRect(x + w - s, y, s, h);
+}
+
+// ---------------------------------------------------------------- Karte zeichnen
+// Die Leinwand ist so breit, wie der Drucker reicht (576), und so hoch wie die ganze Karte (440).
+// Bedruckt wird nur der Streifen; darüber und darunter bleibt das Papier ohnehin leer.
+const druck = document.createElement('canvas'), karte = $('karte');
+let qrWarnung = '';
+function karteZeichnen(d){
+  const st = streifen(), stil = STILE[wahl.stil], W = BREITE;
+  druck.width = W; druck.height = KARTE_H;
+  const g = druck.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, KARTE_H);
+  // Streifen S: mindestens 3 mm Abstand zum Kartenrand
+  const y0 = Math.max(st.von, 24), y1 = Math.min(st.bis, KARTE_H - 24);
+  const S = { x: 0, y: y0, w: W, h: Math.max(0, y1 - y0) };
+  let r = { x: stil.rand.x, y: S.y + stil.rand.y, w: W - 2 * stil.rand.x, h: S.h - 2 * stil.rand.y };
+  qrWarnung = '';
+  if (wahl.qr === 'web' && !d.web) qrWarnung = 'Für den QR-Code fehlt die Website.';
+  // QR-Code rechts. Ein Modul ganze 3–6 Punkte, sonst lässt er sich schlecht scannen
+  const modul = qrModule(d);
+  let qrPlatz = null;
+  if (modul) {
+    const n = modul.getModuleCount(), maxS = Math.min(r.h, 230), s = Math.min(6, Math.floor(maxS / n));
+    if (s < 3) qrWarnung = 'Zu viele Angaben für einen gut lesbaren QR-Code. Weniger Felder ausfüllen oder «Website» wählen.';
+    else {
+      const gr = s * n;
+      qrPlatz = { x: W - stil.rand.x - gr, y: Math.round(r.y + (r.h - gr) / 2), s, n };
+      r = { ...r, w: r.w - gr - 24 };
+    }
+  }
+  stil.zeichnen(g, d, r, S);
+  if (qrPlatz) {
+    const { x, y, s, n } = qrPlatz, ruhe = 2 * s;   // weisser Rand um den Code
+    g.fillStyle = '#fff'; g.fillRect(x - ruhe, y - ruhe, s * n + 2 * ruhe, s * n + 2 * ruhe);
+    g.fillStyle = '#000';
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (modul.isDark(i, j)) g.fillRect(x + j * s, y + i * s, s, s);
+  }
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen; ausserhalb des Streifens bleibt es weiss
+  const img = g.getImageData(0, 0, W, KARTE_H), px = img.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const zeile = (i >> 2) / W | 0;
+    const v = zeile >= st.von && zeile < st.bis && 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE ? 0 : 255;
+    px[i] = px[i + 1] = px[i + 2] = v; px[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  // Vorschau: die ganze Karte, 80 mm breit, so wie sie aus dem Drucker kommt
+  karte.width = KARTE_W; karte.height = KARTE_H;
+  const k = karte.getContext('2d');
+  k.fillStyle = '#fff'; k.fillRect(0, 0, KARTE_W, KARTE_H);
+  k.drawImage(druck, RAND_X, 0);
+  return rasterVon(g, st.von, st.hoehe);
+}
+
+// Ausschnitt der Leinwand als 1-Bit-Raster
+function rasterVon(g, y, H){
+  const W = BREITE, px = g.getImageData(0, y, W, H).data, bpr = W >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < W * H; j++, i += 4) if (px[i] < 128) bits[(j / W | 0) * bpr + ((j % W) >> 3)] |= 0x80 >> (j & 7);
+  return { W, H, bits };
+}
+
+let raster = null;
+async function zeichnen(){
+  let d = daten();
+  const beispiel = leer(d);
+  if (beispiel) d = { ...BEISPIEL };
+  const text = Object.values(d).join(' ') + 'ÄÖÜ·';
+  await Promise.all([
+    document.fonts.load(F.sans(20, false), text), document.fonts.load(F.sans(20, true), text),
+    document.fonts.load(F.serif(20, false), text), document.fonts.load(F.serif(20, true), text),
+    document.fonts.load(F.kursiv(20), text), document.fonts.load(F.playfair(20), text), document.fonts.load(F.titel(20), text),
+  ]);
+  const st = streifen();
+  const r = karteZeichnen(d);
+  raster = beispiel || !st.ok ? null : r;
+  $('vorschauLabel').textContent = beispiel ? 'Beispiel – Felder ausfüllen' : 'So kommt die Karte aus dem Drucker';
+  const m = messwerte();
+  let t = !st.ok ? 'Die Messwerte passen nicht: Der Streifen für den Druck ist zu klein. Mess-Bon nochmals messen.'
+    : `${anzahl} ${anzahl === 1 ? 'Karte' : 'Karten'} à 80 × 55 mm, jede ein eigener Bon` + (m.gemessen ? '' : ' · Länge noch geschätzt, siehe «Länge einstellen»');
+  if (qrWarnung) t = qrWarnung + ' ' + t;
+  $('mass').textContent = t;
+  $('mass').style.color = qrWarnung || !st.ok ? 'var(--err)' : '';
+  messAnzeigen();
+}
+
+let warte = null, laeuft = Promise.resolve();
+function spaeter(){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, 120); }
+
+FELDER.forEach(f => $(f).addEventListener('input', () => { speichern(); spaeter(); if ($('msg').classList.contains('err')) msg(''); }));
+for (const k of Object.keys(wahl)) {
+  $(k).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    wahl[k] = b.dataset.v; markieren(); speichern(); spaeter();
+  });
+}
+function markieren(){
+  for (const k of Object.keys(wahl)) $(k).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === wahl[k])));
+  $('anzahl').textContent = anzahl;
+  $('weniger').disabled = anzahl <= 1; $('mehr').disabled = anzahl >= MAX_ANZAHL;
+}
+$('weniger').addEventListener('click', () => { anzahl = Math.max(1, anzahl - 1); markieren(); speichern(); spaeter(); });
+$('mehr').addEventListener('click', () => { anzahl = Math.min(MAX_ANZAHL, anzahl + 1); markieren(); speichern(); spaeter(); });
+$('leeren').addEventListener('click', () => {
+  if (!confirm('Alle Felder leeren?')) return;
+  FELDER.forEach(f => $(f).value = ''); speichern(); spaeter(); $('name').focus();
+});
+markieren();
+
+// ---------------------------------------------------------------- Mess-Bon
+// Bild genau 31,5 mm hoch, mit einer Linie ganz oben und ganz unten und einem Massstab dazwischen
+function messBon(){
+  const c = document.createElement('canvas'); c.width = BREITE; c.height = MESS_H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, MESS_H);
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, BREITE, 2); g.fillRect(0, MESS_H - 2, BREITE, 2);
+  for (let mm = 0; mm * 8 < MESS_H; mm++) {
+    const l = mm % 5 ? 12 : 28;
+    g.fillRect(0, mm * 8, l, 2); g.fillRect(BREITE - l, mm * 8, l, 2);
+  }
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  g.font = F.sans(30, true); g.fillText('MESS-BON', BREITE / 2, 92);
+  g.font = F.sans(20, false);
+  g.fillText('Ganzen Zettel von Schnitt zu Schnitt messen,', BREITE / 2, 140);
+  g.fillText('und von der oberen Kante bis zur ersten Linie.', BREITE / 2, 168);
+  g.fillText('Striche: 1 mm', BREITE / 2, 210);
+  const img = g.getImageData(0, 0, BREITE, MESS_H), px = img.data;
+  for (let i = 0; i < px.length; i += 4) { const v = px[i] < SCHWELLE ? 0 : 255; px[i] = px[i + 1] = px[i + 2] = v; }
+  g.putImageData(img, 0, 0);
+  return rasterVon(g, 0, MESS_H);
+}
+
+function messAnzeigen(){
+  const m = messwerte(), st = streifen();
+  if (document.activeElement !== $('zettel')) $('zettel').value = m.gemessen ? String(m.zettel).replace('.', ',') : '';
+  if (document.activeElement !== $('oben')) $('oben').value = m.gemessen ? String(m.oben).replace('.', ',') : '';
+  $('messStand').textContent = (m.gemessen ? 'Ausgemessen' : 'Noch geschätzt') +
+    `: oben ${String(m.oben).replace('.', ',')} mm leer, bedruckt ${String(st.hoehe / 8).replace('.', ',')} mm, unten ${String((KARTE_H - st.bis) / 8).replace('.', ',')} mm leer.`;
+}
+function messSpeichern(){
+  const zettel = zahl($('zettel').value), oben = zahl($('oben').value);
+  if (zettel > 35 && zettel < 120 && oben >= 0 && oben < 40) store.set('visitenkarte.mess', JSON.stringify({ zettel, oben }));
+  else if (!$('zettel').value && !$('oben').value) store.set('visitenkarte.mess', 'null');
+  else return;
+  spaeter();
+}
+['zettel', 'oben'].forEach(id => $(id).addEventListener('input', messSpeichern));
+
+$('messDrucken').addEventListener('click', async () => {
+  $('messDrucken').disabled = true;
+  msg('Sende Mess-Bon …');
+  try {
+    const d = await bonpost({ inhalt: await bonHtml(messBon()), titel: 'Visitenkarte Mess-Bon', quelle: 'website-visitenkarte' });
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Mess-Bon gesendet. Messen und die zwei Werte eintragen.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('messDrucken').disabled = false;
+  }
+});
+
+// ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
+// Breite 272 CSS-Pixel. Höhe H × 17/36 Pixel: Bei H als Vielfaches von 36 kommt jeder Punkt 1:1 an.
+// Die Karte braucht eine genaue Höhe statt eines Vielfachen von 36; dann rundet Chrome höchstens eine
+// Punktzeile anders, die Länge stimmt trotzdem auf etwa 0,1 mm.
+async function bonHtml(raster){
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${+(raster.H * 17 / 36).toFixed(4)}px;image-rendering:pixelated">`;
+}
+
+// Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
+async function pngDataUrl({ W, H, bits }){
+  const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
+  for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  if (!('CompressionStream' in window)) {   // altes Safari: über eine Leinwand
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d'), img = g.createImageData(W, H);
+    for (let j = 0; j < W * H; j++) { const v = bits[(j / W | 0) * bpr + ((j % W) >> 3)] & (0x80 >> (j & 7)) ? 0 : 255; img.data.set([v, v, v, 255], j * 4); }
+    g.putImageData(img, 0, 0); return c.toDataURL('image/png');
+  }
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
+  const blob = new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+  return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+}
+
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+// ---------------------------------------------------------------- Senden
+async function bonpost(daten){
+  const r = await fetch(BONPOST, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ key: KEY, ...daten }) });
+  return r.json();
+}
+
+// Jede Karte ist ein eigener Bon: Die Bon-Post druckt sie nacheinander, das Messer schneidet jede ab
+let offen = 0;   // nach einem Abbruch: so viele Karten fehlen noch
+$('drucken').addEventListener('click', async () => {
+  if (leer(daten())) { msg('Zuerst mindestens den Namen eintragen.', 'err'); $('name').focus(); return; }
+  ['drucken', 'weniger', 'mehr', 'messDrucken'].forEach(id => $(id).disabled = true);
+  let gesendet = 0;
+  const n = offen || anzahl;
+  try {
+    clearTimeout(warte);
+    await (laeuft = laeuft.then(zeichnen, zeichnen));   // sicher den neusten Stand drucken
+    if (!raster) throw new Error($('mass').textContent);
+    const inhalt = await bonHtml(raster);
+    const titel = i => n === 1 ? 'Visitenkarte' : `Visitenkarte ${i}/${n}`;
+    window.bonProtokoll?.warten(Array.from({ length: n }, (_, i) => titel(i + 1)));
+    for (let i = 1; i <= n; i++) {
+      msg(n === 1 ? 'Sende …' : `Sende ${i} von ${n} …`);
+      const d = await bonpost({ inhalt, titel: titel(i), quelle: 'website-visitenkarte' });
+      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+      gesendet++;
+    }
+    offen = 0;
+    msg(n === 1 ? 'Gesendet. Die Karte kommt innert einer Minute.' : `Gesendet: ${n} Karten. Sie kommen innert ein, zwei Minuten.`, 'ok');
+  } catch (e) {
+    if (gesendet) offen = n - gesendet;
+    msg((gesendet ? `${gesendet} gesendet, dann ` : '') + 'Fehler: ' + e.message + (offen ? ` Nochmals «Drucken» sendet die fehlenden ${offen}.` : ''), 'err');
+  } finally {
+    ['drucken', 'messDrucken'].forEach(id => $(id).disabled = false);
+    markieren();
+  }
+});
+
+zeichnen();
+</script>
+</body>
+</html>
