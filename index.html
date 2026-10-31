@@ -11,7 +11,7 @@
   <link rel="alternate" hreflang="x-default" href="https://www.simoschlumpf.ch/" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <meta name="theme-color" content="#ecebe7" />
+  <meta name="theme-color" content="#ffffff" />
   <meta name="format-detection" content="telephone=no" />
   <meta property="og:type" content="profile" />
   <meta property="og:title" content="Simo Schlumpf" />
@@ -29,38 +29,31 @@
     document.documentElement.classList.add('js');
     setTimeout(function () { var r = document.documentElement; if (!r.classList.contains('gedruckt')) r.classList.remove('js'); }, 3000);
   </script>
-  <script src="karte/karte.js" defer></script>
   <script src="karte/oberrhein.js" defer></script>
-  <script src="karte/hintergrund.js" defer></script>
+  <script src="karte/karte.js" defer></script>
 </head>
 
 <body>
-  <main class="bon" id="bon">
-    <canvas class="druck" aria-hidden="true"></canvas>
+  <main class="blatt" id="blatt">
+    <canvas class="druck" role="img" aria-label="Karte des Oberrheins von Basel bis Karlsruhe, mit Sternenkreis um Strasbourg"></canvas>
     <div class="satz">
-      <nav class="sprache mitte"><span aria-current="page">DE</span> · <a href="fr/" hreflang="fr" lang="fr" aria-label="Version française">FR</a></nav>
+      <nav class="sprache"><span aria-current="page">DE</span> · <a href="fr/" hreflang="fr" lang="fr" aria-label="Version française">FR</a></nav>
 
       <h1 class="name">Simo Schlumpf</h1>
       <div class="sterne" aria-hidden="true"><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg></div>
 
-      <hr />
-
-      <p class="zeile"><span class="k">Telefon</span><a href="tel:+41799075659" aria-label="Telefon anrufen">0041 79 907 56 59</a></p>
-      <p class="zeile"><span class="k">E-Mail</span><a href="mailto:schlumpfsimo@gmail.com" aria-label="E-Mail schreiben">schlumpfsimo [at] gmail.com</a></p>
-
-      <section id="rhein" aria-label="Rhein in Basel" hidden>
-        <hr />
-        <div class="landkarte" role="img" aria-label="Karte des Oberrheins von Basel bis Karlsruhe" hidden></div>
-        <p class="zeile kopf"><span class="k">Rhein · Basel</span><time id="rzeit"></time></p>
-        <p class="zeile"><span class="k">Wasser</span><span class="gross" id="rtemp"></span></p>
-        <p class="zeile"><span class="k">Abfluss</span><span class="gross" id="rq"></span></p>
-      </section>
-
-      <hr />
+      <p class="kontakt">
+        <a href="tel:+41799075659" aria-label="Telefon anrufen">0041 79 907 56 59</a>
+        <a href="mailto:schlumpfsimo@gmail.com" aria-label="E-Mail schreiben">schlumpfsimo [at] gmail.com</a>
+      </p>
 
       <a class="knopf" href="Simo-Schlumpf.vcf" download="Simo-Schlumpf.vcf" type="text/vcard">Kontakt hinzufügen</a>
 
-      <p class="fuss">simoschlumpf.ch<br /><span id="stempel"></span></p>
+      <section class="rhein" id="rhein" aria-label="Rhein in Basel" hidden>
+        <p class="kopf">Rhein · Basel, <time id="rzeit"></time></p>
+        <span class="k">Wasser</span><span class="w" id="rtemp"></span>
+        <span class="k">Abfluss</span><span class="w" id="rq"></span>
+      </section>
     </div>
   </main>
 </body>
