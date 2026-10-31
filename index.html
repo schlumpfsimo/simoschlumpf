@@ -30,6 +30,8 @@
     setTimeout(function () { var r = document.documentElement; if (!r.classList.contains('gedruckt')) r.classList.remove('js'); }, 3000);
   </script>
   <script src="karte/karte.js" defer></script>
+  <script src="karte/oberrhein.js" defer></script>
+  <script src="karte/hintergrund.js" defer></script>
 </head>
 
 <body>
@@ -48,6 +50,7 @@
 
       <section id="rhein" aria-label="Rhein in Basel" hidden>
         <hr />
+        <div class="landkarte" role="img" aria-label="Karte des Oberrheins von Basel bis Karlsruhe" hidden></div>
         <p class="zeile kopf"><span class="k">Rhein · Basel</span><time id="rzeit"></time></p>
         <p class="zeile"><span class="k">Wasser</span><span class="gross" id="rtemp"></span></p>
         <p class="zeile"><span class="k">Abfluss</span><span class="gross" id="rq"></span></p>

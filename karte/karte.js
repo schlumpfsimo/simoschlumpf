@@ -54,6 +54,7 @@
     z.textContent = zeit(neu);
     z.dateTime = new Date(neu * 1000).toISOString();
     box.hidden = false;
+    if (new URLSearchParams(location.search).get('hg') === 'd') box.querySelector('.landkarte').hidden = false;
   }
 
   // ------------------------------------------------------------ Drucken
@@ -98,6 +99,11 @@
       }
     });
 
+    // Landkarte des Oberrheins (Entwurf ?hg=d); Flächen grau, werden unten im Bayer-Raster gedruckt
+    const karten = [];
+    fuer(satz, el => { if (el.classList.contains('landkarte') && window.OBERRHEIN) karten.push(lage(el.getBoundingClientRect())); });
+    karten.forEach(r => landkarte(ctx, r));
+
     // Text: jeder Textknoten an seiner Stelle im HTML-Satz
     const gang = document.createTreeWalker(satz, NodeFilter.SHOW_TEXT);
     const range = document.createRange();
@@ -127,14 +133,61 @@
       }
     }
 
-    // Rastern: ein Bit pro Druckpunkt
+    // Rastern: ein Bit pro Druckpunkt; in der Landkarte geordnet gerastert, damit Grautöne als Punktdichte erscheinen
     const px = ctx.getImageData(0, 0, w, h).data;
     const bits = new Uint8Array(w * h);
+    const inKarte = (x, y) => karten.some(r => x * p >= r.x && x * p < r.x + r.w && y * p >= r.y && y * p < r.y + r.h);
     for (let i = 0; i < w * h; i++) {
-      const k = i * 4;
-      bits[i] = 0.299 * px[k] + 0.587 * px[k + 1] + 0.114 * px[k + 2] < SCHWELLE ? 1 : 0;
+      const k = i * 4, x = i % w, y = (i / w) | 0;
+      const l = 0.299 * px[k] + 0.587 * px[k + 1] + 0.114 * px[k + 2];
+      const sw = inKarte(x, y) ? BAYER[(y & 3) * 4 + (x & 3)] * 255 : SCHWELLE;
+      bits[i] = l < sw ? 1 : 0;
     }
     return { w, h, p, W, H, bits };
+  }
+
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(x => (x + .5) / 16);
+  const STERN = 'M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z';
+  const LINKS = new Set(['Basel', 'Strasbourg', 'Haguenau', 'Colmar', 'Mulhouse', 'Sélestat']);
+  const ORTE = new Set(['Basel', 'Strasbourg', 'Freiburg', 'Mulhouse', 'Colmar', 'Karlsruhe']);
+
+  function landkarte(ctx, r) {
+    const D = window.OBERRHEIN;
+    const lat0 = 48.25, k = Math.cos(lat0 * Math.PI / 180);
+    const s = r.h / 1.72, lonC = 7.95;
+    const px = ([lon, lat]) => [r.x + r.w / 2 + (lon - lonC) * k * s, r.y + r.h / 2 - (lat - lat0) * s];
+    const pfad = l => { ctx.beginPath(); l.forEach((q, i) => { const [a, b] = px(q); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }); };
+    ctx.save();
+    ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+    ctx.lineCap = ctx.lineJoin = 'round';
+    // Länder als Grautöne: Schweiz dunkel, Frankreich mittel, Deutschland hell
+    for (const [a, g] of [['FRA', '#e6e6e6'], ['DEU', '#f3f3f3'], ['CHE', '#c8c8c8']]) {
+      ctx.fillStyle = g; ctx.beginPath();
+      (D.land[a] || []).forEach(ring => ring.forEach((q, i) => { const [x, y] = px(q); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }));
+      ctx.fill();
+    }
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = .8; ctx.setLineDash([1.5, 2.5]); D.grenzen.forEach(l => { pfad(l); ctx.stroke(); }); ctx.setLineDash([]);
+    ctx.lineWidth = 1; D.fluesse.forEach(l => { pfad(l); ctx.stroke(); });
+    ctx.lineWidth = 3.2; D.rhein.forEach(l => { pfad(l); ctx.stroke(); });
+    // Sternenkreis um Strasbourg
+    const [sx, sy] = px([7.752, 48.573]), R = r.h * .085, st = new Path2D(STERN);
+    ctx.fillStyle = '#000';
+    for (let i = 0; i < 12; i++) {
+      const w = i / 12 * 2 * Math.PI; ctx.save(); ctx.translate(sx + R * Math.sin(w), sy - R * Math.cos(w)); ctx.scale(3.6, 3.6); ctx.fill(st); ctx.restore();
+    }
+    // Orte
+    ctx.font = '700 10px Plex, sans-serif'; ctx.textBaseline = 'middle';
+    D.orte.filter(o => ORTE.has(o.n)).forEach(o => {
+      const [a, b] = px(o.p), t = o.n.toUpperCase();
+      if (o.n === 'Basel') { ctx.beginPath(); ctx.arc(a, b, 5, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke(); }
+      ctx.fillStyle = '#000'; ctx.fillRect(a - 1.8, b - 1.8, 3.6, 3.6);
+      const breit = [...t].reduce((n, ch) => n + ctx.measureText(ch).width + 1.2, 0);
+      let x = LINKS.has(o.n) ? a - 9 - breit : a + 9;
+      ctx.fillStyle = '#fff'; ctx.fillRect(x - 3, b - 7, breit + 5, 14);
+      ctx.fillStyle = '#000'; for (const ch of t) { ctx.fillText(ch, x, b); x += ctx.measureText(ch).width + 1.2; }
+    });
+    ctx.restore();
   }
 
   let laeuft = 0;

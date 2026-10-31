@@ -58,3 +58,8 @@ hr{border:0;border-top:2px dashed var(--tinte);margin:20px 0}
 .gedruckt .satz hr{border-color:transparent}
 .gedruckt .satz .sterne svg{fill:transparent}
 .gedruckt ::selection{background:rgba(0,51,153,.22);color:transparent}
+
+/* Hintergrund aus Punkten (karte/hintergrund.js) */
+.hintergrund{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bon{z-index:1}
+.landkarte{height:340px;margin:0 -24px 18px}
