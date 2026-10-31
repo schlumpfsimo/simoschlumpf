@@ -122,8 +122,11 @@ const MAX_H = 28000;             // grössere Leinwände schafft Safari am iPhon
 const TEMPO = 75;                // Meter pro Minute (4,5 km/h)
 const BASEL = { lat: 47.55814, lon: 7.58785, name: 'Basel, Marktplatz' };
 // Overpass: zuerst der Hauptserver, dann Spiegel. Wer zu lange braucht, wird übersprungen.
-const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
-const OVERPASS_WARTEN = 25000;   // danach der nächste Server; der letzte bekommt 60 s
+// overpass.osm.ch hat nur die Schweiz (und ein wenig Rand), ist dafür schnell und kaum ausgelastet
+const OVERPASS_CH = 'https://overpass.osm.ch/api/interpreter';
+const SCHWEIZ = [45.8, 5.9, 47.85, 10.55];   // s, w, n, e
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+const OVERPASS_WARTEN = 90000;   // so lange dürfen die Server gemeinsam brauchen
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 
 const $ = id => document.getElementById(id);
@@ -197,7 +200,9 @@ let geholt = null;   // { box, json } – die letzte Antwort, für nochmals Wür
 function abfrage([s, w, n, e]){
   const hw = 'footway|path|pedestrian|living_street|residential|service|track|steps|cycleway|unclassified|road|tertiary|tertiary_link|secondary|secondary_link|primary|primary_link|bridleway|corridor';
   // Gehsteige und Fussgängerstreifen sind in Basel oft eigene Linien: weglassen, gegangen wird auf der Strasse mit ihrem Namen
-  return `[out:json][timeout:60][bbox:${s},${w},${n},${e}];
+  // overpass.osm.ch weist dieselbe Abfrage kurz nach der vorigen ab (duplicate_query): der Timeout macht jede einzigartig
+  const zeit = 60 + Math.floor(Math.random() * 30);
+  return `[out:json][timeout:${zeit}][bbox:${s},${w},${n},${e}];
 way[highway~"^(${hw})$"][footway!~"^(sidewalk|crossing)$"][service!~"^(parking_aisle|driveway|drive-through|emergency_access)$"][access!~"^(private|no)$"]->.wege;
 .wege out body qt;
 node(w.wege);
@@ -224,24 +229,39 @@ out center qt;`;
 
 const drin = (a, b) => a[0] >= b[0] && a[1] >= b[1] && a[2] <= b[2] && a[3] <= b[3];
 
+async function overpass(url, box, ms, signal){
+  const body = 'data=' + encodeURIComponent(abfrage(box));
+  // Formular-Daten: einfache Anfrage ohne CORS-Vorabfrage
+  const signale = [AbortSignal.timeout?.(ms), signal].filter(Boolean);
+  const r = await fetch(url, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, signal: signale.length > 1 && AbortSignal.any ? AbortSignal.any(signale) : signale[0] });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const json = await r.json();
+  if (!json.elements) throw new Error('leere Antwort');
+  if (json.remark && /runtime error|timed out|out of memory/i.test(json.remark) && json.elements.length < 50) throw new Error(json.remark);
+  return json;
+}
+
 async function netzHolen(box){
   if (geholt && drin(box, geholt.box)) return geholt.json;
-  const body = 'data=' + encodeURIComponent(abfrage(box));
-  let fehler = null;
-  for (const [i, url] of OVERPASS.entries()) {
-    if (i) msg(`Kartenserver ${i} antwortet nicht, probiere Server ${i + 1} …`);
+  const schweiz = drin(box, SCHWEIZ);
+  let json = null, fehler = null;
+  if (schweiz) {
     try {
-      // Formular-Daten: einfache Anfrage ohne CORS-Vorabfrage
-      const r = await fetch(url, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, signal: AbortSignal.timeout?.(i === OVERPASS.length - 1 ? 60000 : OVERPASS_WARTEN) });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const json = await r.json();
-      if (!json.elements) throw new Error('leere Antwort');
-      if (json.remark && /runtime error|timed out|out of memory/i.test(json.remark) && json.elements.length < 50) throw new Error(json.remark);
-      geholt = { box, json };
-      return json;
-    } catch (e) { fehler = e; console.warn(url, e); }
+      json = await overpass(OVERPASS_CH, box, 30000);
+      if (!json.elements.some(el => el.type === 'way')) throw new Error('keine Wege');
+    } catch (e) { json = null; fehler = e; console.warn(OVERPASS_CH, e); msg('Schweizer Kartenserver antwortet nicht, frage die anderen …'); }
   }
-  throw new Error('Kein Kartenserver erreichbar (' + (fehler?.name === 'TimeoutError' ? 'zu langsam' : fehler?.message) + '). Bitte später nochmals.');
+  if (!json) {
+    // alle gleichzeitig fragen (in der Schweiz den Schweizer nochmals mit), die erste brauchbare Antwort gewinnt
+    const halt = new AbortController();
+    try {
+      json = await Promise.any((schweiz ? [OVERPASS_CH, ...OVERPASS] : OVERPASS).map(url => overpass(url, box, OVERPASS_WARTEN, halt.signal).catch(e => { console.warn(url, e); throw e; })));
+    } catch (e) { fehler = e.errors?.[0] || e; }
+    halt.abort();
+  }
+  if (!json) throw new Error('Kein Kartenserver erreichbar (' + (fehler?.name === 'TimeoutError' ? 'zu langsam' : fehler?.message) + '). Bitte später nochmals.');
+  geholt = { box, json };
+  return json;
 }
 
 // ---------------------------------------------------------------- Wegnetz bauen
