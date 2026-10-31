@@ -62,13 +62,12 @@ button.leise:hover{background:#000;color:#fff}
 /* Vorschau: genau die Punkte, die gedruckt werden (schon schwarz-weiss) */
 .vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
 .vorschau .label{align-self:stretch;margin-top:8px}
-.karte{width:min(100%,340px);border:1px dashed #999;background:#fff;line-height:0}
+.karte{width:min(100%,340px);border:1px dashed #000;background:#fff;line-height:0}
 .karte canvas{display:block;width:100%;height:auto}
 .mass{margin:0;font-size:.78rem;color:var(--muted);text-align:center}
-details{align-self:stretch;margin-top:6px}
+details{margin-top:14px;border-top:1px solid #000;padding-top:8px}
+.innen{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 summary{cursor:pointer;font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.papier{width:min(100%,240px);margin:8px auto 0;background:#fff;border:1px solid #000;border-top:1px dashed #000;padding:10px 0 12px;line-height:0}
-.papier canvas{display:block;width:100%;height:auto}
 @media (min-width:860px){
   main{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"felder vorschau" "knoepfe vorschau";align-items:start}
   .vorschau{position:sticky;top:64px}
@@ -105,10 +104,6 @@ summary{cursor:pointer;font-size:.76rem;color:var(--muted);text-transform:upperc
     <div class="seg" id="stil" role="group" aria-labelledby="stilLabel">
       <button type="button" data-v="klassisch">Klassisch</button><button type="button" data-v="modern">Modern</button><button type="button" data-v="kraeftig">Kräftig</button><button type="button" data-v="elegant">Elegant</button>
     </div>
-    <span class="label" id="formatLabel">Format</span>
-    <div class="seg" id="format" role="group" aria-labelledby="formatLabel">
-      <button type="button" data-v="quer">Quer 85 × 55</button><button type="button" data-v="hoch">Hoch 55 × 85</button>
-    </div>
     <span class="label" id="qrLabel">QR-Code</span>
     <div class="seg" id="qr" role="group" aria-labelledby="qrLabel">
       <button type="button" data-v="kein">Keiner</button><button type="button" data-v="kontakt">Kontakt</button><button type="button" data-v="web">Website</button>
@@ -118,18 +113,26 @@ summary{cursor:pointer;font-size:.76rem;color:var(--muted);text-transform:upperc
     <div class="zahl" role="group" aria-labelledby="anzahlLabel">
       <button type="button" id="weniger" aria-label="Eine weniger">−</button><output id="anzahl">4</output><button type="button" id="mehr" aria-label="Eine mehr">+</button>
     </div>
-    <p class="hint">Alle Karten kommen auf einen Bon, mit Schnittmarken. Mit Schere oder Messer an den Marken entlang schneiden.</p>
+    <p class="hint">Jede Karte ist ein eigener Bon, 80 × 55 mm. Das Messer schneidet direkt darüber und darunter, die Karte ist sofort fertig.</p>
     <button id="drucken">Drucken</button>
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <details id="mess">
+      <summary>Länge einstellen</summary>
+      <div class="innen">
+      <p class="hint">Oben an jedem Bon bleibt Papier leer, und am Schluss schiebt der Drucker noch etwas nach. Damit der Zettel genau 55 mm lang wird, einmal den Mess-Bon drucken und messen.</p>
+      <button type="button" class="leise" id="messDrucken">Mess-Bon drucken</button>
+      <div class="paar">
+        <div><label for="zettel">Ganzer Zettel (mm)</label><input id="zettel" inputmode="decimal" autocomplete="off" placeholder="z. B. 57"></div>
+        <div><label for="oben">Oben leer (mm)</label><input id="oben" inputmode="decimal" autocomplete="off" placeholder="z. B. 15"></div>
+      </div>
+      <p class="hint" id="messStand"></p>
+      </div>
+    </details>
   </div>
   <div class="vorschau">
     <span class="label" id="vorschauLabel">So wird die Karte</span>
     <div class="karte"><canvas id="karte"></canvas></div>
     <p class="mass" id="mass"></p>
-    <details>
-      <summary>Ganzer Bon</summary>
-      <div class="papier"><canvas id="bon"></canvas></div>
-    </details>
   </div>
 </main>
 <script src="../protokoll.js"></script>
@@ -141,8 +144,6 @@ const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGD
 const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
 const BREITE = 576;          // Druckbreite in Punkten: 72 mm bei 203 dpi, 8 Punkte pro mm
 const SCHWELLE = 170;        // wie der Mac: dunkler als etwa 67 % Grau wird schwarz
-const KL = 680, KK = 440;    // Visitenkarte 85 × 55 mm in Punkten (lange und kurze Seite)
-const MARKE = 40, LUECKE = 8; // Schnittmarken 5 mm lang, 1 mm Abstand zur Karte
 const MAX_ANZAHL = 10;
 const FELDER = ['name', 'funktion', 'firma', 'tel', 'mail', 'web', 'adr1', 'adr2'];
 const BEISPIEL = { name: 'Anna Muster', funktion: 'Gestalterin', firma: 'Atelier Rhein', tel: '+41 61 123 45 67', mail: 'anna@atelier-rhein.ch', web: 'atelier-rhein.ch', adr1: 'Rheingasse 12', adr2: '4058 Basel' };
@@ -155,7 +156,7 @@ const store = {
 };
 
 // ---------------------------------------------------------------- Einstellungen
-const wahl = { stil: 'klassisch', format: 'quer', qr: 'kein' };
+const wahl = { stil: 'klassisch', qr: 'kein' };
 let anzahl = 4;
 try {
   const s = JSON.parse(store.get('visitenkarte', '{}'));
@@ -273,75 +274,98 @@ function setzen(g, liste, r, ausrichtung, farbe = '#000'){
   });
 }
 
+// ---------------------------------------------------------------- Länge des Zettels
+// Jede Karte ist ein eigener Bon: Das Messer schneidet direkt darüber und darunter, die Karte ist sofort fertig.
+// Die Website bestimmt nur die Höhe des Bildes. Dazu kommt Papier, das sie nicht steuern kann:
+//   oben: der Weg vom Druckkopf zum Messer (bleibt leer, «oben»)
+//   gesamt: der Vorschub des Macs vor dem Schnitt (ESC d 6), «vorschub» = Zettel − Bild
+// Beides misst man einmal mit dem Mess-Bon. Bildhöhe = Kartenhöhe − Vorschub.
+const KARTE_W = 640, KARTE_H = 440;   // Karte 80 × 55 mm (Rollenbreite × Kartenhöhe), 8 Punkte pro mm
+const RAND_X = (KARTE_W - BREITE) / 2; // links und rechts je 4 mm, die der Drucker nicht erreicht
+const MESS_H = 252;                    // Mess-Bon: Bild genau 31,5 mm hoch (Vielfaches von 36)
+const MESS_STANDARD = { zettel: 57, oben: 15 };   // geschätzt, bis ausgemessen
+
+function messwerte(){
+  try { const m = JSON.parse(store.get('visitenkarte.mess', 'null')); if (m && m.zettel > 0 && m.oben >= 0) return { ...m, gemessen: true }; } catch {}
+  return { ...MESS_STANDARD, gemessen: false };
+}
+const zahl = s => parseFloat(String(s).replace(',', '.'));
+
+// Welcher Streifen der Karte bedruckt wird, in Punkten von oben
+function streifen(){
+  const m = messwerte(), vorschub = m.zettel - MESS_H / 8;
+  const von = Math.round(m.oben * 8), hoehe = Math.round((KARTE_H / 8 - vorschub) * 8);
+  return { von, hoehe, bis: von + hoehe, ok: hoehe >= 120 && von + hoehe <= KARTE_H };
+}
+
 // ---------------------------------------------------------------- Die vier Stile
-// Jeder Stil zeichnet in die Karte (W × H Punkte) und setzt den Text in das Feld r (ohne den Platz des QR-Codes).
+// Jeder Stil zeichnet in die Karte (576 Punkte breit, so weit der Drucker reicht) innerhalb des Streifens S
+// und setzt den Text ins Feld r (ohne den Platz des QR-Codes).
 const STILE = {
   klassisch: {
-    rand: 40,
-    zeichnen(g, W, H, d, r){
-      const k = [d.tel, d.mail, d.web && webKurz(d.web), d.adr1, d.adr2].filter(Boolean);
-      const hoch = H > W;
+    rand: { x: 24, y: 4 },
+    zeichnen(g, d, r){
+      const k = [[d.tel, d.mail].filter(Boolean).join('  ·  '), d.web && webKurz(d.web), [d.adr1, d.adr2].filter(Boolean).join(', ')].filter(Boolean);
       setzen(g, [
-        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 17, sp: 4, lh: 1.2 },
+        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 15, sp: 4, lh: 1.2 },
         { feder: 1 },
-        d.name && { t: d.name, f: px => F.serif(px, true), px: hoch ? 42 : 46, lh: 1.2 },
-        d.funktion && { t: d.funktion, f: F.kursiv, px: 24, lh: 1.3 },
-        k.length && (d.name || d.funktion) && { linie: 1, w: 56, h: 2, luft: 12 },
+        d.name && { t: d.name, f: px => F.serif(px, true), px: 42, lh: 1.15 },
+        d.funktion && { t: d.funktion, f: F.kursiv, px: 22, lh: 1.25 },
+        k.length && (d.name || d.funktion) && { linie: 1, w: 56, h: 2, luft: 8 },
         { feder: 1 },
-        ...k.map(t => ({ t, f: px => F.sans(px, false), px: 19, lh: 1.35 })),
+        ...k.map(t => ({ t, f: px => F.sans(px, false), px: 18, lh: 1.3 })),
       ], r, 'mitte');
     },
   },
   modern: {
-    rand: 40,
-    zeichnen(g, W, H, d, r){
-      const k = [['T', d.tel], ['E', d.mail], ['W', d.web && webKurz(d.web)], ['A', d.adr1], ['', d.adr2]].filter(([, t]) => t);
+    rand: { x: 24, y: 4 },
+    zeichnen(g, d, r){
+      const k = [['T', d.tel], ['E', d.mail], ['W', d.web && webKurz(d.web)], ['A', [d.adr1, d.adr2].filter(Boolean).join(', ')]].filter(([, t]) => t);
       setzen(g, [
-        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 18, sp: 3, lh: 1.25 },
-        d.firma && { linie: 1, w: 48, h: 6, luft: 4 },
+        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 16, sp: 3, lh: 1.2 },
+        d.firma && { linie: 1, w: 48, h: 6, luft: 3 },
         { feder: 1 },
-        d.name && { t: d.name, f: px => F.sans(px, true), px: 44, lh: 1.12 },
-        d.funktion && { t: d.funktion, f: px => F.sans(px, false), px: 22, lh: 1.3 },
-        k.length && (d.name || d.funktion) && { abstand: 18 },
-        ...k.map(([l, t]) => ({ t, label: l, f: px => F.sans(px, false), lf: px => F.sans(px, true), px: 19, lh: 1.35 })),
+        d.name && { t: d.name, f: px => F.sans(px, true), px: 40, lh: 1.1 },
+        d.funktion && { t: d.funktion, f: px => F.sans(px, false), px: 20, lh: 1.25 },
+        k.length && (d.name || d.funktion) && { abstand: 10 },
+        ...k.map(([l, t]) => ({ t, label: l, f: px => F.sans(px, false), lf: px => F.sans(px, true), px: 18, lh: 1.3 })),
       ], r, 'links');
     },
   },
   kraeftig: {
-    rand: 40,
-    zeichnen(g, W, H, d, r){
-      // Schwarzer Block oben, nicht randabfallend: Beim Schneiden bleibt so kein schwarzer Streifen an der Nachbarkarte
-      // Hochformat mit QR-Code unten: Block niedriger, sonst bleibt für die Angaben zu wenig Platz
-      const hoch = H > W, bh = hoch ? (r.h < H - 2 * this.rand ? 200 : 300) : 210;
-      g.fillStyle = '#000'; g.fillRect(24, 24, W - 48, bh);
+    rand: { x: 24, y: 0 },
+    zeichnen(g, d, r, S){
+      // Schwarzer Balken über die ganze Druckbreite, darunter die Angaben
+      const bh = Math.round(S.h * 0.46);
+      g.fillStyle = '#000'; g.fillRect(0, S.y, BREITE, bh);
       setzen(g, [
         { feder: 1 },
-        d.name && { t: d.name, f: F.titel, px: hoch ? 50 : 56, lh: 1.12 },
-        d.funktion && { t: d.funktion.toUpperCase(), f: px => F.sans(px, true), px: 18, sp: 2, lh: 1.4 },
+        d.name && { t: d.name, f: F.titel, px: 48, lh: 1.1 },
+        d.funktion && { t: d.funktion.toUpperCase(), f: px => F.sans(px, true), px: 16, sp: 2, lh: 1.35 },
         { feder: 1 },
-      ], { x: r.x, y: 24 + 18, w: r.w, h: bh - 36 }, 'links', '#fff');
-      const k = [d.tel, d.mail, d.web && webKurz(d.web), [d.adr1, d.adr2].filter(Boolean).join(', ')].filter(Boolean);
-      const oben = 24 + bh + 20;
+      ], { x: r.x, y: S.y + 10, w: r.w, h: bh - 20 }, 'links', '#fff');
+      const k = [[d.tel, d.mail].filter(Boolean).join('  ·  '), [d.web && webKurz(d.web), [d.adr1, d.adr2].filter(Boolean).join(', ')].filter(Boolean).join('  ·  ')].filter(Boolean);
+      const oben = S.y + bh + 10;
       setzen(g, [
-        d.firma && { t: d.firma, f: px => F.sans(px, true), px: 22, lh: 1.4 },
-        ...k.map(t => ({ t, f: px => F.sans(px, false), px: 19, lh: 1.35 })),
-      ], { x: r.x, y: oben, w: r.w, h: r.y + r.h - oben }, 'links');
+        d.firma && { t: d.firma, f: px => F.sans(px, true), px: 20, lh: 1.3 },
+        ...k.map(t => ({ t, f: px => F.sans(px, false), px: 18, lh: 1.3 })),
+      ], { x: r.x, y: oben, w: r.w, h: S.y + S.h - oben }, 'links');
     },
   },
   elegant: {
-    rand: 52,
-    zeichnen(g, W, H, d, r){
-      rahmen(g, 16, 16, W - 32, H - 32, 4);
-      rahmen(g, 26, 26, W - 52, H - 52, 2);
-      const k = [d.tel, d.mail, d.web && webKurz(d.web), d.adr1, d.adr2].filter(Boolean);
+    rand: { x: 44, y: 22 },
+    zeichnen(g, d, r, S){
+      rahmen(g, 8, S.y, BREITE - 16, S.h, 4);
+      rahmen(g, 18, S.y + 10, BREITE - 36, S.h - 20, 2);
+      const k = [[d.tel, d.mail].filter(Boolean).join('  ·  '), d.web && webKurz(d.web), [d.adr1, d.adr2].filter(Boolean).join(', ')].filter(Boolean);
       setzen(g, [
-        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 15, sp: 4, lh: 1.2 },
+        d.firma && { t: d.firma.toUpperCase(), f: px => F.sans(px, true), px: 13, sp: 4, lh: 1.2 },
         { feder: 1 },
-        d.name && { t: d.name, f: F.playfair, px: 50, lh: 1.2 },
-        d.funktion && { t: d.funktion, f: F.kursiv, px: 22, lh: 1.3 },
-        k.length && (d.name || d.funktion) && { raute: 1, luft: 8 },
+        d.name && { t: d.name, f: F.playfair, px: 44, lh: 1.15 },
+        d.funktion && { t: d.funktion, f: F.kursiv, px: 20, lh: 1.25 },
+        k.length && (d.name || d.funktion) && { raute: 1, luft: 5 },
         { feder: 1 },
-        ...k.map(t => ({ t, f: px => F.serif(px, false), px: 18, lh: 1.35 })),
+        ...k.map(t => ({ t, f: px => F.serif(px, false), px: 17, lh: 1.3 })),
       ], r, 'mitte');
     },
   },
@@ -352,102 +376,85 @@ function rahmen(g, x, y, w, h, s){
 }
 
 // ---------------------------------------------------------------- Karte zeichnen
+// Die Leinwand ist so breit, wie der Drucker reicht (576), und so hoch wie die ganze Karte (440).
+// Bedruckt wird nur der Streifen; darüber und darunter bleibt das Papier ohnehin leer.
+const druck = document.createElement('canvas'), karte = $('karte');
 let qrWarnung = '';
-function karteZeichnen(c, d){
-  const quer = wahl.format === 'quer', W = quer ? KL : KK, H = quer ? KK : KL;
-  const stil = STILE[wahl.stil], P = stil.rand;
-  c.width = W; c.height = H;
-  const g = c.getContext('2d', { willReadFrequently: true });
-  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-  // Platz für den QR-Code: quer rechts, hoch unten. Ein Modul ganze 3–6 Punkte, sonst lässt er sich schlecht scannen
-  let r = { x: P, y: P, w: W - 2 * P, h: H - 2 * P }, q = null, qrPlatz = null;
+function karteZeichnen(d){
+  const st = streifen(), stil = STILE[wahl.stil], W = BREITE;
+  druck.width = W; druck.height = KARTE_H;
+  const g = druck.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, KARTE_H);
+  // Streifen S: mindestens 3 mm Abstand zum Kartenrand
+  const y0 = Math.max(st.von, 24), y1 = Math.min(st.bis, KARTE_H - 24);
+  const S = { x: 0, y: y0, w: W, h: Math.max(0, y1 - y0) };
+  let r = { x: stil.rand.x, y: S.y + stil.rand.y, w: W - 2 * stil.rand.x, h: S.h - 2 * stil.rand.y };
   qrWarnung = '';
   if (wahl.qr === 'web' && !d.web) qrWarnung = 'Für den QR-Code fehlt die Website.';
+  // QR-Code rechts. Ein Modul ganze 3–6 Punkte, sonst lässt er sich schlecht scannen
   const modul = qrModule(d);
+  let qrPlatz = null;
   if (modul) {
-    const n = modul.getModuleCount(), maxS = quer ? Math.min(H - 2 * P, 230) : Math.min(W - 2 * P, 240);
-    const s = Math.min(6, Math.floor(maxS / n));
+    const n = modul.getModuleCount(), maxS = Math.min(r.h, 230), s = Math.min(6, Math.floor(maxS / n));
     if (s < 3) qrWarnung = 'Zu viele Angaben für einen gut lesbaren QR-Code. Weniger Felder ausfüllen oder «Website» wählen.';
     else {
-      const S = s * n;
-      qrPlatz = quer ? { x: W - P - S, y: Math.round((H - S) / 2), s, n }
-                     : { x: wahl.stil === 'modern' || wahl.stil === 'kraeftig' ? P : Math.round((W - S) / 2), y: H - P - S, s, n };
-      if (wahl.stil === 'kraeftig' && quer) qrPlatz.y = H - P - S;   // unten rechts, unter dem schwarzen Block
-      r = quer ? { ...r, w: r.w - S - 28 } : { ...r, h: r.h - S - 24 };
-      q = modul;
+      const gr = s * n;
+      qrPlatz = { x: W - stil.rand.x - gr, y: Math.round(r.y + (r.h - gr) / 2), s, n };
+      r = { ...r, w: r.w - gr - 24 };
     }
   }
-  stil.zeichnen(g, W, H, d, r);
-  if (q) {
+  stil.zeichnen(g, d, r, S);
+  if (qrPlatz) {
     const { x, y, s, n } = qrPlatz, ruhe = 2 * s;   // weisser Rand um den Code
     g.fillStyle = '#fff'; g.fillRect(x - ruhe, y - ruhe, s * n + 2 * ruhe, s * n + 2 * ruhe);
     g.fillStyle = '#000';
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (q.isDark(i, j)) g.fillRect(x + j * s, y + i * s, s, s);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (modul.isDark(i, j)) g.fillRect(x + j * s, y + i * s, s, s);
   }
-  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
-  const img = g.getImageData(0, 0, W, H), px = img.data;
+  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen; ausserhalb des Streifens bleibt es weiss
+  const img = g.getImageData(0, 0, W, KARTE_H), px = img.data;
   for (let i = 0; i < px.length; i += 4) {
-    const v = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE ? 0 : 255;
+    const zeile = (i >> 2) / W | 0;
+    const v = zeile >= st.von && zeile < st.bis && 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE ? 0 : 255;
     px[i] = px[i + 1] = px[i + 2] = v; px[i + 3] = 255;
   }
   g.putImageData(img, 0, 0);
+  // Vorschau: die ganze Karte, 80 mm breit, so wie sie aus dem Drucker kommt
+  karte.width = KARTE_W; karte.height = KARTE_H;
+  const k = karte.getContext('2d');
+  k.fillStyle = '#fff'; k.fillRect(0, 0, KARTE_W, KARTE_H);
+  k.drawImage(druck, RAND_X, 0);
+  return rasterVon(g, st.von, st.hoehe);
 }
 
-// ---------------------------------------------------------------- Bon: Karten untereinander mit Schnittmarken
-// Höhe auf ein Vielfaches von 36 Punkten = 17 CSS-Pixel aufrunden. Nur dann bildet der Mac das Bild Punkt für Punkt ab.
-const ganz = h => Math.ceil(h / 36) * 36;
-const leinwand = $('bon'), karte = $('karte');
+// Ausschnitt der Leinwand als 1-Bit-Raster
+function rasterVon(g, y, H){
+  const W = BREITE, px = g.getImageData(0, y, W, H).data, bpr = W >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < W * H; j++, i += 4) if (px[i] < 128) bits[(j / W | 0) * bpr + ((j % W) >> 3)] |= 0x80 >> (j & 7);
+  return { W, H, bits };
+}
+
 let raster = null;
-
-function bonZeichnen(n){
-  const quer = wahl.format === 'quer';
-  const x0 = (BREITE - KK) / 2, oben = MARKE + LUECKE + 8;
-  const H = ganz(oben + n * KL + MARKE + LUECKE + 8);
-  leinwand.width = BREITE; leinwand.height = H;
-  const g = leinwand.getContext('2d', { willReadFrequently: true });
-  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
-  g.imageSmoothingEnabled = false;
-  for (let i = 0; i < n; i++) {
-    const y = oben + i * KL;
-    if (quer) {   // Querkarte um 90° gedreht: Sie liegt längs auf dem Bon und hat so ihre volle Grösse
-      g.save(); g.translate(x0 + KK, y); g.rotate(Math.PI / 2); g.drawImage(karte, 0, 0); g.restore();
-    } else g.drawImage(karte, x0, y);
-  }
-  // Schnittmarken: seitlich an jeder Kante zwischen den Karten, oben und unten an den Ecken
-  g.fillStyle = '#000';
-  for (let i = 0; i <= n; i++) {
-    const y = oben + i * KL - 1;
-    g.fillRect(x0 - LUECKE - MARKE, y, MARKE, 2);
-    g.fillRect(x0 + KK + LUECKE, y, MARKE, 2);
-  }
-  for (const x of [x0 - 1, x0 + KK - 1]) {
-    g.fillRect(x, oben - LUECKE - MARKE, 2, MARKE);
-    g.fillRect(x, oben + n * KL + LUECKE, 2, MARKE);
-  }
-  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
-  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
-    if (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
-  }
-  return { W: BREITE, H, bits };
-}
-
 async function zeichnen(){
   let d = daten();
   const beispiel = leer(d);
   if (beispiel) d = { ...BEISPIEL };
-  const text = Object.values(d).join(' ') + 'ÄÖÜ';
+  const text = Object.values(d).join(' ') + 'ÄÖÜ·';
   await Promise.all([
     document.fonts.load(F.sans(20, false), text), document.fonts.load(F.sans(20, true), text),
     document.fonts.load(F.serif(20, false), text), document.fonts.load(F.serif(20, true), text),
     document.fonts.load(F.kursiv(20), text), document.fonts.load(F.playfair(20), text), document.fonts.load(F.titel(20), text),
   ]);
-  karteZeichnen(karte, d);
-  raster = beispiel ? null : bonZeichnen(anzahl);
-  if (beispiel) bonZeichnen(anzahl);
-  $('vorschauLabel').textContent = beispiel ? 'Beispiel – Felder ausfüllen' : 'So wird die Karte';
-  const cm = (leinwand.height / 80 + 2).toFixed(0);
-  $('mass').textContent = (qrWarnung ? qrWarnung + ' ' : '') + `${anzahl} ${anzahl === 1 ? 'Karte' : 'Karten'} · Bon etwa ${cm} cm lang` + (wahl.format === 'quer' ? ' · quer gedruckt' : '');
-  $('mass').style.color = qrWarnung ? 'var(--err)' : '';
+  const st = streifen();
+  const r = karteZeichnen(d);
+  raster = beispiel || !st.ok ? null : r;
+  $('vorschauLabel').textContent = beispiel ? 'Beispiel – Felder ausfüllen' : 'So kommt die Karte aus dem Drucker';
+  const m = messwerte();
+  let t = !st.ok ? 'Die Messwerte passen nicht: Der Streifen für den Druck ist zu klein. Mess-Bon nochmals messen.'
+    : `${anzahl} ${anzahl === 1 ? 'Karte' : 'Karten'} à 80 × 55 mm, jede ein eigener Bon` + (m.gemessen ? '' : ' · Länge noch geschätzt, siehe «Länge einstellen»');
+  if (qrWarnung) t = qrWarnung + ' ' + t;
+  $('mass').textContent = t;
+  $('mass').style.color = qrWarnung || !st.ok ? 'var(--err)' : '';
+  messAnzeigen();
 }
 
 let warte = null, laeuft = Promise.resolve();
@@ -473,17 +480,78 @@ $('leeren').addEventListener('click', () => {
 });
 markieren();
 
+// ---------------------------------------------------------------- Mess-Bon
+// Bild genau 31,5 mm hoch, mit einer Linie ganz oben und ganz unten und einem Massstab dazwischen
+function messBon(){
+  const c = document.createElement('canvas'); c.width = BREITE; c.height = MESS_H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, MESS_H);
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, BREITE, 2); g.fillRect(0, MESS_H - 2, BREITE, 2);
+  for (let mm = 0; mm * 8 < MESS_H; mm++) {
+    const l = mm % 5 ? 12 : 28;
+    g.fillRect(0, mm * 8, l, 2); g.fillRect(BREITE - l, mm * 8, l, 2);
+  }
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  g.font = F.sans(30, true); g.fillText('MESS-BON', BREITE / 2, 92);
+  g.font = F.sans(20, false);
+  g.fillText('Ganzen Zettel von Schnitt zu Schnitt messen,', BREITE / 2, 140);
+  g.fillText('und von der oberen Kante bis zur ersten Linie.', BREITE / 2, 168);
+  g.fillText('Striche: 1 mm', BREITE / 2, 210);
+  const img = g.getImageData(0, 0, BREITE, MESS_H), px = img.data;
+  for (let i = 0; i < px.length; i += 4) { const v = px[i] < SCHWELLE ? 0 : 255; px[i] = px[i + 1] = px[i + 2] = v; }
+  g.putImageData(img, 0, 0);
+  return rasterVon(g, 0, MESS_H);
+}
+
+function messAnzeigen(){
+  const m = messwerte(), st = streifen();
+  if (document.activeElement !== $('zettel')) $('zettel').value = m.gemessen ? String(m.zettel).replace('.', ',') : '';
+  if (document.activeElement !== $('oben')) $('oben').value = m.gemessen ? String(m.oben).replace('.', ',') : '';
+  $('messStand').textContent = (m.gemessen ? 'Ausgemessen' : 'Noch geschätzt') +
+    `: oben ${String(m.oben).replace('.', ',')} mm leer, bedruckt ${String(st.hoehe / 8).replace('.', ',')} mm, unten ${String((KARTE_H - st.bis) / 8).replace('.', ',')} mm leer.`;
+}
+function messSpeichern(){
+  const zettel = zahl($('zettel').value), oben = zahl($('oben').value);
+  if (zettel > 35 && zettel < 120 && oben >= 0 && oben < 40) store.set('visitenkarte.mess', JSON.stringify({ zettel, oben }));
+  else if (!$('zettel').value && !$('oben').value) store.set('visitenkarte.mess', 'null');
+  else return;
+  spaeter();
+}
+['zettel', 'oben'].forEach(id => $(id).addEventListener('input', messSpeichern));
+
+$('messDrucken').addEventListener('click', async () => {
+  $('messDrucken').disabled = true;
+  msg('Sende Mess-Bon …');
+  try {
+    const d = await bonpost({ inhalt: await bonHtml(messBon()), titel: 'Visitenkarte Mess-Bon', quelle: 'website-visitenkarte' });
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg('Mess-Bon gesendet. Messen und die zwei Werte eintragen.', 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    $('messDrucken').disabled = false;
+  }
+});
+
 // ---------------------------------------------------------------- 1-Bit-Raster -> Bon-HTML
-// Breite 272 CSS-Pixel und Höhe H × 17/36 Pixel (H ein Vielfaches von 36): So kommt jeder Punkt 1:1 an.
+// Breite 272 CSS-Pixel. Höhe H × 17/36 Pixel: Bei H als Vielfaches von 36 kommt jeder Punkt 1:1 an.
+// Die Karte braucht eine genaue Höhe statt eines Vielfachen von 36; dann rundet Chrome höchstens eine
+// Punktzeile anders, die Länge stimmt trotzdem auf etwa 0,1 mm.
 async function bonHtml(raster){
-  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${raster.H * 17 / 36}px;image-rendering:pixelated">`;
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${+(raster.H * 17 / 36).toFixed(4)}px;image-rendering:pixelated">`;
 }
 
 // Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
 async function pngDataUrl({ W, H, bits }){
-  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
   const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
   for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  if (!('CompressionStream' in window)) {   // altes Safari: über eine Leinwand
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d'), img = g.createImageData(W, H);
+    for (let j = 0; j < W * H; j++) { const v = bits[(j / W | 0) * bpr + ((j % W) >> 3)] & (0x80 >> (j & 7)) ? 0 : 255; img.data.set([v, v, v, 255], j * 4); }
+    g.putImageData(img, 0, 0); return c.toDataURL('image/png');
+  }
   const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
   const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
   v.setUint32(0, W); v.setUint32(4, H); ihdr[8] = 1;   // 1 Bit, Graustufen
@@ -504,27 +572,39 @@ const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) 
 function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
 
 // ---------------------------------------------------------------- Senden
+async function bonpost(daten){
+  const r = await fetch(BONPOST, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ key: KEY, ...daten }) });
+  return r.json();
+}
+
+// Jede Karte ist ein eigener Bon: Die Bon-Post druckt sie nacheinander, das Messer schneidet jede ab
+let offen = 0;   // nach einem Abbruch: so viele Karten fehlen noch
 $('drucken').addEventListener('click', async () => {
   if (leer(daten())) { msg('Zuerst mindestens den Namen eintragen.', 'err'); $('name').focus(); return; }
-  $('drucken').disabled = true;
-  msg('Sende …');
+  ['drucken', 'weniger', 'mehr', 'messDrucken'].forEach(id => $(id).disabled = true);
+  let gesendet = 0;
+  const n = offen || anzahl;
   try {
     clearTimeout(warte);
     await (laeuft = laeuft.then(zeichnen, zeichnen));   // sicher den neusten Stand drucken
-    if (!raster) throw new Error('nichts zu drucken');
-    const name = daten().name || daten().firma;
-    const r = await fetch(BONPOST, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ key: KEY, inhalt: await bonHtml(raster), titel: `Visitenkarten ${name} (${anzahl})`, quelle: 'website-visitenkarte' }),
-    });
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
-    msg('Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+    if (!raster) throw new Error($('mass').textContent);
+    const inhalt = await bonHtml(raster);
+    const titel = i => n === 1 ? 'Visitenkarte' : `Visitenkarte ${i}/${n}`;
+    window.bonProtokoll?.warten(Array.from({ length: n }, (_, i) => titel(i + 1)));
+    for (let i = 1; i <= n; i++) {
+      msg(n === 1 ? 'Sende …' : `Sende ${i} von ${n} …`);
+      const d = await bonpost({ inhalt, titel: titel(i), quelle: 'website-visitenkarte' });
+      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+      gesendet++;
+    }
+    offen = 0;
+    msg(n === 1 ? 'Gesendet. Die Karte kommt innert einer Minute.' : `Gesendet: ${n} Karten. Sie kommen innert ein, zwei Minuten.`, 'ok');
   } catch (e) {
-    msg('Fehler: ' + e.message, 'err');
+    if (gesendet) offen = n - gesendet;
+    msg((gesendet ? `${gesendet} gesendet, dann ` : '') + 'Fehler: ' + e.message + (offen ? ` Nochmals «Drucken» sendet die fehlenden ${offen}.` : ''), 'err');
   } finally {
-    $('drucken').disabled = false;
+    ['drucken', 'messDrucken'].forEach(id => $(id).disabled = false);
+    markieren();
   }
 });
 
