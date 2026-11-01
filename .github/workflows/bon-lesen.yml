@@ -1,0 +1,37 @@
+name: Bon – Lesen
+
+# Stellt jede Stunde das Menü «Lesen» der Dépêche zusammen: 25 Schlagzeilen mit dem ganzen Artikel,
+# siehe .github/scripts/bon-lesen.mjs. Läuft nach dem Feed (Minute 17), damit die Schlagzeilen frisch sind.
+on:
+  schedule:
+    - cron: '34 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bon-lesen
+  cancel-in-progress: false
+
+jobs:
+  holen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-package-lock --no-audit --no-fund jsdom@25 @mozilla/readability@0.5
+      - run: node .github/scripts/bon-lesen.mjs
+      - name: Commit
+        run: |
+          git add bon/depeche/lesen.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898333+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Bon: Lesen'
+          # Feed und Ölpreis schreiben auch auf main: bei Bedarf nachziehen und nochmals versuchen
+          for i in 1 2 3; do git push && exit 0; git pull --rebase; sleep 5; done
+          exit 1
