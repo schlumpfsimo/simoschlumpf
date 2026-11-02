@@ -11,7 +11,11 @@
     #touch{ position:fixed; inset:0; z-index:3; display:none; pointer-events:none; }
     #touch .stk{ position:absolute; bottom:26px; width:132px; height:132px; border:2px solid rgba(244,242,236,.45); border-radius:50%; pointer-events:auto; }
     #touch .stk i{ position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px; border-radius:50%; background:rgba(244,242,236,.32); }
-    #touch .tb{ position:absolute; top:10px; padding:8px 11px; font:bold 12px monospace; color:#f4f2ec; background:rgba(0,0,0,.55); border:2px solid rgba(244,242,236,.6); pointer-events:auto; }
+    #touch .tb{ position:absolute; top:10px; padding:8px 11px; font:bold 12px monospace; color:#f4f2ec; background:rgba(0,0,0,.55); border:2px solid rgba(244,242,236,.6); pointer-events:auto; touch-action:none; }
+    #touch .tb.on{ background:rgba(143,216,255,.45); }
+    #touch .sb{ top:auto; bottom:172px; min-width:30px; text-align:center; }
+    #rot{ position:fixed; inset:0; z-index:5; display:none; align-items:center; justify-content:center; text-align:center; padding:24px; background:rgba(0,0,0,.85); color:#f4f2ec; font:bold 15px monospace; pointer-events:none; }
+    @media (orientation:portrait) and (pointer:coarse){ #rot.need{ display:flex; } }
   </style>
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -22,9 +26,14 @@
   <div class="stk" id="stL" style="left:22px"><i></i></div>
   <div class="stk" id="stR" style="right:22px"><i></i></div>
   <div class="tb" id="tbArm" style="left:10px">START</div>
-  <div class="tb" id="tbV" style="left:50%;transform:translateX(-50%)">V</div>
+  <div class="tb" id="tbV" style="right:10px;top:62px">V</div>
   <div class="tb" id="tbP" style="right:10px">II</div>
+  <div class="tb" id="tbM" style="right:56px">MODE</div>
+  <div class="tb sb" id="tbT" style="left:22px">TURBO</div>
+  <div class="tb sb" id="tbCu" style="right:74px">CAM ▲</div>
+  <div class="tb sb" id="tbCd" style="right:22px">▼</div>
 </div>
+<div id="rot">↻</div>
 <script type="module">
 import * as THREE from 'three';
 THREE.ColorManagement.enabled = false;
@@ -125,19 +134,22 @@ const S = {
       fr: ['ESPACE      MOTEURS ON / OFF', 'W / S       MONTER / DESCENDRE', 'A / D       TOURNER', 'FLÈCHES     VOLER', 'MAJ         PLUS VITE', 'Q / E       INCLINER LA CAMÉRA', 'V           AVANT / APRÈS', 'M           MODE DE VOL', 'F           DÉTONER (DÉFENSE)', 'P           PAUSE   L LANGUE'],
       en: ['SPACE       MOTORS ON / OFF', 'W / S       CLIMB / SINK', 'A / D       TURN', 'ARROW KEYS  FLY', 'SHIFT       FASTER', 'Q / E       TILT CAMERA', 'V           BEFORE / AFTER', 'M           FLIGHT MODE', 'F           DETONATE (DEFENCE)', 'P           PAUSE   L LANGUAGE'] },
     pad: {
-      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'LB / RB     KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'START       PAUSE   Y SPRACHE'],
-      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'LB / RB     INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'START       PAUSE   Y LANGUE'],
-      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'LB / RB     TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'START       PAUSE   Y LANGUAGE'] },
+      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'RT          SCHNELLER', 'LB / RB     KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'START       PAUSE   Y SPRACHE'],
+      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'RT          PLUS VITE', 'LB / RB     INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'START       PAUSE   Y LANGUE'],
+      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'RT          FASTER', 'LB / RB     TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'START       PAUSE   Y LANGUAGE'] },
     vr: {
-      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'GRIFFTASTEN KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: BILDGRÖSSE'],
-      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : TAILLE ÉCRAN'],
-      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'GRIPS       TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: SCREEN SIZE'] },
+      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'L-TRIGGER   SCHNELLER', 'GRIFFTASTEN KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: BILDGRÖSSE'],
+      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTE G.  PLUS VITE', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : TAILLE ÉCRAN'],
+      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'L-TRIGGER   FASTER', 'GRIPS       TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: SCREEN SIZE'] },
     touch: {
-      de: ['LINKER STICK  HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'START         MOTOREN AN / AUS', 'V             VORHER / NACHHER', 'II            PAUSE'],
-      fr: ['STICK GAUCHE  HAUTEUR ET ROTATION', 'STICK DROIT   VOLER', 'START         MOTEURS ON / OFF', 'V             AVANT / APRÈS', 'II            PAUSE'],
-      en: ['LEFT STICK    HEIGHT AND TURN', 'RIGHT STICK   FLY', 'START         MOTORS ON / OFF', 'V             BEFORE / AFTER', 'II            PAUSE'] },
+      de: ['LINKER STICK  HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'START         MOTOREN AN / AUS', 'TURBO         HALTEN: SCHNELLER', 'CAM ▲ ▼       KAMERA NEIGEN', 'V / ZÜNDEN    VORHER-NACHHER / ABWEHR', 'MODE          FLUGMODUS', 'II            PAUSE'],
+      fr: ['STICK GAUCHE  HAUTEUR ET ROTATION', 'STICK DROIT   VOLER', 'START         MOTEURS ON / OFF', 'TURBO         MAINTENIR : PLUS VITE', 'CAM ▲ ▼       INCLINER LA CAMÉRA', 'V / DÉTONER   AVANT-APRÈS / DÉFENSE', 'MODE          MODE DE VOL', 'II            PAUSE'],
+      en: ['LEFT STICK    HEIGHT AND TURN', 'RIGHT STICK   FLY', 'START         MOTORS ON / OFF', 'TURBO         HOLD: FASTER', 'CAM ▲ ▼       TILT CAMERA', 'V / DETONATE  BEFORE-AFTER / DEFENCE', 'MODE          FLIGHT MODE', 'II            PAUSE'] },
   },
+  turn: { de: 'BITTE DAS GERÄT QUER HALTEN', fr: 'TOURNE L’APPAREIL À L’HORIZONTALE', en: 'PLEASE TURN YOUR DEVICE SIDEWAYS' },
+  flightMode: { de: 'FLUGMODUS', fr: 'MODE DE VOL', en: 'FLIGHT MODE' },
   hintKb: { de: 'W STEIGEN · PFEILE FLIEGEN · A/D DREHEN · FLIEG ZU DEN MARKIERTEN ORTEN', fr: 'W MONTER · FLÈCHES VOLER · A/D TOURNER · VOLE VERS LES LIEUX MARQUÉS', en: 'W CLIMB · ARROWS FLY · A/D TURN · FLY TO THE MARKED PLACES' },
+  hintTouch: { de: 'LINKER STICK HÖHE · RECHTER STICK FLIEGEN · TURBO HALTEN FÜR TEMPO', fr: 'STICK GAUCHE HAUTEUR · STICK DROIT VOLER · TURBO POUR ACCÉLÉRER', en: 'LEFT STICK HEIGHT · RIGHT STICK FLY · HOLD TURBO FOR SPEED' },
   hintPad: { de: 'LINKER STICK HÖHE · RECHTER STICK FLIEGEN · FLIEG ZU DEN MARKIERTEN ORTEN', fr: 'STICK GAUCHE HAUTEUR · STICK DROIT VOLER · VOLE VERS LES LIEUX MARQUÉS', en: 'LEFT STICK HEIGHT · RIGHT STICK FLY · FLY TO THE MARKED PLACES' },
 };
 
@@ -193,30 +205,127 @@ const GLSL_NOISE = `
   float h1(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   float n1(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1, 0)), f.x), mix(h1(i + vec2(0, 1)), h1(i + 1.0), f.x), f.y); }
 `;
-// buildings: vertex colours; aE.x = windows (1 punched, 2 ribbon glazing), aE.y = share of windows on fire
+// ================================================================ facade skins: eight bays of Basel facades, painted once into a texture atlas
+// One tile = one window bay (3.1 m) by one storey (3.25 m); the top row is the ground floor, the bottom row the upper floors.
+// Alpha 0 marks glass: the shader draws its own panes there (and the fire behind them).
+// 0 neutral plaster (tinted by the vertex colour), 1 old town beige with red sandstone surrounds and green shutters,
+// 2 light grey with grey shutters, 3 red sandstone ashlar, 4 pale yellow with dark shutters, 5 ochre Gründerzeit with pediments,
+// 6 post-war concrete with wide windows, 7 pink plaster with brown shutters
+const FACADE_TEX = (() => {
+  const T = 256, NX = 8, c = document.createElement('canvas'); c.width = T * NX; c.height = T * 2;
+  const g = c.getContext('2d'), m = document.createElement('canvas'); m.width = c.width; m.height = c.height;
+  const gm = m.getContext('2d'); gm.fillStyle = '#fff'; gm.fillRect(0, 0, m.width, m.height); gm.fillStyle = '#000';
+  const R = rng(77);
+  const STY = [
+    { wall: '#d9d9d6', frame: '#f2f1ec', sur: null, shut: null, shop: false },
+    { wall: '#d8c6a2', frame: '#efe9dc', sur: '#a86a55', shut: '#3f5a3a', shop: true },
+    { wall: '#e2e0da', frame: '#f6f5f1', sur: '#bdb9b0', shut: '#6b6f70', shop: false, rust: true },
+    { wall: '#b06a55', frame: '#e6ddd0', sur: '#8d4c3c', shut: null, shop: false, ashlar: true, arch: true },
+    { wall: '#e3d29b', frame: '#f4efe2', sur: '#f0eadb', shut: '#2f3d33', shop: true },
+    { wall: '#cfb48a', frame: '#efe7d6', sur: '#b29a74', shut: null, shop: false, ped: true, rust: true, rustCol: '#9a8a76' },
+    { wall: '#bdbab2', frame: '#6d6f70', sur: null, shut: null, shop: true, wide: true },
+    { wall: '#d9b2a2', frame: '#f4efe8', sur: '#e8ddd2', shut: '#6a4a36', shop: false },
+  ];
+  const rect = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+  const glass = (x, y, w, h) => { gm.fillRect(x, y, w, h); };
+  STY.forEach((s, i) => {
+    for (const row of [0, 1]){
+      const x0 = i * T, y0 = row * T, ground = row === 0;
+      // plaster with grain and weather streaks
+      rect(x0, y0, T, T, s.wall);
+      for (let k = 0; k < 700; k++){ const a = R() * 0.07; g.fillStyle = R() < 0.5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`; g.fillRect(x0 + R() * T, y0 + R() * T, 1 + R() * 3, 1 + R() * 3); }
+      for (let k = 0; k < 6; k++){ g.fillStyle = 'rgba(40,35,30,0.05)'; g.fillRect(x0 + R() * T, y0 + T * 0.55, 2 + R() * 6, T * 0.45); }
+      if (s.ashlar){ g.strokeStyle = 'rgba(60,30,20,0.35)'; g.lineWidth = 2; for (let yy = 0; yy < T; yy += 32){ g.beginPath(); g.moveTo(x0, y0 + yy); g.lineTo(x0 + T, y0 + yy); g.stroke(); for (let xx = (yy / 32) % 2 ? 0 : 48; xx < T; xx += 96){ g.beginPath(); g.moveTo(x0 + xx, y0 + yy); g.lineTo(x0 + xx, y0 + yy + 32); g.stroke(); } } }
+      if (ground && s.rust){ rect(x0, y0 + 40, T, T - 40, s.rustCol || s.wall); g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 3; for (let yy = 70; yy < T; yy += 34){ g.beginPath(); g.moveTo(x0, y0 + yy); g.lineTo(x0 + T, y0 + yy); g.stroke(); } }
+      // a cornice band at the top of the ground floor
+      if (ground){ rect(x0, y0, T, 14, 'rgba(0,0,0,0.12)'); rect(x0, y0 + 2, T, 8, s.sur || s.frame); }
+      if (ground && s.shop){
+        // shop front: a wide window and a door, a sign band
+        const fx = x0 + 18, fy = y0 + 46, fw = T - 36, fh = 170;
+        rect(fx - 6, fy - 6, fw + 12, fh + 12, s.sur || '#3c3a37');
+        rect(fx, fy, fw, fh, s.frame); glass(fx + 6, fy + 6, fw * 0.62 - 9, fh - 12); glass(fx + fw * 0.62 + 3, fy + 6, fw * 0.38 - 9, fh - 6);
+        rect(x0 + 10, y0 + 18, T - 20, 20, '#4a4642');
+        continue;
+      }
+      // a window: surround, frame, cross mullions, sill; shutters beside it
+      const wide = s.wide, ww = wide ? 200 : 100, wh = wide ? 118 : 142;
+      const wx = x0 + (T - ww) / 2, wy = y0 + (ground ? 60 : 50);
+      if (s.arch && ground){ g.fillStyle = s.sur; g.beginPath(); g.arc(x0 + T / 2, wy + 40, 62, Math.PI, 0); g.lineTo(x0 + T / 2 + 62, y0 + T); g.lineTo(x0 + T / 2 - 62, y0 + T); g.fill(); rect(x0 + T / 2 - 50, wy + 40, 100, T - wy - 40 + y0, '#3a2c22'); gm.beginPath(); gm.arc(x0 + T / 2, wy + 40, 48, Math.PI, 0); gm.fill(); continue; }
+      if (s.sur){ rect(wx - 12, wy - 12, ww + 24, wh + 24, s.sur); }
+      if (s.ped){ g.fillStyle = s.sur; g.beginPath(); g.moveTo(wx - 18, wy - 14); g.lineTo(wx + ww / 2, wy - 44); g.lineTo(wx + ww + 18, wy - 14); g.fill(); }
+      rect(wx, wy, ww, wh, s.frame);
+      const p = 7, mx = wide ? 3 : 2;
+      for (let a = 0; a < mx; a++) for (let b = 0; b < 2; b++){
+        const gx = wx + p + a * (ww - p) / mx, gy = wy + p + b * (wh * (b ? 0.6 : 0.4)), gw = (ww - p) / mx - p, gh = (b ? wh * 0.6 : wh * 0.4) - p - (b ? p : 0);
+        glass(gx, b ? wy + wh * 0.4 + p / 2 : gy, gw, b ? wh * 0.6 - p * 1.5 : wh * 0.4 - p);
+      }
+      rect(wx - 8, wy + wh, ww + 16, 9, s.sur || '#b0aca4');
+      rect(wx - 8, wy + wh + 9, ww + 16, 3, 'rgba(0,0,0,0.25)');
+      if (s.shut && !wide){
+        for (const sd of [-1, 1]){
+          const sx = sd < 0 ? wx - 12 - 46 : wx + ww + 12, sw = 44;
+          rect(sx, wy - 4, sw, wh + 8, s.shut);
+          g.fillStyle = 'rgba(0,0,0,0.25)'; for (let yy = wy; yy < wy + wh; yy += 7) g.fillRect(sx + 4, yy, sw - 8, 2);
+        }
+      }
+      if (wide) rect(x0, wy + wh + 12, T, 26, 'rgba(0,0,0,0.12)');
+    }
+  });
+  // merge: colour from c, glass mask from m into alpha; rows flipped so v = 0 is the bottom of a storey
+  const W_ = c.width, H_ = c.height, col = g.getImageData(0, 0, W_, H_).data, msk = gm.getImageData(0, 0, W_, H_).data;
+  const out = new Uint8Array(W_ * H_ * 4);
+  for (let y = 0; y < H_; y++){
+    const ty = Math.floor(y / T), ly = y % T, dst = (1 - ty) * T + (T - 1 - ly);
+    for (let x = 0; x < W_; x++){ const a = (y * W_ + x) * 4, b = (dst * W_ + x) * 4; out[b] = col[a]; out[b + 1] = col[a + 1]; out[b + 2] = col[a + 2]; out[b + 3] = msk[a] > 128 ? 255 : 0; }
+  }
+  const t = new THREE.DataTexture(out, W_, H_, THREE.RGBAFormat);
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 4; t.needsUpdate = true;
+  return t;
+})();
+// approximate wall colour of each style (rubble, soot)
+const STYLE_HUE = ['#d9d9d6', '#d8c6a2', '#e2e0da', '#b06a55', '#e3d29b', '#cfb48a', '#bdbab2', '#d9b2a2'];
+
+// buildings: vertex colours; aE.x = skin (0 none, 1-8 facade style, 9 ribbon glazing, 10 tiled roof, 11 flat roof), aE.y = share of windows on fire; aB = foot of the building
 function buildingMat(){
   const m = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   m.onBeforeCompile = sh => {
-    sh.uniforms.uTime = U_TIME;
-    sh.vertexShader = 'attribute vec2 aE;\nvarying vec2 vE;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
-      vE = aE; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`);
-    sh.fragmentShader = 'uniform float uTime;\nvarying vec2 vE;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + GLSL_NOISE + sh.fragmentShader
+    sh.uniforms.uTime = U_TIME; sh.uniforms.uFacade = { value: FACADE_TEX };
+    sh.vertexShader = 'attribute vec2 aE;\nattribute float aB;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
+      vE = aE; vB = aB; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`);
+    sh.fragmentShader = 'uniform float uTime;\nuniform sampler2D uFacade;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + GLSL_NOISE + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
         float win = 0.0, cellId = 0.0;
-        diffuseColor.rgb *= 0.9 + 0.2 * n1(vWP.xz * 0.35 + vWP.y * 0.21);
-        if (vE.x > 0.5 && abs(vWN.y) < 0.35){
+        diffuseColor.rgb *= 0.92 + 0.16 * n1(vWP.xz * 0.35 + vWP.y * 0.21);
+        float sk = floor(vE.x + 0.5);
+        if (sk > 0.5 && sk < 9.5 && abs(vWN.y) < 0.35){
           vec2 t = normalize(vec2(-vWN.z, vWN.x) + 1e-5);
           float u = dot(vWP.xz, t);
-          if (vE.x < 1.5){
-            float fu = fract(u / 3.1), fy = fract(vWP.y / 3.25);
-            win = step(0.28, fu) * step(fu, 0.72) * step(0.3, fy) * step(fy, 0.8);
-            cellId = floor(u / 3.1) * 7.13 + floor(vWP.y / 3.25) * 13.7;
+          if (sk < 8.5){
+            // a facade bay from the atlas: ground floor or upper storey
+            float hy = max(vWP.y - vB, 0.0), fl = floor(hy / 3.25);
+            vec2 q = vec2(u / 3.1, hy / 3.25);
+            vec2 uvA = (vec2(sk - 1.0, fl < 1.0 ? 1.0 : 0.0) + 0.01 + fract(q) * 0.98) / vec2(8.0, 2.0);
+            vec4 tx = textureGrad(uFacade, uvA, dFdx(q) * 0.98 / vec2(8.0, 2.0), dFdy(q) * 0.98 / vec2(8.0, 2.0));
+            win = 1.0 - tx.a;
+            cellId = floor(q.x) * 7.13 + fl * 13.7;
+            vec3 glassC = vec3(0.07, 0.08, 0.09) + 0.13 * h1(vec2(cellId, 9.1)) + vec3(0.02, 0.03, 0.04) * step(0.5, fract(q.y * 2.0));
+            diffuseColor.rgb = mix(diffuseColor.rgb * tx.rgb * 1.18, glassC, win);
           } else {
             float fy = fract(vWP.y / 4.1);
             win = step(0.38, fy) * (0.75 + 0.25 * step(0.5, fract(u / 1.6)));
             cellId = floor(u / 9.0) * 7.13 + floor(vWP.y / 4.1) * 13.7;
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.08, 0.09, 0.1) + 0.14 * h1(vec2(cellId, 9.1)), win * 0.85);
           }
-          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.12, 0.13, 0.15), win * 0.85);
+        } else if (sk > 9.5 && sk < 10.5 && vWN.y > 0.2){
+          // clay tiles in rows down the slope
+          vec2 dn = normalize(vWN.xz + 1e-5);
+          float along = dot(vWP.xz, dn) / 0.36, across = dot(vWP.xz, vec2(-dn.y, dn.x)) / 0.25;
+          float rowI = floor(along), tile = h1(vec2(rowI, floor(across + rowI * 0.5)));
+          float edge = smoothstep(0.0, 0.18, fract(along)) * (0.8 + 0.2 * smoothstep(0.0, 0.12, abs(fract(across + rowI * 0.5) - 0.5) * 2.0));
+          diffuseColor.rgb *= (0.62 + 0.38 * edge) * (0.85 + 0.3 * tile) * (0.9 + 0.2 * n1(vWP.xz * 0.2));
+        } else if (sk > 10.5 && vWN.y > 0.5){
+          // gravel and tar on flat roofs
+          diffuseColor.rgb *= 0.75 + 0.35 * n1(vWP.xz * 3.1) * n1(vWP.xz * 0.37 + 4.0);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         if (vE.y > 0.0){
@@ -275,14 +384,14 @@ const BLD_MAT = buildingMat();
 
 // ================================================================ geometry builder: merged triangles with colour and building data
 class GB {
-  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); }
-  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
+  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.base = 0; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); this.B = new Float32Array(size); }
+  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2], ['B', 1]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
   v(x, y, z, c, e){
     if (this.n >= this.size) this.grow();
     const i = this.n++;
     this.P[i * 3] = x; this.P[i * 3 + 1] = y; this.P[i * 3 + 2] = z;
     this.C[i * 3] = c[0]; this.C[i * 3 + 1] = c[1]; this.C[i * 3 + 2] = c[2];
-    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0;
+    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0; this.B[i] = this.base;
   }
   tri(a, b, c, col, e){ this.v(a[0], a[1], a[2], col, e); this.v(b[0], b[1], b[2], col, e); this.v(c[0], c[1], c[2], col, e); }
   quad(a, b, c, d, col, e){ this.tri(a, b, c, col, e); this.tri(a, c, d, col, e); }
@@ -327,11 +436,11 @@ class GB {
     for (const [a, b, c] of tris) this.tri([pts[a][0], y, pts[a][1]], [pts[b][0], y, pts[b][1]], [pts[c][0], y, pts[c][1]], col, e);
   }
   // gable roof over an oriented rectangle; ridge along the long axis
-  gable(o, y, rh, colRoof, colWall, over = 0.4){
+  gable(o, y, rh, colRoof, colWall, over = 0.4, eRoof = [10, 0]){
     const { cx, cz, c, s } = o, hu = o.hu + over, hv = o.hv + over;
     const P = (u, v, h) => [cx + c * u - s * v, h, cz + s * u + c * v];
     const a = P(-hu, -hv, y), b = P(hu, -hv, y), d = P(hu, hv, y), e = P(-hu, hv, y), r0 = P(-hu, 0, y + rh), r1 = P(hu, 0, y + rh);
-    this.quad(a, b, r1, r0, colRoof); this.quad(d, e, r0, r1, colRoof.map(v => v * 0.88));
+    this.quad(a, b, r1, r0, colRoof, eRoof); this.quad(d, e, r0, r1, colRoof.map(v => v * 0.88), eRoof);
     const g0 = P(-o.hu, -o.hv, y), g1 = P(-o.hu, o.hv, y), g2 = P(-o.hu, 0, y + rh * (o.hv / hv));
     const g3 = P(o.hu, -o.hv, y), g4 = P(o.hu, o.hv, y), g5 = P(o.hu, 0, y + rh * (o.hv / hv));
     this.tri(g0, g1, g2, colWall); this.tri(g3, g4, g5, colWall);
@@ -367,6 +476,7 @@ class GB {
     g.setAttribute('position', new THREE.BufferAttribute(this.P.slice(0, n * 3), 3));
     g.setAttribute('color', new THREE.BufferAttribute(this.C.slice(0, n * 3), 3));
     g.setAttribute('aE', new THREE.BufferAttribute(this.E.slice(0, n * 2), 2));
+    g.setAttribute('aB', new THREE.BufferAttribute(this.B.slice(0, n), 1));
     g.computeVertexNormals();
     g.computeBoundingSphere();
     return new THREE.Mesh(g, mat);
@@ -503,7 +613,7 @@ function stepParticles(ps, dt, fire){
 let emitters = [];
 function updateEmitters(dt, cam){
   for (const e of emitters){
-    if (e.war && !world.war) continue;
+    if (e.war && !world.war && !(e.roche && GAME.rocheDown && GAME.mode === 'defend')) continue;
     const dx = e.x - cam.x, dz = e.z - cam.z, d2 = dx * dx + dz * dz;
     const range = e.kind === 'column' ? 9000 : e.kind === 'dust' ? 5000 : e.kind === 'smoke' ? 2600 : 1300;
     if (d2 > range * range) continue;
@@ -560,12 +670,12 @@ const K = 0.16;
 const post = new THREE.ShaderMaterial({
   uniforms: {
     tScene: { value: rt.texture }, tOSD: { value: OSD.t }, tUI: { value: UI.t }, uRes: { value: new THREE.Vector2(RW, RH) },
-    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uK: { value: K }, uBlack: { value: 0 }, uDim: { value: 0 }
+    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uK: { value: K }, uBlack: { value: 0 }, uDim: { value: 0 }, uGrade: { value: 1 }
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader: `
     uniform sampler2D tScene, tOSD, tUI; uniform vec2 uRes;
-    uniform float uTime, uNoise, uStatic, uK, uBlack, uDim;
+    uniform float uTime, uNoise, uStatic, uK, uBlack, uDim, uGrade;
     varying vec2 vUv;
     float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main(){
@@ -584,8 +694,12 @@ const post = new THREE.ShaderMaterial({
       col = mix(col, smear, 0.25);
       // grade: a little desaturated and warm, like a cheap camera
       float l = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(vec3(l), col, 0.82) * vec3(1.02, 1.0, 0.96);
-      col = pow(col, vec3(0.95)) * 1.04;
+      vec3 colour = pow(mix(vec3(l), col, 0.82) * vec3(1.02, 1.0, 0.96), vec3(0.95)) * 1.04;
+      // the analog FPV look of /drone: nearly monochrome, warm, a little colour left for fire
+      float lg = clamp(pow(l * 1.3, 0.85) * 1.15, 0.0, 1.0);
+      vec3 graded = mix(vec3(0.11, 0.10, 0.09), vec3(0.88, 0.85, 0.79), lg) * vec3(1.0, 0.965, 0.9);
+      vec3 chroma = col - vec3((col.r + col.g + col.b) / 3.0);
+      col = mix(colour, graded + chroma * 0.6, uGrade);
       vec4 o = texture2D(tOSD, vec2(vUv.x + jit, vUv.y));
       col = mix(col, o.rgb, o.a);
       float n = h(px + vec2(tq * 7.13, tq * 3.7));
@@ -715,7 +829,7 @@ const noteInput = () => { lastInput = performance.now(); };
 // ================================================================ input
 const keys = {};
 const pad = { active: false, pitch: 0, roll: 0, yaw: 0, thr: 0, climb: 0, gim: 0, thrSeen: false, prev: {}, gp: false, navY: 0 };
-const touchIn = { on: false, l: [0, 0], r: [0, 0], used: false };
+const touchIn = { on: false, l: [0, 0], r: [0, 0], used: false, boost: false, camUp: false, camDown: false };
 const device = () => renderer.xr.isPresenting ? 'vr' : pad.gp ? 'pad' : touchIn.used ? 'touch' : 'kb';
 function setPaused(v){
   if (state !== 'fly') v = false;
@@ -736,7 +850,7 @@ addEventListener('keydown', e => {
   } else {
     if (e.code === 'Space') act('arm');
     if (e.code === 'Enter') act('ok');
-    if (e.code === 'KeyW' && state === 'fly' && !P.armed && P.mode === 'POS' && P.alive) act('arm');
+    if (e.code === 'KeyW' && state === 'fly' && !P.armed && P.alive && !card) act('arm');
   }
   if (e.code === 'KeyP' || e.code === 'Escape') act('pause');
   if (e.code === 'KeyL') act('lang');
@@ -817,7 +931,7 @@ function readPads(){
   }
   if (pad.thr > 0.05) pad.thrSeen = true;
   if (busy) noteInput();
-  if (state === 'fly' && !menu && !P.armed && P.alive && P.mode === 'POS' && pad.climb > 0.5) toggleArm();
+  if (state === 'fly' && !menu && !card && !P.armed && P.alive && pad.climb > 0.5) toggleArm();
 }
 // pointer: menus and cards are tapped or clicked
 function uiPoint(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
@@ -849,23 +963,46 @@ cv.addEventListener('pointerdown', e => {
   };
   bind('stL', 'l'); bind('stR', 'r');
   const btn = (id, a) => document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); touchIn.used = true; audioInit(); noteInput(); if (a === 'arm' && card) act('ok'); else act(a); });
-  btn('tbArm', 'arm'); btn('tbV', 'vbtn'); btn('tbP', 'pause');
+  btn('tbArm', 'arm'); btn('tbV', 'vbtn'); btn('tbP', 'pause'); btn('tbM', 'mode');
+  // hold buttons: turbo, camera tilt
+  const hold = (id, key) => {
+    const el = document.getElementById(id);
+    const on = v => e => { e.preventDefault(); e.stopPropagation(); touchIn.used = true; noteInput(); touchIn[key] = v; el.classList.toggle('on', v); if (v) el.setPointerCapture(e.pointerId); };
+    el.addEventListener('pointerdown', on(true)); el.addEventListener('pointerup', on(false)); el.addEventListener('pointercancel', on(false));
+  };
+  hold('tbT', 'boost'); hold('tbCu', 'camUp'); hold('tbCd', 'camDown');
+  // the first touch asks for fullscreen and landscape; held upright, the page asks to turn the phone
+  let fs = false;
+  addEventListener('pointerdown', () => {
+    if (fs) return; fs = true;
+    const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
+    try { const pr = req && req.call(el, { navigationUI: 'hide' }); if (pr && pr.then) pr.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (e) {}
+  }, true);
+  document.getElementById('rot').classList.add('need');
   touchIn.pane = pane;
 })();
-function showTouch(){ if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = def ? (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN') : 'V'; } }
+function showTouch(){
+  if (touchIn.pane){
+    const rot = document.getElementById('rot'); rot.textContent = '↻  ' + say(S.turn);
+    const pos = P.mode === 'POS';
+    document.getElementById('tbCu').style.display = document.getElementById('tbCd').style.display = pos ? '' : 'none';
+    document.getElementById('tbT').style.display = pos ? '' : 'none';
+    document.getElementById('tbM').textContent = say(S.modeName[P.mode]);
+  }
+  if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = def ? (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN') : 'V'; } }
 
 // ================================================================ the drone: camera quadcopter with three flight modes
 // POS: GPS hold and a stabilised camera (easy); ANGL: self-levelling; ACRO: full manual, like a racing drone
 const G = 9.81, MAXT = 4.6 * G, KDRAG = 0.004, LDRAG = 0.12;
 const P = {
   pos: new THREE.Vector3(), vel: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), prev: new THREE.Vector3(),
-  yaw: 0, gimbal: -0.2, psi: 0, thr: 0, T: 0, armed: false, alive: true, mode: 'POS', onGround: true, deadAt: 0, deadWhy: '',
-  sp: 0, sr: 0, sy: 0, safe: new THREE.Vector3(), safeYaw: 0, safeT: 0, tiltX: 0, tiltZ: 0
+  yaw: 0, gimbal: -0.2, psi: 0, thr: 0, T: 0, armed: false, alive: true, mode: 'ACRO', onGround: true, deadAt: 0, deadWhy: '',
+  sp: 0, sr: 0, sy: 0, used: 0, time: 0, safe: new THREE.Vector3(), safeYaw: 0, safeT: 0, tiltX: 0, tiltZ: 0
 };
 function placeDrone(x, y, z, yaw, hover){
   P.pos.set(x, y, z); P.prev.copy(P.pos); P.vel.set(0, 0, 0); P.w.set(0, 0, 0);
   P.yaw = yaw; P.psi = yaw; P.q.setFromEuler(_e.set(0, yaw, 0, 'YXZ'));
-  P.alive = true; P.armed = !!hover; P.onGround = !hover; P.thr = hover ? G / MAXT : 0; P.tiltX = P.tiltZ = 0;
+  P.alive = true; P.armed = !!hover; P.onGround = !hover; P.used = 0; P.time = 0; P.thr = hover ? G / MAXT : 0; P.tiltX = P.tiltZ = 0;
 }
 function respawnStart(){
   const s = world.start;
@@ -898,14 +1035,14 @@ function crash(why){
   if (!P.alive) return;
   if (GAME.mode === 'defend'){
     if (why === 'crash'){ detonate(); return; }
-    if (why === 'hit'){ explosion(P.pos.clone(), 0.4); GAME.used++; GAME.hitMsg = 2.5; GAME.hitWhat = say(DT.shot); }
+    if (why === 'hit'){ explosion(P.pos.clone(), 0.4); GAME.used++; GAME.hitMsg = 2.5; GAME.hitTitle = say(DT.shot); GAME.hitWhat = ''; }
   }
   P.alive = false; P.armed = false; P.deadAt = clock; P.deadWhy = why;
   beep(220, 0.4, 0.12);
 }
 const _up = new THREE.Vector3(), _acc = new THREE.Vector3(), _qt = new THREE.Quaternion(), _dq = new THREE.Quaternion(), _ax = new THREE.Vector3();
 function simPOS(dt){
-  const boost = keys.ShiftLeft || keys.ShiftRight ? 1.9 : 1;
+  const boost = keys.ShiftLeft || keys.ShiftRight || touchIn.boost || (pad.active && pad.thr > 0.5) ? 1.9 : 1;
   const climb = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + pad.climb + touchIn.l[1], -1, 1);
   if (P.armed){
     P.yaw -= P.sy * 1.5 * dt;
@@ -997,18 +1134,23 @@ function updateSticks(dt){
   const ra = pad.active || touchIn.used ? 1 - Math.exp(-dt * 25) : r;
   P.sp += (tp - P.sp) * ra; P.sr += (tr - P.sr) * ra; P.sy += (ty - P.sy) * ra;
   if (P.mode === 'ACRO' && P.armed){
+    // gamepad trigger: throttle as it is; a self-centring stick (touch, gamepad, Quest): the centre hovers
+    const hov = G / MAXT, stick = y => y >= 0 ? hov + y * (1 - hov) : hov * (1 + y);
     if (pad.active && pad.thrSeen) P.thr = pad.thr;
+    else if (pad.active) P.thr = stick(pad.climb);
+    else if (touchIn.used) P.thr = stick(touchIn.l[1]);
     else {
-      const c = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + touchIn.l[1];
+      const c = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
       P.thr = clamp(P.thr + c * dt * 0.7, 0, 1);
     }
   }
-  const gim = (keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0) + pad.gim;
+  const gim = (keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0) + pad.gim + (touchIn.camUp ? 1 : 0) - (touchIn.camDown ? 1 : 0);
   P.gimbal = clamp(P.gimbal + gim * dt * 0.9, -PI / 2, 0.3);
 }
 function updateDrone(dt){
   updateSticks(dt);
   if (P.alive){
+    if (P.armed){ P.time += dt; P.used = Math.min(1, P.used + (0.03 + 0.97 * Math.pow(clamp(P.T / MAXT, 0, 1), 1.5)) * dt / 300); }
     const n = Math.ceil(dt / 0.005);
     for (let i = 0; i < n && P.alive; i++){
       P.prev.copy(P.pos);
@@ -1108,6 +1250,29 @@ function newWorld(id){
   return { id, root, gPeace: peace, gWar: war, hasWar: true, war: false, slabs: [], slabsPeace: [], slabsWar: [], pois: [], terrains: [], ceiling: 3000, R: 3000, center: [0, 0] };
 }
 
+// burnt-out armour, anti-tank hedgehogs, sandbag positions: written into a war geometry
+function milWreck(gb, x, y, z, yaw, tank, r){
+  const H = mix3([0.22, 0.2, 0.18], [0.32, 0.24, 0.18], r()), D = [0.1, 0.1, 0.09], c = Math.cos(yaw), s = Math.sin(yaw);
+  gb.box(x, y + 1.0, z, 3.3, tank ? 0.9 : 1.2, tank ? 6.8 : 6.5, yaw, H, null, 0, (r() - 0.5) * 0.12);
+  for (const sd of [-1, 1]) gb.box(x + c * sd * 1.55, y + 0.5, z - s * sd * 1.55, 0.5, 0.9, 6.9, yaw, D);
+  if (r() < 0.55){ const a = r() * 6.28, d = 4 + r() * 8; gb.cyl(x + Math.cos(a) * d, y + 0.2, z + Math.sin(a) * d, 1.5, 1.1, 0.8, H, 9); gb.box(x + Math.cos(a) * d + 2.5, y + 0.4, z + Math.sin(a) * d, 0.17, 0.17, 5, r() * 6, D, null, 0.1, 0); }
+  else { gb.cyl(x, y + 1.45, z, tank ? 1.5 : 1.0, tank ? 1.1 : 0.8, 0.8, H, 9); gb.box(x + s * 2.6, y + 2.0, z + c * 2.6, 0.17, 0.17, tank ? 5 : 2.6, yaw, D, null, (r() - 0.3) * 0.4, 0); }
+}
+function hedgehogs(gb, x, y, z, yaw, n, r){
+  const c = Math.cos(yaw), s = Math.sin(yaw), M = [0.22, 0.21, 0.2];
+  for (let k = 0; k < n; k++){
+    const u = (k - n / 2) * 3 + (r() - 0.5), px = x + c * u, pz = z - s * u;
+    gb.box(px, y + 0.8, pz, 0.22, 0.22, 2.4, r() * 3, M, null, 0.7, 0); gb.box(px, y + 0.8, pz, 0.22, 0.22, 2.4, r() * 3, M, null, -0.7, 0); gb.box(px, y + 0.8, pz, 2.4, 0.22, 0.22, r() * 3, M, null, 0, 0.7);
+  }
+}
+function sandbags(gb, x, y, z, yaw, len, r){
+  const c = Math.cos(yaw), s = Math.sin(yaw);
+  for (let l = 0; l < 3; l++) for (let u = -len / 2; u < len / 2; u += 0.62){
+    const k = 0.85 + r() * 0.2, uu = u + (l % 2) * 0.31;
+    gb.box(x + c * uu, y + 0.18 + l * 0.32, z - s * uu, 0.6, 0.3, 0.38, yaw, [0.55 * k, 0.5 * k, 0.4 * k]);
+  }
+}
+
 // ================================================================ BASEL: a fictional scenario on real map data (OpenStreetMap, swisstopo; via /nostalgia)
 const BASEL_TXT = {
   name: { de: 'BASEL – EIN SZENARIO', fr: 'BÂLE – UN SCÉNARIO', en: 'BASEL – A SCENARIO' },
@@ -1192,13 +1357,14 @@ async function buildBasel(){
   for (let k = 0; k < 70; k++){ const b = D.B[Math.floor(R0() * D.B.length)], p = b[3]; strikes.push([p[0], p[1], 30 + R0() * 100, 0.5 + R0() * 0.5]); }
   const dmgAt = (x, z) => { let d = 0; for (const s of strikes){ const t = 1 - smooth(Math.hypot(x - s[0], z - s[1]) / s[2]); if (t > 0) d = Math.max(d, t * s[3]); } return d + 0.2 + 0.9 * (fbm(x / 160, z / 160, 3) - 0.5); };
   w.obstPeace = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3); w.obstWar = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3);
-  const gP = new GB(1 << 20), gW = new GB(1 << 20);
+  const gP = new GB(1 << 20), gW = new GB(1 << 20), gRi = new GB(1 << 16), gRd = new GB(1 << 18);   // gRi/gRd: Bau 2 and its quarter, standing and fallen
   const FAC = ['#d9cbb0', '#cdbb9c', '#e3d8c4', '#c9a990', '#b8b2a6', '#d7c49a', '#c58f78', '#e6e0d2', '#a9a49a', '#d4b9a6'].map(hex);
   const ROOF = ['#8e4b37', '#7a4434', '#6b5a50', '#5e5550', '#9a5a40', '#84503c'].map(hex);
   const SOOT = hex('#1d1b19'), RUB = hex('#7a736a'), CONC = hex('#8d8a84');
   // ---- the Roche towers: Bau 1 (178 m) and Bau 2 (205 m); stepped, white, with ribbon glazing
   const T2 = obb(pairs([1059, -134, 1032, -130, 1022, -189, 1049, -193]));
   const T1 = { ...T2, cx: 936, cz: -150, hu: 31, hv: 15 };
+  const inTongue = (x, z) => { const dx = x - 1040.5, dz = z + 161.5, f0 = Math.cos(-PI * 0.6), f1 = Math.sin(-PI * 0.6), u = dx * f0 + dz * f1, v = -dx * f1 + dz * f0; return u > -40 && u < 255 && Math.abs(v) < 42 - u * 0.07; };
   const inTower = (x, z) => [T1, T2].some(o => { const dx = x - o.cx, dz = z - o.cz, u = dx * o.c + dz * o.s, v = -dx * o.s + dz * o.c; return Math.abs(u) < o.hu + 4 && Math.abs(v) < o.hv + 4; });
   const rectPts = (o, u0, u1, hv) => [[u0, -hv], [u1, -hv], [u1, hv], [u0, hv]].map(([u, v]) => [o.cx + o.c * u - o.s * v, o.cz + o.s * u + o.c * v]);
   function roche(g, o, Ht, steps, burn, grid){
@@ -1206,27 +1372,60 @@ async function buildBasel(){
     for (let k = 0; k < steps; k++){
       const u0 = -o.hu + Math.floor(k / 2) * 4.2, u1 = o.hu - k * 3.8, y0 = base + k * th, y1 = base + (k + 1) * th;
       const pts = rectPts(o, u0, u1, o.hv);
-      g.walls(pts, y0, y1, white, [2, burn && k > 1 && k < steps - 1 ? burn : 0]);
-      g.cap(pts, y1, hex('#cfcfcb'));
+      g.walls(pts, y0, y1, white, [9, burn && k > 1 && k < steps - 1 ? burn : 0]);
+      g.cap(pts, y1, hex('#cfcfcb'), [11, 0]);
       if (grid) grid.poly(pts, y1);
     }
   }
-  roche(gP, T1, 178, 7, 0, w.obstPeace); roche(gP, T2, 205, 8, 0, w.obstPeace);
+  roche(gP, T1, 178, 7, 0, w.obstPeace); roche(gRi, T2, 205, 8, 0, w.obstPeace);
   roche(gW, T1, 178, 7, 0.22, w.obstWar);
   {
-    // Bau 2 has come down: a jagged stump, the concrete core, and a field of slabs
-    const base = groundH(T2.cx, T2.cz) - 1, r = rng(205), pts = rectPts(T2, -T2.hu, T2.hu, T2.hv);
-    gW.walls(pts, base, (i, k) => base + 16 + r() * 40 * (k % 3 === 0 ? 1 : 0.5), mul(hex('#bdbcb6'), 0.75), [2, 0.15], 4, 0.9);
-    gW.box(T2.cx, base + 36, T2.cz, 9, 72, 9, Math.atan2(-T2.s, T2.c), mul(CONC, 0.7));
-    const heap = rectPts(T2, -T2.hu - 26, T2.hu + 30, T2.hv + 24);
-    gW.rubble(heap, base, 24, mix3(RUB, hex('#c9c7c0'), 0.4), r, 10);
-    for (let k = 0; k < 60; k++){
-      const a = r() * 6.28, d = 10 + r() * 70, x = T2.cx + Math.cos(a) * d * 1.2, z = T2.cz + Math.sin(a) * d;
-      gW.box(x, groundH(x, z) + 1 + r() * 8 * Math.max(0, 1 - d / 60), z, 6 + r() * 10, 0.6, 3 + r() * 5, r() * 6.28, mul(hex('#d8d7d0'), 0.6 + r() * 0.3), [2, 0], (r() - 0.5) * 1.4, (r() - 0.5) * 1.2);
+    // Bau 2 has come down. What stands: a skeleton of bare floor slabs, the concrete core, one sliver of facade.
+    // It fell to the west-southwest: a tongue of rubble runs some 250 m into the Wettstein quarter.
+    const base = groundH(T2.cx, T2.cz) - 1, r = rng(205), yawT = Math.atan2(-T2.s, T2.c), FLH = 4.1, STAND = 13;
+    const WHITE = hex('#e2e1db'), SLAB = hex('#c4c1b9');
+    const at = (u, v) => [T2.cx + T2.c * u - T2.s * v, T2.cz + T2.s * u + T2.c * v];
+    for (let k = 1; k <= STAND; k++){
+      if (k > 9 && r() < 0.35) continue;
+      const u0 = -T2.hu + r() * k * 1.4, u1 = T2.hu - r() * k * 2.6, hv = T2.hv - r() * k * 0.25, [x, z] = at((u0 + u1) / 2, 0);
+      gRd.box(x, base + k * FLH, z, u1 - u0, 0.45, hv * 2, yawT, mul(SLAB, 0.75 + r() * 0.2), null, k > STAND - 3 ? (r() - 0.5) * 0.25 : 0, k > STAND - 3 ? (r() - 0.5) * 0.2 : 0);
+      for (let i = 0; i < 6; i++) for (const sv of [-1, 1]){
+        const u = lerp(u0 + 1, u1 - 1, i / 5); if (r() < 0.15) continue;
+        const [cx, cz] = at(u, sv * (hv - 1)); gRd.box(cx, base + (k - 0.5) * FLH, cz, 0.8, FLH, 0.8, yawT, mul(CONC, 0.7));
+      }
     }
-    w.obstWar.poly(pts, base + 56); w.obstWar.poly(heap, base + 20); w.obstWar.circle(T2.cx, T2.cz, 6, base + 72);
-    emitters.push({ kind: 'dust', x: T2.cx, y: base + 20, z: T2.cz, s: 1.6, acc: 0, war: true }, { kind: 'column', x: T2.cx + 10, y: base + 30, z: T2.cz, s: 2, acc: 0, war: true });
-    for (let k = 0; k < 6; k++) emitters.push({ kind: 'fire', x: T2.cx + (r() - 0.5) * 60, y: base + 12 + r() * 10, z: T2.cz + (r() - 0.5) * 70, s: 1.6, acc: 0, war: true });
+    gRd.walls(rectPts(T2, -T2.hu, T2.hu, T2.hv), base, (i, k) => base + FLH * (1 + r() * 2.5), mul(WHITE, 0.7), [9, 0.12], 4, 0.6);
+    gRd.box(T2.cx, base + 29, T2.cz, 9, 58, 9, yawT, mul(CONC, 0.68));
+    { const [x, z] = at(T2.hu - 3, T2.hv - 0.4); gRd.box(x, base + 38, z, 9, 76, 0.6, yawT, mul(WHITE, 0.8), [9, 0.1]); }
+    const FALL = [Math.cos(-PI * 0.6), Math.sin(-PI * 0.6)];
+    const tongueAt = (sd, side) => [T2.cx + FALL[0] * sd - FALL[1] * side, T2.cz + FALL[1] * sd + FALL[0] * side];
+    gRd.rubble(rectPts(T2, -T2.hu - 22, T2.hu + 22, T2.hv + 20), base, 27, mix3(RUB, WHITE, 0.45), r, 12);
+    w.obstWar.poly(rectPts(T2, -T2.hu - 15, T2.hu + 15, T2.hv + 14), base + 24);
+    for (let sd = 30; sd < 255; sd += 22){
+      const hw = 34 - sd * 0.07, hh = 24 * (1 - sd / 280), hl = 15, [mx, mz] = tongueAt(sd, (r() - 0.5) * 10);
+      const pts = [[-hl, -hw], [hl, -hw], [hl, hw], [-hl, hw]].map(([u, v]) => [mx + FALL[0] * u - FALL[1] * v, mz + FALL[1] * u + FALL[0] * v]);
+      const g0 = groundH(mx, mz);
+      gRd.rubble(pts, g0, Math.max(3, hh), mix3(RUB, WHITE, 0.4), r, 8);
+      w.obstWar.poly(pts, g0 + Math.max(3, hh) * 0.8);
+    }
+    // slabs and facade panels thrown along the fall line, and chunks all over the quarter
+    for (let k = 0; k < 260; k++){
+      const sd = r() * 260, side = (r() - 0.5) * (80 - sd * 0.15), [x, z] = tongueAt(sd, side), g0 = groundH(x, z);
+      const h = Math.max(0, 22 * (1 - sd / 280) * (1 - Math.abs(side) / 45));
+      const panel = r() < 0.35;
+      gRd.box(x, g0 + 0.5 + r() * h, z, panel ? 6 : 6 + r() * 10, panel ? 4 : 0.5, panel ? 0.35 : 3 + r() * 6, r() * 6.28, panel ? mul(WHITE, 0.75 + r() * 0.2) : mul(SLAB, 0.6 + r() * 0.3), panel ? [9, 0] : null, (r() - 0.5) * 1.5, (r() - 0.5) * 1.3);
+    }
+    for (let k = 0; k < 2600; k++){
+      const a = r() * 6.28, d = 20 + Math.pow(r(), 1.6) * 520, x = T2.cx + Math.cos(a) * d + FALL[0] * d * 0.35, z = T2.cz + Math.sin(a) * d + FALL[1] * d * 0.35;
+      if (inRiver(x, z)) continue;
+      const sz = 0.3 + r() * r() * 2.6;
+      gRd.box(x, groundH(x, z) + sz * 0.25, z, sz, sz * 0.5, sz * (0.6 + r()), r() * 6.28, mix3(SLAB, WHITE, r() * 0.6), null, (r() - 0.5) * 0.6, (r() - 0.5) * 0.6);
+    }
+    w.obstWar.circle(T2.cx, T2.cz, 6, base + 58); w.obstWar.poly(rectPts(T2, -T2.hu, T2.hu, T2.hv), base + STAND * FLH);
+    w.rocheFall = { x: T2.cx, z: T2.cz, FALL };
+    emitters.push({ kind: 'dust', x: tongueAt(110, 0)[0], y: base + 8, z: tongueAt(110, 0)[1], s: 1.6, acc: 0, war: true, roche: true },
+      { kind: 'column', x: tongueAt(170, 10)[0], y: base + 10, z: tongueAt(170, 10)[1], s: 1.8, acc: 0, war: true, roche: true });
+    for (let k = 0; k < 9; k++){ const [x, z] = tongueAt(r() * 230, (r() - 0.5) * 50); emitters.push({ kind: 'fire', x, y: groundH(x, z) + 4 + r() * 10, z, s: 1.5, acc: 0, war: true, roche: true }); }
     // Bau 1 still stands, burning on several floors
     const b1 = groundH(T1.cx, T1.cz);
     for (let k = 0; k < 4; k++){ const y = b1 + 40 + r() * 90, u = (r() - 0.5) * 20; emitters.push({ kind: 'fire', x: T1.cx + T1.c * u - T1.s * (T1.hv + 1), y, z: T1.cz + T1.s * u + T1.c * (T1.hv + 1), s: 1.4, acc: 0, war: true }); }
@@ -1242,64 +1441,76 @@ async function buildBasel(){
     const [cx, cz] = centroid(pts);
     if (inRiver(cx, cz) || inTower(cx, cz)) continue;
     const r = rng(seed * 31 + 7);
+    const affected = inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 100, gPx = affected ? gRi : gP, gWx = affected ? gRd : gW;
     let lo = 1e9, hi = -1e9; for (const [x, z] of pts){ const h = groundH(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); }
     const small = t === 1, area = Math.abs(signedArea(pts));
     let hh = h0 > 0 ? h0 : small ? 3.5 + r() * 1.5 : 11.5 + Math.floor(r() * 3) * 3.3 + (r() < 0.15 ? 3.3 : 0);
     if (t === 2) hh = Math.max(hh, 16); if (t === 3 || t === 5) hh = Math.max(hh, 18);
     const rathaus = /rathaus/i.test(name), tall = hh > 32;
-    let fc = rathaus ? hex('#b23a30') : t === 2 || t === 3 ? hex('#e3dccd') : tall ? hex('#b9bcbd') : t === 6 ? hex('#c9c6bd') : small ? hex('#9a958c') : FAC[Math.floor(r() * FAC.length)];
-    if (t === 3) fc = hex('#b5574a');   // the red sandstone of the Münster
+    // the skin: old town styles near the Münster and the Marktplatz, a mix further out, concrete for tall and industrial blocks
+    const oldTown = Math.hypot(cx + 300, cz - 50) < 750;
+    let wf, fc;
+    if (small){ wf = 0; fc = hex('#9a958c'); }
+    else if (rathaus){ wf = 1; fc = hex('#b23a30'); }
+    else if (t === 2){ wf = 1; fc = hex('#e3dccd'); }
+    else if (t === 3){ wf = 4; fc = [1, 1, 1]; }
+    else if (hh > 60){ wf = 9; fc = hex('#b9bcbd'); }
+    else if (tall || t === 6){ wf = 7; fc = mul([1, 1, 1], 0.92 + r() * 0.08); }
+    else { const pool = oldTown ? [2, 2, 3, 5, 8, 4] : [6, 6, 3, 5, 8, 7, 2]; wf = pool[Math.floor(r() * pool.length)]; fc = mul([1, 1, 1], 0.88 + r() * 0.12); }
+    const hue = wf >= 1 && wf <= 8 && fc[0] === fc[1] ? hex(STYLE_HUE[wf - 1]) : fc;
     const rc = t === 3 ? hex('#6f5a4a') : ROOF[Math.floor(r() * ROOF.length)];
-    const wf = small ? 0 : tall || t === 6 ? 2 : 1;
+    gPx.base = gWx.base = lo;
     const y0 = lo - 1.5, y1 = hi + hh;
     const o = obb(pts), fill = area / (4 * o.hu * o.hv), gableOk = !small && !tall && t !== 6 && fill > 0.72 && o.hv < 16;
     const rh = gableOk ? Math.min(o.hv * (t === 3 ? 1.8 : 1.15), t === 3 ? 22 : 10) : 0;
     // peace
-    gP.walls(pts, y0, y1, fc, [wf, 0]);
-    if (gableOk) gP.gable(o, y1, rh, rc, fc); else gP.cap(pts, y1, small ? hex('#77706a') : mul(rc, 0.75));
+    gPx.walls(pts, y0, y1, fc, [wf, 0]);
+    if (gableOk) gPx.gable(o, y1, rh, rc, hue); else gPx.cap(pts, y1, small ? hex('#77706a') : hex('#8a867e'), [11, 0]);
     w.obstPeace.poly(pts, y1 + rh);
     // war
     let d = dmgAt(cx, cz) + (r() - 0.5) * 0.3;
+    if (inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 95) d = 1;
     if (t === 3) d = 0.55;            // the Münster burns, but stands
     if (rathaus) d = 0.45;
     const st = d < 0.24 ? 0 : d < 0.42 ? 1 : d < 0.62 ? 2 : 3;
     footprints.push([pts, st, hh]); STATS[st]++;
-    const soot = mix3(fc, SOOT, 0.15 + 0.12 * st + r() * 0.12);
+    const soot = mix3(fc, SOOT, 0.1 + 0.08 * st + r() * 0.1);
     const burn = t === 3 || (st === 1 || st === 2) && area > 60 && r() < (st === 2 ? 0.32 : 0.18);
     if (st === 0){
-      gW.walls(pts, y0, y1, mul(fc, 0.82), [wf, r() < 0.03 ? 0.3 : 0]);
-      if (gableOk && r() < 0.6) gW.gable(o, y1, rh, mul(rc, 0.7), mul(fc, 0.72)); else gW.cap(pts, y1, gableOk ? hex('#2a2725') : mul(rc, 0.55));
+      gWx.walls(pts, y0, y1, mul(fc, 0.82), [wf, r() < 0.03 ? 0.3 : 0]);
+      if (gableOk && r() < 0.6) gWx.gable(o, y1, rh, mul(rc, 0.7), mul(hue, 0.72)); else gWx.cap(pts, y1, gableOk ? hex('#2a2725') : hex('#5e5a54'), [11, 0]);
       w.obstWar.poly(pts, y1 + rh);
     } else if (st === 1){
       const a = 0.68, b = 0.97;
-      gW.walls(pts, y0, (i, k) => hi + hh * lerp(a, b, r()), soot, [wf, burn ? 0.45 : 0.03], 3, 0.45);
-      gW.cap(pts, hi + hh * 0.6, hex('#2f2c29'), [0, burn ? 0.6 : 0.1]);
+      gWx.walls(pts, y0, (i, k) => hi + hh * lerp(a, b, r()), soot, [wf, burn ? 0.45 : 0.03], 3, 0.45);
+      gWx.cap(pts, hi + hh * 0.6, hex('#2f2c29'), [0, burn ? 0.6 : 0.1]);
       w.obstWar.poly(pts, y1);
     } else if (st === 2){
-      gW.walls(pts, y0, (i, k) => hi + hh * lerp(0.22, 0.9, r()), mix3(soot, SOOT, 0.35), [wf, burn ? 0.6 : 0.06], 3, 0.45);
-      gW.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, fc, 0.3), r, 0.4);
+      gWx.walls(pts, y0, (i, k) => hi + hh * lerp(0.22, 0.9, r()), mix3(soot, SOOT, 0.18), [wf, burn ? 0.6 : 0.06], 3, 0.45);
+      gWx.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, hue, 0.3), r, 0.4);
       w.obstWar.poly(pts, y1);
     } else {
       const hgt = clamp(hh * 0.26, 2, 14);
-      gW.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(soot, SOOT, 0.3), [0, 0], 3, 0.45);
+      gWx.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(soot, SOOT, 0.3), [0, 0], 3, 0.45);
       const sm = smolder < 260 && r() < 0.35;
-      const g0 = gW.n;
-      gW.rubble(pts, lo, hgt, mix3(RUB, fc, 0.35), r, 2.5 + hh * 0.12);
-      if (sm) for (let i = g0; i < gW.n; i++) gW.E[i * 2 + 1] = 0.35;   // embers glow in the heap
+      const g0 = gWx.n;
+      gWx.rubble(pts, lo, hgt, mix3(RUB, hue, 0.35), r, 2.5 + hh * 0.12);
+      if (sm) for (let i = g0; i < gWx.n; i++) gWx.E[i * 2 + 1] = 0.35;   // embers glow in the heap
       const nd = Math.min(8, 2 + Math.floor(area / 120));
       for (let k = 0; k < nd; k++){ const u = (r() - 0.5) * o.hu * 1.6, v = (r() - 0.5) * o.hv * 1.6, x = o.cx + o.c * u - o.s * v, z = o.cz + o.s * u + o.c * v;
-        gW.box(x, lo + hgt * (0.3 + r() * 0.5), z, 2 + r() * 6, 0.35, 1.5 + r() * 3, r() * 6.28, mul(CONC, 0.6 + r() * 0.3), null, (r() - 0.5) * 1.2, (r() - 0.5) * 1.2); }
+        gWx.box(x, lo + hgt * (0.3 + r() * 0.5), z, 2 + r() * 6, 0.35, 1.5 + r() * 3, r() * 6.28, mul(CONC, 0.6 + r() * 0.3), null, (r() - 0.5) * 1.2, (r() - 0.5) * 1.2); }
       w.obstWar.poly(pts, lo + hgt + 1);
-      if (sm){ smolder++; emitters.push({ kind: 'smoke', x: cx, y: lo + hgt, z: cz, s: 0.7 + Math.min(1, area / 600), acc: Math.random(), war: true }); }
+      if (sm){ smolder++; emitters.push({ kind: 'smoke', x: cx, y: lo + hgt, z: cz, s: 0.7 + Math.min(1, area / 600), acc: Math.random(), war: true, roche: affected }); }
     }
-    if (burn && fires < 240){ fires++; burning.push([cx, cz, area, y1, hh]); emitters.push({ kind: 'fire', x: cx, y: st === 1 ? hi + hh * 0.75 : lo + 2 + hh * 0.3, z: cz, s: clamp(Math.sqrt(area) / 12, 0.8, 2.4), acc: Math.random(), war: true }); }
+    if (burn && fires < 240){ fires++; burning.push([cx, cz, area, y1, hh, affected]); emitters.push({ kind: 'fire', x: cx, y: st === 1 ? hi + hh * 0.75 : lo + 2 + hh * 0.3, z: cz, s: clamp(Math.sqrt(area) / 12, 0.8, 2.4), acc: Math.random(), war: true, roche: affected }); }
   }
   burning.sort((a, b) => b[2] - a[2]);
-  burning.forEach((b, i) => emitters.push({ kind: i < 22 ? 'column' : 'smoke', x: b[0], y: b[3] - b[4] * 0.2, z: b[1], s: i < 22 ? clamp(Math.sqrt(b[2]) / 25, 0.8, 1.6) : 1, acc: Math.random(), war: true }));
+  burning.forEach((b, i) => emitters.push({ kind: i < 22 ? 'column' : 'smoke', x: b[0], y: b[3] - b[4] * 0.2, z: b[1], s: i < 22 ? clamp(Math.sqrt(b[2]) / 25, 0.8, 1.6) : 1, acc: Math.random(), war: true, roche: b[5] }));
   // ---- towers: bell towers, the Münster towers, the old gates
   for (const [x, z, h, kind, name] of D.TOW){
     if (inRiver(x, z)) continue;
     const g0 = groundH(x, z), r = rng(Math.floor(x * 7 + z * 13));
+    gP.base = gW.base = g0;
     const def = kind === 'defensiv', hh = h > 0 ? h : def ? 22 : 30, side = def ? 8 : 6.5, spire = def ? 7 : hh * 0.3;
     const col = def || /Georg|Martin/.test(name) ? hex('#b5574a') : hex('#d8d0c0'), roof = def ? hex('#7a4434') : hex('#4f5a4a');
     const sq = (gb, top, c) => { gb.box(x, (g0 - 1 + top) / 2, z, side, top - g0 + 1, side, 0, c, [1, 0]); };
@@ -1367,6 +1578,34 @@ async function buildBasel(){
     if (!flip) gW.box(x, g0 + 1.15, z, 2.2, 0.5, 1.5, yaw, mul(hulk, 0.7));
     if (RC() < 0.08) emitters.push({ kind: 'fire', x, y: g0 + 1, z, s: 0.6, acc: 0, war: true });
   }
+  // ---- war on the streets: burnt-out armour, barricades at the bridges, air defence positions
+  {
+    const rw = rng(1414), big = D.ROADS.filter(q => q[1] !== 1 && q[0] >= 8.5);
+    for (let k = 0; k < 26; k++){
+      const rd = big[Math.floor(rw() * big.length)], pts = pairs(rd[3]); if (pts.length < 2) continue;
+      const i = Math.floor(rw() * (pts.length - 1)), a = pts[i], b = pts[i + 1], t = rw(), x = lerp(a[0], b[0], t), z = lerp(a[1], b[1], t);
+      if (inRiver(x, z)) continue;
+      milWreck(gW, x, groundH(x, z), z, Math.atan2(b[0] - a[0], b[1] - a[1]) + (rw() - 0.5) * 0.8, rw() < 0.5, rw);
+      w.obstWar.circle(x, z, 3.5, groundH(x, z) + 2.5);
+      if (rw() < 0.3) emitters.push({ kind: 'smoke', x, y: groundH(x, z) + 2, z, s: 0.8, acc: 0, war: true });
+    }
+    const heads = [];
+    for (const [, br, , flat] of D.ROADS){
+      if (br !== 1) continue;
+      const pts = pairs(flat);
+      for (const p of [pts[0], pts[pts.length - 1]]){
+        if (inRiver(p[0], p[1]) || heads.some(h => Math.hypot(h[0] - p[0], h[1] - p[1]) < 140)) continue;
+        heads.push(p);
+        const q = pts.length > 1 ? (p === pts[0] ? pts[1] : pts[pts.length - 2]) : p, yaw = Math.atan2(q[1] - p[1], q[0] - p[0]);
+        const back = 14, x = p[0] - Math.cos(yaw) * back, z = p[1] - Math.sin(yaw) * back, y = groundH(x, z);
+        hedgehogs(gW, x, y, z, -yaw + PI / 2, 5, rw);
+        sandbags(gW, x - Math.cos(yaw) * 6, y, z - Math.sin(yaw) * 6, -yaw + PI / 2, 7, rw);
+      }
+    }
+    w.aaSpots = [[-120, 120], [-160, -560], [470, -690], [-330, 1140], [620, 330], [-760, -700], [200, -260]];
+    for (const [x, z] of w.aaSpots){ sandbags(gW, x - 5, groundH(x, z), z, 0.3, 6, rw); sandbags(gW, x + 5, groundH(x, z), z + 2, 1.9, 6, rw); }
+    w.ambientTarget = () => ({ x: rr(-1300, 1300), z: rr(-1000, 1100) });
+  }
   // ---- terrain: the painted city map, peace and war
   const TW = 2048, TH = Math.round(2048 * BSZ / BSX), mpp = BSX / TW;
   const toPx = (x, z) => [(x - BX0) / mpp, (z - BZ0) / mpp];
@@ -1389,6 +1628,10 @@ async function buildBasel(){
         gr.addColorStop(0, st === 3 ? 'rgba(118,110,100,0.9)' : 'rgba(25,22,20,0.7)'); gr.addColorStop(1, 'rgba(60,56,52,0)');
         g.fillStyle = gr; g.fillRect(px - rad * 2, pz - rad * 2, rad * 4, rad * 4);
       }
+      // the dust of the collapsed tower lies over the whole quarter
+      { const [px, pz] = toPx(1000, -300), rad = 520 / mpp, gr = g.createRadialGradient(px, pz, 0, px, pz, rad);
+        gr.addColorStop(0, 'rgba(176,172,163,0.9)'); gr.addColorStop(0.45, 'rgba(160,156,148,0.55)'); gr.addColorStop(1, 'rgba(150,146,138,0)');
+        g.fillStyle = gr; g.fillRect(px - rad, pz - rad, rad * 2, rad * 2); }
       for (let k = 0; k < 900; k++){
         const s = strikes[Math.floor(rr() * strikes.length)], a = rr() * 6.28, d = rr() * s[2], [px, pz] = toPx(s[0] + Math.cos(a) * d, s[1] + Math.sin(a) * d), rad = (3 + rr() * 14) / mpp;
         const gr = g.createRadialGradient(px, pz, 0, px, pz, rad);
@@ -1413,6 +1656,29 @@ async function buildBasel(){
   const water = waterMesh(new THREE.PlaneGeometry(OS, OS).rotateX(-PI / 2), [0.22, 0.34, 0.36]);
   water.position.y = 0.4; w.root.add(water);
   w.gPeace.add(gP.mesh()); w.gWar.add(gW.mesh());
+  // ---- Bau 2 and its quarter: standing or fallen; in the defence it falls when the drones have hit it often enough
+  {
+    const up = gRi.mesh(), down = gRd.mesh(); w.root.add(up, down);
+    w.setRoche = fallen => { up.visible = !fallen; down.visible = fallen; };
+    const aff = (x, z) => inTongue(x, z) || Math.hypot(x - 1040.5, z + 161.5) < 100, O = w.obstPeace, cells = [];
+    for (let z = -700; z < 300; z += 3) for (let x = 600; x < 1300; x += 3) if (aff(x, z)){ const k = O.idx(x, z); if (k >= 0) cells.push(k); }
+    const backup = Float32Array.from(cells, k => O.h[k]);
+    w.collapseRoche = () => { for (const k of cells) O.h[k] = w.obstWar.h[k]; };
+    w.restoreRoche = () => { cells.forEach((k, i) => { O.h[k] = backup[i]; }); };
+    const base = groundH(T2.cx, T2.cz) - 1, MB = D.LM['Basler Münster'] || [-91, 172];
+    w.rocheAt = { x: T2.cx, z: T2.cz, base };
+    // the drones' targets: the tower first; once it has fallen the Münster and the hospital
+    w.pickStrike = () => {
+      if (!GAME.rocheDown && Math.random() < 0.8){
+        const u = rr(-T2.hu + 4, T2.hu - 4), v = (Math.random() < 0.5 ? -1 : 1) * (T2.hv + 1.5);
+        return { x: T2.cx + T2.c * u - T2.s * v, z: T2.cz + T2.s * u + T2.c * v, y: base + rr(40, 190), id: 'roche' };
+      }
+      if (GAME.rocheDown){ const q = Math.random(); if (q < 0.45) return { x: MB[0] + rr(-25, 25), z: MB[1] + rr(-15, 15), id: 'muenster' }; if (q < 0.92) return { x: -650 + rr(-30, 30), z: -190 + rr(-30, 30), id: 'spital' }; }
+      return { x: rr(-1200, 1200), z: rr(-900, 900), id: 'city' };
+    };
+    w.salvoAt = () => GAME.rocheDown ? w.home : { x: T2.cx, z: T2.cz };
+    w.homeHP = 16; w.rocheHP = 8; w.endless = true;
+  }
   // ---- the defence: the hospital, attacks from the east, the column on the road network
   w.home = { x: -650, z: -190 }; w.attackDir = 0;
   {
@@ -1552,6 +1818,7 @@ async function buildValley(){
   // a chalet: stone base, timber upper floor, a low wide roof
   const chalet = (x, z, hu, hv, yaw, big) => {
     const c = Math.cos(yaw), s = Math.sin(yaw), y0 = baseAt(x, z, hu, hv, yaw) - 1.5, pts = rectAt(x, z, hu, hv, c, s);
+    gb.base = y0 + 1.5;
     const stoneTop = y0 + 1.5 + 3, woodTop = stoneTop + (big ? 6 : 4.5);
     gb.walls(pts, y0, stoneTop, [0.86, 0.85, 0.8], [1, 0]);
     gb.walls(pts, stoneTop, woodTop, mix3([0.42, 0.27, 0.15], [0.5, 0.34, 0.2], r()), [1, 0]);
@@ -1674,7 +1941,7 @@ async function buildValley(){
   w.start = [560, ROAD(560), yawTo(560, ROAD(560), 0, VC(0))];
   w.center = [0, 0]; w.R = 4300; w.ceiling = 3600;
   w.atmos = { peace: { fog: [0.74, 0.82, 0.92], density: 0.00014, zen: [0.22, 0.42, 0.8], hor: [0.72, 0.82, 0.93], sun: [0.35, 0.75, 0.4], sunCol: [1, 0.97, 0.9], sky: [0.85, 0.9, 1], ground: [0.4, 0.45, 0.3], hemi: 1.05, sunI: 1.05 } };
-  w.sound = 'valley';
+  w.sound = 'valley'; w.grade = 0.5;
   return w;
 }
 
@@ -1812,6 +2079,7 @@ async function buildDonbas(){
   const house = (x, z, yaw, hu, hv, warP, gardenSide) => {
     const c = Math.cos(yaw), s = Math.sin(yaw), pts = [[-hu, -hv], [hu, -hv], [hu, hv], [-hu, hv]].map(([u, v]) => [x + c * u - s * v, z + s * u + c * v]);
     let lo = 1e9, hi = -1e9; for (const [px, pz] of pts){ const h = dH(px, pz); lo = Math.min(lo, h); hi = Math.max(hi, h); }
+    gP.base = gW.base = lo;
     const wc = WALLC[Math.floor(r() * WALLC.length)], rc = ROOFC[Math.floor(r() * ROOFC.length)], top = hi + 3.1, o = { cx: x, cz: z, hu, hv, c, s };
     gP.walls(pts, lo - 1, top, wc, [1, 0]); gP.gable(o, top, hv * 0.7, rc, wc, 0.5); w.obstPeace.poly(pts, top + hv * 0.7);
     const st = r() < warP ? (r() < 0.45 ? 3 : r() < 0.6 ? 2 : 1) : 0;
@@ -1942,6 +2210,8 @@ async function buildDonbas(){
   w.start = [-2350, ROADZ(-2350) - 12, yawTo(-2350, 0, 0, 0)];
   w.center = [-300, 0]; w.R = 3800; w.ceiling = 1200;
   w.front = F;
+  w.aaSpots = [[VIL.x + 140, ROADZ(VIL.x + 140) + 70], [VIL.x - 230, ROADZ(VIL.x - 230) - 90]];
+  w.ambientTarget = () => Math.random() < 0.5 ? { x: VIL.x + rr(-350, 350), z: ROADZ(VIL.x) + rr(-300, 300) } : { x: F(0) - 380 + rr(-100, 100), z: rr(-2000, 2000) };
   w.home = { x: VIL.x, z: ROADZ(VIL.x) }; w.attackDir = 0;
   { const pts = []; for (let x = 3400; x > VIL.x; x -= 20) pts.push([x, ROADZ(x)]); w.routes = [makePath(pts)]; }
   w.motoRoutes = [-900, 300, 1100].map(z0 => { const pts = []; for (let k = 0; k <= 50; k++){ const t = k / 50; pts.push([lerp(3300, VIL.x + 150, t), lerp(z0, ROADZ(VIL.x), t) + Math.sin(t * 9 + z0) * 60 * (1 - t)]); } return makePath(pts); });
@@ -1964,6 +2234,7 @@ function setWar(v){
   w.gPeace.visible = !v; w.gWar.visible = v;
   w.obst = v ? w.obstWar : w.obstPeace; w.slabs = v ? w.slabsWar : w.slabsPeace;
   if (w.setTerrain) w.setTerrain(v);
+  if (w.setRoche) w.setRoche(v || (GAME.mode === 'defend' && GAME.rocheDown));
   setAtmosphere(v ? w.atmos.war : w.atmos.peace);
   SMOKE.mat.uniforms.uTint.value.setRGB(...(v ? [0.2, 0.18, 0.17] : [0.5, 0.5, 0.5]));
   SMOKE.mat.uniforms.uLit.value.setRGB(...(v ? [0.55, 0.47, 0.4] : [0.8, 0.8, 0.8]));
@@ -1991,6 +2262,9 @@ async function startWorld(i, mode = 'explore'){
     state = 'menu'; openMain(); msg = say(S.loadFail); msgT = 5; return;
   }
   world.def = def;
+  post.uniforms.uGrade.value = world.grade ?? 1;
+  aaGuns.length = 0;
+  if (world.aaSpots) for (const [x, z] of world.aaSpots) aaGuns.push(makeAA(x, z));
   for (const p of world.pois){ p.y = world.groundAt(p.x, p.z); p.visited = false; p.beacon = makeBeacon(p.x, p.y, p.z); world.root.add(p.beacon); }
   world.gPeace.visible = world.gWar.visible = false;
   if (!world.obstWar) world.obstWar = world.obstPeace;
@@ -2043,6 +2317,7 @@ function openPause(){
     { label: () => say(S.resume), act: () => setPaused(false) },
     { label: () => say(S.restart), act: () => { setPaused(false); if (GAME.mode === 'defend') resetDefense(); else for (const p of world.pois){ p.visited = false; p.beacon.visible = true; } respawnStart(); card = null; } },
     { label: () => say(S.otherMap), act: () => { location.href = location.pathname + (lang !== 'de' ? '?lang=' + lang : ''); } },
+    { label: () => say(S.flightMode) + ': ' + say(S.modeName[P.mode]), act: () => toggleMode() },
     { label: () => say(S.language) + ': ' + say(S.langName), act: () => nextLang() },
   ] };
 }
@@ -2061,104 +2336,106 @@ function drawCompass(g){
   if (Math.hypot(f.x, f.z) < 0.05) f.copy(_w.set(0, 1, 0).applyQuaternion(camera.quaternion)).negate();
   const hd = (Math.atan2(f.x, -f.z) * 180 / PI + 360) % 360, cx = W / 2, y = 11, ppd = 1.15, span = 60;
   const lab = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' };
-  if (lang === 'de') lab[90] = 'O'; if (lang === 'fr') lab[270] = 'O';
   g.beginPath();
   for (let d = Math.ceil((hd - span) / 10) * 10; d <= hd + span; d += 10){
     const x = cx + (d - hd) * ppd, dn = (d % 360 + 360) % 360;
     if (dn % 30 === 0) txt(g, lab[dn] || String(dn), x, y, 'center'); else { g.moveTo(x, y - 2); g.lineTo(x, y + 2); }
   }
-  g.stroke(); g.lineWidth = 1; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = EDGE;
-  const mark = (x, z, col, shape) => {
-    const brg = (Math.atan2(x - P.pos.x, -(z - P.pos.z)) * 180 / PI + 360) % 360, off = ((brg - hd + 540) % 360) - 180, px = cx + clamp(off, -span - 4, span + 4) * ppd;
-    g.beginPath();
-    if (shape === 'h'){ g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(px - 4, y + 4, 8, 9); g.fillStyle = col; txt(g, 'H', px, y + 9, 'center'); g.fillStyle = INK; return; }
-    g.moveTo(px, y + 4); g.lineTo(px + 3, y + 9); g.lineTo(px - 3, y + 9); g.closePath(); g.fillStyle = col; g.stroke(); g.fill(); g.fillStyle = INK;
-  };
-  if (GAME.mode === 'defend'){
-    for (const b of bandits) if (b.state !== 'down' && b.pos.distanceTo(P.pos) < 4000) mark(b.pos.x, b.pos.z, '#ff6a50');
-    for (const v of vehicles) if (v.alive && v.pos.distanceTo(P.pos) < 4000) mark(v.pos.x, v.pos.z, '#ffb050');
-    if (Math.hypot(world.home.x - P.pos.x, world.home.z - P.pos.z) > 60) mark(world.home.x, world.home.z, '#8fd8ff', 'h');
-  }
-  // the next place to visit
-  const np = nextPoi();
-  if (np){
-    const brg = (Math.atan2(np.x - P.pos.x, -(np.z - P.pos.z)) * 180 / PI + 360) % 360, off = ((brg - hd + 540) % 360) - 180, x = cx + clamp(off, -span - 4, span + 4) * ppd;
-    g.beginPath(); g.moveTo(x, y + 4); g.lineTo(x + 4, y + 8); g.lineTo(x, y + 12); g.lineTo(x - 4, y + 8); g.closePath();
-    g.fillStyle = '#8fd8ff'; g.stroke(); g.fill(); g.fillStyle = INK;
-  }
+  stroke2(g);
+  g.beginPath(); g.moveTo(cx, y + 6); g.lineTo(cx - 3, y + 10); g.lineTo(cx + 3, y + 10); g.closePath(); g.stroke(); g.fill();
+  txt(g, String(Math.round(hd) % 360).padStart(3, '0'), cx, y + 17, 'center');
+  const at = (x, z) => { const brg = (Math.atan2(x - P.pos.x, -(z - P.pos.z)) * 180 / PI + 360) % 360, off = ((brg - hd + 540) % 360) - 180; return cx + clamp(off, -span - 4, span + 4) * ppd; };
+  // the nearest target (a drone, else a vehicle; when exploring the next place), and home
+  let tg = null, td = 1e9;
+  if (GAME.mode === 'defend' || world.war){ for (const b of bandits) if (b.state !== 'down'){ const d = b.pos.distanceTo(P.pos); if (d < td){ td = d; tg = b.pos; } } }
+  if (!tg) for (const v of vehicles) if (v.alive && v.s >= 0){ const d = v.pos.distanceTo(P.pos); if (d < td){ td = d; tg = v.pos; } }
+  if (!tg){ const np = nextPoi(); if (np) tg = _w.set(np.x, 0, np.z); }
+  if (tg){ const x = at(tg.x, tg.z); g.beginPath(); g.moveTo(x, y + 4); g.lineTo(x + 4, y + 8); g.lineTo(x, y + 12); g.lineTo(x - 4, y + 8); g.closePath(); stroke2(g); }
+  const hm = GAME.mode === 'defend' ? world.home : { x: world.start[0], z: world.start[1] };
+  if (Math.hypot(hm.x - P.pos.x, hm.z - P.pos.z) > 60){ const x = at(hm.x, hm.z); g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(x - 4, y + 4, 8, 9); g.fillStyle = INK; txt(g, 'H', x, y + 9, 'center'); }
 }
+function stroke2(g){ g.stroke(); g.lineWidth = 1; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = EDGE; }
 function nextPoi(){ if (GAME.mode === 'defend') return null; let b = null, bd = 1e9; for (const p of world.pois){ if (p.visited) continue; const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); if (d < bd){ bd = d; b = p; } } return b; }
-const fmtD = d => d < 1000 ? Math.round(d) + ' M' : (d / 1000).toFixed(1) + ' KM';
+const fmtD = d => d < 1000 ? Math.round(d) + '' : (d / 1000).toFixed(1) + 'K';
+// the readout of /drone: little text, all at the edges; cue boxes on what matters
 function drawOSD(){
   const g = OSD.g;
   g.setTransform(OW / W, 0, 0, OH / H, 0, 0); g.clearRect(0, 0, W, H);
   if (state !== 'fly' || !world || GAME.mode === 'defend' && GAME.ended) return;
-  g.font = 'bold 8px monospace'; g.textBaseline = 'middle'; g.lineWidth = 2.5; g.strokeStyle = EDGE; g.fillStyle = INK;
+  g.font = 'bold 9px monospace'; g.textBaseline = 'middle'; g.lineWidth = 2.5; g.strokeStyle = EDGE; g.fillStyle = INK; g.lineJoin = 'round';
+  const def = GAME.mode === 'defend', blink = (clock * 2.5 | 0) % 2 === 0, dev = device();
+  if (def && GAME.hitMsg > 0){ txt(g, GAME.hitTitle || 'HIT CONFIRMED', W / 2, H / 2 + 54, 'center'); txt(g, GAME.hitWhat, W / 2, H / 2 + 66, 'center'); }
+  if (msgT > 0) txt(g, msg, W / 2, H / 2 + 54, 'center');
+  if (!P.alive){ txt(g, say(P.deadWhy === 'lost' ? S.lost : P.deadWhy === 'boom' ? DT.det : S.crashed), W / 2, H / 2 + 26, 'center'); return; }
+  // artificial horizon: dots on the true horizon; crosshair; velocity marker
+  const f = _v.set(0, 0, -1).applyQuaternion(camera.quaternion); f.y = 0;
+  if (f.lengthSq() > 1e-4){
+    f.normalize();
+    for (let a = -4; a <= 4; a++){
+      const d = _w.copy(f).applyAxisAngle(_ax.set(0, 1, 0), a * 0.07).multiplyScalar(1000).add(camera.position);
+      const [x, y, fr] = toScreen(d);
+      if (fr && x > 20 && x < W - 20 && y > 32 && y < H - 15){ g.fillRect(x - 2, y - 1.5, 4, 3); g.strokeRect(x - 2, y - 1.5, 4, 3); g.fillRect(x - 1.5, y - 1, 3, 2); }
+    }
+  }
+  g.beginPath(); g.arc(W / 2, H / 2, 4, 0, 7); g.moveTo(W / 2 - 9, H / 2); g.lineTo(W / 2 + 9, H / 2); g.moveTo(W / 2, H / 2 - 7); g.lineTo(W / 2, H / 2 + 7); stroke2(g);
+  if (P.vel.length() > 3){ const [x, y, fr] = toScreen(_w.copy(P.vel).normalize().multiplyScalar(100).add(camera.position)); if (fr && x > 0 && x < W && y > 0 && y < H){ g.strokeRect(x - 2, y - 2, 4, 4); g.fillRect(x - 1, y - 1, 2, 2); } }
   drawCompass(g);
-  const agl = P.pos.y - world.groundAt(P.pos.x, P.pos.z);
-  txt(g, say(world.txt.name), 10, 12);
-  const def = GAME.mode === 'defend';
+  // cue boxes on drones, diamonds on vehicles, the next place as a box; an arrow to the nearest drone off screen
+  let near = null, nd = 1e9;
+  if (def || world.war) for (const b of bandits){
+    if (b.state === 'down') continue;
+    const d = b.pos.distanceTo(camera.position); if (d > 4000) continue;
+    const [x, y, fr] = toScreen(b.pos);
+    if (fr && x > 4 && x < W - 4 && y > 4 && y < H - 4){
+      const sz = clamp(900 / d, 3, 14); g.beginPath();
+      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]){ g.moveTo(x + sx * sz, y + sy * sz * 0.4); g.lineTo(x + sx * sz, y + sy * sz); g.lineTo(x + sx * sz * 0.4, y + sy * sz); }
+      stroke2(g); txt(g, fmtD(d), x, y + sz + 6, 'center');
+    } else if (def && d < nd){ nd = d; near = b; }
+  }
+  for (const v of vehicles){
+    if (!v.alive || v.s < 0) continue;
+    const d = v.pos.distanceTo(camera.position); if (d > 3000) continue;
+    const [x, y, fr] = toScreen(_w.copy(v.pos).setY(v.pos.y + 1.5));
+    if (!fr || x < 4 || x > W - 4 || y < 36 || y > H - 4) continue;
+    g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); stroke2(g);
+    txt(g, fmtD(d), x, y + 12, 'center');
+  }
+  const np = nextPoi();
+  if (np){
+    const d = Math.hypot(np.x - P.pos.x, np.z - P.pos.z), [x, y, fr] = toScreen(_w.set(np.x, np.y + 20, np.z));
+    if (fr && x > 4 && x < W - 4 && y > 36 && y < H - 4){ g.strokeRect(x - 5, y - 5, 10, 10); g.lineWidth = 1; g.strokeStyle = INK; g.strokeRect(x - 5, y - 5, 10, 10); g.lineWidth = 2.5; g.strokeStyle = EDGE; txt(g, fmtD(d), x, y + 13, 'center'); }
+  }
+  if (near){
+    const l = _w.copy(near.pos).applyMatrix4(camera.matrixWorldInverse);
+    let ax = l.x, ay = l.y; if (l.z > 0 && Math.abs(ax) + Math.abs(ay) < 1e-3) ay = -1;
+    const m = Math.hypot(ax, ay) || 1; ax /= m; ay /= m;
+    const cx = W / 2 + ax * 130, cy = H / 2 - ay * 88;
+    g.save(); g.translate(cx, cy); g.rotate(Math.atan2(-ay, ax)); g.beginPath(); g.moveTo(7, 0); g.lineTo(-4, -5); g.lineTo(-4, 5); g.closePath(); g.stroke(); g.fill(); g.restore();
+    txt(g, fmtD(nd), cx, cy + (ay > 0 ? 11 : -11), 'center');
+  }
+  // the corners
   if (def){
-    const left = Math.max(0, ROUND - GAME.t);
-    txt(g, say(DT.defend) + '  ' + Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0'), 10, 23);
-    g.font = 'bold 7px monospace'; txt(g, say(DT.stopped) + ' ' + GAME.stopped + '   ' + say(DT.through) + ' ' + GAME.leaks, 10, 33); g.font = 'bold 8px monospace';
-    // the threats in view
-    for (const b of bandits){
-      if (b.state === 'down') continue;
-      const d = b.pos.distanceTo(P.pos); if (d > 3500) continue;
-      const [x, y, front] = toScreen(b.pos); if (!front || x < 4 || x > W - 4 || y < 4 || y > H - 4) continue;
-      const r = clamp(60 / Math.sqrt(d + 1), 2.5, 7);
-      g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath();
-      g.strokeStyle = EDGE; g.lineWidth = 2.5; g.stroke(); g.strokeStyle = '#ff6a50'; g.lineWidth = 1; g.stroke(); g.strokeStyle = EDGE; g.lineWidth = 2.5;
-      if (d < 1500){ g.font = 'bold 6px monospace'; txt(g, b.name, x, y - r - 5, 'center'); txt(g, fmtD(d), x, y + r + 5, 'center'); g.font = 'bold 8px monospace'; }
-      if (b.role === 'recon' && b.spot > 0 && d < 1500){ const w = clamp(b.spot / 60, 0, 1) * 16; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(x - 8, y + r + 9, 16, 2.5); g.fillStyle = '#ff6a50'; g.fillRect(x - 8, y + r + 9, w, 2.5); g.fillStyle = INK; }
-    }
-    for (const v of vehicles){
-      if (!v.alive) continue;
-      const d = v.pos.distanceTo(P.pos); if (d > 2500) continue;
-      _w.copy(v.pos).y += 1.5;
-      const [x, y, front] = toScreen(_w); if (!front || x < 4 || x > W - 4 || y < 4 || y > H - 4) continue;
-      g.strokeStyle = EDGE; g.lineWidth = 2.5; g.strokeRect(x - 4, y - 4, 8, 8); g.strokeStyle = '#ffb050'; g.lineWidth = 1; g.strokeRect(x - 4, y - 4, 8, 8); g.strokeStyle = EDGE; g.lineWidth = 2.5;
-      if (d < 900 && v.type !== 'moto' || d < 400){ g.font = 'bold 6px monospace'; txt(g, say(DT.vnames[v.type]), x, y - 9, 'center'); g.font = 'bold 8px monospace'; }
-    }
-    { _w.set(world.home.x, world.groundAt(world.home.x, world.home.z) + 15, world.home.z); const [x, y, front] = toScreen(_w);
-      if (front && x > 20 && x < W - 20 && y > 20 && y < H - 20){ g.font = 'bold 6px monospace'; g.fillStyle = '#8fd8ff'; txt(g, '[ ' + say(DT.homeName[world.id]) + ' ]', x, y, 'center'); g.fillStyle = INK; g.font = 'bold 8px monospace'; } }
-  } else {
-    const done = world.pois.filter(p => p.visited).length;
-    txt(g, say(S.places) + ' ' + done + '/' + world.pois.length, 10, 23);
+    if (!(GAME.hitMsg > 2 && blink)) txt(g, 'KILL ' + GAME.kills, 8, 10);
+    txt(g, 'LEAK ' + GAME.leaks, 8, 21);
+    txt(g, 'AA ' + GAME.aa, 8, 32);
+  } else txt(g, say(S.places) + ' ' + world.pois.filter(p => p.visited).length + '/' + world.pois.length, 8, 10);
+  const tm = def ? GAME.t : P.time, mm = Math.floor(tm / 60), ss = Math.floor(tm % 60);
+  txt(g, mm + ':' + String(ss).padStart(2, '0'), W - 8, 10, 'right');
+  const dist = Math.hypot(P.pos.x - world.center[0], P.pos.z - world.center[1]);
+  const lq = Math.round(clamp(100 - Math.max(0, dist - world.R * 0.8) / (world.R * 0.008), 0, 99));
+  if (!(lq < 30 && blink)) txt(g, 'LQ ' + lq, W - 8, 21, 'right');
+  if (def && world.homeHP) txt(g, say(DT.homeName[world.id]) + ' ' + Math.max(0, Math.round(100 - GAME.homeHits / world.homeHP * 100)) + '%', W - 8, 32, 'right');
+  const volts = 16.8 - 3.6 * P.used - 0.7 * clamp(P.T / MAXT, 0, 1);
+  if (!(volts < 13.6 && blink)) txt(g, volts.toFixed(1) + 'V', 8, H - 10);
+  txt(g, 'THR ' + Math.round(clamp(P.mode === 'ACRO' ? P.thr : P.T / MAXT, 0, 1) * 100), 8, H - 21);
+  txt(g, Math.round(P.vel.length() * 3.6) + ' KMH', W - 8, H - 21, 'right');
+  txt(g, Math.round(P.pos.y - world.groundAt(P.pos.x, P.pos.z)) + ' M', W - 8, H - 10, 'right');
+  txt(g, P.mode === 'POS' ? 'CAM' : P.mode, W / 2, H - 10, 'center');
+  txt(g, 'H ' + fmtD(Math.hypot(P.pos.x - (def ? world.home.x : world.start[0]), P.pos.z - (def ? world.home.z : world.start[1]))), W / 2 + 40, H - 10, 'left');
+  if (!P.armed && !card){
+    if (blink) txt(g, 'DISARMED', W / 2, H / 2 + 26, 'center');
+    txt(g, dev === 'vr' ? '[A]   [Y]' : dev === 'pad' ? '[A]   [START]' : dev === 'touch' ? '[START]   [II]' : '[SPACE]   [P]', W / 2, H / 2 + 38, 'center');
   }
-  txt(g, say(S.modeName[P.mode]), W - 10, 12, 'right');
-  if (world.hasWar && !def){ g.fillStyle = world.war ? '#ffb08a' : '#bfe6ff'; txt(g, say(world.war ? S.war : S.before), W - 10, 23, 'right'); g.fillStyle = INK; }
-  txt(g, Math.round(P.vel.length() * 3.6) + ' KM/H', 12, H / 2, 'left');
-  txt(g, Math.round(agl) + ' M', W - 12, H / 2, 'right');
-  if (P.mode === 'POS'){ g.font = 'bold 7px monospace'; txt(g, 'CAM ' + Math.round(P.gimbal * 180 / PI) + '°', W - 12, H / 2 + 11, 'right'); g.font = 'bold 8px monospace'; }
-  // the marked places, in view
-  const drawn = [];
-  if (!def) for (const p of [...world.pois].sort((a, b) => Math.hypot(a.x - P.pos.x, a.z - P.pos.z) - Math.hypot(b.x - P.pos.x, b.z - P.pos.z))){
-    if (p.visited) continue;
-    _w.set(p.x, p.y + 25, p.z);
-    const [x, y, front] = toScreen(_w);
-    if (!front || x < 46 || x > W - 46 || y < 30 || y > H - 30) continue;
-    const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z);
-    g.beginPath(); g.moveTo(x - 6, y - 3); g.lineTo(x - 6, y - 6); g.lineTo(x - 3, y - 6); g.moveTo(x + 3, y - 6); g.lineTo(x + 6, y - 6); g.lineTo(x + 6, y - 3);
-    g.moveTo(x - 6, y + 3); g.lineTo(x - 6, y + 6); g.lineTo(x - 3, y + 6); g.moveTo(x + 3, y + 6); g.lineTo(x + 6, y + 6); g.lineTo(x + 6, y + 3);
-    g.strokeStyle = EDGE; g.lineWidth = 2.5; g.stroke(); g.strokeStyle = '#8fd8ff'; g.lineWidth = 1; g.stroke(); g.strokeStyle = EDGE; g.lineWidth = 2.5;
-    if (drawn.some(([a, b]) => Math.abs(a - x) < 60 && Math.abs(b - y) < 22)) continue;
-    drawn.push([x, y]);
-    g.font = 'bold 7px monospace'; txt(g, say(p.title), x, y - 12, 'center'); txt(g, fmtD(d), x, y + 13, 'center'); g.font = 'bold 8px monospace';
-  }
-  if (P.mode !== 'POS'){ g.beginPath(); g.moveTo(W / 2 - 5, H / 2); g.lineTo(W / 2 + 5, H / 2); g.moveTo(W / 2, H / 2 - 5); g.lineTo(W / 2, H / 2 + 5); g.stroke(); g.lineWidth = 1; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = EDGE; }
-  // status lines
-  const dev = device();
-  let line = '';
-  if (def && GAME.hitMsg > 0) line = GAME.hitWhat;
-  else if (!P.alive) line = say(P.deadWhy === 'lost' ? S.lost : P.deadWhy === 'boom' ? DT.det : S.crashed);
-  else if (msgT > 0) line = msg;
-  else if (Math.hypot(P.pos.x - world.center[0], P.pos.z - world.center[1]) > world.R) line = say(S.far);
-  else if (!P.armed && !card) line = say(dev === 'kb' ? S.disarmedKb : dev === 'touch' ? S.disarmedTouch : S.disarmedPad);
-  if (line && Math.floor(clock * 2) % 2 === 0 || line && (msgT > 0 || !P.alive || def && GAME.hitMsg > 0)) txt(g, line, W / 2, H - 46, 'center');
-  if (def && !card && P.armed && GAME.t < 40){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? DT.detKb : DT.detPad), W / 2, H - 14, 'center'); if (dev === 'kb') txt(g, say(DT.shift), W / 2, H - 24, 'center'); }
-  else if (hintT > 0 && !card && P.armed && !def){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? S.hintKb : S.hintPad), W / 2, H - 14, 'center'); if (world.hasWar) txt(g, say(dev === 'kb' ? S.toggleKb : dev === 'touch' ? S.toggleTouch : S.togglePad), W / 2, H - 24, 'center'); }
 }
 function drawBox(g, x, y, w, h){ g.fillStyle = 'rgba(8,10,12,0.82)'; g.fillRect(x, y, w, h); g.strokeStyle = 'rgba(244,242,236,0.55)'; g.lineWidth = 0.6; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); g.fillStyle = INK; g.strokeStyle = EDGE; g.lineWidth = 2; }
 function drawUI(){
@@ -2187,7 +2464,7 @@ function drawUI(){
     const a = clamp(GAME.endT / 1.5, 0, 1);
     g.globalAlpha = a;
     g.font = 'bold 11px monospace'; g.fillStyle = '#ffb08a';
-    txt(g, say(GAME.endWhy === 'time' ? DT.endTime : GAME.endWhy === 'column' ? DT.endColumn : DT.endHome), W / 2, 34, 'center'); g.fillStyle = INK;
+    txt(g, say(GAME.endWhy === 'time' ? DT.endTime : GAME.endWhy === 'column' ? DT.endColumn : world.id === 'basel' ? DT.endSpital : DT.endHome), W / 2, 34, 'center'); g.fillStyle = INK;
     g.font = 'bold 8px monospace';
     [[DT.stopped, GAME.stopped], [DT.through, GAME.leaks], [DT.hits, GAME.homeHits], [DT.used, GAME.used]].forEach(([k, v], i) => { txt(g, say(k), W / 2 + 40, 56 + i * 12, 'right'); txt(g, String(v), W / 2 + 52, 56 + i * 12, 'left'); });
     g.font = '7.5px monospace';
@@ -2220,15 +2497,15 @@ function drawUI(){
     drawBox(g, 40, 22, W - 80, H - 44);
     g.font = 'bold 12px monospace'; txt(g, say(S.paused), W / 2, 38, 'center');
     menu.items.forEach((it, i) => {
-      const y = 52 + i * 17, sel = i === menu.sel;
-      it.box = [70, y, W - 140, 14];
-      if (sel){ g.fillStyle = 'rgba(143,216,255,0.22)'; g.fillRect(70, y, W - 140, 14); g.fillStyle = INK; }
-      g.font = 'bold 8px monospace'; txt(g, (sel ? '▸ ' : '') + it.label(), W / 2, y + 7, 'center');
+      const y = 48 + i * 15, sel = i === menu.sel;
+      it.box = [70, y, W - 140, 13];
+      if (sel){ g.fillStyle = 'rgba(143,216,255,0.22)'; g.fillRect(70, y, W - 140, 13); g.fillStyle = INK; }
+      g.font = 'bold 8px monospace'; txt(g, (sel ? '▸ ' : '') + it.label(), W / 2, y + 6.5, 'center');
     });
-    g.font = 'bold 7px monospace'; txt(g, say(S.controls), W / 2, 130, 'center');
+    g.font = 'bold 7px monospace'; txt(g, say(S.controls), W / 2, 131, 'center');
     g.font = '6.5px monospace';
     const help = S.help[dev] || S.help.kb;
-    say(help).forEach((l, i) => txt(g, l, 74, 142 + i * 8.5));
+    say(help).forEach((l, i) => txt(g, l, 74, 141 + i * 7.6));
     return;
   }
   if (card && state === 'fly'){
@@ -2277,9 +2554,15 @@ function updateAudio(dt){
     boomT -= dt;
     if (boomT <= 0){
       boomT = 6 + Math.random() * 16;
-      const a = Math.random() * 6.28, d = 700 + Math.random() * 2200, x = P.pos.x + Math.cos(a) * d, z = P.pos.z + Math.sin(a) * d, y = world.groundAt(x, z);
-      impact(x, y, z);
-      setTimeout(() => thump(clamp(0.5 - d / 7000, 0.12, 0.5)), d / 343 * 1000);
+      const a = Math.random() * 6.28, d = Math.random() < 0.3 ? 250 + Math.random() * 450 : 700 + Math.random() * 2200, x = P.pos.x + Math.cos(a) * d, z = P.pos.z + Math.sin(a) * d, y = world.groundAt(x, z);
+      const fall = d < 700 ? 1.6 : 0;
+      if (fall) whistle(_v.set(x, y, z), fall);
+      setTimeout(() => {
+        if (!world || !world.war) return;
+        impact(x, y, z);
+        if (d < 700){ addDamage(x, Math.max(y, solidAt(x, z) - 2), z, 1.2, true); boom(d, 2.5); }
+        else setTimeout(() => thump(clamp(0.5 - d / 7000, 0.12, 0.5)), d / 343 * 1000);
+      }, fall * 1000);
     }
     if (world.id === 'basel'){ if (!siren && Math.random() < dt / 120) sirenStart(); if (siren && clock > siren.end) sirenStop(); }
   } else sirenStop();
@@ -2292,7 +2575,7 @@ function impact(x, y, z){
 
 // ================================================================ DEFENCE: an interceptor drone against Russian drones, tanks and motorcycles
 // Not a game about scores: every drone that gets through hits something, and the damage stays.
-const GAME = { mode: 'explore', t: 0, stopped: 0, leaks: 0, used: 0, homeHits: 0, ended: false, endT: 0, endWhy: '', next: {}, hitMsg: 0, hitWhat: '' };
+const GAME = { mode: 'explore', t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', next: {}, hitMsg: 0, hitWhat: '', hitTitle: '' };
 const ROUND = 300;
 const DT = {
   modeT: { de: 'WAS MÖCHTEST DU TUN?', fr: 'QUE VEUX-TU FAIRE ?', en: 'WHAT DO YOU WANT TO DO?' },
@@ -2310,6 +2593,7 @@ const DT = {
   shot: { de: 'ABGESCHOSSEN', fr: 'ABATTU', en: 'SHOT DOWN' },
   hit: { de: 'GETROFFEN', fr: 'TOUCHÉ', en: 'HIT' },
   detKb: { de: 'F: ZÜNDEN · FLIEG IN DAS ZIEL, UM ES ZU STOPPEN', fr: 'F : DÉTONER · FONCE DANS LA CIBLE POUR L’ARRÊTER', en: 'F: DETONATE · FLY INTO THE TARGET TO STOP IT' },
+  detTouch: { de: 'ZÜNDEN TIPPEN · FLIEG IN DAS ZIEL, UM ES ZU STOPPEN', fr: 'TOUCHE DÉTONER · FONCE DANS LA CIBLE POUR L’ARRÊTER', en: 'TAP DETONATE · FLY INTO THE TARGET TO STOP IT' },
   detPad: { de: 'B: ZÜNDEN · FLIEG IN DAS ZIEL, UM ES ZU STOPPEN', fr: 'B : DÉTONER · FONCE DANS LA CIBLE POUR L’ARRÊTER', en: 'B: DETONATE · FLY INTO THE TARGET TO STOP IT' },
   shift: { de: 'SHIFT: VOLLGAS', fr: 'MAJ : PLEIN GAZ', en: 'SHIFT: FULL SPEED' },
   again: { de: 'ENTER: NOCHMAL   P: MENÜ', fr: 'ENTRÉE : RECOMMENCER   P : MENU', en: 'ENTER: AGAIN   P: MENU' },
@@ -2317,6 +2601,7 @@ const DT = {
   endTime: { de: 'DIE NACHT IST VORBEI', fr: 'LA NUIT EST FINIE', en: 'THE NIGHT IS OVER' },
   endColumn: { de: 'DIE KOLONNE HAT IHR ZIEL ERREICHT', fr: 'LA COLONNE A ATTEINT SON BUT', en: 'THE COLUMN HAS REACHED ITS TARGET' },
   endHome: { de: 'DAS ZIEL WURDE ZERSTÖRT', fr: 'LA CIBLE A ÉTÉ DÉTRUITE', en: 'THE TARGET WAS DESTROYED' },
+  endSpital: { de: 'DAS UNIVERSITÄTSSPITAL IST ZERSTÖRT', fr: 'L’HÔPITAL UNIVERSITAIRE EST DÉTRUIT', en: 'THE UNIVERSITY HOSPITAL IS DESTROYED' },
   endText: {
     de: 'In der Ukraine gibt es Nächte mit mehreren hundert Drohnen und Raketen. Jede, die durchkommt, trifft Wohnhäuser, Spitäler, Kraftwerke – und Menschen. Wer abfängt, kann nie alles stoppen. Hier kannst du neu beginnen. In Wirklichkeit gibt es keinen Neustart. Darum braucht es Frieden.',
     fr: 'En Ukraine, il y a des nuits avec plusieurs centaines de drones et de missiles. Chacun qui passe frappe des immeubles, des hôpitaux, des centrales – et des gens. Celui qui intercepte ne peut jamais tout arrêter. Ici, tu peux recommencer. Dans la réalité, il n’y a pas de nouveau départ. C’est pourquoi il faut la paix.',
@@ -2324,9 +2609,9 @@ const DT = {
   intro: {
     basel: {
       t: { de: 'ABWEHR – FIKTIVES SZENARIO', fr: 'DÉFENSE – SCÉNARIO FICTIF', en: 'DEFENCE – FICTIONAL SCENARIO' },
-      x: { de: 'Stell dir vor, Basel würde angegriffen wie Kyjiw oder Charkiw: Shahed-Drohnen in der Nacht, Aufklärungsdrohnen, die Artillerie lenken, eine Panzerkolonne von Osten. Du fliegst Abfangdrohnen und schützt das Universitätsspital. Jede Abfangdrohne zerstört sich beim Treffer selbst.',
-           fr: 'Imagine que Bâle soit attaquée comme Kyiv ou Kharkiv : des drones Shahed la nuit, des drones de reconnaissance qui guident l’artillerie, une colonne de chars venant de l’est. Tu pilotes des drones intercepteurs et tu protèges l’hôpital universitaire. Chaque intercepteur se détruit en touchant sa cible.',
-           en: 'Imagine Basel being attacked like Kyiv or Kharkiv: Shahed drones at night, recon drones directing artillery, a tank column from the east. You fly interceptor drones and protect the university hospital. Every interceptor destroys itself when it hits.' } },
+      x: { de: 'Stell dir vor, Basel würde angegriffen wie Kyjiw oder Charkiw. Die Drohnen fliegen zuerst auf die Roche-Türme. Stürzt einer ein, nehmen sie das Münster und das Universitätsspital ins Visier. Die Nacht endet erst, wenn das Spital zerstört ist. Du fliegst Abfangdrohnen, die sich beim Treffer selbst zerstören.',
+           fr: 'Imagine que Bâle soit attaquée comme Kyiv ou Kharkiv. Les drones visent d’abord les tours Roche. Si l’une s’effondre, ils prennent pour cible la cathédrale et l’hôpital universitaire. La nuit ne s’achève que lorsque l’hôpital est détruit. Tu pilotes des drones intercepteurs qui se détruisent en touchant leur cible.',
+           en: 'Imagine Basel being attacked like Kyiv or Kharkiv. The drones go for the Roche towers first. Once one collapses, they turn to the Minster and the university hospital. The night only ends when the hospital is destroyed. You fly interceptor drones that destroy themselves when they hit.' } },
     valley: {
       t: { de: 'ABWEHR – DAS TAL WIRD ANGEGRIFFEN', fr: 'DÉFENSE – LA VALLÉE EST ATTAQUÉE', en: 'DEFENCE – THE VALLEY IS ATTACKED' },
       x: { de: 'Ein friedlicher Sommertag – und dann kommen die Drohnen. Panzer und Motorräder fahren die Talstrasse hinauf. Du fliegst Abfangdrohnen und schützt die Dorfschule. Achte darauf, was jeder Einschlag in diesem Tal hinterlässt.',
@@ -2338,6 +2623,7 @@ const DT = {
            fr: 'Voici à quoi ressemble la guerre dans le Donbass aujourd’hui : des drones de reconnaissance guident l’artillerie, des drones Shahed et Lancet volent vers le village, des chars arrivent par la route et des groupes de motos avancent à travers les champs. Tu pilotes des drones intercepteurs et tu protèges le village.',
            en: 'This is what the war in the Donbas looks like today: recon drones direct the artillery, Shahed and Lancet drones fly at the village, tanks come down the road and motorcycle groups push across the fields. You fly interceptor drones and protect the village.' } },
   },
+  rocheDownMsg: { de: 'ROCHE-TURM EINGESTÜRZT', fr: 'TOUR ROCHE EFFONDRÉE', en: 'ROCHE TOWER COLLAPSED' },
   homeName: { basel: { de: 'SPITAL', fr: 'HÔPITAL', en: 'HOSPITAL' }, valley: { de: 'SCHULE', fr: 'ÉCOLE', en: 'SCHOOL' }, donbas: { de: 'DORF', fr: 'VILLAGE', en: 'VILLAGE' } },
   vnames: { tank: { de: 'PANZER T-72', fr: 'CHAR T-72', en: 'T-72 TANK' }, bmp: { de: 'SCHÜTZENPANZER BMP', fr: 'BMP', en: 'BMP IFV' }, moto: { de: 'MOTORRAD', fr: 'MOTO', en: 'MOTORCYCLE' } },
 };
@@ -2357,15 +2643,15 @@ function explosion(pos, big){
 const SCORCH_TEX = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(10,8,7,0.95)'); gr.addColorStop(0.55, 'rgba(25,20,16,0.7)'); gr.addColorStop(1, 'rgba(25,20,16,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
 const SCORCH_MAT = new THREE.MeshBasicMaterial({ map: SCORCH_TEX, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 });
 const damage = [];
-function addDamage(x, y, z, big){
+function addDamage(x, y, z, big, warOnly = false){
   const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-PI / 2), SCORCH_MAT);
-  const s = 10 + 12 * big; m.scale.set(s, 1, s); m.position.set(x, y + 0.25, z); scene.add(m);
-  const fires = [{ kind: 'fire', x, y: y + 1, z, s: 0.8 + big * 0.6, acc: 0, dyn: true }, { kind: big > 1.5 ? 'column' : 'smoke', x, y: y + 3, z, s: 0.6 + big * 0.3, acc: 0, dyn: true }];
+  const s = 10 + 12 * big; m.scale.set(s, 1, s); m.position.set(x, y + 0.25, z); (warOnly ? world.gWar : scene).add(m);
+  const fires = [{ kind: 'fire', x, y: y + 1, z, s: 0.8 + big * 0.6, acc: 0, dyn: true, war: warOnly }, { kind: big > 1.5 ? 'column' : 'smoke', x, y: y + 3, z, s: 0.6 + big * 0.3, acc: 0, dyn: true, war: warOnly }];
   emitters.push(...fires);
   damage.push({ m, fires });
-  if (damage.length > 70){ const d = damage.shift(); scene.remove(d.m); d.m.geometry.dispose(); emitters = emitters.filter(e => !d.fires.includes(e)); }
+  if (damage.length > 70){ const d = damage.shift(); if (d.m.parent) d.m.parent.remove(d.m); d.m.geometry.dispose(); emitters = emitters.filter(e => !d.fires.includes(e)); }
 }
-function clearDamage(){ for (const d of damage){ scene.remove(d.m); d.m.geometry.dispose(); } damage.length = 0; emitters = emitters.filter(e => !e.dyn); }
+function clearDamage(){ for (const d of damage){ if (d.m.parent) d.m.parent.remove(d.m); d.m.geometry.dispose(); } damage.length = 0; emitters = emitters.filter(e => !e.dyn); }
 
 // ---------------------------------------------------------------- sound sources that move
 function srcChain(){
@@ -2492,8 +2778,9 @@ function makeBanditModel(type){
 function disposeTree(o){ o.traverse(m => { if (m.isMesh){ m.geometry.dispose(); for (const x of [].concat(m.material)) x.dispose(); } }); }
 const bandits = [];
 class Bandit {
-  constructor(type){
-    const t = BTYPES[type], hm = world.home;
+  constructor(type, target){
+    const t = BTYPES[type], hm = target || world.home;
+    this.home = hm; this.ambient = !!target;
     this.type = type; this.t = t; this.role = t.role; this.name = t.name; this.state = 'cruise'; this.spot = 0; this.salvoT = 18 + rr(0, 8);
     // a corridor from far out towards the target, varied for every drone
     const a = world.attackDir + rr(-0.55, 0.55), d0 = world.R * 1.25;
@@ -2508,6 +2795,8 @@ class Bandit {
     if (this.role === 'recon'){
       this.loiter = { x: hm.x + rr(-250, 250), z: hm.z + rr(-250, 250), r: rr(350, 600), dir: rnd() < 0.5 ? 1 : -1, until: 0 };
       this.aimP.set(this.loiter.x, 0, this.loiter.z);
+    } else if (!target && world.pickStrike){
+      this.retarget();
     } else {
       const toHome = rnd() < 0.45, rad = toHome ? 0 : rr(40, 260), b = rr(0, 6.28);
       this.aimP.set(hm.x + Math.cos(b) * rad, 0, hm.z + Math.sin(b) * rad);
@@ -2533,7 +2822,7 @@ class Bandit {
       if (this.pos.y <= solidAt(this.pos.x, this.pos.z) + 0.5){ explosion(this.pos.clone(), 0.6); this.remove(); }
     } else {
       let tx, tz;
-      const hm = world.home;
+      const hm = this.home;
       if (this.wi < this.wp.length){ [tx, tz] = this.wp[this.wi]; if (Math.hypot(tx - this.pos.x, tz - this.pos.z) < 200) this.wi++; }
       else if (this.role === 'recon'){
         const L = this.loiter;
@@ -2543,7 +2832,7 @@ class Bandit {
         else { const an = Math.atan2(this.pos.z - L.z, this.pos.x - L.x) + 0.5 * L.dir; tx = L.x + Math.cos(an) * L.r; tz = L.z + Math.sin(an) * L.r; }
       } else { tx = this.aimP.x; tz = this.aimP.z; }
       // a recon drone over the target directs the artillery
-      if (this.role === 'recon' && !this.leaving && Math.hypot(this.pos.x - hm.x, this.pos.z - hm.z) < 1300){
+      if (this.role === 'recon' && !this.ambient && !this.leaving && Math.hypot(this.pos.x - hm.x, this.pos.z - hm.z) < 1300){
         this.spot += dt; this.salvoT -= dt;
         if (this.salvoT <= 0){ this.salvoT = rr(18, 28); salvo(); }
       }
@@ -2570,18 +2859,31 @@ class Bandit {
     }
     if (!this.grp.parent) return;
     if (AU.ready){ if (!this.snd) this.snd = makeBanditSound(this.type); updateSrcSound(this.snd, this.pos, this.vel, this.state !== 'down'); }
-    const far = Math.hypot(this.pos.x - world.home.x, this.pos.z - world.home.z);
-    if (this.leaving && far > world.R * 1.3){ if (this.spot > 20) GAME.leaks++; this.remove(); }
+    const far = Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z);
+    if (this.leaving && far > world.R * 1.3){ if (this.spot > 20 && !this.ambient) GAME.leaks++; this.remove(); }
+    else if (far > world.R * 2) this.remove();
+  }
+  retarget(){
+    const tg = world.pickStrike(); this.tgId = tg.id;
+    this.aimP.set(tg.x, tg.y ?? solidAt(tg.x, tg.z) + 1, tg.z);
+    if (tg.id !== 'roche' && rnd() < this.t.miss * 0.5){ const c = rr(0, 6.28), m = rr(20, 120); this.aimP.x += Math.cos(c) * m; this.aimP.z += Math.sin(c) * m; this.aimP.y = solidAt(this.aimP.x, this.aimP.z) + 1; }
   }
   shootDown(){ if (this.state === 'down') return; this.state = 'down'; this.spin.set(rr(-1, 1), rr(-0.5, 0.5), rr(-3, 3)); this.vel.y -= rr(2, 8); }
   impact(){
     if (!this.grp.parent) return;
-    GAME.leaks++;
+    if (!this.ambient) GAME.leaks++;
     const big = this.type === 'geran' ? 2.2 : 1.3;
     explosion(this.pos.clone(), big);
-    const y = world.groundAt(this.pos.x, this.pos.z);
-    addDamage(this.pos.x, Math.max(y, this.pos.y - 3), this.pos.z, big);
-    if (Math.hypot(this.pos.x - world.home.x, this.pos.z - world.home.z) < 70) GAME.homeHits += this.type === 'geran' ? 2 : 1;
+    const y = world.groundAt(this.pos.x, this.pos.z), R0 = world.rocheAt;
+    if (!this.ambient && R0 && !GAME.rocheDown && Math.hypot(this.pos.x - R0.x, this.pos.z - R0.z) < 45 && this.pos.y > y + 15){
+      // a hit on the tower: it burns where it was hit; enough hits and it comes down
+      emitters.push({ kind: 'fire', x: this.pos.x, y: this.pos.y, z: this.pos.z, s: 1.4 + big * 0.3, acc: 0, dyn: true, onTower: true }, { kind: 'smoke', x: this.pos.x, y: this.pos.y + 3, z: this.pos.z, s: 1.4, acc: 0, dyn: true, onTower: true });
+      GAME.rocheHits += this.type === 'geran' ? 2 : 1;
+      if (GAME.rocheHits >= world.rocheHP) collapseRoche();
+      this.remove(); return;
+    }
+    addDamage(this.pos.x, Math.max(y, this.pos.y - 3), this.pos.z, big, this.ambient);
+    if (!this.ambient && Math.hypot(this.pos.x - world.home.x, this.pos.z - world.home.z) < 70) GAME.homeHits += this.type === 'geran' ? 2 : 1;
     this.remove();
   }
   remove(){
@@ -2591,9 +2893,25 @@ class Bandit {
     bandits.splice(bandits.indexOf(this), 1);
   }
 }
+// Roche Bau 2 comes down: blasts up the tower, dust, the fallen tower and its rubble replace the standing one
+function collapseRoche(){
+  if (GAME.rocheDown) return;
+  GAME.rocheDown = true;
+  const R0 = world.rocheAt;
+  emitters = emitters.filter(e => !e.onTower);
+  for (let k = 0; k < 8; k++) setTimeout(() => explosion(new THREE.Vector3(R0.x + rr(-20, 20), R0.base + 20 + k * 22, R0.z + rr(-20, 20)), 2.4), k * 260);
+  setTimeout(() => {
+    world.collapseRoche(); world.setRoche(true);
+    for (let k = 0; k < 40; k++) emit(SMOKE, R0.x + rr(-60, 60), R0.base + rr(0, 40), R0.z + rr(-80, 40), rr(-6, 6), rr(2, 8), rr(-6, 6), 40 + rr(0, 20), 30, 160, 0.8, 0.8 + rr(0, 0.2));
+    boom(Math.hypot(R0.x - camera.position.x, R0.z - camera.position.z), 6); flashI = 200; flashLight.position.set(R0.x, R0.base + 40, R0.z);
+    if (P.alive && Math.hypot(P.pos.x - R0.x, P.pos.z - R0.z) < 80 && P.pos.y < R0.base + 210) crash('crash');
+  }, 2200);
+  msg = say(DT.rocheDownMsg); msgT = 6;
+  for (const b of bandits) if (!b.ambient && b.tgId === 'roche' && b.state !== 'down'){ b.retarget(); if (b.state === 'dive') b.state = 'cruise'; }
+}
 // the artillery that the recon drones direct: three shells near the target
 function salvo(){
-  const hm = world.home;
+  const hm = world.salvoAt ? world.salvoAt() : world.home;
   for (let k = 0; k < 3; k++){
     const a = rr(0, 6.28), d = rr(10, 180), x = hm.x + Math.cos(a) * d, z = hm.z + Math.sin(a) * d, delay = 2 + k * 1.3;
     whistle(_v.set(x, world.groundAt(x, z), z), delay);
@@ -2601,7 +2919,7 @@ function salvo(){
       if (GAME.mode !== 'defend' || GAME.ended) return;
       const y = solidAt(x, z);
       explosion(new THREE.Vector3(x, y + 1, z), 1.8); addDamage(x, world.groundAt(x, z) < y - 2 ? y - 2 : world.groundAt(x, z), z, 1.5);
-      if (d < 60) GAME.homeHits++;
+      if (d < 60 && hm === world.home) GAME.homeHits++;
       if (P.alive && P.pos.distanceTo(_v.set(x, y, z)) < 15) crash('hit');
     }, delay * 1000);
   }
@@ -2667,9 +2985,15 @@ class Vehicle {
     if (!this.alive){ if (this.snd){ stopSound(this.snd); this.snd = null; } return; }
     let speed = this.speed;
     for (const v of vehicles){ if (v === this || v.path !== this.path || !v.alive || v.side !== this.side) continue; const ds = v.s - this.s; if (ds > 0 && ds < 30) speed = Math.min(speed, (ds - 16) * 0.6); }
-    this.s += Math.max(0, speed) * dt;
+    this.s = Math.min(this.s + Math.max(0, speed) * dt, this.path.len - 3);
     this.place(dt);
-    if (this.s >= this.path.len - 3 && !GAME.ended) endRound('column');
+    if (this.s >= this.path.len - 3 && !GAME.ended){
+      if (!world.endless) endRound('column');
+      else {
+        this.s = this.path.len - 3; this.shellT = (this.shellT ?? 2) - dt;
+        if (this.shellT <= 0 && this.type !== 'moto'){ this.shellT = rr(5, 8); const h = world.home; explosion(new THREE.Vector3(h.x + rr(-15, 15), solidAt(h.x, h.z), h.z + rr(-15, 15)), 1.6); GAME.homeHits++; }
+      }
+    }
     if (rnd() < dt * 6 && speed > 2) emit(SMOKE, this.pos.x, this.pos.y + 0.6, this.pos.z, 0, 1, 0, 5, 1.5, this.type === 'moto' ? 6 : 12, 0.45, 0.85);
     if (AU.ready){ if (!this.snd) this.snd = makeVehicleSound(this.type === 'moto'); updateSrcSound(this.snd, this.pos, this.vel, true); }
     if (this.t.gun) this.shoot(dt);
@@ -2739,10 +3063,10 @@ function updateFlying(dt){
 const TR_MAX = 300, trPos = new Float32Array(TR_MAX * 6);
 const tracers = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(trPos, 3)), new THREE.LineBasicMaterial({ color: 0xffb070, transparent: true, blending: THREE.AdditiveBlending, fog: false }));
 tracers.frustumCulled = false; scene.add(tracers);
-function fireRound(from, aim, v0, tracer){
-  if (rounds.length > 400) return;
+function fireRound(from, aim, v0, tracer, owner = 'veh'){
+  if (rounds.length > 500) return;
   const v = aim.clone().sub(from).normalize().multiplyScalar(v0);
-  rounds.push({ p: from.clone(), v, life: 3, tracer });
+  rounds.push({ p: from.clone(), v, life: owner === 'aa' ? 4.5 : 3, tracer, owner });
 }
 const _rp = new THREE.Vector3(), _rd = new THREE.Vector3();
 function updateRounds(dt){
@@ -2750,15 +3074,78 @@ function updateRounds(dt){
   for (let i = rounds.length - 1; i >= 0; i--){
     const r = rounds[i];
     _rp.copy(r.p); r.v.y -= G * dt; r.p.addScaledVector(r.v, dt); r.life -= dt;
-    if (P.alive){
-      _rd.copy(r.p).sub(_rp); const L2 = _rd.lengthSq();
-      const t = L2 ? clamp(_v.copy(P.pos).sub(_rp).dot(_rd) / L2, 0, 1) : 0;
-      if (_v.copy(_rp).addScaledVector(_rd, t).distanceTo(P.pos) < 0.9){ crash('hit'); rounds.splice(i, 1); continue; }
-    }
+    _rd.copy(r.p).sub(_rp); const L2 = _rd.lengthSq();
+    const near = q => { const t = L2 ? clamp(_v.copy(q).sub(_rp).dot(_rd) / L2, 0, 1) : 0; return _v.copy(_rp).addScaledVector(_rd, t).distanceTo(q); };
+    if (r.owner === 'aa'){
+      let hit = false;
+      for (const b of bandits) if (b.state !== 'down' && near(b.pos) < 2.6){ b.shootDown(); explosion(b.pos.clone(), b.type === 'geran' ? 1.5 : 0.8); if (GAME.mode === 'defend' && !b.ambient){ GAME.stopped++; GAME.aa++; } hit = true; break; }
+      if (hit){ rounds.splice(i, 1); continue; }
+    } else if (P.alive && near(P.pos) < 0.9){ crash('hit'); rounds.splice(i, 1); continue; }
     if (r.life <= 0 || r.p.y < world.groundAt(r.p.x, r.p.z)){ rounds.splice(i, 1); continue; }
     if (r.tracer && n < TR_MAX){ trPos.set([r.p.x - r.v.x * 0.025, r.p.y - r.v.y * 0.025, r.p.z - r.v.z * 0.025, r.p.x, r.p.y, r.p.z], n * 6); n++; }
   }
   tracers.geometry.setDrawRange(0, n * 2); tracers.geometry.attributes.position.needsUpdate = true;
+}
+
+// ---------------------------------------------------------------- air defence: twin anti-aircraft guns that fire on drones, with tracers
+const aaGuns = [];
+function makeAA(x, z){
+  const y = world.groundAt(x, z), grp = new THREE.Group(), tur = new THREE.Group(), gun = new THREE.Group();
+  const hb = new GB(512), tb = new GB(256), bb = new GB(128), OL = [0.3, 0.32, 0.26], DK = [0.14, 0.14, 0.13];
+  hb.box(0, 1.0, 0, 3.2, 1.1, 6.6, 0, OL); for (const sd of [-1, 1]) hb.box(sd * 1.5, 0.5, 0, 0.5, 0.9, 6.8, 0, DK);
+  tb.box(0, 0.5, 0, 2.4, 1.0, 2.4, 0, OL); tb.box(0, 1.5, -0.8, 1.2, 0.9, 0.12, 0, DK);
+  bb.box(-0.55, 0, 1.6, 0.13, 0.13, 3.2, 0, DK); bb.box(0.55, 0, 1.6, 0.13, 0.13, 3.2, 0, DK);
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  grp.add(hb.mesh(mat)); tur.add(tb.mesh(mat)); gun.add(bb.mesh(mat));
+  gun.position.set(0, 0.8, 0.5); tur.add(gun); tur.position.set(0, 1.55, 0); grp.add(tur);
+  grp.position.set(x, y, z); grp.rotation.y = rr(0, 6.28);
+  world.gWar.add(grp);
+  world.obstWar.circle(x, z, 4, y + 3.5);
+  return { grp, tur, gun, pos: new THREE.Vector3(x, y + 2.6, z), cd: rr(0, 2), burst: 0, acc: 0, n: 0, target: null, err: new THREE.Vector3(), muzzle: new THREE.Vector3() };
+}
+function updateAA(dt){
+  for (const a of aaGuns){
+    if (!a.target || a.target.state === 'down' || !a.target.grp.parent || a.target.pos.distanceTo(a.pos) > 1900){
+      a.target = null; let bd = 1900;
+      for (const b of bandits) if (b.state !== 'down'){ const d = b.pos.distanceTo(a.pos); if (d < bd){ bd = d; a.target = b; } }
+    }
+    const t = a.target;
+    if (!t){ a.burst = 0; continue; }
+    const d = t.pos.distanceTo(a.pos), tof = d / 1000;
+    const aim = _w.copy(t.pos).addScaledVector(t.vel, tof).add(a.err); aim.y += 0.5 * G * tof * tof;
+    a.grp.updateMatrixWorld(true);
+    const local = a.grp.worldToLocal(_v.copy(aim));
+    let dy = Math.atan2(local.x, local.z) - a.tur.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    a.tur.rotation.y += clamp(dy, -1.6 * dt, 1.6 * dt);
+    const pitch = Math.atan2(local.y - 2.4, Math.hypot(local.x, local.z));
+    a.gun.rotation.x += clamp(-pitch - a.gun.rotation.x, -1.2 * dt, 1.2 * dt);
+    a.cd -= dt;
+    if (a.cd <= 0 && a.burst <= 0 && Math.abs(dy) < 0.15){ a.burst = rr(1, 2.4); a.err.set(gauss(), gauss(), gauss()).multiplyScalar(d * rr(0.012, 0.035)); }
+    if (a.burst > 0){
+      a.burst -= dt; a.acc += dt * 14;
+      while (a.acc >= 1){
+        a.acc -= 1; a.n++;
+        a.gun.localToWorld(a.muzzle.set(a.n % 2 ? -0.55 : 0.55, 0, 3.3));
+        fireRound(a.muzzle, _w, 1000, a.n % 2 === 0, 'aa');
+        if (a.n % 2) gunShot(a.muzzle, false);
+      }
+      emit(FIRE, a.muzzle.x, a.muzzle.y, a.muzzle.z, 0, 0, 0, 0.06, 2.2, 1, 1, 0);
+      if (a.burst <= 0) a.cd = rr(1.2, 3);
+    }
+  }
+}
+// the war goes on around the pilot when exploring: drones over the town, air defence firing, impacts
+let warT = 12;
+function updateWarLife(dt){
+  if (GAME.mode !== 'defend'){
+    if (world.war && world.ambientTarget){
+      warT -= dt;
+      if (warT <= 0){ warT = rr(14, 30); const n = Math.random() < 0.25 ? 3 : 1; for (let k = 0; k < n; k++) bandits.push(new Bandit(pickR(['geran', 'geran', 'lancet', 'molniya']), world.ambientTarget())); }
+      for (const b of [...bandits]) b.update(dt);
+    } else if (bandits.length) for (const b of [...bandits]) b.remove();
+    updateRounds(dt); updateFlying(dt);
+  }
+  if (world.war && aaGuns.length) updateAA(dt);
 }
 
 // ---------------------------------------------------------------- the interceptor: it detonates on contact
@@ -2771,7 +3158,7 @@ function detonate(){
   P.alive = false; P.armed = false; P.deadAt = clock; P.deadWhy = 'boom'; GAME.used++;
   staticAmt = 1;
 }
-function confirm(what){ GAME.hitMsg = 3; GAME.hitWhat = what + ' · ' + say(DT.stopped); beep(440, 0.25); }
+function confirm(what){ GAME.kills++; GAME.hitMsg = 3; GAME.hitTitle = 'HIT CONFIRMED'; GAME.hitWhat = what; beep(440, 0.25); }
 function interceptCheck(p0){
   if (!P.alive || !P.armed) return;
   for (const b of bandits){
@@ -2789,7 +3176,8 @@ function resetDefense(){
   for (const v of vehicles) v.remove(); vehicles.length = 0;
   for (const f of flying) scene.remove(f.o); flying.length = 0; rounds.length = 0;
   clearDamage();
-  Object.assign(GAME, { t: 0, stopped: 0, leaks: 0, used: 0, homeHits: 0, ended: false, endT: 0, endWhy: '', hitMsg: 0, next: { recon: 8, strike: 25, column: [60, 185], moto: [115, 235] } });
+  Object.assign(GAME, { t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', hitMsg: 0, next: { recon: 8, strike: 25, column: [60, 185], moto: [115, 235] } });
+  if (world.restoreRoche){ world.restoreRoche(); world.setRoche(world.war); }
 }
 function spawnColumn(){
   const path = pickR(world.routes);
@@ -2809,16 +3197,16 @@ function updateDefense(dt){
   if (T > N.strike){
     const swarm = T > 100 && rnd() < 0.3 ? 2 + Math.floor(rnd() * 3) : 1;
     for (let k = 0; k < swarm; k++){ const r = rnd(); bandits.push(new Bandit(swarm > 1 || r < 0.5 ? 'geran' : r < 0.75 ? 'molniya' : 'lancet')); }
-    N.strike = T + lerp(22, 9, T / ROUND) * rr(0.7, 1.3);
+    N.strike = T + Math.max(4, lerp(22, 9, T / ROUND)) * rr(0.7, 1.3);
   }
-  if (N.column.length && T > N.column[0]){ N.column.shift(); spawnColumn(); }
-  if (N.moto.length && T > N.moto[0]){ N.moto.shift(); spawnMotos(); }
+  if (N.column.length && T > N.column[0]){ N.column.shift(); spawnColumn(); if (world.endless) N.column.push(T + rr(140, 200)); }
+  if (N.moto.length && T > N.moto[0]){ N.moto.shift(); spawnMotos(); if (world.endless) N.moto.push(T + rr(110, 160)); }
   for (const b of [...bandits]) b.update(dt);
   for (const v of vehicles) v.update(dt);
   updateRounds(dt); updateFlying(dt);
   GAME.hitMsg = Math.max(0, GAME.hitMsg - dt);
-  if (GAME.homeHits >= 6) endRound('home');
-  else if (T >= ROUND) endRound('time');
+  if (GAME.homeHits >= (world.homeHP || 6)) endRound('home');
+  else if (!world.endless && T >= ROUND) endRound('time');
 }
 function endRound(why){
   if (GAME.ended) return;
@@ -2838,6 +3226,7 @@ function update(dt){
   if (!GAME.ended) updateDrone(dt); else { camera.position.copy(P.pos); camera.updateMatrixWorld(); }
   if (GAME.mode === 'defend'){ if (card) card.t += dt; interceptCheck(p0); if (!(card && card.intro)) updateDefense(dt); }
   else updatePois(dt);
+  updateWarLife(dt);
   flashI *= Math.exp(-dt * 9); flashLight.intensity = flashI;
   updateEmitters(dt, camera.position);
   stepParticles(SMOKE, dt, false); stepParticles(FIRE, dt, true);
@@ -2925,7 +3314,7 @@ openMain();
 const autoMap = WORLDS.findIndex(w => w.id === QS.get('map'));
 if (QS.has('go') && autoMap >= 0) startWorld(autoMap, QS.get('mode') === 'defend' ? 'defend' : 'explore');
 renderer.setAnimationLoop(frame);
-if (location.hash === '#dbg') window.__d = { P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound };
+if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound };
 </script>
 </body>
 </html>
