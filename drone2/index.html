@@ -613,7 +613,7 @@ function stepParticles(ps, dt, fire){
 let emitters = [];
 function updateEmitters(dt, cam){
   for (const e of emitters){
-    if (e.war && !world.war) continue;
+    if (e.war && !world.war && !(e.roche && GAME.rocheDown && GAME.mode === 'defend')) continue;
     const dx = e.x - cam.x, dz = e.z - cam.z, d2 = dx * dx + dz * dz;
     const range = e.kind === 'column' ? 9000 : e.kind === 'dust' ? 5000 : e.kind === 'smoke' ? 2600 : 1300;
     if (d2 > range * range) continue;
@@ -997,12 +997,12 @@ const G = 9.81, MAXT = 4.6 * G, KDRAG = 0.004, LDRAG = 0.12;
 const P = {
   pos: new THREE.Vector3(), vel: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), prev: new THREE.Vector3(),
   yaw: 0, gimbal: -0.2, psi: 0, thr: 0, T: 0, armed: false, alive: true, mode: 'ACRO', onGround: true, deadAt: 0, deadWhy: '',
-  sp: 0, sr: 0, sy: 0, safe: new THREE.Vector3(), safeYaw: 0, safeT: 0, tiltX: 0, tiltZ: 0
+  sp: 0, sr: 0, sy: 0, used: 0, time: 0, safe: new THREE.Vector3(), safeYaw: 0, safeT: 0, tiltX: 0, tiltZ: 0
 };
 function placeDrone(x, y, z, yaw, hover){
   P.pos.set(x, y, z); P.prev.copy(P.pos); P.vel.set(0, 0, 0); P.w.set(0, 0, 0);
   P.yaw = yaw; P.psi = yaw; P.q.setFromEuler(_e.set(0, yaw, 0, 'YXZ'));
-  P.alive = true; P.armed = !!hover; P.onGround = !hover; P.thr = hover ? G / MAXT : 0; P.tiltX = P.tiltZ = 0;
+  P.alive = true; P.armed = !!hover; P.onGround = !hover; P.used = 0; P.time = 0; P.thr = hover ? G / MAXT : 0; P.tiltX = P.tiltZ = 0;
 }
 function respawnStart(){
   const s = world.start;
@@ -1035,7 +1035,7 @@ function crash(why){
   if (!P.alive) return;
   if (GAME.mode === 'defend'){
     if (why === 'crash'){ detonate(); return; }
-    if (why === 'hit'){ explosion(P.pos.clone(), 0.4); GAME.used++; GAME.hitMsg = 2.5; GAME.hitWhat = say(DT.shot); }
+    if (why === 'hit'){ explosion(P.pos.clone(), 0.4); GAME.used++; GAME.hitMsg = 2.5; GAME.hitTitle = say(DT.shot); GAME.hitWhat = ''; }
   }
   P.alive = false; P.armed = false; P.deadAt = clock; P.deadWhy = why;
   beep(220, 0.4, 0.12);
@@ -1150,6 +1150,7 @@ function updateSticks(dt){
 function updateDrone(dt){
   updateSticks(dt);
   if (P.alive){
+    if (P.armed){ P.time += dt; P.used = Math.min(1, P.used + (0.03 + 0.97 * Math.pow(clamp(P.T / MAXT, 0, 1), 1.5)) * dt / 300); }
     const n = Math.ceil(dt / 0.005);
     for (let i = 0; i < n && P.alive; i++){
       P.prev.copy(P.pos);
@@ -1356,7 +1357,7 @@ async function buildBasel(){
   for (let k = 0; k < 70; k++){ const b = D.B[Math.floor(R0() * D.B.length)], p = b[3]; strikes.push([p[0], p[1], 30 + R0() * 100, 0.5 + R0() * 0.5]); }
   const dmgAt = (x, z) => { let d = 0; for (const s of strikes){ const t = 1 - smooth(Math.hypot(x - s[0], z - s[1]) / s[2]); if (t > 0) d = Math.max(d, t * s[3]); } return d + 0.2 + 0.9 * (fbm(x / 160, z / 160, 3) - 0.5); };
   w.obstPeace = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3); w.obstWar = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3);
-  const gP = new GB(1 << 20), gW = new GB(1 << 20);
+  const gP = new GB(1 << 20), gW = new GB(1 << 20), gRi = new GB(1 << 16), gRd = new GB(1 << 18);   // gRi/gRd: Bau 2 and its quarter, standing and fallen
   const FAC = ['#d9cbb0', '#cdbb9c', '#e3d8c4', '#c9a990', '#b8b2a6', '#d7c49a', '#c58f78', '#e6e0d2', '#a9a49a', '#d4b9a6'].map(hex);
   const ROOF = ['#8e4b37', '#7a4434', '#6b5a50', '#5e5550', '#9a5a40', '#84503c'].map(hex);
   const SOOT = hex('#1d1b19'), RUB = hex('#7a736a'), CONC = hex('#8d8a84');
@@ -1376,7 +1377,7 @@ async function buildBasel(){
       if (grid) grid.poly(pts, y1);
     }
   }
-  roche(gP, T1, 178, 7, 0, w.obstPeace); roche(gP, T2, 205, 8, 0, w.obstPeace);
+  roche(gP, T1, 178, 7, 0, w.obstPeace); roche(gRi, T2, 205, 8, 0, w.obstPeace);
   roche(gW, T1, 178, 7, 0.22, w.obstWar);
   {
     // Bau 2 has come down. What stands: a skeleton of bare floor slabs, the concrete core, one sliver of facade.
@@ -1387,24 +1388,24 @@ async function buildBasel(){
     for (let k = 1; k <= STAND; k++){
       if (k > 9 && r() < 0.35) continue;
       const u0 = -T2.hu + r() * k * 1.4, u1 = T2.hu - r() * k * 2.6, hv = T2.hv - r() * k * 0.25, [x, z] = at((u0 + u1) / 2, 0);
-      gW.box(x, base + k * FLH, z, u1 - u0, 0.45, hv * 2, yawT, mul(SLAB, 0.75 + r() * 0.2), null, k > STAND - 3 ? (r() - 0.5) * 0.25 : 0, k > STAND - 3 ? (r() - 0.5) * 0.2 : 0);
+      gRd.box(x, base + k * FLH, z, u1 - u0, 0.45, hv * 2, yawT, mul(SLAB, 0.75 + r() * 0.2), null, k > STAND - 3 ? (r() - 0.5) * 0.25 : 0, k > STAND - 3 ? (r() - 0.5) * 0.2 : 0);
       for (let i = 0; i < 6; i++) for (const sv of [-1, 1]){
         const u = lerp(u0 + 1, u1 - 1, i / 5); if (r() < 0.15) continue;
-        const [cx, cz] = at(u, sv * (hv - 1)); gW.box(cx, base + (k - 0.5) * FLH, cz, 0.8, FLH, 0.8, yawT, mul(CONC, 0.7));
+        const [cx, cz] = at(u, sv * (hv - 1)); gRd.box(cx, base + (k - 0.5) * FLH, cz, 0.8, FLH, 0.8, yawT, mul(CONC, 0.7));
       }
     }
-    gW.walls(rectPts(T2, -T2.hu, T2.hu, T2.hv), base, (i, k) => base + FLH * (1 + r() * 2.5), mul(WHITE, 0.7), [9, 0.12], 4, 0.6);
-    gW.box(T2.cx, base + 29, T2.cz, 9, 58, 9, yawT, mul(CONC, 0.68));
-    { const [x, z] = at(T2.hu - 3, T2.hv - 0.4); gW.box(x, base + 38, z, 9, 76, 0.6, yawT, mul(WHITE, 0.8), [9, 0.1]); }
+    gRd.walls(rectPts(T2, -T2.hu, T2.hu, T2.hv), base, (i, k) => base + FLH * (1 + r() * 2.5), mul(WHITE, 0.7), [9, 0.12], 4, 0.6);
+    gRd.box(T2.cx, base + 29, T2.cz, 9, 58, 9, yawT, mul(CONC, 0.68));
+    { const [x, z] = at(T2.hu - 3, T2.hv - 0.4); gRd.box(x, base + 38, z, 9, 76, 0.6, yawT, mul(WHITE, 0.8), [9, 0.1]); }
     const FALL = [Math.cos(-PI * 0.6), Math.sin(-PI * 0.6)];
     const tongueAt = (sd, side) => [T2.cx + FALL[0] * sd - FALL[1] * side, T2.cz + FALL[1] * sd + FALL[0] * side];
-    gW.rubble(rectPts(T2, -T2.hu - 22, T2.hu + 22, T2.hv + 20), base, 27, mix3(RUB, WHITE, 0.45), r, 12);
+    gRd.rubble(rectPts(T2, -T2.hu - 22, T2.hu + 22, T2.hv + 20), base, 27, mix3(RUB, WHITE, 0.45), r, 12);
     w.obstWar.poly(rectPts(T2, -T2.hu - 15, T2.hu + 15, T2.hv + 14), base + 24);
     for (let sd = 30; sd < 255; sd += 22){
       const hw = 34 - sd * 0.07, hh = 24 * (1 - sd / 280), hl = 15, [mx, mz] = tongueAt(sd, (r() - 0.5) * 10);
       const pts = [[-hl, -hw], [hl, -hw], [hl, hw], [-hl, hw]].map(([u, v]) => [mx + FALL[0] * u - FALL[1] * v, mz + FALL[1] * u + FALL[0] * v]);
       const g0 = groundH(mx, mz);
-      gW.rubble(pts, g0, Math.max(3, hh), mix3(RUB, WHITE, 0.4), r, 8);
+      gRd.rubble(pts, g0, Math.max(3, hh), mix3(RUB, WHITE, 0.4), r, 8);
       w.obstWar.poly(pts, g0 + Math.max(3, hh) * 0.8);
     }
     // slabs and facade panels thrown along the fall line, and chunks all over the quarter
@@ -1412,19 +1413,19 @@ async function buildBasel(){
       const sd = r() * 260, side = (r() - 0.5) * (80 - sd * 0.15), [x, z] = tongueAt(sd, side), g0 = groundH(x, z);
       const h = Math.max(0, 22 * (1 - sd / 280) * (1 - Math.abs(side) / 45));
       const panel = r() < 0.35;
-      gW.box(x, g0 + 0.5 + r() * h, z, panel ? 6 : 6 + r() * 10, panel ? 4 : 0.5, panel ? 0.35 : 3 + r() * 6, r() * 6.28, panel ? mul(WHITE, 0.75 + r() * 0.2) : mul(SLAB, 0.6 + r() * 0.3), panel ? [9, 0] : null, (r() - 0.5) * 1.5, (r() - 0.5) * 1.3);
+      gRd.box(x, g0 + 0.5 + r() * h, z, panel ? 6 : 6 + r() * 10, panel ? 4 : 0.5, panel ? 0.35 : 3 + r() * 6, r() * 6.28, panel ? mul(WHITE, 0.75 + r() * 0.2) : mul(SLAB, 0.6 + r() * 0.3), panel ? [9, 0] : null, (r() - 0.5) * 1.5, (r() - 0.5) * 1.3);
     }
     for (let k = 0; k < 2600; k++){
       const a = r() * 6.28, d = 20 + Math.pow(r(), 1.6) * 520, x = T2.cx + Math.cos(a) * d + FALL[0] * d * 0.35, z = T2.cz + Math.sin(a) * d + FALL[1] * d * 0.35;
       if (inRiver(x, z)) continue;
       const sz = 0.3 + r() * r() * 2.6;
-      gW.box(x, groundH(x, z) + sz * 0.25, z, sz, sz * 0.5, sz * (0.6 + r()), r() * 6.28, mix3(SLAB, WHITE, r() * 0.6), null, (r() - 0.5) * 0.6, (r() - 0.5) * 0.6);
+      gRd.box(x, groundH(x, z) + sz * 0.25, z, sz, sz * 0.5, sz * (0.6 + r()), r() * 6.28, mix3(SLAB, WHITE, r() * 0.6), null, (r() - 0.5) * 0.6, (r() - 0.5) * 0.6);
     }
     w.obstWar.circle(T2.cx, T2.cz, 6, base + 58); w.obstWar.poly(rectPts(T2, -T2.hu, T2.hu, T2.hv), base + STAND * FLH);
     w.rocheFall = { x: T2.cx, z: T2.cz, FALL };
-    emitters.push({ kind: 'dust', x: tongueAt(110, 0)[0], y: base + 8, z: tongueAt(110, 0)[1], s: 1.6, acc: 0, war: true },
-      { kind: 'column', x: tongueAt(170, 10)[0], y: base + 10, z: tongueAt(170, 10)[1], s: 1.8, acc: 0, war: true });
-    for (let k = 0; k < 9; k++){ const [x, z] = tongueAt(r() * 230, (r() - 0.5) * 50); emitters.push({ kind: 'fire', x, y: groundH(x, z) + 4 + r() * 10, z, s: 1.5, acc: 0, war: true }); }
+    emitters.push({ kind: 'dust', x: tongueAt(110, 0)[0], y: base + 8, z: tongueAt(110, 0)[1], s: 1.6, acc: 0, war: true, roche: true },
+      { kind: 'column', x: tongueAt(170, 10)[0], y: base + 10, z: tongueAt(170, 10)[1], s: 1.8, acc: 0, war: true, roche: true });
+    for (let k = 0; k < 9; k++){ const [x, z] = tongueAt(r() * 230, (r() - 0.5) * 50); emitters.push({ kind: 'fire', x, y: groundH(x, z) + 4 + r() * 10, z, s: 1.5, acc: 0, war: true, roche: true }); }
     // Bau 1 still stands, burning on several floors
     const b1 = groundH(T1.cx, T1.cz);
     for (let k = 0; k < 4; k++){ const y = b1 + 40 + r() * 90, u = (r() - 0.5) * 20; emitters.push({ kind: 'fire', x: T1.cx + T1.c * u - T1.s * (T1.hv + 1), y, z: T1.cz + T1.s * u + T1.c * (T1.hv + 1), s: 1.4, acc: 0, war: true }); }
@@ -1440,6 +1441,7 @@ async function buildBasel(){
     const [cx, cz] = centroid(pts);
     if (inRiver(cx, cz) || inTower(cx, cz)) continue;
     const r = rng(seed * 31 + 7);
+    const affected = inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 100, gPx = affected ? gRi : gP, gWx = affected ? gRd : gW;
     let lo = 1e9, hi = -1e9; for (const [x, z] of pts){ const h = groundH(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); }
     const small = t === 1, area = Math.abs(signedArea(pts));
     let hh = h0 > 0 ? h0 : small ? 3.5 + r() * 1.5 : 11.5 + Math.floor(r() * 3) * 3.3 + (r() < 0.15 ? 3.3 : 0);
@@ -1457,13 +1459,13 @@ async function buildBasel(){
     else { const pool = oldTown ? [2, 2, 3, 5, 8, 4] : [6, 6, 3, 5, 8, 7, 2]; wf = pool[Math.floor(r() * pool.length)]; fc = mul([1, 1, 1], 0.88 + r() * 0.12); }
     const hue = wf >= 1 && wf <= 8 && fc[0] === fc[1] ? hex(STYLE_HUE[wf - 1]) : fc;
     const rc = t === 3 ? hex('#6f5a4a') : ROOF[Math.floor(r() * ROOF.length)];
-    gP.base = gW.base = lo;
+    gPx.base = gWx.base = lo;
     const y0 = lo - 1.5, y1 = hi + hh;
     const o = obb(pts), fill = area / (4 * o.hu * o.hv), gableOk = !small && !tall && t !== 6 && fill > 0.72 && o.hv < 16;
     const rh = gableOk ? Math.min(o.hv * (t === 3 ? 1.8 : 1.15), t === 3 ? 22 : 10) : 0;
     // peace
-    gP.walls(pts, y0, y1, fc, [wf, 0]);
-    if (gableOk) gP.gable(o, y1, rh, rc, hue); else gP.cap(pts, y1, small ? hex('#77706a') : hex('#8a867e'), [11, 0]);
+    gPx.walls(pts, y0, y1, fc, [wf, 0]);
+    if (gableOk) gPx.gable(o, y1, rh, rc, hue); else gPx.cap(pts, y1, small ? hex('#77706a') : hex('#8a867e'), [11, 0]);
     w.obstPeace.poly(pts, y1 + rh);
     // war
     let d = dmgAt(cx, cz) + (r() - 0.5) * 0.3;
@@ -1475,35 +1477,35 @@ async function buildBasel(){
     const soot = mix3(fc, SOOT, 0.1 + 0.08 * st + r() * 0.1);
     const burn = t === 3 || (st === 1 || st === 2) && area > 60 && r() < (st === 2 ? 0.32 : 0.18);
     if (st === 0){
-      gW.walls(pts, y0, y1, mul(fc, 0.82), [wf, r() < 0.03 ? 0.3 : 0]);
-      if (gableOk && r() < 0.6) gW.gable(o, y1, rh, mul(rc, 0.7), mul(hue, 0.72)); else gW.cap(pts, y1, gableOk ? hex('#2a2725') : hex('#5e5a54'), [11, 0]);
+      gWx.walls(pts, y0, y1, mul(fc, 0.82), [wf, r() < 0.03 ? 0.3 : 0]);
+      if (gableOk && r() < 0.6) gWx.gable(o, y1, rh, mul(rc, 0.7), mul(hue, 0.72)); else gWx.cap(pts, y1, gableOk ? hex('#2a2725') : hex('#5e5a54'), [11, 0]);
       w.obstWar.poly(pts, y1 + rh);
     } else if (st === 1){
       const a = 0.68, b = 0.97;
-      gW.walls(pts, y0, (i, k) => hi + hh * lerp(a, b, r()), soot, [wf, burn ? 0.45 : 0.03], 3, 0.45);
-      gW.cap(pts, hi + hh * 0.6, hex('#2f2c29'), [0, burn ? 0.6 : 0.1]);
+      gWx.walls(pts, y0, (i, k) => hi + hh * lerp(a, b, r()), soot, [wf, burn ? 0.45 : 0.03], 3, 0.45);
+      gWx.cap(pts, hi + hh * 0.6, hex('#2f2c29'), [0, burn ? 0.6 : 0.1]);
       w.obstWar.poly(pts, y1);
     } else if (st === 2){
-      gW.walls(pts, y0, (i, k) => hi + hh * lerp(0.22, 0.9, r()), mix3(soot, SOOT, 0.18), [wf, burn ? 0.6 : 0.06], 3, 0.45);
-      gW.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, hue, 0.3), r, 0.4);
+      gWx.walls(pts, y0, (i, k) => hi + hh * lerp(0.22, 0.9, r()), mix3(soot, SOOT, 0.18), [wf, burn ? 0.6 : 0.06], 3, 0.45);
+      gWx.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, hue, 0.3), r, 0.4);
       w.obstWar.poly(pts, y1);
     } else {
       const hgt = clamp(hh * 0.26, 2, 14);
-      gW.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(soot, SOOT, 0.3), [0, 0], 3, 0.45);
+      gWx.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(soot, SOOT, 0.3), [0, 0], 3, 0.45);
       const sm = smolder < 260 && r() < 0.35;
-      const g0 = gW.n;
-      gW.rubble(pts, lo, hgt, mix3(RUB, hue, 0.35), r, 2.5 + hh * 0.12);
-      if (sm) for (let i = g0; i < gW.n; i++) gW.E[i * 2 + 1] = 0.35;   // embers glow in the heap
+      const g0 = gWx.n;
+      gWx.rubble(pts, lo, hgt, mix3(RUB, hue, 0.35), r, 2.5 + hh * 0.12);
+      if (sm) for (let i = g0; i < gWx.n; i++) gWx.E[i * 2 + 1] = 0.35;   // embers glow in the heap
       const nd = Math.min(8, 2 + Math.floor(area / 120));
       for (let k = 0; k < nd; k++){ const u = (r() - 0.5) * o.hu * 1.6, v = (r() - 0.5) * o.hv * 1.6, x = o.cx + o.c * u - o.s * v, z = o.cz + o.s * u + o.c * v;
-        gW.box(x, lo + hgt * (0.3 + r() * 0.5), z, 2 + r() * 6, 0.35, 1.5 + r() * 3, r() * 6.28, mul(CONC, 0.6 + r() * 0.3), null, (r() - 0.5) * 1.2, (r() - 0.5) * 1.2); }
+        gWx.box(x, lo + hgt * (0.3 + r() * 0.5), z, 2 + r() * 6, 0.35, 1.5 + r() * 3, r() * 6.28, mul(CONC, 0.6 + r() * 0.3), null, (r() - 0.5) * 1.2, (r() - 0.5) * 1.2); }
       w.obstWar.poly(pts, lo + hgt + 1);
-      if (sm){ smolder++; emitters.push({ kind: 'smoke', x: cx, y: lo + hgt, z: cz, s: 0.7 + Math.min(1, area / 600), acc: Math.random(), war: true }); }
+      if (sm){ smolder++; emitters.push({ kind: 'smoke', x: cx, y: lo + hgt, z: cz, s: 0.7 + Math.min(1, area / 600), acc: Math.random(), war: true, roche: affected }); }
     }
-    if (burn && fires < 240){ fires++; burning.push([cx, cz, area, y1, hh]); emitters.push({ kind: 'fire', x: cx, y: st === 1 ? hi + hh * 0.75 : lo + 2 + hh * 0.3, z: cz, s: clamp(Math.sqrt(area) / 12, 0.8, 2.4), acc: Math.random(), war: true }); }
+    if (burn && fires < 240){ fires++; burning.push([cx, cz, area, y1, hh, affected]); emitters.push({ kind: 'fire', x: cx, y: st === 1 ? hi + hh * 0.75 : lo + 2 + hh * 0.3, z: cz, s: clamp(Math.sqrt(area) / 12, 0.8, 2.4), acc: Math.random(), war: true, roche: affected }); }
   }
   burning.sort((a, b) => b[2] - a[2]);
-  burning.forEach((b, i) => emitters.push({ kind: i < 22 ? 'column' : 'smoke', x: b[0], y: b[3] - b[4] * 0.2, z: b[1], s: i < 22 ? clamp(Math.sqrt(b[2]) / 25, 0.8, 1.6) : 1, acc: Math.random(), war: true }));
+  burning.forEach((b, i) => emitters.push({ kind: i < 22 ? 'column' : 'smoke', x: b[0], y: b[3] - b[4] * 0.2, z: b[1], s: i < 22 ? clamp(Math.sqrt(b[2]) / 25, 0.8, 1.6) : 1, acc: Math.random(), war: true, roche: b[5] }));
   // ---- towers: bell towers, the Münster towers, the old gates
   for (const [x, z, h, kind, name] of D.TOW){
     if (inRiver(x, z)) continue;
@@ -1654,6 +1656,29 @@ async function buildBasel(){
   const water = waterMesh(new THREE.PlaneGeometry(OS, OS).rotateX(-PI / 2), [0.22, 0.34, 0.36]);
   water.position.y = 0.4; w.root.add(water);
   w.gPeace.add(gP.mesh()); w.gWar.add(gW.mesh());
+  // ---- Bau 2 and its quarter: standing or fallen; in the defence it falls when the drones have hit it often enough
+  {
+    const up = gRi.mesh(), down = gRd.mesh(); w.root.add(up, down);
+    w.setRoche = fallen => { up.visible = !fallen; down.visible = fallen; };
+    const aff = (x, z) => inTongue(x, z) || Math.hypot(x - 1040.5, z + 161.5) < 100, O = w.obstPeace, cells = [];
+    for (let z = -700; z < 300; z += 3) for (let x = 600; x < 1300; x += 3) if (aff(x, z)){ const k = O.idx(x, z); if (k >= 0) cells.push(k); }
+    const backup = Float32Array.from(cells, k => O.h[k]);
+    w.collapseRoche = () => { for (const k of cells) O.h[k] = w.obstWar.h[k]; };
+    w.restoreRoche = () => { cells.forEach((k, i) => { O.h[k] = backup[i]; }); };
+    const base = groundH(T2.cx, T2.cz) - 1, MB = D.LM['Basler Münster'] || [-91, 172];
+    w.rocheAt = { x: T2.cx, z: T2.cz, base };
+    // the drones' targets: the tower first; once it has fallen the Münster and the hospital
+    w.pickStrike = () => {
+      if (!GAME.rocheDown && Math.random() < 0.8){
+        const u = rr(-T2.hu + 4, T2.hu - 4), v = (Math.random() < 0.5 ? -1 : 1) * (T2.hv + 1.5);
+        return { x: T2.cx + T2.c * u - T2.s * v, z: T2.cz + T2.s * u + T2.c * v, y: base + rr(40, 190), id: 'roche' };
+      }
+      if (GAME.rocheDown){ const q = Math.random(); if (q < 0.45) return { x: MB[0] + rr(-25, 25), z: MB[1] + rr(-15, 15), id: 'muenster' }; if (q < 0.92) return { x: -650 + rr(-30, 30), z: -190 + rr(-30, 30), id: 'spital' }; }
+      return { x: rr(-1200, 1200), z: rr(-900, 900), id: 'city' };
+    };
+    w.salvoAt = () => GAME.rocheDown ? w.home : { x: T2.cx, z: T2.cz };
+    w.homeHP = 16; w.rocheHP = 8; w.endless = true;
+  }
   // ---- the defence: the hospital, attacks from the east, the column on the road network
   w.home = { x: -650, z: -190 }; w.attackDir = 0;
   {
@@ -2209,6 +2234,7 @@ function setWar(v){
   w.gPeace.visible = !v; w.gWar.visible = v;
   w.obst = v ? w.obstWar : w.obstPeace; w.slabs = v ? w.slabsWar : w.slabsPeace;
   if (w.setTerrain) w.setTerrain(v);
+  if (w.setRoche) w.setRoche(v || (GAME.mode === 'defend' && GAME.rocheDown));
   setAtmosphere(v ? w.atmos.war : w.atmos.peace);
   SMOKE.mat.uniforms.uTint.value.setRGB(...(v ? [0.2, 0.18, 0.17] : [0.5, 0.5, 0.5]));
   SMOKE.mat.uniforms.uLit.value.setRGB(...(v ? [0.55, 0.47, 0.4] : [0.8, 0.8, 0.8]));
@@ -2310,105 +2336,106 @@ function drawCompass(g){
   if (Math.hypot(f.x, f.z) < 0.05) f.copy(_w.set(0, 1, 0).applyQuaternion(camera.quaternion)).negate();
   const hd = (Math.atan2(f.x, -f.z) * 180 / PI + 360) % 360, cx = W / 2, y = 11, ppd = 1.15, span = 60;
   const lab = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' };
-  if (lang === 'de') lab[90] = 'O'; if (lang === 'fr') lab[270] = 'O';
   g.beginPath();
   for (let d = Math.ceil((hd - span) / 10) * 10; d <= hd + span; d += 10){
     const x = cx + (d - hd) * ppd, dn = (d % 360 + 360) % 360;
     if (dn % 30 === 0) txt(g, lab[dn] || String(dn), x, y, 'center'); else { g.moveTo(x, y - 2); g.lineTo(x, y + 2); }
   }
-  g.stroke(); g.lineWidth = 1; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = EDGE;
-  const mark = (x, z, col, shape) => {
-    const brg = (Math.atan2(x - P.pos.x, -(z - P.pos.z)) * 180 / PI + 360) % 360, off = ((brg - hd + 540) % 360) - 180, px = cx + clamp(off, -span - 4, span + 4) * ppd;
-    g.beginPath();
-    if (shape === 'h'){ g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(px - 4, y + 4, 8, 9); g.fillStyle = col; txt(g, 'H', px, y + 9, 'center'); g.fillStyle = INK; return; }
-    g.moveTo(px, y + 4); g.lineTo(px + 3, y + 9); g.lineTo(px - 3, y + 9); g.closePath(); g.fillStyle = col; g.stroke(); g.fill(); g.fillStyle = INK;
-  };
-  if (GAME.mode === 'defend'){
-    for (const b of bandits) if (b.state !== 'down' && b.pos.distanceTo(P.pos) < 4000) mark(b.pos.x, b.pos.z, '#ff6a50');
-    for (const v of vehicles) if (v.alive && v.pos.distanceTo(P.pos) < 4000) mark(v.pos.x, v.pos.z, '#ffb050');
-    if (Math.hypot(world.home.x - P.pos.x, world.home.z - P.pos.z) > 60) mark(world.home.x, world.home.z, '#8fd8ff', 'h');
-  }
-  // the next place to visit
-  const np = nextPoi();
-  if (np){
-    const brg = (Math.atan2(np.x - P.pos.x, -(np.z - P.pos.z)) * 180 / PI + 360) % 360, off = ((brg - hd + 540) % 360) - 180, x = cx + clamp(off, -span - 4, span + 4) * ppd;
-    g.beginPath(); g.moveTo(x, y + 4); g.lineTo(x + 4, y + 8); g.lineTo(x, y + 12); g.lineTo(x - 4, y + 8); g.closePath();
-    g.fillStyle = '#8fd8ff'; g.stroke(); g.fill(); g.fillStyle = INK;
-  }
+  stroke2(g);
+  g.beginPath(); g.moveTo(cx, y + 6); g.lineTo(cx - 3, y + 10); g.lineTo(cx + 3, y + 10); g.closePath(); g.stroke(); g.fill();
+  txt(g, String(Math.round(hd) % 360).padStart(3, '0'), cx, y + 17, 'center');
+  const at = (x, z) => { const brg = (Math.atan2(x - P.pos.x, -(z - P.pos.z)) * 180 / PI + 360) % 360, off = ((brg - hd + 540) % 360) - 180; return cx + clamp(off, -span - 4, span + 4) * ppd; };
+  // the nearest target (a drone, else a vehicle; when exploring the next place), and home
+  let tg = null, td = 1e9;
+  if (GAME.mode === 'defend' || world.war){ for (const b of bandits) if (b.state !== 'down'){ const d = b.pos.distanceTo(P.pos); if (d < td){ td = d; tg = b.pos; } } }
+  if (!tg) for (const v of vehicles) if (v.alive && v.s >= 0){ const d = v.pos.distanceTo(P.pos); if (d < td){ td = d; tg = v.pos; } }
+  if (!tg){ const np = nextPoi(); if (np) tg = _w.set(np.x, 0, np.z); }
+  if (tg){ const x = at(tg.x, tg.z); g.beginPath(); g.moveTo(x, y + 4); g.lineTo(x + 4, y + 8); g.lineTo(x, y + 12); g.lineTo(x - 4, y + 8); g.closePath(); stroke2(g); }
+  const hm = GAME.mode === 'defend' ? world.home : { x: world.start[0], z: world.start[1] };
+  if (Math.hypot(hm.x - P.pos.x, hm.z - P.pos.z) > 60){ const x = at(hm.x, hm.z); g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(x - 4, y + 4, 8, 9); g.fillStyle = INK; txt(g, 'H', x, y + 9, 'center'); }
 }
+function stroke2(g){ g.stroke(); g.lineWidth = 1; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = EDGE; }
 function nextPoi(){ if (GAME.mode === 'defend') return null; let b = null, bd = 1e9; for (const p of world.pois){ if (p.visited) continue; const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); if (d < bd){ bd = d; b = p; } } return b; }
-const fmtD = d => d < 1000 ? Math.round(d) + ' M' : (d / 1000).toFixed(1) + ' KM';
+const fmtD = d => d < 1000 ? Math.round(d) + '' : (d / 1000).toFixed(1) + 'K';
+// the readout of /drone: little text, all at the edges; cue boxes on what matters
 function drawOSD(){
   const g = OSD.g;
   g.setTransform(OW / W, 0, 0, OH / H, 0, 0); g.clearRect(0, 0, W, H);
   if (state !== 'fly' || !world || GAME.mode === 'defend' && GAME.ended) return;
-  g.font = 'bold 8px monospace'; g.textBaseline = 'middle'; g.lineWidth = 2.5; g.strokeStyle = EDGE; g.fillStyle = INK;
+  g.font = 'bold 9px monospace'; g.textBaseline = 'middle'; g.lineWidth = 2.5; g.strokeStyle = EDGE; g.fillStyle = INK; g.lineJoin = 'round';
+  const def = GAME.mode === 'defend', blink = (clock * 2.5 | 0) % 2 === 0, dev = device();
+  if (def && GAME.hitMsg > 0){ txt(g, GAME.hitTitle || 'HIT CONFIRMED', W / 2, H / 2 + 54, 'center'); txt(g, GAME.hitWhat, W / 2, H / 2 + 66, 'center'); }
+  if (msgT > 0) txt(g, msg, W / 2, H / 2 + 54, 'center');
+  if (!P.alive){ txt(g, say(P.deadWhy === 'lost' ? S.lost : P.deadWhy === 'boom' ? DT.det : S.crashed), W / 2, H / 2 + 26, 'center'); return; }
+  // artificial horizon: dots on the true horizon; crosshair; velocity marker
+  const f = _v.set(0, 0, -1).applyQuaternion(camera.quaternion); f.y = 0;
+  if (f.lengthSq() > 1e-4){
+    f.normalize();
+    for (let a = -4; a <= 4; a++){
+      const d = _w.copy(f).applyAxisAngle(_ax.set(0, 1, 0), a * 0.07).multiplyScalar(1000).add(camera.position);
+      const [x, y, fr] = toScreen(d);
+      if (fr && x > 20 && x < W - 20 && y > 32 && y < H - 15){ g.fillRect(x - 2, y - 1.5, 4, 3); g.strokeRect(x - 2, y - 1.5, 4, 3); g.fillRect(x - 1.5, y - 1, 3, 2); }
+    }
+  }
+  g.beginPath(); g.arc(W / 2, H / 2, 4, 0, 7); g.moveTo(W / 2 - 9, H / 2); g.lineTo(W / 2 + 9, H / 2); g.moveTo(W / 2, H / 2 - 7); g.lineTo(W / 2, H / 2 + 7); stroke2(g);
+  if (P.vel.length() > 3){ const [x, y, fr] = toScreen(_w.copy(P.vel).normalize().multiplyScalar(100).add(camera.position)); if (fr && x > 0 && x < W && y > 0 && y < H){ g.strokeRect(x - 2, y - 2, 4, 4); g.fillRect(x - 1, y - 1, 2, 2); } }
   drawCompass(g);
-  const agl = P.pos.y - world.groundAt(P.pos.x, P.pos.z);
-  txt(g, say(world.txt.name), 10, 12);
-  const def = GAME.mode === 'defend';
+  // cue boxes on drones, diamonds on vehicles, the next place as a box; an arrow to the nearest drone off screen
+  let near = null, nd = 1e9;
+  if (def || world.war) for (const b of bandits){
+    if (b.state === 'down') continue;
+    const d = b.pos.distanceTo(camera.position); if (d > 4000) continue;
+    const [x, y, fr] = toScreen(b.pos);
+    if (fr && x > 4 && x < W - 4 && y > 4 && y < H - 4){
+      const sz = clamp(900 / d, 3, 14); g.beginPath();
+      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]){ g.moveTo(x + sx * sz, y + sy * sz * 0.4); g.lineTo(x + sx * sz, y + sy * sz); g.lineTo(x + sx * sz * 0.4, y + sy * sz); }
+      stroke2(g); txt(g, fmtD(d), x, y + sz + 6, 'center');
+    } else if (def && d < nd){ nd = d; near = b; }
+  }
+  for (const v of vehicles){
+    if (!v.alive || v.s < 0) continue;
+    const d = v.pos.distanceTo(camera.position); if (d > 3000) continue;
+    const [x, y, fr] = toScreen(_w.copy(v.pos).setY(v.pos.y + 1.5));
+    if (!fr || x < 4 || x > W - 4 || y < 36 || y > H - 4) continue;
+    g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); stroke2(g);
+    txt(g, fmtD(d), x, y + 12, 'center');
+  }
+  const np = nextPoi();
+  if (np){
+    const d = Math.hypot(np.x - P.pos.x, np.z - P.pos.z), [x, y, fr] = toScreen(_w.set(np.x, np.y + 20, np.z));
+    if (fr && x > 4 && x < W - 4 && y > 36 && y < H - 4){ g.strokeRect(x - 5, y - 5, 10, 10); g.lineWidth = 1; g.strokeStyle = INK; g.strokeRect(x - 5, y - 5, 10, 10); g.lineWidth = 2.5; g.strokeStyle = EDGE; txt(g, fmtD(d), x, y + 13, 'center'); }
+  }
+  if (near){
+    const l = _w.copy(near.pos).applyMatrix4(camera.matrixWorldInverse);
+    let ax = l.x, ay = l.y; if (l.z > 0 && Math.abs(ax) + Math.abs(ay) < 1e-3) ay = -1;
+    const m = Math.hypot(ax, ay) || 1; ax /= m; ay /= m;
+    const cx = W / 2 + ax * 130, cy = H / 2 - ay * 88;
+    g.save(); g.translate(cx, cy); g.rotate(Math.atan2(-ay, ax)); g.beginPath(); g.moveTo(7, 0); g.lineTo(-4, -5); g.lineTo(-4, 5); g.closePath(); g.stroke(); g.fill(); g.restore();
+    txt(g, fmtD(nd), cx, cy + (ay > 0 ? 11 : -11), 'center');
+  }
+  // the corners
   if (def){
-    const left = Math.max(0, ROUND - GAME.t);
-    txt(g, say(DT.defend) + '  ' + Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0'), 10, 23);
-    g.font = 'bold 7px monospace'; txt(g, say(DT.stopped) + ' ' + GAME.stopped + '   ' + say(DT.through) + ' ' + GAME.leaks, 10, 33); g.font = 'bold 8px monospace';
-    // the threats in view
-    for (const b of bandits){
-      if (b.state === 'down') continue;
-      const d = b.pos.distanceTo(P.pos); if (d > 3500) continue;
-      const [x, y, front] = toScreen(b.pos); if (!front || x < 4 || x > W - 4 || y < 4 || y > H - 4) continue;
-      const r = clamp(60 / Math.sqrt(d + 1), 2.5, 7);
-      g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath();
-      g.strokeStyle = EDGE; g.lineWidth = 2.5; g.stroke(); g.strokeStyle = '#ff6a50'; g.lineWidth = 1; g.stroke(); g.strokeStyle = EDGE; g.lineWidth = 2.5;
-      if (d < 1500){ g.font = 'bold 6px monospace'; txt(g, b.name, x, y - r - 5, 'center'); txt(g, fmtD(d), x, y + r + 5, 'center'); g.font = 'bold 8px monospace'; }
-      if (b.role === 'recon' && b.spot > 0 && d < 1500){ const w = clamp(b.spot / 60, 0, 1) * 16; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(x - 8, y + r + 9, 16, 2.5); g.fillStyle = '#ff6a50'; g.fillRect(x - 8, y + r + 9, w, 2.5); g.fillStyle = INK; }
-    }
-    for (const v of vehicles){
-      if (!v.alive) continue;
-      const d = v.pos.distanceTo(P.pos); if (d > 2500) continue;
-      _w.copy(v.pos).y += 1.5;
-      const [x, y, front] = toScreen(_w); if (!front || x < 4 || x > W - 4 || y < 4 || y > H - 4) continue;
-      g.strokeStyle = EDGE; g.lineWidth = 2.5; g.strokeRect(x - 4, y - 4, 8, 8); g.strokeStyle = '#ffb050'; g.lineWidth = 1; g.strokeRect(x - 4, y - 4, 8, 8); g.strokeStyle = EDGE; g.lineWidth = 2.5;
-      if (d < 900 && v.type !== 'moto' || d < 400){ g.font = 'bold 6px monospace'; txt(g, say(DT.vnames[v.type]), x, y - 9, 'center'); g.font = 'bold 8px monospace'; }
-    }
-    { _w.set(world.home.x, world.groundAt(world.home.x, world.home.z) + 15, world.home.z); const [x, y, front] = toScreen(_w);
-      if (front && x > 20 && x < W - 20 && y > 20 && y < H - 20){ g.font = 'bold 6px monospace'; g.fillStyle = '#8fd8ff'; txt(g, '[ ' + say(DT.homeName[world.id]) + ' ]', x, y, 'center'); g.fillStyle = INK; g.font = 'bold 8px monospace'; } }
-  } else {
-    const done = world.pois.filter(p => p.visited).length;
-    txt(g, say(S.places) + ' ' + done + '/' + world.pois.length, 10, 23);
+    if (!(GAME.hitMsg > 2 && blink)) txt(g, 'KILL ' + GAME.kills, 8, 10);
+    txt(g, 'LEAK ' + GAME.leaks, 8, 21);
+    txt(g, 'AA ' + GAME.aa, 8, 32);
+  } else txt(g, say(S.places) + ' ' + world.pois.filter(p => p.visited).length + '/' + world.pois.length, 8, 10);
+  const tm = def ? GAME.t : P.time, mm = Math.floor(tm / 60), ss = Math.floor(tm % 60);
+  txt(g, mm + ':' + String(ss).padStart(2, '0'), W - 8, 10, 'right');
+  const dist = Math.hypot(P.pos.x - world.center[0], P.pos.z - world.center[1]);
+  const lq = Math.round(clamp(100 - Math.max(0, dist - world.R * 0.8) / (world.R * 0.008), 0, 99));
+  if (!(lq < 30 && blink)) txt(g, 'LQ ' + lq, W - 8, 21, 'right');
+  if (def && world.homeHP) txt(g, say(DT.homeName[world.id]) + ' ' + Math.max(0, Math.round(100 - GAME.homeHits / world.homeHP * 100)) + '%', W - 8, 32, 'right');
+  const volts = 16.8 - 3.6 * P.used - 0.7 * clamp(P.T / MAXT, 0, 1);
+  if (!(volts < 13.6 && blink)) txt(g, volts.toFixed(1) + 'V', 8, H - 10);
+  txt(g, 'THR ' + Math.round(clamp(P.mode === 'ACRO' ? P.thr : P.T / MAXT, 0, 1) * 100), 8, H - 21);
+  txt(g, Math.round(P.vel.length() * 3.6) + ' KMH', W - 8, H - 21, 'right');
+  txt(g, Math.round(P.pos.y - world.groundAt(P.pos.x, P.pos.z)) + ' M', W - 8, H - 10, 'right');
+  txt(g, P.mode === 'POS' ? 'CAM' : P.mode, W / 2, H - 10, 'center');
+  txt(g, 'H ' + fmtD(Math.hypot(P.pos.x - (def ? world.home.x : world.start[0]), P.pos.z - (def ? world.home.z : world.start[1]))), W / 2 + 40, H - 10, 'left');
+  if (!P.armed && !card){
+    if (blink) txt(g, 'DISARMED', W / 2, H / 2 + 26, 'center');
+    txt(g, dev === 'vr' ? '[A]   [Y]' : dev === 'pad' ? '[A]   [START]' : dev === 'touch' ? '[START]   [II]' : '[SPACE]   [P]', W / 2, H / 2 + 38, 'center');
   }
-  txt(g, say(S.modeName[P.mode]), W - 10, 12, 'right');
-  if (world.hasWar && !def){ g.fillStyle = world.war ? '#ffb08a' : '#bfe6ff'; txt(g, say(world.war ? S.war : S.before), W - 10, 23, 'right'); g.fillStyle = INK; }
-  txt(g, Math.round(P.vel.length() * 3.6) + ' KM/H', 12, H / 2, 'left');
-  txt(g, Math.round(agl) + ' M', W - 12, H / 2, 'right');
-  if (P.mode === 'ACRO'){ g.font = 'bold 7px monospace'; txt(g, 'THR ' + Math.round(P.thr * 100), 12, H / 2 + 11, 'left'); g.font = 'bold 8px monospace'; }
-  if (P.mode === 'POS'){ g.font = 'bold 7px monospace'; txt(g, 'CAM ' + Math.round(P.gimbal * 180 / PI) + '°', W - 12, H / 2 + 11, 'right'); g.font = 'bold 8px monospace'; }
-  // the marked places, in view
-  const drawn = [];
-  if (!def) for (const p of [...world.pois].sort((a, b) => Math.hypot(a.x - P.pos.x, a.z - P.pos.z) - Math.hypot(b.x - P.pos.x, b.z - P.pos.z))){
-    if (p.visited) continue;
-    _w.set(p.x, p.y + 25, p.z);
-    const [x, y, front] = toScreen(_w);
-    if (!front || x < 46 || x > W - 46 || y < 30 || y > H - 30) continue;
-    const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z);
-    g.beginPath(); g.moveTo(x - 6, y - 3); g.lineTo(x - 6, y - 6); g.lineTo(x - 3, y - 6); g.moveTo(x + 3, y - 6); g.lineTo(x + 6, y - 6); g.lineTo(x + 6, y - 3);
-    g.moveTo(x - 6, y + 3); g.lineTo(x - 6, y + 6); g.lineTo(x - 3, y + 6); g.moveTo(x + 3, y + 6); g.lineTo(x + 6, y + 6); g.lineTo(x + 6, y + 3);
-    g.strokeStyle = EDGE; g.lineWidth = 2.5; g.stroke(); g.strokeStyle = '#8fd8ff'; g.lineWidth = 1; g.stroke(); g.strokeStyle = EDGE; g.lineWidth = 2.5;
-    if (drawn.some(([a, b]) => Math.abs(a - x) < 60 && Math.abs(b - y) < 22)) continue;
-    drawn.push([x, y]);
-    g.font = 'bold 7px monospace'; txt(g, say(p.title), x, y - 12, 'center'); txt(g, fmtD(d), x, y + 13, 'center'); g.font = 'bold 8px monospace';
-  }
-  if (P.mode !== 'POS'){ g.beginPath(); g.moveTo(W / 2 - 5, H / 2); g.lineTo(W / 2 + 5, H / 2); g.moveTo(W / 2, H / 2 - 5); g.lineTo(W / 2, H / 2 + 5); g.stroke(); g.lineWidth = 1; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = EDGE; }
-  // status lines
-  const dev = device();
-  let line = '';
-  if (def && GAME.hitMsg > 0) line = GAME.hitWhat;
-  else if (!P.alive) line = say(P.deadWhy === 'lost' ? S.lost : P.deadWhy === 'boom' ? DT.det : S.crashed);
-  else if (msgT > 0) line = msg;
-  else if (Math.hypot(P.pos.x - world.center[0], P.pos.z - world.center[1]) > world.R) line = say(S.far);
-  else if (!P.armed && !card) line = say(dev === 'kb' ? S.disarmedKb : dev === 'touch' ? S.disarmedTouch : S.disarmedPad);
-  if (line && Math.floor(clock * 2) % 2 === 0 || line && (msgT > 0 || !P.alive || def && GAME.hitMsg > 0)) txt(g, line, W / 2, H - 46, 'center');
-  if (def && !card && P.armed && GAME.t < 40){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? DT.detKb : dev === 'touch' ? DT.detTouch : DT.detPad), W / 2, H - 14, 'center'); if (dev === 'kb') txt(g, say(DT.shift), W / 2, H - 24, 'center'); }
-  else if (hintT > 0 && !card && P.armed && !def){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? S.hintKb : dev === 'touch' ? S.hintTouch : S.hintPad), W / 2, H - 14, 'center'); if (world.hasWar) txt(g, say(dev === 'kb' ? S.toggleKb : dev === 'touch' ? S.toggleTouch : S.togglePad), W / 2, H - 24, 'center'); }
 }
 function drawBox(g, x, y, w, h){ g.fillStyle = 'rgba(8,10,12,0.82)'; g.fillRect(x, y, w, h); g.strokeStyle = 'rgba(244,242,236,0.55)'; g.lineWidth = 0.6; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); g.fillStyle = INK; g.strokeStyle = EDGE; g.lineWidth = 2; }
 function drawUI(){
@@ -2437,7 +2464,7 @@ function drawUI(){
     const a = clamp(GAME.endT / 1.5, 0, 1);
     g.globalAlpha = a;
     g.font = 'bold 11px monospace'; g.fillStyle = '#ffb08a';
-    txt(g, say(GAME.endWhy === 'time' ? DT.endTime : GAME.endWhy === 'column' ? DT.endColumn : DT.endHome), W / 2, 34, 'center'); g.fillStyle = INK;
+    txt(g, say(GAME.endWhy === 'time' ? DT.endTime : GAME.endWhy === 'column' ? DT.endColumn : world.id === 'basel' ? DT.endSpital : DT.endHome), W / 2, 34, 'center'); g.fillStyle = INK;
     g.font = 'bold 8px monospace';
     [[DT.stopped, GAME.stopped], [DT.through, GAME.leaks], [DT.hits, GAME.homeHits], [DT.used, GAME.used]].forEach(([k, v], i) => { txt(g, say(k), W / 2 + 40, 56 + i * 12, 'right'); txt(g, String(v), W / 2 + 52, 56 + i * 12, 'left'); });
     g.font = '7.5px monospace';
@@ -2548,7 +2575,7 @@ function impact(x, y, z){
 
 // ================================================================ DEFENCE: an interceptor drone against Russian drones, tanks and motorcycles
 // Not a game about scores: every drone that gets through hits something, and the damage stays.
-const GAME = { mode: 'explore', t: 0, stopped: 0, leaks: 0, used: 0, homeHits: 0, ended: false, endT: 0, endWhy: '', next: {}, hitMsg: 0, hitWhat: '' };
+const GAME = { mode: 'explore', t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', next: {}, hitMsg: 0, hitWhat: '', hitTitle: '' };
 const ROUND = 300;
 const DT = {
   modeT: { de: 'WAS MÖCHTEST DU TUN?', fr: 'QUE VEUX-TU FAIRE ?', en: 'WHAT DO YOU WANT TO DO?' },
@@ -2574,6 +2601,7 @@ const DT = {
   endTime: { de: 'DIE NACHT IST VORBEI', fr: 'LA NUIT EST FINIE', en: 'THE NIGHT IS OVER' },
   endColumn: { de: 'DIE KOLONNE HAT IHR ZIEL ERREICHT', fr: 'LA COLONNE A ATTEINT SON BUT', en: 'THE COLUMN HAS REACHED ITS TARGET' },
   endHome: { de: 'DAS ZIEL WURDE ZERSTÖRT', fr: 'LA CIBLE A ÉTÉ DÉTRUITE', en: 'THE TARGET WAS DESTROYED' },
+  endSpital: { de: 'DAS UNIVERSITÄTSSPITAL IST ZERSTÖRT', fr: 'L’HÔPITAL UNIVERSITAIRE EST DÉTRUIT', en: 'THE UNIVERSITY HOSPITAL IS DESTROYED' },
   endText: {
     de: 'In der Ukraine gibt es Nächte mit mehreren hundert Drohnen und Raketen. Jede, die durchkommt, trifft Wohnhäuser, Spitäler, Kraftwerke – und Menschen. Wer abfängt, kann nie alles stoppen. Hier kannst du neu beginnen. In Wirklichkeit gibt es keinen Neustart. Darum braucht es Frieden.',
     fr: 'En Ukraine, il y a des nuits avec plusieurs centaines de drones et de missiles. Chacun qui passe frappe des immeubles, des hôpitaux, des centrales – et des gens. Celui qui intercepte ne peut jamais tout arrêter. Ici, tu peux recommencer. Dans la réalité, il n’y a pas de nouveau départ. C’est pourquoi il faut la paix.',
@@ -2581,9 +2609,9 @@ const DT = {
   intro: {
     basel: {
       t: { de: 'ABWEHR – FIKTIVES SZENARIO', fr: 'DÉFENSE – SCÉNARIO FICTIF', en: 'DEFENCE – FICTIONAL SCENARIO' },
-      x: { de: 'Stell dir vor, Basel würde angegriffen wie Kyjiw oder Charkiw: Shahed-Drohnen in der Nacht, Aufklärungsdrohnen, die Artillerie lenken, eine Panzerkolonne von Osten. Du fliegst Abfangdrohnen und schützt das Universitätsspital. Jede Abfangdrohne zerstört sich beim Treffer selbst.',
-           fr: 'Imagine que Bâle soit attaquée comme Kyiv ou Kharkiv : des drones Shahed la nuit, des drones de reconnaissance qui guident l’artillerie, une colonne de chars venant de l’est. Tu pilotes des drones intercepteurs et tu protèges l’hôpital universitaire. Chaque intercepteur se détruit en touchant sa cible.',
-           en: 'Imagine Basel being attacked like Kyiv or Kharkiv: Shahed drones at night, recon drones directing artillery, a tank column from the east. You fly interceptor drones and protect the university hospital. Every interceptor destroys itself when it hits.' } },
+      x: { de: 'Stell dir vor, Basel würde angegriffen wie Kyjiw oder Charkiw. Die Drohnen fliegen zuerst auf die Roche-Türme. Stürzt einer ein, nehmen sie das Münster und das Universitätsspital ins Visier. Die Nacht endet erst, wenn das Spital zerstört ist. Du fliegst Abfangdrohnen, die sich beim Treffer selbst zerstören.',
+           fr: 'Imagine que Bâle soit attaquée comme Kyiv ou Kharkiv. Les drones visent d’abord les tours Roche. Si l’une s’effondre, ils prennent pour cible la cathédrale et l’hôpital universitaire. La nuit ne s’achève que lorsque l’hôpital est détruit. Tu pilotes des drones intercepteurs qui se détruisent en touchant leur cible.',
+           en: 'Imagine Basel being attacked like Kyiv or Kharkiv. The drones go for the Roche towers first. Once one collapses, they turn to the Minster and the university hospital. The night only ends when the hospital is destroyed. You fly interceptor drones that destroy themselves when they hit.' } },
     valley: {
       t: { de: 'ABWEHR – DAS TAL WIRD ANGEGRIFFEN', fr: 'DÉFENSE – LA VALLÉE EST ATTAQUÉE', en: 'DEFENCE – THE VALLEY IS ATTACKED' },
       x: { de: 'Ein friedlicher Sommertag – und dann kommen die Drohnen. Panzer und Motorräder fahren die Talstrasse hinauf. Du fliegst Abfangdrohnen und schützt die Dorfschule. Achte darauf, was jeder Einschlag in diesem Tal hinterlässt.',
@@ -2595,6 +2623,7 @@ const DT = {
            fr: 'Voici à quoi ressemble la guerre dans le Donbass aujourd’hui : des drones de reconnaissance guident l’artillerie, des drones Shahed et Lancet volent vers le village, des chars arrivent par la route et des groupes de motos avancent à travers les champs. Tu pilotes des drones intercepteurs et tu protèges le village.',
            en: 'This is what the war in the Donbas looks like today: recon drones direct the artillery, Shahed and Lancet drones fly at the village, tanks come down the road and motorcycle groups push across the fields. You fly interceptor drones and protect the village.' } },
   },
+  rocheDownMsg: { de: 'ROCHE-TURM EINGESTÜRZT', fr: 'TOUR ROCHE EFFONDRÉE', en: 'ROCHE TOWER COLLAPSED' },
   homeName: { basel: { de: 'SPITAL', fr: 'HÔPITAL', en: 'HOSPITAL' }, valley: { de: 'SCHULE', fr: 'ÉCOLE', en: 'SCHOOL' }, donbas: { de: 'DORF', fr: 'VILLAGE', en: 'VILLAGE' } },
   vnames: { tank: { de: 'PANZER T-72', fr: 'CHAR T-72', en: 'T-72 TANK' }, bmp: { de: 'SCHÜTZENPANZER BMP', fr: 'BMP', en: 'BMP IFV' }, moto: { de: 'MOTORRAD', fr: 'MOTO', en: 'MOTORCYCLE' } },
 };
@@ -2766,6 +2795,8 @@ class Bandit {
     if (this.role === 'recon'){
       this.loiter = { x: hm.x + rr(-250, 250), z: hm.z + rr(-250, 250), r: rr(350, 600), dir: rnd() < 0.5 ? 1 : -1, until: 0 };
       this.aimP.set(this.loiter.x, 0, this.loiter.z);
+    } else if (!target && world.pickStrike){
+      this.retarget();
     } else {
       const toHome = rnd() < 0.45, rad = toHome ? 0 : rr(40, 260), b = rr(0, 6.28);
       this.aimP.set(hm.x + Math.cos(b) * rad, 0, hm.z + Math.sin(b) * rad);
@@ -2832,13 +2863,25 @@ class Bandit {
     if (this.leaving && far > world.R * 1.3){ if (this.spot > 20 && !this.ambient) GAME.leaks++; this.remove(); }
     else if (far > world.R * 2) this.remove();
   }
+  retarget(){
+    const tg = world.pickStrike(); this.tgId = tg.id;
+    this.aimP.set(tg.x, tg.y ?? solidAt(tg.x, tg.z) + 1, tg.z);
+    if (tg.id !== 'roche' && rnd() < this.t.miss * 0.5){ const c = rr(0, 6.28), m = rr(20, 120); this.aimP.x += Math.cos(c) * m; this.aimP.z += Math.sin(c) * m; this.aimP.y = solidAt(this.aimP.x, this.aimP.z) + 1; }
+  }
   shootDown(){ if (this.state === 'down') return; this.state = 'down'; this.spin.set(rr(-1, 1), rr(-0.5, 0.5), rr(-3, 3)); this.vel.y -= rr(2, 8); }
   impact(){
     if (!this.grp.parent) return;
     if (!this.ambient) GAME.leaks++;
     const big = this.type === 'geran' ? 2.2 : 1.3;
     explosion(this.pos.clone(), big);
-    const y = world.groundAt(this.pos.x, this.pos.z);
+    const y = world.groundAt(this.pos.x, this.pos.z), R0 = world.rocheAt;
+    if (!this.ambient && R0 && !GAME.rocheDown && Math.hypot(this.pos.x - R0.x, this.pos.z - R0.z) < 45 && this.pos.y > y + 15){
+      // a hit on the tower: it burns where it was hit; enough hits and it comes down
+      emitters.push({ kind: 'fire', x: this.pos.x, y: this.pos.y, z: this.pos.z, s: 1.4 + big * 0.3, acc: 0, dyn: true, onTower: true }, { kind: 'smoke', x: this.pos.x, y: this.pos.y + 3, z: this.pos.z, s: 1.4, acc: 0, dyn: true, onTower: true });
+      GAME.rocheHits += this.type === 'geran' ? 2 : 1;
+      if (GAME.rocheHits >= world.rocheHP) collapseRoche();
+      this.remove(); return;
+    }
     addDamage(this.pos.x, Math.max(y, this.pos.y - 3), this.pos.z, big, this.ambient);
     if (!this.ambient && Math.hypot(this.pos.x - world.home.x, this.pos.z - world.home.z) < 70) GAME.homeHits += this.type === 'geran' ? 2 : 1;
     this.remove();
@@ -2850,9 +2893,25 @@ class Bandit {
     bandits.splice(bandits.indexOf(this), 1);
   }
 }
+// Roche Bau 2 comes down: blasts up the tower, dust, the fallen tower and its rubble replace the standing one
+function collapseRoche(){
+  if (GAME.rocheDown) return;
+  GAME.rocheDown = true;
+  const R0 = world.rocheAt;
+  emitters = emitters.filter(e => !e.onTower);
+  for (let k = 0; k < 8; k++) setTimeout(() => explosion(new THREE.Vector3(R0.x + rr(-20, 20), R0.base + 20 + k * 22, R0.z + rr(-20, 20)), 2.4), k * 260);
+  setTimeout(() => {
+    world.collapseRoche(); world.setRoche(true);
+    for (let k = 0; k < 40; k++) emit(SMOKE, R0.x + rr(-60, 60), R0.base + rr(0, 40), R0.z + rr(-80, 40), rr(-6, 6), rr(2, 8), rr(-6, 6), 40 + rr(0, 20), 30, 160, 0.8, 0.8 + rr(0, 0.2));
+    boom(Math.hypot(R0.x - camera.position.x, R0.z - camera.position.z), 6); flashI = 200; flashLight.position.set(R0.x, R0.base + 40, R0.z);
+    if (P.alive && Math.hypot(P.pos.x - R0.x, P.pos.z - R0.z) < 80 && P.pos.y < R0.base + 210) crash('crash');
+  }, 2200);
+  msg = say(DT.rocheDownMsg); msgT = 6;
+  for (const b of bandits) if (!b.ambient && b.tgId === 'roche' && b.state !== 'down'){ b.retarget(); if (b.state === 'dive') b.state = 'cruise'; }
+}
 // the artillery that the recon drones direct: three shells near the target
 function salvo(){
-  const hm = world.home;
+  const hm = world.salvoAt ? world.salvoAt() : world.home;
   for (let k = 0; k < 3; k++){
     const a = rr(0, 6.28), d = rr(10, 180), x = hm.x + Math.cos(a) * d, z = hm.z + Math.sin(a) * d, delay = 2 + k * 1.3;
     whistle(_v.set(x, world.groundAt(x, z), z), delay);
@@ -2860,7 +2919,7 @@ function salvo(){
       if (GAME.mode !== 'defend' || GAME.ended) return;
       const y = solidAt(x, z);
       explosion(new THREE.Vector3(x, y + 1, z), 1.8); addDamage(x, world.groundAt(x, z) < y - 2 ? y - 2 : world.groundAt(x, z), z, 1.5);
-      if (d < 60) GAME.homeHits++;
+      if (d < 60 && hm === world.home) GAME.homeHits++;
       if (P.alive && P.pos.distanceTo(_v.set(x, y, z)) < 15) crash('hit');
     }, delay * 1000);
   }
@@ -2926,9 +2985,15 @@ class Vehicle {
     if (!this.alive){ if (this.snd){ stopSound(this.snd); this.snd = null; } return; }
     let speed = this.speed;
     for (const v of vehicles){ if (v === this || v.path !== this.path || !v.alive || v.side !== this.side) continue; const ds = v.s - this.s; if (ds > 0 && ds < 30) speed = Math.min(speed, (ds - 16) * 0.6); }
-    this.s += Math.max(0, speed) * dt;
+    this.s = Math.min(this.s + Math.max(0, speed) * dt, this.path.len - 3);
     this.place(dt);
-    if (this.s >= this.path.len - 3 && !GAME.ended) endRound('column');
+    if (this.s >= this.path.len - 3 && !GAME.ended){
+      if (!world.endless) endRound('column');
+      else {
+        this.s = this.path.len - 3; this.shellT = (this.shellT ?? 2) - dt;
+        if (this.shellT <= 0 && this.type !== 'moto'){ this.shellT = rr(5, 8); const h = world.home; explosion(new THREE.Vector3(h.x + rr(-15, 15), solidAt(h.x, h.z), h.z + rr(-15, 15)), 1.6); GAME.homeHits++; }
+      }
+    }
     if (rnd() < dt * 6 && speed > 2) emit(SMOKE, this.pos.x, this.pos.y + 0.6, this.pos.z, 0, 1, 0, 5, 1.5, this.type === 'moto' ? 6 : 12, 0.45, 0.85);
     if (AU.ready){ if (!this.snd) this.snd = makeVehicleSound(this.type === 'moto'); updateSrcSound(this.snd, this.pos, this.vel, true); }
     if (this.t.gun) this.shoot(dt);
@@ -3013,7 +3078,7 @@ function updateRounds(dt){
     const near = q => { const t = L2 ? clamp(_v.copy(q).sub(_rp).dot(_rd) / L2, 0, 1) : 0; return _v.copy(_rp).addScaledVector(_rd, t).distanceTo(q); };
     if (r.owner === 'aa'){
       let hit = false;
-      for (const b of bandits) if (b.state !== 'down' && near(b.pos) < 2.6){ b.shootDown(); explosion(b.pos.clone(), b.type === 'geran' ? 1.5 : 0.8); if (GAME.mode === 'defend' && !b.ambient) GAME.stopped++; hit = true; break; }
+      for (const b of bandits) if (b.state !== 'down' && near(b.pos) < 2.6){ b.shootDown(); explosion(b.pos.clone(), b.type === 'geran' ? 1.5 : 0.8); if (GAME.mode === 'defend' && !b.ambient){ GAME.stopped++; GAME.aa++; } hit = true; break; }
       if (hit){ rounds.splice(i, 1); continue; }
     } else if (P.alive && near(P.pos) < 0.9){ crash('hit'); rounds.splice(i, 1); continue; }
     if (r.life <= 0 || r.p.y < world.groundAt(r.p.x, r.p.z)){ rounds.splice(i, 1); continue; }
@@ -3093,7 +3158,7 @@ function detonate(){
   P.alive = false; P.armed = false; P.deadAt = clock; P.deadWhy = 'boom'; GAME.used++;
   staticAmt = 1;
 }
-function confirm(what){ GAME.hitMsg = 3; GAME.hitWhat = what + ' · ' + say(DT.stopped); beep(440, 0.25); }
+function confirm(what){ GAME.kills++; GAME.hitMsg = 3; GAME.hitTitle = 'HIT CONFIRMED'; GAME.hitWhat = what; beep(440, 0.25); }
 function interceptCheck(p0){
   if (!P.alive || !P.armed) return;
   for (const b of bandits){
@@ -3111,7 +3176,8 @@ function resetDefense(){
   for (const v of vehicles) v.remove(); vehicles.length = 0;
   for (const f of flying) scene.remove(f.o); flying.length = 0; rounds.length = 0;
   clearDamage();
-  Object.assign(GAME, { t: 0, stopped: 0, leaks: 0, used: 0, homeHits: 0, ended: false, endT: 0, endWhy: '', hitMsg: 0, next: { recon: 8, strike: 25, column: [60, 185], moto: [115, 235] } });
+  Object.assign(GAME, { t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', hitMsg: 0, next: { recon: 8, strike: 25, column: [60, 185], moto: [115, 235] } });
+  if (world.restoreRoche){ world.restoreRoche(); world.setRoche(world.war); }
 }
 function spawnColumn(){
   const path = pickR(world.routes);
@@ -3131,16 +3197,16 @@ function updateDefense(dt){
   if (T > N.strike){
     const swarm = T > 100 && rnd() < 0.3 ? 2 + Math.floor(rnd() * 3) : 1;
     for (let k = 0; k < swarm; k++){ const r = rnd(); bandits.push(new Bandit(swarm > 1 || r < 0.5 ? 'geran' : r < 0.75 ? 'molniya' : 'lancet')); }
-    N.strike = T + lerp(22, 9, T / ROUND) * rr(0.7, 1.3);
+    N.strike = T + Math.max(4, lerp(22, 9, T / ROUND)) * rr(0.7, 1.3);
   }
-  if (N.column.length && T > N.column[0]){ N.column.shift(); spawnColumn(); }
-  if (N.moto.length && T > N.moto[0]){ N.moto.shift(); spawnMotos(); }
+  if (N.column.length && T > N.column[0]){ N.column.shift(); spawnColumn(); if (world.endless) N.column.push(T + rr(140, 200)); }
+  if (N.moto.length && T > N.moto[0]){ N.moto.shift(); spawnMotos(); if (world.endless) N.moto.push(T + rr(110, 160)); }
   for (const b of [...bandits]) b.update(dt);
   for (const v of vehicles) v.update(dt);
   updateRounds(dt); updateFlying(dt);
   GAME.hitMsg = Math.max(0, GAME.hitMsg - dt);
-  if (GAME.homeHits >= 6) endRound('home');
-  else if (T >= ROUND) endRound('time');
+  if (GAME.homeHits >= (world.homeHP || 6)) endRound('home');
+  else if (!world.endless && T >= ROUND) endRound('time');
 }
 function endRound(why){
   if (GAME.ended) return;
