@@ -205,30 +205,127 @@ const GLSL_NOISE = `
   float h1(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   float n1(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1, 0)), f.x), mix(h1(i + vec2(0, 1)), h1(i + 1.0), f.x), f.y); }
 `;
-// buildings: vertex colours; aE.x = windows (1 punched, 2 ribbon glazing), aE.y = share of windows on fire
+// ================================================================ facade skins: eight bays of Basel facades, painted once into a texture atlas
+// One tile = one window bay (3.1 m) by one storey (3.25 m); the top row is the ground floor, the bottom row the upper floors.
+// Alpha 0 marks glass: the shader draws its own panes there (and the fire behind them).
+// 0 neutral plaster (tinted by the vertex colour), 1 old town beige with red sandstone surrounds and green shutters,
+// 2 light grey with grey shutters, 3 red sandstone ashlar, 4 pale yellow with dark shutters, 5 ochre Gründerzeit with pediments,
+// 6 post-war concrete with wide windows, 7 pink plaster with brown shutters
+const FACADE_TEX = (() => {
+  const T = 256, NX = 8, c = document.createElement('canvas'); c.width = T * NX; c.height = T * 2;
+  const g = c.getContext('2d'), m = document.createElement('canvas'); m.width = c.width; m.height = c.height;
+  const gm = m.getContext('2d'); gm.fillStyle = '#fff'; gm.fillRect(0, 0, m.width, m.height); gm.fillStyle = '#000';
+  const R = rng(77);
+  const STY = [
+    { wall: '#d9d9d6', frame: '#f2f1ec', sur: null, shut: null, shop: false },
+    { wall: '#d8c6a2', frame: '#efe9dc', sur: '#a86a55', shut: '#3f5a3a', shop: true },
+    { wall: '#e2e0da', frame: '#f6f5f1', sur: '#bdb9b0', shut: '#6b6f70', shop: false, rust: true },
+    { wall: '#b06a55', frame: '#e6ddd0', sur: '#8d4c3c', shut: null, shop: false, ashlar: true, arch: true },
+    { wall: '#e3d29b', frame: '#f4efe2', sur: '#f0eadb', shut: '#2f3d33', shop: true },
+    { wall: '#cfb48a', frame: '#efe7d6', sur: '#b29a74', shut: null, shop: false, ped: true, rust: true, rustCol: '#9a8a76' },
+    { wall: '#bdbab2', frame: '#6d6f70', sur: null, shut: null, shop: true, wide: true },
+    { wall: '#d9b2a2', frame: '#f4efe8', sur: '#e8ddd2', shut: '#6a4a36', shop: false },
+  ];
+  const rect = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+  const glass = (x, y, w, h) => { gm.fillRect(x, y, w, h); };
+  STY.forEach((s, i) => {
+    for (const row of [0, 1]){
+      const x0 = i * T, y0 = row * T, ground = row === 0;
+      // plaster with grain and weather streaks
+      rect(x0, y0, T, T, s.wall);
+      for (let k = 0; k < 700; k++){ const a = R() * 0.07; g.fillStyle = R() < 0.5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`; g.fillRect(x0 + R() * T, y0 + R() * T, 1 + R() * 3, 1 + R() * 3); }
+      for (let k = 0; k < 6; k++){ g.fillStyle = 'rgba(40,35,30,0.05)'; g.fillRect(x0 + R() * T, y0 + T * 0.55, 2 + R() * 6, T * 0.45); }
+      if (s.ashlar){ g.strokeStyle = 'rgba(60,30,20,0.35)'; g.lineWidth = 2; for (let yy = 0; yy < T; yy += 32){ g.beginPath(); g.moveTo(x0, y0 + yy); g.lineTo(x0 + T, y0 + yy); g.stroke(); for (let xx = (yy / 32) % 2 ? 0 : 48; xx < T; xx += 96){ g.beginPath(); g.moveTo(x0 + xx, y0 + yy); g.lineTo(x0 + xx, y0 + yy + 32); g.stroke(); } } }
+      if (ground && s.rust){ rect(x0, y0 + 40, T, T - 40, s.rustCol || s.wall); g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 3; for (let yy = 70; yy < T; yy += 34){ g.beginPath(); g.moveTo(x0, y0 + yy); g.lineTo(x0 + T, y0 + yy); g.stroke(); } }
+      // a cornice band at the top of the ground floor
+      if (ground){ rect(x0, y0, T, 14, 'rgba(0,0,0,0.12)'); rect(x0, y0 + 2, T, 8, s.sur || s.frame); }
+      if (ground && s.shop){
+        // shop front: a wide window and a door, a sign band
+        const fx = x0 + 18, fy = y0 + 46, fw = T - 36, fh = 170;
+        rect(fx - 6, fy - 6, fw + 12, fh + 12, s.sur || '#3c3a37');
+        rect(fx, fy, fw, fh, s.frame); glass(fx + 6, fy + 6, fw * 0.62 - 9, fh - 12); glass(fx + fw * 0.62 + 3, fy + 6, fw * 0.38 - 9, fh - 6);
+        rect(x0 + 10, y0 + 18, T - 20, 20, '#4a4642');
+        continue;
+      }
+      // a window: surround, frame, cross mullions, sill; shutters beside it
+      const wide = s.wide, ww = wide ? 200 : 100, wh = wide ? 118 : 142;
+      const wx = x0 + (T - ww) / 2, wy = y0 + (ground ? 60 : 50);
+      if (s.arch && ground){ g.fillStyle = s.sur; g.beginPath(); g.arc(x0 + T / 2, wy + 40, 62, Math.PI, 0); g.lineTo(x0 + T / 2 + 62, y0 + T); g.lineTo(x0 + T / 2 - 62, y0 + T); g.fill(); rect(x0 + T / 2 - 50, wy + 40, 100, T - wy - 40 + y0, '#3a2c22'); gm.beginPath(); gm.arc(x0 + T / 2, wy + 40, 48, Math.PI, 0); gm.fill(); continue; }
+      if (s.sur){ rect(wx - 12, wy - 12, ww + 24, wh + 24, s.sur); }
+      if (s.ped){ g.fillStyle = s.sur; g.beginPath(); g.moveTo(wx - 18, wy - 14); g.lineTo(wx + ww / 2, wy - 44); g.lineTo(wx + ww + 18, wy - 14); g.fill(); }
+      rect(wx, wy, ww, wh, s.frame);
+      const p = 7, mx = wide ? 3 : 2;
+      for (let a = 0; a < mx; a++) for (let b = 0; b < 2; b++){
+        const gx = wx + p + a * (ww - p) / mx, gy = wy + p + b * (wh * (b ? 0.6 : 0.4)), gw = (ww - p) / mx - p, gh = (b ? wh * 0.6 : wh * 0.4) - p - (b ? p : 0);
+        glass(gx, b ? wy + wh * 0.4 + p / 2 : gy, gw, b ? wh * 0.6 - p * 1.5 : wh * 0.4 - p);
+      }
+      rect(wx - 8, wy + wh, ww + 16, 9, s.sur || '#b0aca4');
+      rect(wx - 8, wy + wh + 9, ww + 16, 3, 'rgba(0,0,0,0.25)');
+      if (s.shut && !wide){
+        for (const sd of [-1, 1]){
+          const sx = sd < 0 ? wx - 12 - 46 : wx + ww + 12, sw = 44;
+          rect(sx, wy - 4, sw, wh + 8, s.shut);
+          g.fillStyle = 'rgba(0,0,0,0.25)'; for (let yy = wy; yy < wy + wh; yy += 7) g.fillRect(sx + 4, yy, sw - 8, 2);
+        }
+      }
+      if (wide) rect(x0, wy + wh + 12, T, 26, 'rgba(0,0,0,0.12)');
+    }
+  });
+  // merge: colour from c, glass mask from m into alpha; rows flipped so v = 0 is the bottom of a storey
+  const W_ = c.width, H_ = c.height, col = g.getImageData(0, 0, W_, H_).data, msk = gm.getImageData(0, 0, W_, H_).data;
+  const out = new Uint8Array(W_ * H_ * 4);
+  for (let y = 0; y < H_; y++){
+    const ty = Math.floor(y / T), ly = y % T, dst = (1 - ty) * T + (T - 1 - ly);
+    for (let x = 0; x < W_; x++){ const a = (y * W_ + x) * 4, b = (dst * W_ + x) * 4; out[b] = col[a]; out[b + 1] = col[a + 1]; out[b + 2] = col[a + 2]; out[b + 3] = msk[a] > 128 ? 255 : 0; }
+  }
+  const t = new THREE.DataTexture(out, W_, H_, THREE.RGBAFormat);
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 4; t.needsUpdate = true;
+  return t;
+})();
+// approximate wall colour of each style (rubble, soot)
+const STYLE_HUE = ['#d9d9d6', '#d8c6a2', '#e2e0da', '#b06a55', '#e3d29b', '#cfb48a', '#bdbab2', '#d9b2a2'];
+
+// buildings: vertex colours; aE.x = skin (0 none, 1-8 facade style, 9 ribbon glazing, 10 tiled roof, 11 flat roof), aE.y = share of windows on fire; aB = foot of the building
 function buildingMat(){
   const m = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   m.onBeforeCompile = sh => {
-    sh.uniforms.uTime = U_TIME;
-    sh.vertexShader = 'attribute vec2 aE;\nvarying vec2 vE;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
-      vE = aE; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`);
-    sh.fragmentShader = 'uniform float uTime;\nvarying vec2 vE;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + GLSL_NOISE + sh.fragmentShader
+    sh.uniforms.uTime = U_TIME; sh.uniforms.uFacade = { value: FACADE_TEX };
+    sh.vertexShader = 'attribute vec2 aE;\nattribute float aB;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
+      vE = aE; vB = aB; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`);
+    sh.fragmentShader = 'uniform float uTime;\nuniform sampler2D uFacade;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + GLSL_NOISE + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
         float win = 0.0, cellId = 0.0;
-        diffuseColor.rgb *= 0.9 + 0.2 * n1(vWP.xz * 0.35 + vWP.y * 0.21);
-        if (vE.x > 0.5 && abs(vWN.y) < 0.35){
+        diffuseColor.rgb *= 0.92 + 0.16 * n1(vWP.xz * 0.35 + vWP.y * 0.21);
+        float sk = floor(vE.x + 0.5);
+        if (sk > 0.5 && sk < 9.5 && abs(vWN.y) < 0.35){
           vec2 t = normalize(vec2(-vWN.z, vWN.x) + 1e-5);
           float u = dot(vWP.xz, t);
-          if (vE.x < 1.5){
-            float fu = fract(u / 3.1), fy = fract(vWP.y / 3.25);
-            win = step(0.28, fu) * step(fu, 0.72) * step(0.3, fy) * step(fy, 0.8);
-            cellId = floor(u / 3.1) * 7.13 + floor(vWP.y / 3.25) * 13.7;
+          if (sk < 8.5){
+            // a facade bay from the atlas: ground floor or upper storey
+            float hy = max(vWP.y - vB, 0.0), fl = floor(hy / 3.25);
+            vec2 q = vec2(u / 3.1, hy / 3.25);
+            vec2 uvA = (vec2(sk - 1.0, fl < 1.0 ? 1.0 : 0.0) + 0.01 + fract(q) * 0.98) / vec2(8.0, 2.0);
+            vec4 tx = textureGrad(uFacade, uvA, dFdx(q) * 0.98 / vec2(8.0, 2.0), dFdy(q) * 0.98 / vec2(8.0, 2.0));
+            win = 1.0 - tx.a;
+            cellId = floor(q.x) * 7.13 + fl * 13.7;
+            vec3 glassC = vec3(0.07, 0.08, 0.09) + 0.13 * h1(vec2(cellId, 9.1)) + vec3(0.02, 0.03, 0.04) * step(0.5, fract(q.y * 2.0));
+            diffuseColor.rgb = mix(diffuseColor.rgb * tx.rgb * 1.18, glassC, win);
           } else {
             float fy = fract(vWP.y / 4.1);
             win = step(0.38, fy) * (0.75 + 0.25 * step(0.5, fract(u / 1.6)));
             cellId = floor(u / 9.0) * 7.13 + floor(vWP.y / 4.1) * 13.7;
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.08, 0.09, 0.1) + 0.14 * h1(vec2(cellId, 9.1)), win * 0.85);
           }
-          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.08, 0.09, 0.1) + 0.14 * h1(vec2(cellId, 9.1)), win * 0.85);
+        } else if (sk > 9.5 && sk < 10.5 && vWN.y > 0.2){
+          // clay tiles in rows down the slope
+          vec2 dn = normalize(vWN.xz + 1e-5);
+          float along = dot(vWP.xz, dn) / 0.36, across = dot(vWP.xz, vec2(-dn.y, dn.x)) / 0.25;
+          float rowI = floor(along), tile = h1(vec2(rowI, floor(across + rowI * 0.5)));
+          float edge = smoothstep(0.0, 0.18, fract(along)) * (0.8 + 0.2 * smoothstep(0.0, 0.12, abs(fract(across + rowI * 0.5) - 0.5) * 2.0));
+          diffuseColor.rgb *= (0.62 + 0.38 * edge) * (0.85 + 0.3 * tile) * (0.9 + 0.2 * n1(vWP.xz * 0.2));
+        } else if (sk > 10.5 && vWN.y > 0.5){
+          // gravel and tar on flat roofs
+          diffuseColor.rgb *= 0.75 + 0.35 * n1(vWP.xz * 3.1) * n1(vWP.xz * 0.37 + 4.0);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         if (vE.y > 0.0){
@@ -287,14 +384,14 @@ const BLD_MAT = buildingMat();
 
 // ================================================================ geometry builder: merged triangles with colour and building data
 class GB {
-  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); }
-  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
+  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.base = 0; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); this.B = new Float32Array(size); }
+  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2], ['B', 1]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
   v(x, y, z, c, e){
     if (this.n >= this.size) this.grow();
     const i = this.n++;
     this.P[i * 3] = x; this.P[i * 3 + 1] = y; this.P[i * 3 + 2] = z;
     this.C[i * 3] = c[0]; this.C[i * 3 + 1] = c[1]; this.C[i * 3 + 2] = c[2];
-    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0;
+    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0; this.B[i] = this.base;
   }
   tri(a, b, c, col, e){ this.v(a[0], a[1], a[2], col, e); this.v(b[0], b[1], b[2], col, e); this.v(c[0], c[1], c[2], col, e); }
   quad(a, b, c, d, col, e){ this.tri(a, b, c, col, e); this.tri(a, c, d, col, e); }
@@ -339,11 +436,11 @@ class GB {
     for (const [a, b, c] of tris) this.tri([pts[a][0], y, pts[a][1]], [pts[b][0], y, pts[b][1]], [pts[c][0], y, pts[c][1]], col, e);
   }
   // gable roof over an oriented rectangle; ridge along the long axis
-  gable(o, y, rh, colRoof, colWall, over = 0.4){
+  gable(o, y, rh, colRoof, colWall, over = 0.4, eRoof = [10, 0]){
     const { cx, cz, c, s } = o, hu = o.hu + over, hv = o.hv + over;
     const P = (u, v, h) => [cx + c * u - s * v, h, cz + s * u + c * v];
     const a = P(-hu, -hv, y), b = P(hu, -hv, y), d = P(hu, hv, y), e = P(-hu, hv, y), r0 = P(-hu, 0, y + rh), r1 = P(hu, 0, y + rh);
-    this.quad(a, b, r1, r0, colRoof); this.quad(d, e, r0, r1, colRoof.map(v => v * 0.88));
+    this.quad(a, b, r1, r0, colRoof, eRoof); this.quad(d, e, r0, r1, colRoof.map(v => v * 0.88), eRoof);
     const g0 = P(-o.hu, -o.hv, y), g1 = P(-o.hu, o.hv, y), g2 = P(-o.hu, 0, y + rh * (o.hv / hv));
     const g3 = P(o.hu, -o.hv, y), g4 = P(o.hu, o.hv, y), g5 = P(o.hu, 0, y + rh * (o.hv / hv));
     this.tri(g0, g1, g2, colWall); this.tri(g3, g4, g5, colWall);
@@ -379,6 +476,7 @@ class GB {
     g.setAttribute('position', new THREE.BufferAttribute(this.P.slice(0, n * 3), 3));
     g.setAttribute('color', new THREE.BufferAttribute(this.C.slice(0, n * 3), 3));
     g.setAttribute('aE', new THREE.BufferAttribute(this.E.slice(0, n * 2), 2));
+    g.setAttribute('aB', new THREE.BufferAttribute(this.B.slice(0, n), 1));
     g.computeVertexNormals();
     g.computeBoundingSphere();
     return new THREE.Mesh(g, mat);
@@ -1273,8 +1371,8 @@ async function buildBasel(){
     for (let k = 0; k < steps; k++){
       const u0 = -o.hu + Math.floor(k / 2) * 4.2, u1 = o.hu - k * 3.8, y0 = base + k * th, y1 = base + (k + 1) * th;
       const pts = rectPts(o, u0, u1, o.hv);
-      g.walls(pts, y0, y1, white, [2, burn && k > 1 && k < steps - 1 ? burn : 0]);
-      g.cap(pts, y1, hex('#cfcfcb'));
+      g.walls(pts, y0, y1, white, [9, burn && k > 1 && k < steps - 1 ? burn : 0]);
+      g.cap(pts, y1, hex('#cfcfcb'), [11, 0]);
       if (grid) grid.poly(pts, y1);
     }
   }
@@ -1295,9 +1393,9 @@ async function buildBasel(){
         const [cx, cz] = at(u, sv * (hv - 1)); gW.box(cx, base + (k - 0.5) * FLH, cz, 0.8, FLH, 0.8, yawT, mul(CONC, 0.7));
       }
     }
-    gW.walls(rectPts(T2, -T2.hu, T2.hu, T2.hv), base, (i, k) => base + FLH * (1 + r() * 2.5), mul(WHITE, 0.7), [2, 0.12], 4, 0.6);
+    gW.walls(rectPts(T2, -T2.hu, T2.hu, T2.hv), base, (i, k) => base + FLH * (1 + r() * 2.5), mul(WHITE, 0.7), [9, 0.12], 4, 0.6);
     gW.box(T2.cx, base + 29, T2.cz, 9, 58, 9, yawT, mul(CONC, 0.68));
-    { const [x, z] = at(T2.hu - 3, T2.hv - 0.4); gW.box(x, base + 38, z, 9, 76, 0.6, yawT, mul(WHITE, 0.8), [2, 0.1]); }
+    { const [x, z] = at(T2.hu - 3, T2.hv - 0.4); gW.box(x, base + 38, z, 9, 76, 0.6, yawT, mul(WHITE, 0.8), [9, 0.1]); }
     const FALL = [Math.cos(-PI * 0.6), Math.sin(-PI * 0.6)];
     const tongueAt = (sd, side) => [T2.cx + FALL[0] * sd - FALL[1] * side, T2.cz + FALL[1] * sd + FALL[0] * side];
     gW.rubble(rectPts(T2, -T2.hu - 22, T2.hu + 22, T2.hv + 20), base, 27, mix3(RUB, WHITE, 0.45), r, 12);
@@ -1314,7 +1412,7 @@ async function buildBasel(){
       const sd = r() * 260, side = (r() - 0.5) * (80 - sd * 0.15), [x, z] = tongueAt(sd, side), g0 = groundH(x, z);
       const h = Math.max(0, 22 * (1 - sd / 280) * (1 - Math.abs(side) / 45));
       const panel = r() < 0.35;
-      gW.box(x, g0 + 0.5 + r() * h, z, panel ? 6 : 6 + r() * 10, panel ? 4 : 0.5, panel ? 0.35 : 3 + r() * 6, r() * 6.28, panel ? mul(WHITE, 0.75 + r() * 0.2) : mul(SLAB, 0.6 + r() * 0.3), panel ? [2, 0] : null, (r() - 0.5) * 1.5, (r() - 0.5) * 1.3);
+      gW.box(x, g0 + 0.5 + r() * h, z, panel ? 6 : 6 + r() * 10, panel ? 4 : 0.5, panel ? 0.35 : 3 + r() * 6, r() * 6.28, panel ? mul(WHITE, 0.75 + r() * 0.2) : mul(SLAB, 0.6 + r() * 0.3), panel ? [9, 0] : null, (r() - 0.5) * 1.5, (r() - 0.5) * 1.3);
     }
     for (let k = 0; k < 2600; k++){
       const a = r() * 6.28, d = 20 + Math.pow(r(), 1.6) * 520, x = T2.cx + Math.cos(a) * d + FALL[0] * d * 0.35, z = T2.cz + Math.sin(a) * d + FALL[1] * d * 0.35;
@@ -1347,16 +1445,25 @@ async function buildBasel(){
     let hh = h0 > 0 ? h0 : small ? 3.5 + r() * 1.5 : 11.5 + Math.floor(r() * 3) * 3.3 + (r() < 0.15 ? 3.3 : 0);
     if (t === 2) hh = Math.max(hh, 16); if (t === 3 || t === 5) hh = Math.max(hh, 18);
     const rathaus = /rathaus/i.test(name), tall = hh > 32;
-    let fc = rathaus ? hex('#b23a30') : t === 2 || t === 3 ? hex('#e3dccd') : tall ? hex('#b9bcbd') : t === 6 ? hex('#c9c6bd') : small ? hex('#9a958c') : FAC[Math.floor(r() * FAC.length)];
-    if (t === 3) fc = hex('#b5574a');   // the red sandstone of the Münster
+    // the skin: old town styles near the Münster and the Marktplatz, a mix further out, concrete for tall and industrial blocks
+    const oldTown = Math.hypot(cx + 300, cz - 50) < 750;
+    let wf, fc;
+    if (small){ wf = 0; fc = hex('#9a958c'); }
+    else if (rathaus){ wf = 1; fc = hex('#b23a30'); }
+    else if (t === 2){ wf = 1; fc = hex('#e3dccd'); }
+    else if (t === 3){ wf = 4; fc = [1, 1, 1]; }
+    else if (hh > 60){ wf = 9; fc = hex('#b9bcbd'); }
+    else if (tall || t === 6){ wf = 7; fc = mul([1, 1, 1], 0.92 + r() * 0.08); }
+    else { const pool = oldTown ? [2, 2, 3, 5, 8, 4] : [6, 6, 3, 5, 8, 7, 2]; wf = pool[Math.floor(r() * pool.length)]; fc = mul([1, 1, 1], 0.88 + r() * 0.12); }
+    const hue = wf >= 1 && wf <= 8 && fc[0] === fc[1] ? hex(STYLE_HUE[wf - 1]) : fc;
     const rc = t === 3 ? hex('#6f5a4a') : ROOF[Math.floor(r() * ROOF.length)];
-    const wf = small ? 0 : tall || t === 6 ? 2 : 1;
+    gP.base = gW.base = lo;
     const y0 = lo - 1.5, y1 = hi + hh;
     const o = obb(pts), fill = area / (4 * o.hu * o.hv), gableOk = !small && !tall && t !== 6 && fill > 0.72 && o.hv < 16;
     const rh = gableOk ? Math.min(o.hv * (t === 3 ? 1.8 : 1.15), t === 3 ? 22 : 10) : 0;
     // peace
     gP.walls(pts, y0, y1, fc, [wf, 0]);
-    if (gableOk) gP.gable(o, y1, rh, rc, fc); else gP.cap(pts, y1, small ? hex('#77706a') : mul(rc, 0.75));
+    if (gableOk) gP.gable(o, y1, rh, rc, hue); else gP.cap(pts, y1, small ? hex('#77706a') : hex('#8a867e'), [11, 0]);
     w.obstPeace.poly(pts, y1 + rh);
     // war
     let d = dmgAt(cx, cz) + (r() - 0.5) * 0.3;
@@ -1365,11 +1472,11 @@ async function buildBasel(){
     if (rathaus) d = 0.45;
     const st = d < 0.24 ? 0 : d < 0.42 ? 1 : d < 0.62 ? 2 : 3;
     footprints.push([pts, st, hh]); STATS[st]++;
-    const soot = mix3(fc, SOOT, 0.15 + 0.12 * st + r() * 0.12);
+    const soot = mix3(fc, SOOT, 0.1 + 0.08 * st + r() * 0.1);
     const burn = t === 3 || (st === 1 || st === 2) && area > 60 && r() < (st === 2 ? 0.32 : 0.18);
     if (st === 0){
       gW.walls(pts, y0, y1, mul(fc, 0.82), [wf, r() < 0.03 ? 0.3 : 0]);
-      if (gableOk && r() < 0.6) gW.gable(o, y1, rh, mul(rc, 0.7), mul(fc, 0.72)); else gW.cap(pts, y1, gableOk ? hex('#2a2725') : mul(rc, 0.55));
+      if (gableOk && r() < 0.6) gW.gable(o, y1, rh, mul(rc, 0.7), mul(hue, 0.72)); else gW.cap(pts, y1, gableOk ? hex('#2a2725') : hex('#5e5a54'), [11, 0]);
       w.obstWar.poly(pts, y1 + rh);
     } else if (st === 1){
       const a = 0.68, b = 0.97;
@@ -1377,15 +1484,15 @@ async function buildBasel(){
       gW.cap(pts, hi + hh * 0.6, hex('#2f2c29'), [0, burn ? 0.6 : 0.1]);
       w.obstWar.poly(pts, y1);
     } else if (st === 2){
-      gW.walls(pts, y0, (i, k) => hi + hh * lerp(0.22, 0.9, r()), mix3(soot, SOOT, 0.35), [wf, burn ? 0.6 : 0.06], 3, 0.45);
-      gW.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, fc, 0.3), r, 0.4);
+      gW.walls(pts, y0, (i, k) => hi + hh * lerp(0.22, 0.9, r()), mix3(soot, SOOT, 0.18), [wf, burn ? 0.6 : 0.06], 3, 0.45);
+      gW.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, hue, 0.3), r, 0.4);
       w.obstWar.poly(pts, y1);
     } else {
       const hgt = clamp(hh * 0.26, 2, 14);
       gW.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(soot, SOOT, 0.3), [0, 0], 3, 0.45);
       const sm = smolder < 260 && r() < 0.35;
       const g0 = gW.n;
-      gW.rubble(pts, lo, hgt, mix3(RUB, fc, 0.35), r, 2.5 + hh * 0.12);
+      gW.rubble(pts, lo, hgt, mix3(RUB, hue, 0.35), r, 2.5 + hh * 0.12);
       if (sm) for (let i = g0; i < gW.n; i++) gW.E[i * 2 + 1] = 0.35;   // embers glow in the heap
       const nd = Math.min(8, 2 + Math.floor(area / 120));
       for (let k = 0; k < nd; k++){ const u = (r() - 0.5) * o.hu * 1.6, v = (r() - 0.5) * o.hv * 1.6, x = o.cx + o.c * u - o.s * v, z = o.cz + o.s * u + o.c * v;
@@ -1401,6 +1508,7 @@ async function buildBasel(){
   for (const [x, z, h, kind, name] of D.TOW){
     if (inRiver(x, z)) continue;
     const g0 = groundH(x, z), r = rng(Math.floor(x * 7 + z * 13));
+    gP.base = gW.base = g0;
     const def = kind === 'defensiv', hh = h > 0 ? h : def ? 22 : 30, side = def ? 8 : 6.5, spire = def ? 7 : hh * 0.3;
     const col = def || /Georg|Martin/.test(name) ? hex('#b5574a') : hex('#d8d0c0'), roof = def ? hex('#7a4434') : hex('#4f5a4a');
     const sq = (gb, top, c) => { gb.box(x, (g0 - 1 + top) / 2, z, side, top - g0 + 1, side, 0, c, [1, 0]); };
@@ -1685,6 +1793,7 @@ async function buildValley(){
   // a chalet: stone base, timber upper floor, a low wide roof
   const chalet = (x, z, hu, hv, yaw, big) => {
     const c = Math.cos(yaw), s = Math.sin(yaw), y0 = baseAt(x, z, hu, hv, yaw) - 1.5, pts = rectAt(x, z, hu, hv, c, s);
+    gb.base = y0 + 1.5;
     const stoneTop = y0 + 1.5 + 3, woodTop = stoneTop + (big ? 6 : 4.5);
     gb.walls(pts, y0, stoneTop, [0.86, 0.85, 0.8], [1, 0]);
     gb.walls(pts, stoneTop, woodTop, mix3([0.42, 0.27, 0.15], [0.5, 0.34, 0.2], r()), [1, 0]);
@@ -1945,6 +2054,7 @@ async function buildDonbas(){
   const house = (x, z, yaw, hu, hv, warP, gardenSide) => {
     const c = Math.cos(yaw), s = Math.sin(yaw), pts = [[-hu, -hv], [hu, -hv], [hu, hv], [-hu, hv]].map(([u, v]) => [x + c * u - s * v, z + s * u + c * v]);
     let lo = 1e9, hi = -1e9; for (const [px, pz] of pts){ const h = dH(px, pz); lo = Math.min(lo, h); hi = Math.max(hi, h); }
+    gP.base = gW.base = lo;
     const wc = WALLC[Math.floor(r() * WALLC.length)], rc = ROOFC[Math.floor(r() * ROOFC.length)], top = hi + 3.1, o = { cx: x, cz: z, hu, hv, c, s };
     gP.walls(pts, lo - 1, top, wc, [1, 0]); gP.gable(o, top, hv * 0.7, rc, wc, 0.5); w.obstPeace.poly(pts, top + hv * 0.7);
     const st = r() < warP ? (r() < 0.45 ? 3 : r() < 0.6 ? 2 : 1) : 0;
