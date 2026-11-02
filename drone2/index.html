@@ -591,6 +591,7 @@ class HGrid {
     for (const [x, z] of pts){ x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     const c = this.cell;
     for (let z = Math.floor(z0 / c) * c + c / 2; z < z1; z += c) for (let x = Math.floor(x0 / c) * c + c / 2; x < x1; x += c){ const k = this.idx(x, z); if (k >= 0 && pointInPoly(x, z, pts)) this.h[k] = top; }
+    const [cx, cz] = centroid(pts), kc = this.idx(cx, cz); if (kc >= 0) this.h[kc] = top;
   }
   circle(x, z, r, top){
     const c = this.cell;
@@ -1562,8 +1563,6 @@ async function buildBasel(){
   }
   // ---- buildings: one intact mesh, seen in peace and in war; for each building a ruin, shown only once it has been destroyed.
   // A small texture holds every building's state (intact, damaged, ruin; fire; soot), so the city changes where things hit.
-  const STATS = [0, 0, 0, 0]; w.stats = STATS;
-  const footprints = [];
   const CP = new Chunks(), CR = new Chunks();
   const BLDS = []; w.blds = BLDS;
   const MB_ = D.LM['Basler Münster'] || [-91, 172], RH = D.B.find(q => /rathaus/i.test(q[2])), RHc = RH ? centroid(pairs(RH[3])) : [-461, -60];
@@ -1598,7 +1597,6 @@ async function buildBasel(){
     const hue = wf >= 1 && wf <= 10 ? hex(STYLE_HUE[wf - 1]).map((v, i) => v * fc[i]) : fc;
     const rc = roofSkin === 22 ? [0.95, 0.95, 0.95] : ROOF[Math.floor(r() * ROOF.length)], flatC = [0.95, 0.95, 0.95];
     const y0 = lo - 1.5, y1 = lo + hh, o = obb(pts);
-    footprints.push([pts, 0, hh]);
     if (affected){
       // the quarter of Roche Bau 2: standing until the tower falls, then the fallen version (built with the tower's rubble)
       gRi.base = gRd.base = lo;
@@ -1612,6 +1610,7 @@ async function buildBasel(){
       w.obstWar.poly(pts, lo + hgt + 1);
       continue;
     }
+    if (BLDS.length >= 16384){ const g0 = CP.at(cx, cz); g0.base = lo; g0.id = -1; realMesh(g0, S, lo, fc, rc, flatC, [wf, 0], 0, roofSkin); w.obstPeace.poly(pts, y1); w.obstWar.poly(pts, y1); continue; }
     const id = BLDS.length, gI = CP.at(cx, cz), gR = CR.at(cx, cz);
     // intact, as surveyed
     gI.base = lo; gI.id = id; gI.var = 0;
@@ -2831,11 +2830,12 @@ function addDamage(x, y, z, big, warOnly = false){
 function clearDamage(){ for (const d of damage){ if (d.m.parent) d.m.parent.remove(d.m); d.m.geometry.dispose(); } damage.length = 0; emitters = emitters.filter(e => !e.dyn); }
 
 // ---------------------------------------------------------------- buildings that break over time (as in /drone): a hit sets a house on fire or brings it down
-const BSTATE = { list: null, grid: null, burning: [], t: 0 };
+const BSTATE = { list: null, grid: null, burning: [], t: 0, ext: 60 };
 function bldInit(){
   const L = world.blds; BSTATE.list = L || null; BSTATE.burning = []; BSTATE.grid = new Map();
   STATE_TEX.image.data.fill(0); STATE_TEX.needsUpdate = true;
   if (!L) return;
+  BSTATE.ext = 60; for (const b of L) BSTATE.ext = Math.max(BSTATE.ext, Math.sqrt(b.area) * 0.5 + 30);
   for (const b of L){ b.st = 0; b.fire = 0; b.soot = 0; b.em = null; const k = Math.floor(b.cx / 60) + ',' + Math.floor(b.cz / 60); if (!BSTATE.grid.has(k)) BSTATE.grid.set(k, []); BSTATE.grid.get(k).push(b); }
 }
 function bldWrite(b){ const d = STATE_TEX.image.data, i = b.id * 4; d[i] = b.st; d[i + 1] = Math.round(b.fire * 255); d[i + 2] = Math.round(b.soot * 255); STATE_TEX.needsUpdate = true; }
@@ -2847,7 +2847,7 @@ function bldReset(){
 }
 function damageAt(x, z, rad, power){
   if (!BSTATE.list) return;
-  const k0 = Math.floor(x / 60), l0 = Math.floor(z / 60), K = Math.ceil(rad / 60) + 1;
+  const k0 = Math.floor(x / 60), l0 = Math.floor(z / 60), K = Math.ceil((rad + BSTATE.ext) / 60);
   for (let i = -K; i <= K; i++) for (let j = -K; j <= K; j++){
     const L = BSTATE.grid.get((k0 + i) + ',' + (l0 + j)); if (!L) continue;
     for (const b of L){
@@ -2855,7 +2855,7 @@ function damageAt(x, z, rad, power){
       if (d > rad) continue;
       let p = power * (1 - d / rad) + rr(-0.15, 0.15);
       if (b.landmark) p *= 0.55;   // the great stone and concrete buildings take more
-      if (p > 0.78 && b.st < 2){ b.st = 2; b.fire = Math.max(b.fire, rr(0.5, 0.9)); b.soot = 1; world.obstWar.polySet(b.pts, b.ruinTop); }
+      if (p > 0.78 && b.st < 2){ bldUnlight(b); b.st = 2; b.fire = Math.max(b.fire, rr(0.5, 0.9)); b.soot = 1; world.obstWar.polySet(b.pts, b.ruinTop); }
       else if (p > 0.32){ b.st = Math.max(b.st, 1); b.fire = Math.max(b.fire, clamp(p, 0.2, 0.75)); b.soot = Math.max(b.soot, 0.75); }
       else if (p > 0.1){ b.soot = Math.max(b.soot, 0.4); if (b.st === 0) b.st = 1; }
       else continue;
@@ -2865,12 +2865,13 @@ function damageAt(x, z, rad, power){
   }
 }
 function igniteBld(b){
-  if (b.em) return;
+  if (b.em && b.em.some(e => e.kind === 'fire')) return;
+  bldUnlight(b);
   const s0 = clamp(Math.sqrt(b.area) / 12, 0.7, 2.2), top = b.st === 2 ? b.lo + 2 : b.lo + b.hh * 0.7;
   b.em = [{ kind: 'fire', x: b.cx, y: top, z: b.cz, s: s0, s0, acc: 0, war: true, bld: true }, { kind: b.area > 500 ? 'column' : 'smoke', x: b.cx, y: top + 3, z: b.cz, s: Math.min(1.4, s0 * 0.8), acc: 0, war: true, bld: true }];
   emitters.push(...b.em);
   if (!BSTATE.burning.includes(b)) BSTATE.burning.push(b);
-  while (BSTATE.burning.length > 80){ const o = BSTATE.burning.shift(); bldUnlight(o); }
+  while (BSTATE.burning.length > 80){ const o = BSTATE.burning.shift(); bldUnlight(o); o.fire = 0; bldWrite(o); }
 }
 // fires burn down over minutes: the flames go first, the smoke a little later, the embers last
 function updateBlds(dt){
