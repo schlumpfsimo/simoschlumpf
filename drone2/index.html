@@ -156,7 +156,7 @@ const S = {
 // ================================================================ scene, light, sky
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(new THREE.Color(0.7, 0.75, 0.8), 0.0005);
-const camera = new THREE.PerspectiveCamera(90, W / H, 0.1, 30000);
+const camera = new THREE.PerspectiveCamera(104, W / H, 0.1, 30000);   // a wide FPV lens; the fisheye bend comes in the post
 scene.add(camera);
 const rt = new THREE.WebGLRenderTarget(RW, RH, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
 const hemi = new THREE.HemisphereLight(0xffffff, 0x555555, 1);
@@ -205,73 +205,66 @@ const GLSL_NOISE = `
   float h1(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   float n1(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1, 0)), f.x), mix(h1(i + vec2(0, 1)), h1(i + 1.0), f.x), f.y); }
 `;
-// ================================================================ facade skins: eight bays of Basel facades, painted once into a texture atlas
-// One tile = one window bay (3.1 m) by one storey (3.25 m); the top row is the ground floor, the bottom row the upper floors.
-// Alpha 0 marks glass: the shader draws its own panes there (and the fire behind them).
-// 0 neutral plaster (tinted by the vertex colour), 1 old town beige with red sandstone surrounds and green shutters,
-// 2 light grey with grey shutters, 3 red sandstone ashlar, 4 pale yellow with dark shutters, 5 ochre Gründerzeit with pediments,
-// 6 post-war concrete with wide windows, 7 pink plaster with brown shutters
+// ================================================================ facade skins: one window bay (3.1 m) by one storey (3.25 m) per tile, painted into an atlas
+// top row: ground floor, bottom row: upper storeys. Alpha 0 marks glass: the shader draws the panes (and the fire behind them).
+// Plain houses take tile 0 or 1 tinted by their vertex colour; the landmarks have their own:
+// 0 plaster, plain window      1 plaster, dark modern frames      2 Münster: red sandstone, lancet windows
+// 3 Rathaus: painted red, gold frieze, arcade      4 glass curtain wall (Messeturm)      5 post-war concrete
+// 6 sandstone, round-arched window (churches)      7 blank plaster (sheds, fire walls)
 const FACADE_TEX = (() => {
   const T = 256, NX = 8, c = document.createElement('canvas'); c.width = T * NX; c.height = T * 2;
   const g = c.getContext('2d'), m = document.createElement('canvas'); m.width = c.width; m.height = c.height;
   const gm = m.getContext('2d'); gm.fillStyle = '#fff'; gm.fillRect(0, 0, m.width, m.height); gm.fillStyle = '#000';
   const R = rng(77);
-  const STY = [
-    { wall: '#d9d9d6', frame: '#f2f1ec', sur: null, shut: null, shop: false },
-    { wall: '#d8c6a2', frame: '#efe9dc', sur: '#a86a55', shut: '#3f5a3a', shop: true },
-    { wall: '#e2e0da', frame: '#f6f5f1', sur: '#bdb9b0', shut: '#6b6f70', shop: false, rust: true },
-    { wall: '#b06a55', frame: '#e6ddd0', sur: '#8d4c3c', shut: null, shop: false, ashlar: true, arch: true },
-    { wall: '#e3d29b', frame: '#f4efe2', sur: '#f0eadb', shut: '#2f3d33', shop: true },
-    { wall: '#cfb48a', frame: '#efe7d6', sur: '#b29a74', shut: null, shop: false, ped: true, rust: true, rustCol: '#9a8a76' },
-    { wall: '#bdbab2', frame: '#6d6f70', sur: null, shut: null, shop: true, wide: true },
-    { wall: '#d9b2a2', frame: '#f4efe8', sur: '#e8ddd2', shut: '#6a4a36', shop: false },
-  ];
   const rect = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
-  const glass = (x, y, w, h) => { gm.fillRect(x, y, w, h); };
-  STY.forEach((s, i) => {
-    for (const row of [0, 1]){
-      const x0 = i * T, y0 = row * T, ground = row === 0;
-      // plaster with grain and weather streaks
-      rect(x0, y0, T, T, s.wall);
-      for (let k = 0; k < 700; k++){ const a = R() * 0.07; g.fillStyle = R() < 0.5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`; g.fillRect(x0 + R() * T, y0 + R() * T, 1 + R() * 3, 1 + R() * 3); }
-      for (let k = 0; k < 6; k++){ g.fillStyle = 'rgba(40,35,30,0.05)'; g.fillRect(x0 + R() * T, y0 + T * 0.55, 2 + R() * 6, T * 0.45); }
-      if (s.ashlar){ g.strokeStyle = 'rgba(60,30,20,0.35)'; g.lineWidth = 2; for (let yy = 0; yy < T; yy += 32){ g.beginPath(); g.moveTo(x0, y0 + yy); g.lineTo(x0 + T, y0 + yy); g.stroke(); for (let xx = (yy / 32) % 2 ? 0 : 48; xx < T; xx += 96){ g.beginPath(); g.moveTo(x0 + xx, y0 + yy); g.lineTo(x0 + xx, y0 + yy + 32); g.stroke(); } } }
-      if (ground && s.rust){ rect(x0, y0 + 40, T, T - 40, s.rustCol || s.wall); g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 3; for (let yy = 70; yy < T; yy += 34){ g.beginPath(); g.moveTo(x0, y0 + yy); g.lineTo(x0 + T, y0 + yy); g.stroke(); } }
-      // a cornice band at the top of the ground floor
-      if (ground){ rect(x0, y0, T, 14, 'rgba(0,0,0,0.12)'); rect(x0, y0 + 2, T, 8, s.sur || s.frame); }
-      if (ground && s.shop){
-        // shop front: a wide window and a door, a sign band
-        const fx = x0 + 18, fy = y0 + 46, fw = T - 36, fh = 170;
-        rect(fx - 6, fy - 6, fw + 12, fh + 12, s.sur || '#3c3a37');
-        rect(fx, fy, fw, fh, s.frame); glass(fx + 6, fy + 6, fw * 0.62 - 9, fh - 12); glass(fx + fw * 0.62 + 3, fy + 6, fw * 0.38 - 9, fh - 6);
-        rect(x0 + 10, y0 + 18, T - 20, 20, '#4a4642');
-        continue;
-      }
-      // a window: surround, frame, cross mullions, sill; shutters beside it
-      const wide = s.wide, ww = wide ? 200 : 100, wh = wide ? 118 : 142;
-      const wx = x0 + (T - ww) / 2, wy = y0 + (ground ? 60 : 50);
-      if (s.arch && ground){ g.fillStyle = s.sur; g.beginPath(); g.arc(x0 + T / 2, wy + 40, 62, Math.PI, 0); g.lineTo(x0 + T / 2 + 62, y0 + T); g.lineTo(x0 + T / 2 - 62, y0 + T); g.fill(); rect(x0 + T / 2 - 50, wy + 40, 100, T - wy - 40 + y0, '#3a2c22'); gm.beginPath(); gm.arc(x0 + T / 2, wy + 40, 48, Math.PI, 0); gm.fill(); continue; }
-      if (s.sur){ rect(wx - 12, wy - 12, ww + 24, wh + 24, s.sur); }
-      if (s.ped){ g.fillStyle = s.sur; g.beginPath(); g.moveTo(wx - 18, wy - 14); g.lineTo(wx + ww / 2, wy - 44); g.lineTo(wx + ww + 18, wy - 14); g.fill(); }
-      rect(wx, wy, ww, wh, s.frame);
-      const p = 7, mx = wide ? 3 : 2;
-      for (let a = 0; a < mx; a++) for (let b = 0; b < 2; b++){
-        const gx = wx + p + a * (ww - p) / mx, gy = wy + p + b * (wh * (b ? 0.6 : 0.4)), gw = (ww - p) / mx - p, gh = (b ? wh * 0.6 : wh * 0.4) - p - (b ? p : 0);
-        glass(gx, b ? wy + wh * 0.4 + p / 2 : gy, gw, b ? wh * 0.6 - p * 1.5 : wh * 0.4 - p);
-      }
-      rect(wx - 8, wy + wh, ww + 16, 9, s.sur || '#b0aca4');
-      rect(wx - 8, wy + wh + 9, ww + 16, 3, 'rgba(0,0,0,0.25)');
-      if (s.shut && !wide){
-        for (const sd of [-1, 1]){
-          const sx = sd < 0 ? wx - 12 - 46 : wx + ww + 12, sw = 44;
-          rect(sx, wy - 4, sw, wh + 8, s.shut);
-          g.fillStyle = 'rgba(0,0,0,0.25)'; for (let yy = wy; yy < wy + wh; yy += 7) g.fillRect(sx + 4, yy, sw - 8, 2);
-        }
-      }
-      if (wide) rect(x0, wy + wh + 12, T, 26, 'rgba(0,0,0,0.12)');
-    }
-  });
-  // merge: colour from c, glass mask from m into alpha; rows flipped so v = 0 is the bottom of a storey
+  const glass = (x, y, w, h) => gm.fillRect(x, y, w, h);
+  const grain = (x0, y0, k = 500, a = 0.06) => { for (let i = 0; i < k; i++){ g.fillStyle = R() < 0.5 ? `rgba(0,0,0,${R() * a})` : `rgba(255,255,255,${R() * a})`; g.fillRect(x0 + R() * T, y0 + R() * T, 1 + R() * 3, 1 + R() * 3); } };
+  const ashlar = (x0, y0, col, line) => { rect(x0, y0, T, T, col); g.strokeStyle = line; g.lineWidth = 2; for (let yy = 0; yy < T; yy += 28){ g.beginPath(); g.moveTo(x0, y0 + yy); g.lineTo(x0 + T, y0 + yy); g.stroke(); for (let xx = (yy / 28) % 2 ? 0 : 40; xx < T; xx += 80){ g.beginPath(); g.moveTo(x0 + xx, y0 + yy); g.lineTo(x0 + xx, y0 + yy + 28); g.stroke(); } } };
+  // a plain window: frame, a mullion and transom, a sill
+  const win = (x0, y0, ww, wh, frame, sill, panes = 2) => {
+    const wx = x0 + (T - ww) / 2, wy = y0 + 54;
+    rect(wx - 5, wy - 5, ww + 10, wh + 10, 'rgba(0,0,0,0.18)');
+    rect(wx, wy, ww, wh, frame);
+    const p = 6, cw = (ww - p * (panes + 1)) / panes;
+    for (let a = 0; a < panes; a++){ glass(wx + p + a * (cw + p), wy + p, cw, wh * 0.32); glass(wx + p + a * (cw + p), wy + p * 2 + wh * 0.32, cw, wh * 0.68 - p * 3); }
+    rect(wx - 8, wy + wh, ww + 16, 8, sill);
+  };
+  const tiles = [
+    // 0 plaster, plain window
+    (x0, y0, ground) => { rect(x0, y0, T, T, '#dedbd4'); grain(x0, y0); if (ground){ rect(x0, y0, T, 10, '#c9c5bc'); } win(x0, y0 + (ground ? 8 : 0), 96, 138, '#f1efe9', '#c9c5bc'); },
+    // 1 plaster, dark modern frames; shop window on the ground floor
+    (x0, y0, ground) => { rect(x0, y0, T, T, '#dcdad6'); grain(x0, y0);
+      if (ground){ rect(x0 + 16, y0 + 40, T - 32, 180, '#3b3d3e'); glass(x0 + 22, y0 + 46, T - 44, 168); rect(x0, y0, T, 26, '#4a4b4c'); }
+      else win(x0, y0, 120, 130, '#3d3f41', '#9a9894', 2); },
+    // 2 Münster: red sandstone ashlar, a tall pointed lancet window with tracery
+    (x0, y0, ground) => { ashlar(x0, y0, '#b9604f', 'rgba(70,25,18,0.35)'); grain(x0, y0, 400, 0.08);
+      const cx = x0 + T / 2, wy = y0 + 30, ww = 74, wh = 196;
+      g.fillStyle = '#8f3f33'; g.beginPath(); g.moveTo(cx - ww / 2 - 10, wy + wh); g.lineTo(cx - ww / 2 - 10, wy + 46); g.quadraticCurveTo(cx - ww / 2 - 10, wy - 18, cx, wy - 34); g.quadraticCurveTo(cx + ww / 2 + 10, wy - 18, cx + ww / 2 + 10, wy + 46); g.lineTo(cx + ww / 2 + 10, wy + wh); g.fill();
+      gm.beginPath(); gm.moveTo(cx - ww / 2, wy + wh); gm.lineTo(cx - ww / 2, wy + 46); gm.quadraticCurveTo(cx - ww / 2, wy - 6, cx, wy - 20); gm.quadraticCurveTo(cx + ww / 2, wy - 6, cx + ww / 2, wy + 46); gm.lineTo(cx + ww / 2, wy + wh); gm.fill();
+      rect(cx - 3, wy - 10, 6, wh + 10, '#8f3f33'); gm.fillStyle = '#fff'; gm.fillRect(cx - 3, wy - 10, 6, wh + 10); gm.fillRect(cx - ww / 2, wy + 70, ww, 5); gm.fillStyle = '#000';
+      rect(cx - 3, wy - 10, 6, wh + 10, '#8f3f33'); },
+    // 3 Rathaus: red painted plaster, a gold and green frieze, windows in gold surrounds; pointed arches on the ground floor
+    (x0, y0, ground) => { rect(x0, y0, T, T, '#b8392c'); grain(x0, y0, 600, 0.08);
+      rect(x0, y0 + 6, T, 18, '#d5a43a'); for (let xx = 0; xx < T; xx += 24){ g.fillStyle = '#2f5b3a'; g.beginPath(); g.arc(x0 + xx + 12, y0 + 15, 6, 0, 7); g.fill(); }
+      if (ground){ g.fillStyle = '#7d2219'; g.beginPath(); g.moveTo(x0 + 38, y0 + T); g.lineTo(x0 + 38, y0 + 110); g.quadraticCurveTo(x0 + 38, y0 + 50, x0 + T / 2, y0 + 40); g.quadraticCurveTo(x0 + T - 38, y0 + 50, x0 + T - 38, y0 + 110); g.lineTo(x0 + T - 38, y0 + T); g.fill(); rect(x0 + 52, y0 + 110, T - 104, T - 110, '#2a1a14'); }
+      else { rect(x0 + 74, y0 + 60, 108, 140, '#d5a43a'); rect(x0 + 80, y0 + 66, 96, 128, '#efe6d2'); glass(x0 + 86, y0 + 72, 40, 116); glass(x0 + 130, y0 + 72, 40, 116);
+        for (let k = 0; k < 4; k++){ g.fillStyle = ['#e2c05a', '#3e6b8a', '#e9e1cf', '#2f5b3a'][k]; g.fillRect(x0 + 10 + k * 8, y0 + 80 + k * 30, 30, 20); g.fillRect(x0 + T - 40 - k * 6, y0 + 90 + k * 28, 28, 18); } } },
+    // 4 glass curtain wall: glass everywhere, thin mullions, a spandrel band
+    (x0, y0, ground) => { rect(x0, y0, T, T, '#2f3a3c'); glass(x0, y0, T, T);
+      gm.fillStyle = '#fff'; for (let xx = 0; xx < T; xx += 64) gm.fillRect(x0 + xx, y0, 4, T); gm.fillRect(x0, y0 + T - 18, T, 18); gm.fillStyle = '#000';
+      for (let xx = 0; xx < T; xx += 64) rect(x0 + xx, y0, 4, T, '#3c4446'); rect(x0, y0 + T - 18, T, 18, '#273032'); },
+    // 5 post-war concrete: a wide band window and a parapet band
+    (x0, y0, ground) => { rect(x0, y0, T, T, '#c4c1b9'); grain(x0, y0, 500, 0.07);
+      rect(x0, y0 + 186, T, 40, '#b3b0a8'); rect(x0 + 10, y0 + 52, T - 20, 124, '#55585a');
+      for (let a = 0; a < 3; a++) glass(x0 + 16 + a * ((T - 32) / 3), y0 + 58, (T - 32) / 3 - 6, 112); },
+    // 6 sandstone, round-arched window: other churches
+    (x0, y0, ground) => { ashlar(x0, y0, '#cdb79a', 'rgba(80,60,40,0.3)'); grain(x0, y0, 400, 0.06);
+      const cx = x0 + T / 2; g.fillStyle = '#a58e72'; g.beginPath(); g.moveTo(cx - 46, y0 + 220); g.lineTo(cx - 46, y0 + 90); g.arc(cx, y0 + 90, 46, Math.PI, 0); g.lineTo(cx + 46, y0 + 220); g.fill();
+      gm.beginPath(); gm.moveTo(cx - 36, y0 + 214); gm.lineTo(cx - 36, y0 + 92); gm.arc(cx, y0 + 92, 36, Math.PI, 0); gm.lineTo(cx + 36, y0 + 214); gm.fill(); },
+    // 7 blank plaster
+    (x0, y0, ground) => { rect(x0, y0, T, T, '#d6d3cc'); grain(x0, y0, 700, 0.08); },
+  ];
+  tiles.forEach((f, i) => { f(i * T, 0, true); f(i * T, T, false); });
   const W_ = c.width, H_ = c.height, col = g.getImageData(0, 0, W_, H_).data, msk = gm.getImageData(0, 0, W_, H_).data;
   const out = new Uint8Array(W_ * H_ * 4);
   for (let y = 0; y < H_; y++){
@@ -282,8 +275,8 @@ const FACADE_TEX = (() => {
   t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 4; t.needsUpdate = true;
   return t;
 })();
-// approximate wall colour of each style (rubble, soot)
-const STYLE_HUE = ['#d9d9d6', '#d8c6a2', '#e2e0da', '#b06a55', '#e3d29b', '#cfb48a', '#bdbab2', '#d9b2a2'];
+// approximate wall colour of each skin (rubble, soot)
+const STYLE_HUE = ['#dedbd4', '#dcdad6', '#b9604f', '#b8392c', '#2f3a3c', '#c4c1b9', '#cdb79a', '#d6d3cc'];
 
 // buildings: vertex colours; aE.x = skin (0 none, 1-8 facade style, 9 ribbon glazing, 10 tiled roof, 11 flat roof), aE.y = share of windows on fire; aB = foot of the building
 function buildingMat(){
@@ -297,6 +290,7 @@ function buildingMat(){
         float win = 0.0, cellId = 0.0;
         diffuseColor.rgb *= 0.92 + 0.16 * n1(vWP.xz * 0.35 + vWP.y * 0.21);
         float sk = floor(vE.x + 0.5);
+        vec3 nU = vWN * (vWN.y < 0.0 ? -1.0 : 1.0);   // the surveyed solids are wound inwards: the roof normal, facing up
         if (sk > 0.5 && sk < 9.5 && abs(vWN.y) < 0.35){
           vec2 t = normalize(vec2(-vWN.z, vWN.x) + 1e-5);
           float u = dot(vWP.xz, t);
@@ -309,6 +303,7 @@ function buildingMat(){
             win = 1.0 - tx.a;
             cellId = floor(q.x) * 7.13 + fl * 13.7;
             vec3 glassC = vec3(0.07, 0.08, 0.09) + 0.13 * h1(vec2(cellId, 9.1)) + vec3(0.02, 0.03, 0.04) * step(0.5, fract(q.y * 2.0));
+            if (sk > 4.5 && sk < 5.5) glassC = mix(vec3(0.14, 0.22, 0.24), vec3(0.42, 0.52, 0.55), clamp((vWP.y - vB) / 140.0, 0.0, 1.0) * 0.6 + 0.12 * h1(vec2(floor(q.x / 2.0), fl)));
             diffuseColor.rgb = mix(diffuseColor.rgb * tx.rgb * 1.18, glassC, win);
           } else {
             float fy = fract(vWP.y / 4.1);
@@ -316,14 +311,25 @@ function buildingMat(){
             cellId = floor(u / 9.0) * 7.13 + floor(vWP.y / 4.1) * 13.7;
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.08, 0.09, 0.1) + 0.14 * h1(vec2(cellId, 9.1)), win * 0.85);
           }
-        } else if (sk > 9.5 && sk < 10.5 && vWN.y > 0.2){
+        } else if (sk > 9.5 && sk < 10.5 && nU.y > 0.2){
           // clay tiles in rows down the slope
-          vec2 dn = normalize(vWN.xz + 1e-5);
+          vec2 dn = normalize(nU.xz + 1e-5);
           float along = dot(vWP.xz, dn) / 0.36, across = dot(vWP.xz, vec2(-dn.y, dn.x)) / 0.25;
           float rowI = floor(along), tile = h1(vec2(rowI, floor(across + rowI * 0.5)));
           float edge = smoothstep(0.0, 0.18, fract(along)) * (0.8 + 0.2 * smoothstep(0.0, 0.12, abs(fract(across + rowI * 0.5) - 0.5) * 2.0));
           diffuseColor.rgb *= (0.62 + 0.38 * edge) * (0.85 + 0.3 * tile) * (0.9 + 0.2 * n1(vWP.xz * 0.2));
-        } else if (sk > 10.5 && vWN.y > 0.5){
+        } else if (sk > 11.5 && nU.y > 0.15){
+          // glazed tiles in diamonds and zigzag bands, as on the Münster and the Rathaus
+          vec2 dn = normalize(nU.xz + 1e-5);
+          float along = dot(vWP.xz, dn) / 0.8, across = dot(vWP.xz, vec2(-dn.y, dn.x)) / 0.8;
+          vec2 dd = vec2(along + across, along - across), cl = floor(dd);
+          float k = mod(cl.x + cl.y * 2.0, 4.0);
+          vec3 cG = vec3(0.22, 0.42, 0.26), cY = vec3(0.82, 0.64, 0.2), cR = vec3(0.56, 0.2, 0.14), cK = vec3(0.14, 0.14, 0.12);
+          vec3 cc = k < 1.0 ? cG : k < 2.0 ? cY : k < 3.0 ? cG : cR;
+          if (mod(floor(along / 4.0), 3.0) > 1.5) cc = mod(cl.x + cl.y, 2.0) < 1.0 ? cY : cK;
+          float edge = smoothstep(0.0, 0.1, min(fract(dd.x), fract(dd.y)));
+          diffuseColor.rgb = cc * (0.75 + 0.25 * edge) * clamp(dot(diffuseColor.rgb, vec3(0.333)) * 1.15, 0.15, 1.2);
+        } else if (sk > 10.5 && sk < 11.5 && nU.y > 0.5){
           // gravel and tar on flat roofs
           diffuseColor.rgb *= 0.75 + 0.35 * n1(vWP.xz * 3.1) * n1(vWP.xz * 0.37 + 4.0);
         }`)
@@ -613,7 +619,8 @@ function stepParticles(ps, dt, fire){
 let emitters = [];
 function updateEmitters(dt, cam){
   for (const e of emitters){
-    if (e.war && !world.war && !(e.roche && GAME.rocheDown && GAME.mode === 'defend')) continue;
+    if (e.war && !world.war) continue;
+    if (e.roche && !GAME.rocheDown) continue;
     const dx = e.x - cam.x, dz = e.z - cam.z, d2 = dx * dx + dz * dz;
     const range = e.kind === 'column' ? 9000 : e.kind === 'dust' ? 5000 : e.kind === 'smoke' ? 2600 : 1300;
     if (d2 > range * range) continue;
@@ -666,7 +673,7 @@ function makeBeacon(x, y, z){
 // ================================================================ post processing: analog FPV feed; the UI layer stays sharp on top
 function canvasLayer(){ const c = document.createElement('canvas'); c.width = OW; c.height = OH; const t = new THREE.CanvasTexture(c); t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; const g = c.getContext('2d'); g.lineJoin = 'round'; g.miterLimit = 2; return { c, g, t }; }
 const OSD = canvasLayer(), UI = canvasLayer();
-const K = 0.16;
+const K = 0.34;
 const post = new THREE.ShaderMaterial({
   uniforms: {
     tScene: { value: rt.texture }, tOSD: { value: OSD.t }, tUI: { value: UI.t }, uRes: { value: new THREE.Vector2(RW, RH) },
@@ -683,34 +690,52 @@ const post = new THREE.ShaderMaterial({
       vec2 px = floor(vUv * uRes);
       float tq = floor(uTime * 30.0);
       float row = floor(uv.y * uRes.y);
-      float jit = (h(vec2(row, tq)) - 0.5) * (0.002 + uNoise * 0.05) * step(0.75 - uNoise * 0.6, h(vec2(row * 0.37, tq + 1.7)));
+      float jit = (h(vec2(row, tq)) - 0.5) * (0.004 + uNoise * 0.06) * step(0.62 - uNoise * 0.5, h(vec2(floor(row / 3.0) * 0.37, tq + 1.7)));
       jit += sin(uv.y * 30.0 + uTime * 2.0) * 0.0006;
       uv.x += jit;
       vec2 c = uv * 2.0 - 1.0;
       c *= (1.0 + uK * dot(c, c)) / (1.0 + 2.0 * uK);
       vec2 s = c * 0.5 + 0.5;
-      vec3 col = texture2D(tScene, s).rgb;
-      vec3 smear = texture2D(tScene, s - vec2(1.5 / uRes.x, 0.0)).rgb;
-      col = mix(col, smear, 0.25);
+      // interlaced fields a little apart; with a weak link the picture breaks into blocks
+      float odd = mod(row, 2.0);
+      s.x += odd * 0.6 / uRes.x;
+      float blk = step(1.0 - uNoise * 0.45, h(vec2(floor(s.x * uRes.x / 12.0), floor(s.y * uRes.y / 12.0) + tq)));
+      vec2 sb = mix(s, (floor(s * uRes / 12.0) + 0.5) * 12.0 / uRes, blk);
+      vec2 dx = vec2(1.0 / uRes.x, 0.0), dy = vec2(0.0, 1.0 / uRes.y);
+      vec3 col = texture2D(tScene, sb).rgb * 0.4 + (texture2D(tScene, sb + dx).rgb + texture2D(tScene, sb - dx).rgb) * 0.2 + (texture2D(tScene, sb + dy).rgb + texture2D(tScene, sb - dy).rgb) * 0.1;
+      vec3 smear = texture2D(tScene, sb - dx * 3.0).rgb;
+      col = mix(col, smear, 0.18) * (1.0 - odd * 0.04);
       // grade: a little desaturated and warm, like a cheap camera
       float l = dot(col, vec3(0.299, 0.587, 0.114));
       vec3 colour = pow(mix(vec3(l), col, 0.82) * vec3(1.02, 1.0, 0.96), vec3(0.95)) * 1.04;
-      // the analog FPV look of /drone: nearly monochrome, warm, a little colour left for fire
-      float lg = clamp(pow(l * 1.3, 0.85) * 1.15, 0.0, 1.0);
-      vec3 graded = mix(vec3(0.11, 0.10, 0.09), vec3(0.88, 0.85, 0.79), lg) * vec3(1.0, 0.965, 0.9);
-      vec3 chroma = col - vec3((col.r + col.g + col.b) / 3.0);
-      col = mix(colour, graded + chroma * 0.6, uGrade);
+      // a real analog FPV camera: washed out, blacks lifted, low contrast, half the colour gone, highlights blooming
+      vec3 fpv = mix(vec3(l), col, 0.6) * 0.78 + vec3(0.11, 0.115, 0.12);
+      fpv += smoothstep(0.55, 1.0, l) * 0.18;
+      fpv = pow(fpv, vec3(1.05)) * vec3(0.98, 1.0, 1.03);
+      col = mix(colour, fpv, uGrade);
       vec4 o = texture2D(tOSD, vec2(vUv.x + jit, vUv.y));
       col = mix(col, o.rgb, o.a);
+      // the analog feed: grain, colour speckle, line noise, sparkles, a little flicker
       float n = h(px + vec2(tq * 7.13, tq * 3.7));
-      col += (n - 0.5) * (0.035 + uNoise * 0.5);
-      col += step(1.0 - uNoise * 0.03, h(px * 1.31 + tq)) * 0.8;
+      float lineN = h(vec2(row, tq * 2.1)) - 0.5;
+      col += (n - 0.5) * (0.1 + uNoise * 0.55);
+      col += lineN * (0.03 + uNoise * 0.22);
+      col += (vec3(h(px + tq * 1.1), h(px + tq * 2.3), h(px + tq * 3.7)) - 0.5) * (0.06 + uNoise * 0.3);
+      col += step(1.0 - (0.0015 + uNoise * 0.05), h(px * 1.31 + tq)) * 0.7;
+      col *= 0.95 + 0.05 * h(vec2(tq, 1.0));
       float band = fract(vUv.y + uTime * 0.11);
       col *= 1.0 - 0.05 * smoothstep(0.0, 0.04, band) * smoothstep(0.1, 0.04, band);
       vec2 vc = vUv - 0.5; col *= 1.0 - dot(vc, vc) * 0.8;
-      float sn = h(vec2(px.x * 0.5 + tq, px.y * 1.7 + tq * 13.0));
-      float ln = h(vec2(row, tq * 1.3));
-      col = mix(col, vec3(sn * 0.7 + ln * 0.25) * vec3(0.92, 0.9, 0.86), uStatic);
+      // signal lost: analog snow - streaks of varying length per line, a rolling sync bar, torn bands, line brightness
+      float rowR = h(vec2(row, tq * 1.7));
+      float seg = floor(px.x / (1.0 + floor(rowR * 4.0)));
+      float snow = h(vec2(seg * 1.13 + tq * 17.0, row * 0.71 + tq * 5.3)); snow = snow * snow * 1.35;
+      float roll = fract(vUv.y * 0.9 + uTime * 0.7);
+      float bar = smoothstep(0.0, 0.05, roll) * smoothstep(0.24, 0.12, roll);
+      float tear = step(0.9, h(vec2(floor(row / 5.0), tq)));
+      vec3 st = vec3(snow) * (1.0 - bar * 0.6) + (rowR - 0.5) * 0.28 + tear * 0.22;
+      st *= vec3(0.95, 0.94, 0.98) + vec3(h(px + 1.7 + tq), h(px + 3.1 + tq), h(px + 5.3 + tq)) * 0.14;
+      col = mix(col, clamp(st, 0.0, 1.0), max(uStatic, uNoise * uNoise * 0.55 * step(0.45, h(vec2(floor(row / 9.0), tq * 0.5)))));
       col = mix(col, vec3(0.0), uBlack);
       col *= 1.0 - uDim * 0.55;
       vec4 u = texture2D(tUI, vUv);
@@ -1250,6 +1275,39 @@ function newWorld(id){
   return { id, root, gPeace: peace, gWar: war, hasWar: true, war: false, slabs: [], slabsPeace: [], slabsWar: [], pois: [], terrains: [], ceiling: 3000, R: 3000, center: [0, 0] };
 }
 
+// swissBUILDINGS3D 3.0 (swisstopo, open data): real roof surfaces, roof outlines and footprints, packed by tools/sb_pack.py
+// record: nv, nt, ne (u16), nf, kind (u8), anchor x z, height (f32); vertices i16 dm (x, y above the building's foot, z); triangles, edges u16; footprint i16 dm
+function parseSB(buf){
+  const dv = new DataView(buf), out = [];
+  if (dv.getUint32(0, true) !== 0x31425342) throw new Error('not a BSB1 file');
+  const n = dv.getUint32(4, true); let o = 8;
+  for (let k = 0; k < n; k++){
+    const nv = dv.getUint16(o, true), nt = dv.getUint16(o + 2, true), ne = dv.getUint16(o + 4, true), nf = dv.getUint8(o + 6), kind = dv.getUint8(o + 7);
+    const ax = dv.getFloat32(o + 8, true), az = dv.getFloat32(o + 12, true), h = dv.getFloat32(o + 16, true); o += 20;
+    const V = new Float32Array(nv * 3); for (let i = 0; i < nv * 3; i++){ V[i] = dv.getInt16(o, true) / 10; o += 2; }
+    const I = new Uint16Array(nt * 3); for (let i = 0; i < nt * 3; i++){ I[i] = dv.getUint16(o, true); o += 2; }
+    const E = new Uint16Array(ne * 2); for (let i = 0; i < ne * 2; i++){ E[i] = dv.getUint16(o, true); o += 2; }
+    const pts = []; for (let i = 0; i < nf; i++){ pts.push([ax + dv.getInt16(o, true) / 10, az + dv.getInt16(o + 2, true) / 10]); o += 4; }
+    out.push({ kind, ax, az, h, V, I, E, pts });
+  }
+  return out;
+}
+// a building as surveyed: its roof triangles, and walls hung from every roof edge down to the ground
+function realMesh(g, S, lo, wallCol, roofCol, flatCol, e, roofBurn = 0, roofSkin = 10){
+  const V = S.V, P = i => [S.ax + V[i * 3], lo + V[i * 3 + 1], S.az + V[i * 3 + 2]];
+  for (let t = 0; t < S.I.length; t += 3){
+    const a = P(S.I[t]), b = P(S.I[t + 1]), c = P(S.I[t + 2]);
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, ln = Math.hypot(nx, ny, nz) || 1;
+    const flat = Math.abs(ny / ln) > 0.95;
+    g.tri(a, b, c, flat && roofSkin === 10 ? flatCol : roofCol, [flat && roofSkin === 10 ? 11 : roofSkin, roofBurn]);
+  }
+  for (let k = 0; k < S.E.length; k += 2){
+    const a = P(S.E[k]), b = P(S.E[k + 1]);
+    g.quad([a[0], lo - 1.5, a[2]], [b[0], lo - 1.5, b[2]], b, a, wallCol, e);
+  }
+}
+
 // burnt-out armour, anti-tank hedgehogs, sandbag positions: written into a war geometry
 function milWreck(gb, x, y, z, yaw, tank, r){
   const H = mix3([0.22, 0.2, 0.18], [0.32, 0.24, 0.18], r()), D = [0.1, 0.1, 0.09], c = Math.cos(yaw), s = Math.sin(yaw);
@@ -1315,6 +1373,8 @@ const BASEL_TXT = {
 };
 async function buildBasel(){
   if (!window.BASEL2) await loadScript('../nostalgia/basel-city.js?v=2');
+  const sbRes = await fetch('basel-buildings.bin'); if (!sbRes.ok) throw new Error('basel-buildings.bin ' + sbRes.status);
+  const SB = parseSB(await sbRes.arrayBuffer());
   const D = window.BASEL2, w = newWorld('basel');
   w.txt = BASEL_TXT;
   // ---- river (the largest water polygon), tests as in /nostalgia
@@ -1359,26 +1419,15 @@ async function buildBasel(){
   w.obstPeace = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3); w.obstWar = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3);
   const gP = new GB(1 << 20), gW = new GB(1 << 20), gRi = new GB(1 << 16), gRd = new GB(1 << 18);   // gRi/gRd: Bau 2 and its quarter, standing and fallen
   const FAC = ['#d9cbb0', '#cdbb9c', '#e3d8c4', '#c9a990', '#b8b2a6', '#d7c49a', '#c58f78', '#e6e0d2', '#a9a49a', '#d4b9a6'].map(hex);
-  const ROOF = ['#8e4b37', '#7a4434', '#6b5a50', '#5e5550', '#9a5a40', '#84503c'].map(hex);
+  const ROOF = ['#7d4b38', '#6e4333', '#865240', '#5f4a40', '#744636'].map(hex);
+  const PLASTER = ['#fbf3e3', '#f7e6c4', '#f2dcc0', '#f4efe6', '#ead8c8', '#f6e9d2', '#e9e4dc', '#f3e1cf', '#eedfc4'].map(hex);
   const SOOT = hex('#1d1b19'), RUB = hex('#7a736a'), CONC = hex('#8d8a84');
   // ---- the Roche towers: Bau 1 (178 m) and Bau 2 (205 m); stepped, white, with ribbon glazing
-  const T2 = obb(pairs([1059, -134, 1032, -130, 1022, -189, 1049, -193]));
-  const T1 = { ...T2, cx: 936, cz: -150, hu: 31, hv: 15 };
+  const near = (x, z, hmin) => SB.filter(b => b.h > hmin).reduce((a, b) => Math.hypot(b.ax - x, b.az - z) < Math.hypot(a.ax - x, a.az - z) ? b : a);
+  const B2 = near(1040, -165, 190), B1 = near(1079, -91, 160);
+  const T2 = obb(B2.pts), T1 = obb(B1.pts);
   const inTongue = (x, z) => { const dx = x - 1040.5, dz = z + 161.5, f0 = Math.cos(-PI * 0.6), f1 = Math.sin(-PI * 0.6), u = dx * f0 + dz * f1, v = -dx * f1 + dz * f0; return u > -40 && u < 255 && Math.abs(v) < 42 - u * 0.07; };
-  const inTower = (x, z) => [T1, T2].some(o => { const dx = x - o.cx, dz = z - o.cz, u = dx * o.c + dz * o.s, v = -dx * o.s + dz * o.c; return Math.abs(u) < o.hu + 4 && Math.abs(v) < o.hv + 4; });
   const rectPts = (o, u0, u1, hv) => [[u0, -hv], [u1, -hv], [u1, hv], [u0, hv]].map(([u, v]) => [o.cx + o.c * u - o.s * v, o.cz + o.s * u + o.c * v]);
-  function roche(g, o, Ht, steps, burn, grid){
-    const base = groundH(o.cx, o.cz) - 1, th = Ht / steps, white = hex('#eeeeea');
-    for (let k = 0; k < steps; k++){
-      const u0 = -o.hu + Math.floor(k / 2) * 4.2, u1 = o.hu - k * 3.8, y0 = base + k * th, y1 = base + (k + 1) * th;
-      const pts = rectPts(o, u0, u1, o.hv);
-      g.walls(pts, y0, y1, white, [9, burn && k > 1 && k < steps - 1 ? burn : 0]);
-      g.cap(pts, y1, hex('#cfcfcb'), [11, 0]);
-      if (grid) grid.poly(pts, y1);
-    }
-  }
-  roche(gP, T1, 178, 7, 0, w.obstPeace); roche(gRi, T2, 205, 8, 0, w.obstPeace);
-  roche(gW, T1, 178, 7, 0.22, w.obstWar);
   {
     // Bau 2 has come down. What stands: a skeleton of bare floor slabs, the concrete core, one sliver of facade.
     // It fell to the west-southwest: a tongue of rubble runs some 250 m into the Wettstein quarter.
@@ -1432,54 +1481,60 @@ async function buildBasel(){
     emitters.push({ kind: 'column', x: T1.cx, y: b1 + 140, z: T1.cz, s: 1.3, acc: 0, war: true });
   }
   // ---- buildings
-  const towersAt = D.TOW.map(t => [t[0], t[1]]);
   let fires = 0, smolder = 0; const STATS = [0, 0, 0, 0]; w.stats = STATS;
   const burning = [];
   const footprints = [];   // for the ground map: [pts, state]
-  for (const [t, h0, name, flat, seed] of D.B){
-    const pts = pairs(flat); if (pts.length < 3) continue;
+  const MB_ = D.LM['Basler Münster'] || [-91, 172], RH = D.B.find(q => /rathaus/i.test(q[2])), RHc = RH ? centroid(pairs(RH[3])) : [-461, -60];
+  let seedN = 0;
+  for (const S of SB){
+    const pts = S.pts; seedN++;
+    if (pts.length < 3) continue;
     const [cx, cz] = centroid(pts);
-    if (inRiver(cx, cz) || inTower(cx, cz)) continue;
-    const r = rng(seed * 31 + 7);
+    if (inRiver(cx, cz)) continue;
+    const isBau2 = S === B2, isBau1 = S === B1;
+    const r = rng(seedN * 7919 + 13);
     const affected = inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 100, gPx = affected ? gRi : gP, gWx = affected ? gRd : gW;
-    let lo = 1e9, hi = -1e9; for (const [x, z] of pts){ const h = groundH(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); }
-    const small = t === 1, area = Math.abs(signedArea(pts));
-    let hh = h0 > 0 ? h0 : small ? 3.5 + r() * 1.5 : 11.5 + Math.floor(r() * 3) * 3.3 + (r() < 0.15 ? 3.3 : 0);
-    if (t === 2) hh = Math.max(hh, 16); if (t === 3 || t === 5) hh = Math.max(hh, 18);
-    const rathaus = /rathaus/i.test(name), tall = hh > 32;
-    // the skin: old town styles near the Münster and the Marktplatz, a mix further out, concrete for tall and industrial blocks
-    const oldTown = Math.hypot(cx + 300, cz - 50) < 750;
-    let wf, fc;
-    if (small){ wf = 0; fc = hex('#9a958c'); }
-    else if (rathaus){ wf = 1; fc = hex('#b23a30'); }
-    else if (t === 2){ wf = 1; fc = hex('#e3dccd'); }
-    else if (t === 3){ wf = 4; fc = [1, 1, 1]; }
-    else if (hh > 60){ wf = 9; fc = hex('#b9bcbd'); }
-    else if (tall || t === 6){ wf = 7; fc = mul([1, 1, 1], 0.92 + r() * 0.08); }
-    else { const pool = oldTown ? [2, 2, 3, 5, 8, 4] : [6, 6, 3, 5, 8, 7, 2]; wf = pool[Math.floor(r() * pool.length)]; fc = mul([1, 1, 1], 0.88 + r() * 0.12); }
-    const hue = wf >= 1 && wf <= 8 && fc[0] === fc[1] ? hex(STYLE_HUE[wf - 1]) : fc;
-    const rc = t === 3 ? hex('#6f5a4a') : ROOF[Math.floor(r() * ROOF.length)];
+    let lo = 1e9; for (const [x, z] of pts) lo = Math.min(lo, groundH(x, z));
+    const hi = lo, area = Math.abs(signedArea(pts)), hh = Math.max(2.5, S.h);
+    const small = area < 30 && hh < 6;
+    const sacral = S.kind === 2 || S.kind === 3;
+    const t = sacral ? (pointInPoly(MB_[0], MB_[1], pts) ? 3 : 2) : small ? 1 : S.kind === 5 ? 6 : 0;
+    const rathaus = pointInPoly(RHc[0], RHc[1], pts), tall = hh > 32;
+    // the skin: plain plaster houses in Basel's light tones; the landmarks in their own dress
+    const oldTown = Math.hypot(cx + 300, cz - 50) < 750, near_ = (x, z, d) => Math.hypot(cx - x, cz - z) < d;
+    const munster = t === 3 || sacral && near_(MB_[0], MB_[1], 70), messe = hh > 90 && near_(645, -716, 90);
+    const roche = S === B1 || S === B2 || hh > 60 && near_(1000, -150, 170);
+    let wf, fc, roofSkin = 10;
+    if (small){ wf = 8; fc = hex('#a39e95'); }
+    else if (munster){ wf = 3; fc = [1, 1, 1]; roofSkin = 12; }
+    else if (rathaus){ wf = 4; fc = [1, 1, 1]; roofSkin = 12; }
+    else if (messe){ wf = 5; fc = [1, 1, 1]; }
+    else if (roche){ wf = 9; fc = hex('#efefeb'); }
+    else if (sacral){ wf = 7; fc = [1, 1, 1]; }
+    else if (tall || t === 6){ wf = 6; fc = mul([1, 1, 1], 0.93 + r() * 0.07); }
+    else { wf = r() < (oldTown ? 0.85 : 0.6) ? 1 : 2; fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+    const hue = wf >= 1 && wf <= 8 ? hex(STYLE_HUE[wf - 1]).map((v, i) => v * fc[i]) : fc;
+    const rc = roofSkin === 12 ? [0.95, 0.95, 0.95] : ROOF[Math.floor(r() * ROOF.length)], flatC = wf === 9 || wf === 5 ? hex('#cfcfcb') : hex('#8a867e');
     gPx.base = gWx.base = lo;
-    const y0 = lo - 1.5, y1 = hi + hh;
-    const o = obb(pts), fill = area / (4 * o.hu * o.hv), gableOk = !small && !tall && t !== 6 && fill > 0.72 && o.hv < 16;
-    const rh = gableOk ? Math.min(o.hv * (t === 3 ? 1.8 : 1.15), t === 3 ? 22 : 10) : 0;
-    // peace
-    gPx.walls(pts, y0, y1, fc, [wf, 0]);
-    if (gableOk) gPx.gable(o, y1, rh, rc, hue); else gPx.cap(pts, y1, small ? hex('#77706a') : hex('#8a867e'), [11, 0]);
-    w.obstPeace.poly(pts, y1 + rh);
+    const y0 = lo - 1.5, y1 = lo + hh, o = obb(pts);
+    // peace: the building as surveyed
+    realMesh(gPx, S, lo, fc, rc, flatC, [wf, 0], 0, roofSkin);
+    w.obstPeace.poly(pts, y1);
+    if (isBau2) continue;   // its fall is built with the tower's skeleton and the rubble tongue
     // war
     let d = dmgAt(cx, cz) + (r() - 0.5) * 0.3;
     if (inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 95) d = 1;
     if (t === 3) d = 0.55;            // the Münster burns, but stands
     if (rathaus) d = 0.45;
+    if (isBau1) d = 0;
     const st = d < 0.24 ? 0 : d < 0.42 ? 1 : d < 0.62 ? 2 : 3;
     footprints.push([pts, st, hh]); STATS[st]++;
     const soot = mix3(fc, SOOT, 0.1 + 0.08 * st + r() * 0.1);
     const burn = t === 3 || (st === 1 || st === 2) && area > 60 && r() < (st === 2 ? 0.32 : 0.18);
     if (st === 0){
-      gWx.walls(pts, y0, y1, mul(fc, 0.82), [wf, r() < 0.03 ? 0.3 : 0]);
-      if (gableOk && r() < 0.6) gWx.gable(o, y1, rh, mul(rc, 0.7), mul(hue, 0.72)); else gWx.cap(pts, y1, gableOk ? hex('#2a2725') : hex('#5e5a54'), [11, 0]);
-      w.obstWar.poly(pts, y1 + rh);
+      const roofGone = r() < 0.4;
+      realMesh(gWx, S, lo, mul(fc, 0.82), roofGone && roofSkin === 10 ? hex('#2a2725') : mul(rc, 0.7), hex('#5e5a54'), [wf, isBau1 ? 0.25 : r() < 0.03 ? 0.3 : 0], roofGone ? 0.15 : 0, roofSkin);
+      w.obstWar.poly(pts, y1);
     } else if (st === 1){
       const a = 0.68, b = 0.97;
       gWx.walls(pts, y0, (i, k) => hi + hh * lerp(a, b, r()), soot, [wf, burn ? 0.45 : 0.03], 3, 0.45);
@@ -1506,20 +1561,6 @@ async function buildBasel(){
   }
   burning.sort((a, b) => b[2] - a[2]);
   burning.forEach((b, i) => emitters.push({ kind: i < 22 ? 'column' : 'smoke', x: b[0], y: b[3] - b[4] * 0.2, z: b[1], s: i < 22 ? clamp(Math.sqrt(b[2]) / 25, 0.8, 1.6) : 1, acc: Math.random(), war: true, roche: b[5] }));
-  // ---- towers: bell towers, the Münster towers, the old gates
-  for (const [x, z, h, kind, name] of D.TOW){
-    if (inRiver(x, z)) continue;
-    const g0 = groundH(x, z), r = rng(Math.floor(x * 7 + z * 13));
-    gP.base = gW.base = g0;
-    const def = kind === 'defensiv', hh = h > 0 ? h : def ? 22 : 30, side = def ? 8 : 6.5, spire = def ? 7 : hh * 0.3;
-    const col = def || /Georg|Martin/.test(name) ? hex('#b5574a') : hex('#d8d0c0'), roof = def ? hex('#7a4434') : hex('#4f5a4a');
-    const sq = (gb, top, c) => { gb.box(x, (g0 - 1 + top) / 2, z, side, top - g0 + 1, side, 0, c, [1, 0]); };
-    sq(gP, g0 + hh - spire * (def ? 0 : 0.6), col); gP.pyramid(x, g0 + hh - spire * (def ? 0 : 0.6), z, side * 0.75, spire, roof);
-    w.obstPeace.circle(x, z, side * 0.6, g0 + hh);
-    const broken = name === 'Martinsturm' || r() < 0.4;
-    if (broken){ const top = g0 + (hh - spire) * (0.55 + r() * 0.3); gW.walls([[x - side / 2, z - side / 2], [x + side / 2, z - side / 2], [x + side / 2, z + side / 2], [x - side / 2, z + side / 2]], g0 - 1, () => top - r() * 6, mul(col, 0.55), [1, 0.2], 2, 0.6); w.obstWar.circle(x, z, side * 0.6, top); }
-    else { sq(gW, g0 + hh - spire * (def ? 0 : 0.6), mul(col, 0.7)); gW.pyramid(x, g0 + hh - spire * (def ? 0 : 0.6), z, side * 0.75, spire, mul(roof, 0.6)); w.obstWar.circle(x, z, side * 0.6, g0 + hh); }
-  }
   // ---- bridges (OSM bridge ways); in the war the middle of the Mittlere Brücke is gone
   const MB = D.LM['Mittlere Brücke'] || [-290, -233];
   for (const [rw, br, , flat] of D.ROADS){
@@ -1602,7 +1643,27 @@ async function buildBasel(){
         sandbags(gW, x - Math.cos(yaw) * 6, y, z - Math.sin(yaw) * 6, -yaw + PI / 2, 7, rw);
       }
     }
-    w.aaSpots = [[-120, 120], [-160, -560], [470, -690], [-330, 1140], [620, 330], [-760, -700], [200, -260]];
+    // resistance on the Grossbasel side: Leopard 2 tanks dug in behind sandbags at the bridgeheads
+    w.leoSpots = [];
+    for (const [, br, , flat] of D.ROADS){
+      if (br !== 1) continue;
+      const pts = pairs(flat); if (pts.length < 2) continue;
+      const a = pts[0], b = pts[pts.length - 1], south = a[1] > b[1] ? a : b, north = south === a ? b : a;
+      if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 120) continue;   // the Rhine bridges only
+      if (south[0] < -1000 || south[0] > 1300 || inRiver(south[0], south[1])) continue;
+      if (w.leoSpots.some(l => Math.hypot(l[0] - south[0], l[1] - south[1]) < 160)) continue;
+      const dx = north[0] - south[0], dz = north[1] - south[1], L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L;
+      for (const side of [-1, 1]){
+        const x = south[0] - ux * 30 - uz * side * 14, z = south[1] - uz * 30 + ux * side * 14;
+        if (inRiver(x, z)) continue;
+        const yaw = Math.atan2(ux, uz), y = groundH(x, z);
+        w.leoSpots.push([x, z, yaw]);
+        const c = Math.cos(yaw), sn = Math.sin(yaw);
+        sandbags(gW, x + sn * 6.5, y, z + c * 6.5, yaw, 8, rw);
+        sandbags(gW, x + c * 4.5, y, z - sn * 4.5, yaw + PI / 2, 7, rw); sandbags(gW, x - c * 4.5, y, z + sn * 4.5, yaw + PI / 2, 7, rw);
+      }
+    }
+    w.aaSpots = [[-60, 40], [-160, -560], [470, -690], [-330, 1140], [620, 330], [-760, -700], [200, -260]];
     for (const [x, z] of w.aaSpots){ sandbags(gW, x - 5, groundH(x, z), z, 0.3, 6, rw); sandbags(gW, x + 5, groundH(x, z), z + 2, 1.9, 6, rw); }
     w.ambientTarget = () => ({ x: rr(-1300, 1300), z: rr(-1000, 1100) });
   }
@@ -1662,22 +1723,20 @@ async function buildBasel(){
     w.setRoche = fallen => { up.visible = !fallen; down.visible = fallen; };
     const aff = (x, z) => inTongue(x, z) || Math.hypot(x - 1040.5, z + 161.5) < 100, O = w.obstPeace, cells = [];
     for (let z = -700; z < 300; z += 3) for (let x = 600; x < 1300; x += 3) if (aff(x, z)){ const k = O.idx(x, z); if (k >= 0) cells.push(k); }
-    const backup = Float32Array.from(cells, k => O.h[k]);
-    w.collapseRoche = () => { for (const k of cells) O.h[k] = w.obstWar.h[k]; };
-    w.restoreRoche = () => { cells.forEach((k, i) => { O.h[k] = backup[i]; }); };
+    const fallen = Float32Array.from(cells, k => w.obstWar.h[k]);
+    w.collapseRoche = () => { cells.forEach((k, i) => { w.obstWar.h[k] = fallen[i]; }); };
+    w.restoreRoche = () => { for (const k of cells) w.obstWar.h[k] = O.h[k]; };   // standing: the war grid takes the peace heights
     const base = groundH(T2.cx, T2.cz) - 1, MB = D.LM['Basler Münster'] || [-91, 172];
     w.rocheAt = { x: T2.cx, z: T2.cz, base };
+    w.rocheTarget = () => { const u = rr(-T2.hu + 4, T2.hu - 4), v = (Math.random() < 0.5 ? -1 : 1) * (T2.hv + 1.5); return { x: T2.cx + T2.c * u - T2.s * v, z: T2.cz + T2.s * u + T2.c * v, y: base + rr(50, 170), id: 'roche' }; };
     // the drones' targets: the tower first; once it has fallen the Münster and the hospital
     w.pickStrike = () => {
-      if (!GAME.rocheDown && Math.random() < 0.8){
-        const u = rr(-T2.hu + 4, T2.hu - 4), v = (Math.random() < 0.5 ? -1 : 1) * (T2.hv + 1.5);
-        return { x: T2.cx + T2.c * u - T2.s * v, z: T2.cz + T2.s * u + T2.c * v, y: base + rr(40, 190), id: 'roche' };
-      }
+      if (!GAME.rocheDown && Math.random() < 0.8) return w.rocheTarget();
       if (GAME.rocheDown){ const q = Math.random(); if (q < 0.45) return { x: MB[0] + rr(-25, 25), z: MB[1] + rr(-15, 15), id: 'muenster' }; if (q < 0.92) return { x: -650 + rr(-30, 30), z: -190 + rr(-30, 30), id: 'spital' }; }
       return { x: rr(-1200, 1200), z: rr(-900, 900), id: 'city' };
     };
     w.salvoAt = () => GAME.rocheDown ? w.home : { x: T2.cx, z: T2.cz };
-    w.homeHP = 16; w.rocheHP = 8; w.endless = true;
+    w.homeHP = 16; w.rocheHP = 7; w.endless = true;
   }
   // ---- the defence: the hospital, attacks from the east, the column on the road network
   w.home = { x: -650, z: -190 }; w.attackDir = 0;
@@ -1697,12 +1756,12 @@ async function buildBasel(){
       const out = []; for (let n = to; n; n = n.prev) out.push([n.x, n.z]); return out.reverse();
     };
     const goal = nearest(w.home.x, w.home.z);
-    w.routes = [[1760, -120], [1700, 650], [1300, -1300]].map(([x, z]) => route(nearest(x, z), goal)).filter(Boolean).map(makePath);
+    w.routes = [[1760, -120], [1300, -1300], [-600, -1350]].map(([x, z]) => route(nearest(x, z), goal)).filter(Boolean).map(makePath);
     if (!w.routes.length) w.routes = [makePath([[1700, -150], [w.home.x, w.home.z]])];
   }
   // ---- places to visit
   for (const p of BASEL_TXT.pois){ const at = (p.lm && D.LM[p.lm]) ? D.LM[p.lm] : p.at; w.pois.push({ x: at[0], z: at[1], title: p.t, text: p.x }); }
-  w.start = [70, -60, yawTo(70, -60, -91, 172)];
+  { const MP = D.LM['Münsterplatz'] || [-132, 124]; w.start = [MP[0], MP[1], yawTo(MP[0], MP[1], 1040, -160)]; }
   w.center = [0, 0]; w.R = 2300; w.ceiling = 900;
   w.atmos = {
     peace: { fog: [0.72, 0.77, 0.83], density: 0.00042, zen: [0.32, 0.5, 0.8], hor: [0.75, 0.82, 0.9], sun: [-0.5, 0.55, 0.6], sunCol: [1, 0.95, 0.85], sky: [0.85, 0.9, 1], ground: [0.45, 0.42, 0.36], hemi: 1.15, sunI: 0.95 },
@@ -2141,12 +2200,12 @@ async function buildDonbas(){
   const rowsIn = (g, f, col, sp, rr) => { g.save(); poly(g, f.pts); g.clip(); g.strokeStyle = col; g.lineWidth = 1; const [cx, cz] = toPx(f.cx, f.cz); g.translate(cx, cz); g.rotate(A + (f.seed % 2 > 1 ? PI / 2 : 0)); for (let t = -260; t < 260; t += sp){ g.beginPath(); g.moveTo(-300, t); g.lineTo(300, t); g.stroke(); } g.restore(); };
   const paint = war => g => {
     const rr = rng(war ? 7 : 3);
-    g.fillStyle = war ? '#77765a' : '#7f8a55'; g.fillRect(0, 0, TW, TW);
+    g.fillStyle = war ? '#6e7a4c' : '#7f8a55'; g.fillRect(0, 0, TW, TW);
     for (const f of fields){
       const front = Math.exp(-(((f.cx - F(f.cz)) / 1300) ** 2));
       let col, t = f.type;
       if (!war) col = ['#c4ab62', '#6d7a2e', '#6b5440', '#6f8c3e'][t];
-      else if (front > 0.35 || nearVillage(f.cx, f.cz)) col = rr() < 0.3 ? '#3a3530' : '#7d7a5a';
+      else if (front > 0.35 || nearVillage(f.cx, f.cz)) col = rr() < 0.3 ? '#5a4c3c' : '#717c4c';
       else col = ['#a8925a', '#4f4a2e', '#6b5644', '#768048'][t];
       poly(g, f.pts); g.fillStyle = col; g.fill();
       if (!war){
@@ -2217,7 +2276,7 @@ async function buildDonbas(){
   w.motoRoutes = [-900, 300, 1100].map(z0 => { const pts = []; for (let k = 0; k <= 50; k++){ const t = k / 50; pts.push([lerp(3300, VIL.x + 150, t), lerp(z0, ROADZ(VIL.x), t) + Math.sin(t * 9 + z0) * 60 * (1 - t)]); } return makePath(pts); });
   w.atmos = {
     peace: { fog: [0.76, 0.8, 0.86], density: 0.00026, zen: [0.28, 0.48, 0.82], hor: [0.76, 0.82, 0.9], sun: [0.4, 0.6, -0.5], sunCol: [1, 0.96, 0.86], sky: [0.85, 0.9, 1], ground: [0.45, 0.45, 0.32], hemi: 1.1, sunI: 1.0 },
-    war: { fog: [0.58, 0.58, 0.56], density: 0.00062, zen: [0.42, 0.44, 0.47], hor: [0.66, 0.66, 0.64], sun: [0.4, 0.4, -0.6], sunCol: [0.85, 0.82, 0.76], sky: [0.8, 0.8, 0.8], ground: [0.42, 0.4, 0.35], hemi: 1.15, sunI: 0.7, haze: 0.7 },
+    war: { fog: [0.66, 0.68, 0.68], density: 0.0005, zen: [0.46, 0.5, 0.55], hor: [0.72, 0.73, 0.72], sun: [0.4, 0.5, -0.6], sunCol: [0.95, 0.92, 0.85], sky: [0.9, 0.92, 0.92], ground: [0.48, 0.46, 0.38], hemi: 1.3, sunI: 0.85, haze: 0.6 },
   };
   w.sound = 'steppe';
   return w;
@@ -2234,8 +2293,9 @@ function setWar(v){
   w.gPeace.visible = !v; w.gWar.visible = v;
   w.obst = v ? w.obstWar : w.obstPeace; w.slabs = v ? w.slabsWar : w.slabsPeace;
   if (w.setTerrain) w.setTerrain(v);
-  if (w.setRoche) w.setRoche(v || (GAME.mode === 'defend' && GAME.rocheDown));
+  if (w.setRoche) w.setRoche(v && GAME.rocheDown);
   setAtmosphere(v ? w.atmos.war : w.atmos.peace);
+  post.uniforms.uGrade.value = v ? (w.grade ?? 1) : Math.min(w.grade ?? 1, 0.45);
   SMOKE.mat.uniforms.uTint.value.setRGB(...(v ? [0.2, 0.18, 0.17] : [0.5, 0.5, 0.5]));
   SMOKE.mat.uniforms.uLit.value.setRGB(...(v ? [0.55, 0.47, 0.4] : [0.8, 0.8, 0.8]));
   if (!v){ SMOKE.P.fill(0); FIRE.P.fill(0); }
@@ -2246,7 +2306,7 @@ function setWar(v){
 // run the smoke for a while so the columns stand when the war view appears
 function prewarm(){ for (let i = 0; i < 60; i++){ updateEmitters(1, camera.position); stepParticles(SMOKE, 1, false); } }
 function toggleWar(){
-  if (!world || !world.hasWar) return;
+  if (!world || !world.hasWar || GAME.mode !== 'explore') return;
   setWar(!world.war); beep(world.war ? 500 : 1500, 0.08);
   msg = say(world.war ? S.war : S.before); msgT = 2;
 }
@@ -2265,6 +2325,11 @@ async function startWorld(i, mode = 'explore'){
   post.uniforms.uGrade.value = world.grade ?? 1;
   aaGuns.length = 0;
   if (world.aaSpots) for (const [x, z] of world.aaSpots) aaGuns.push(makeAA(x, z));
+  leos.length = 0;
+  if (world.leoSpots) for (const [x, z, yaw] of world.leoSpots) leos.push(makeLeo(x, z, yaw));
+  GAME.rocheDown = false; GAME.rocheHits = 0;
+  if (world.restoreRoche) world.restoreRoche();
+  if (world.rocheAt) world.opening = { t: 0, stage: 0 };
   for (const p of world.pois){ p.y = world.groundAt(p.x, p.z); p.visited = false; p.beacon = makeBeacon(p.x, p.y, p.z); world.root.add(p.beacon); }
   world.gPeace.visible = world.gWar.visible = false;
   if (!world.obstWar) world.obstWar = world.obstPeace;
@@ -2276,11 +2341,14 @@ async function startWorld(i, mode = 'explore'){
   GAME.mode = mode;
   if (mode === 'defend'){
     for (const p of world.pois) p.beacon.visible = false;
-    if (world.hasWar) setWar(world.id === 'donbas');
     resetDefense();
     card = { title: DT.intro[world.id].t, text: DT.intro[world.id].x, t: 0, intro: true };
+  } else if (mode === 'peace'){
+    for (const p of world.pois) p.beacon.visible = false;
+    setWar(false);
+    card = { title: DT.peaceT, text: DT.peaceX, t: 0, intro: true };
   } else card = { title: world.txt.introT, text: world.txt.intro, t: 0, intro: true };
-  try { history.replaceState(null, '', '?map=' + def.id + (mode === 'defend' ? '&mode=defend' : '') + (lang !== 'de' ? '&lang=' + lang : '')); } catch (e) {}
+  try { history.replaceState(null, '', '?map=' + def.id + (mode !== 'explore' ? '&mode=' + mode : '') + (lang !== 'de' ? '&lang=' + lang : '')); } catch (e) {}
   last = performance.now();
 }
 function closeCard(){
@@ -2306,9 +2374,10 @@ function openMain(sel){
   menu = { kind: 'main', sel: sel ?? Math.max(0, WORLDS.findIndex(w => w.id === QS.get('map'))), items: WORLDS.map((wd, i) => ({ label: () => say(wd.txt.name), desc: () => say(wd.txt.desc), act: () => openMode(i) })) };
 }
 function openMode(i){
-  menu = { kind: 'mode', world: i, sel: QS.get('mode') === 'defend' ? 1 : 0, items: [
+  menu = { kind: 'mode', world: i, sel: QS.get('mode') === 'defend' ? 1 : QS.get('mode') === 'peace' ? 2 : 0, items: [
     { label: () => say(DT.explore), desc: () => say(DT.exploreD), act: () => startWorld(i, 'explore') },
     { label: () => say(DT.defend), desc: () => say(DT.defendD), act: () => startWorld(i, 'defend') },
+    ...(WORLDS[i].id !== 'valley' ? [{ label: () => say(DT.peace), desc: () => say(DT.peaceD), act: () => startWorld(i, 'peace') }] : []),
     { label: () => say(DT.back), desc: () => say(DT.backD), act: () => openMain(i) },
   ] };
 }
@@ -2355,7 +2424,7 @@ function drawCompass(g){
   if (Math.hypot(hm.x - P.pos.x, hm.z - P.pos.z) > 60){ const x = at(hm.x, hm.z); g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(x - 4, y + 4, 8, 9); g.fillStyle = INK; txt(g, 'H', x, y + 9, 'center'); }
 }
 function stroke2(g){ g.stroke(); g.lineWidth = 1; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = EDGE; }
-function nextPoi(){ if (GAME.mode === 'defend') return null; let b = null, bd = 1e9; for (const p of world.pois){ if (p.visited) continue; const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); if (d < bd){ bd = d; b = p; } } return b; }
+function nextPoi(){ if (GAME.mode !== 'explore') return null; let b = null, bd = 1e9; for (const p of world.pois){ if (p.visited) continue; const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); if (d < bd){ bd = d; b = p; } } return b; }
 const fmtD = d => d < 1000 ? Math.round(d) + '' : (d / 1000).toFixed(1) + 'K';
 // the readout of /drone: little text, all at the edges; cue boxes on what matters
 function drawOSD(){
@@ -2377,6 +2446,9 @@ function drawOSD(){
       if (fr && x > 20 && x < W - 20 && y > 32 && y < H - 15){ g.fillRect(x - 2, y - 1.5, 4, 3); g.strokeRect(x - 2, y - 1.5, 4, 3); g.fillRect(x - 1.5, y - 1, 3, 2); }
     }
   }
+  // horizon sidebars: dotted ladders either side of the centre, with arrows (as in Betaflight)
+  for (const sx of [W / 2 - 74, W / 2 + 74]) for (let k = -4; k <= 4; k++){ const y = H / 2 + k * 11; g.strokeRect(sx - 1.2, y - 1.2, 2.4, 2.4); g.fillRect(sx - 1, y - 1, 2, 2); }
+  txt(g, '>', W / 2 - 82, H / 2, 'center'); txt(g, '<', W / 2 + 82, H / 2, 'center');
   g.beginPath(); g.arc(W / 2, H / 2, 4, 0, 7); g.moveTo(W / 2 - 9, H / 2); g.lineTo(W / 2 + 9, H / 2); g.moveTo(W / 2, H / 2 - 7); g.lineTo(W / 2, H / 2 + 7); stroke2(g);
   if (P.vel.length() > 3){ const [x, y, fr] = toScreen(_w.copy(P.vel).normalize().multiplyScalar(100).add(camera.position)); if (fr && x > 0 && x < W && y > 0 && y < H){ g.strokeRect(x - 2, y - 2, 4, 4); g.fillRect(x - 1, y - 1, 2, 2); } }
   drawCompass(g);
@@ -2418,16 +2490,16 @@ function drawOSD(){
     if (!(GAME.hitMsg > 2 && blink)) txt(g, 'KILL ' + GAME.kills, 8, 10);
     txt(g, 'LEAK ' + GAME.leaks, 8, 21);
     txt(g, 'AA ' + GAME.aa, 8, 32);
-  } else txt(g, say(S.places) + ' ' + world.pois.filter(p => p.visited).length + '/' + world.pois.length, 8, 10);
+  } else if (GAME.mode === 'explore') txt(g, say(S.places) + ' ' + world.pois.filter(p => p.visited).length + '/' + world.pois.length, 8, 10);
   const tm = def ? GAME.t : P.time, mm = Math.floor(tm / 60), ss = Math.floor(tm % 60);
   txt(g, mm + ':' + String(ss).padStart(2, '0'), W - 8, 10, 'right');
   const dist = Math.hypot(P.pos.x - world.center[0], P.pos.z - world.center[1]);
   const lq = Math.round(clamp(100 - Math.max(0, dist - world.R * 0.8) / (world.R * 0.008), 0, 99));
   if (!(lq < 30 && blink)) txt(g, 'LQ ' + lq, W - 8, 21, 'right');
   if (def && world.homeHP) txt(g, say(DT.homeName[world.id]) + ' ' + Math.max(0, Math.round(100 - GAME.homeHits / world.homeHP * 100)) + '%', W - 8, 32, 'right');
-  const volts = 16.8 - 3.6 * P.used - 0.7 * clamp(P.T / MAXT, 0, 1);
-  if (!(volts < 13.6 && blink)) txt(g, volts.toFixed(1) + 'V', 8, H - 10);
-  txt(g, 'THR ' + Math.round(clamp(P.mode === 'ACRO' ? P.thr : P.T / MAXT, 0, 1) * 100), 8, H - 21);
+  const volts = 25.2 - 5.4 * P.used - 1.1 * clamp(P.T / MAXT, 0, 1), cell = volts / 6;   // a 6S pack
+  txt(g, 'THR ' + Math.round(clamp(P.mode === 'ACRO' ? P.thr : P.T / MAXT, 0, 1) * 100), 8, H - 32);
+  if (!(cell < 3.5 && blink)){ txt(g, volts.toFixed(1) + 'V', 8, H - 21); txt(g, cell.toFixed(2) + 'V', 8, H - 10); }
   txt(g, Math.round(P.vel.length() * 3.6) + ' KMH', W - 8, H - 21, 'right');
   txt(g, Math.round(P.pos.y - world.groundAt(P.pos.x, P.pos.z)) + ' M', W - 8, H - 10, 'right');
   txt(g, P.mode === 'POS' ? 'CAM' : P.mode, W / 2, H - 10, 'center');
@@ -2448,7 +2520,7 @@ function drawUI(){
     g.font = 'bold 13px monospace'; txt(g, say(WORLDS[menu.world].txt.name), W / 2, 30, 'center');
     g.font = 'bold 7px monospace'; txt(g, say(DT.modeT), W / 2, 48, 'center');
     menu.items.forEach((it, i) => {
-      const y = 66 + i * 44, sel = i === menu.sel, h = i === 2 ? 26 : 38;
+      const last = i === menu.items.length - 1, y = 60 + i * 40, sel = i === menu.sel, h = last ? 24 : 35;
       it.box = [36, y, W - 72, h];
       g.fillStyle = sel ? (i === 1 ? 'rgba(255,120,90,0.22)' : 'rgba(143,216,255,0.22)') : 'rgba(0,0,0,0.45)'; g.fillRect(36, y, W - 72, h);
       g.strokeStyle = sel ? (i === 1 ? '#ff8a6a' : '#8fd8ff') : 'rgba(244,242,236,0.35)'; g.lineWidth = sel ? 1 : 0.6; g.strokeRect(36.5, y + 0.5, W - 73, h - 1);
@@ -2489,8 +2561,11 @@ function drawUI(){
       g.font = '6.5px monospace'; g.fillStyle = 'rgba(244,242,236,0.85)'; wrap(g, it.desc(), W - 100).slice(0, 2).forEach((l, k) => txt(g, l, 56, y + 20 + k * 8)); g.fillStyle = INK;
     });
     g.font = 'bold 7px monospace';
-    txt(g, say(TOUCH && dev !== 'pad' ? S.chooseTouch : dev === 'kb' ? S.chooseKb : S.choosePad), W / 2, H - 14, 'center');
-    if (msgT > 0) txt(g, msg, W / 2, H - 26, 'center');
+    txt(g, say(TOUCH && dev !== 'pad' ? S.chooseTouch : dev === 'kb' ? S.chooseKb : S.choosePad), W / 2, H - 16, 'center');
+    g.font = '5px monospace'; g.fillStyle = 'rgba(244,242,236,0.6)';
+    txt(g, 'BASEL: GEBÄUDE swissBUILDINGS3D 3.0 © swisstopo · KARTE © OpenStreetMap', W / 2, H - 6, 'center'); g.fillStyle = INK;
+    g.font = 'bold 7px monospace';
+    if (msgT > 0) txt(g, msg, W / 2, H - 28, 'center');
     return;
   }
   if (menu && menu.kind === 'pause'){
@@ -2583,6 +2658,10 @@ const DT = {
   exploreD: { de: 'Flieg zu markierten Orten und erfahre, was Krieg für Menschen bedeutet.', fr: 'Vole vers des lieux marqués et découvre ce que la guerre signifie pour les gens.', en: 'Fly to marked places and learn what war means for people.' },
   defend: { de: 'ABWEHR', fr: 'DÉFENSE', en: 'DEFENCE' },
   defendD: { de: 'Mit Abfangdrohnen gegen russische Drohnen, Panzer und Motorräder. Erleben, wofür es Frieden braucht.', fr: 'Avec des drones intercepteurs contre des drones, des chars et des motos russes. Vivre pourquoi la paix est nécessaire.', en: 'With interceptor drones against Russian drones, tanks and motorcycles. Experience why peace is needed.' },
+  peace: { de: 'FRIEDENSFLUG', fr: 'VOL EN TEMPS DE PAIX', en: 'PEACETIME FLIGHT' },
+  peaceD: { de: 'Die Landschaft, wie sie heute ist. Kein Auftrag, kein Krieg – einfach fliegen.', fr: 'Le paysage tel qu’il est aujourd’hui. Pas de mission, pas de guerre – simplement voler.', en: 'The landscape as it is today. No mission, no war – just fly.' },
+  peaceT: { de: 'FRIEDENSZEIT', fr: 'TEMPS DE PAIX', en: 'PEACETIME' },
+  peaceX: { de: 'So sieht diese Landschaft aus, wenn Frieden ist. Nichts brennt, niemand flieht. Flieg, schau dich um – und vergleiche mit dem Krieg.', fr: 'Voici ce paysage quand c’est la paix. Rien ne brûle, personne ne fuit. Vole, regarde autour de toi – et compare avec la guerre.', en: 'This is what this landscape looks like in peace. Nothing burns, no one flees. Fly, look around – and compare it with the war.' },
   back: { de: 'ZURÜCK', fr: 'RETOUR', en: 'BACK' },
   backD: { de: 'Eine andere Landschaft wählen.', fr: 'Choisir un autre paysage.', en: 'Choose another landscape.' },
   stopped: { de: 'GESTOPPT', fr: 'ARRÊTÉS', en: 'STOPPED' },
@@ -2778,21 +2857,28 @@ function makeBanditModel(type){
 function disposeTree(o){ o.traverse(m => { if (m.isMesh){ m.geometry.dispose(); for (const x of [].concat(m.material)) x.dispose(); } }); }
 const bandits = [];
 class Bandit {
-  constructor(type, target){
+  constructor(type, target, opts = {}){
     const t = BTYPES[type], hm = target || world.home;
-    this.home = hm; this.ambient = !!target;
+    this.home = hm; this.ambient = opts.ambient ?? !!target;
     this.type = type; this.t = t; this.role = t.role; this.name = t.name; this.state = 'cruise'; this.spot = 0; this.salvoT = 18 + rr(0, 8);
-    // a corridor from far out towards the target, varied for every drone
-    const a = world.attackDir + rr(-0.55, 0.55), d0 = world.R * 1.25;
-    const sx = hm.x + Math.cos(a) * d0, sz = hm.z + Math.sin(a) * d0;
-    this.wp = [[sx, sz]];
-    for (let k = 1; k <= 3; k++){ const f = 1 - k / 4, l = rr(-300, 300) * f; this.wp.push([lerp(hm.x, sx, f) - Math.sin(a) * l, lerp(hm.z, sz, f) + Math.cos(a) * l]); }
+    // a corridor from far out towards the target, varied for every drone (or given: a formation)
+    if (opts.wp) this.wp = opts.wp.map(p => p.slice());
+    else {
+      const a = world.attackDir + rr(-0.55, 0.55), d0 = world.R * 1.25;
+      const sx0 = hm.x + Math.cos(a) * d0, sz0 = hm.z + Math.sin(a) * d0;
+      this.wp = [[sx0, sz0]];
+      for (let k = 1; k <= 3; k++){ const f = 1 - k / 4, l = rr(-300, 300) * f; this.wp.push([lerp(hm.x, sx0, f) - Math.sin(a) * l, lerp(hm.z, sz0, f) + Math.cos(a) * l]); }
+    }
+    const [sx, sz] = this.wp[0];
     this.wi = 1;
-    this.alt = rr(t.alt[0], t.alt[1]);
+    this.alt = opts.alt ?? rr(t.alt[0], t.alt[1]);
     this.pos = new THREE.Vector3(sx, world.groundAt(sx, sz) + this.alt, sz);
-    this.speed = t.speed * rr(0.95, 1.05);
+    this.speed = t.speed * (opts.speed ?? rr(0.95, 1.05));
     this.aimP = new THREE.Vector3();
-    if (this.role === 'recon'){
+    if (this.role !== 'recon' && target && target.id){
+      this.tgId = target.id;
+      this.aimP.set(target.x, target.y ?? solidAt(target.x, target.z) + 1, target.z);
+    } else if (this.role === 'recon'){
       this.loiter = { x: hm.x + rr(-250, 250), z: hm.z + rr(-250, 250), r: rr(350, 600), dir: rnd() < 0.5 ? 1 : -1, until: 0 };
       this.aimP.set(this.loiter.x, 0, this.loiter.z);
     } else if (!target && world.pickStrike){
@@ -2875,10 +2961,10 @@ class Bandit {
     const big = this.type === 'geran' ? 2.2 : 1.3;
     explosion(this.pos.clone(), big);
     const y = world.groundAt(this.pos.x, this.pos.z), R0 = world.rocheAt;
-    if (!this.ambient && R0 && !GAME.rocheDown && Math.hypot(this.pos.x - R0.x, this.pos.z - R0.z) < 45 && this.pos.y > y + 15){
+    if ((this.tgId === 'roche' || !this.ambient) && R0 && !GAME.rocheDown && Math.hypot(this.pos.x - R0.x, this.pos.z - R0.z) < 45 && this.pos.y > y + 15){
       // a hit on the tower: it burns where it was hit; enough hits and it comes down
       emitters.push({ kind: 'fire', x: this.pos.x, y: this.pos.y, z: this.pos.z, s: 1.4 + big * 0.3, acc: 0, dyn: true, onTower: true }, { kind: 'smoke', x: this.pos.x, y: this.pos.y + 3, z: this.pos.z, s: 1.4, acc: 0, dyn: true, onTower: true });
-      GAME.rocheHits += this.type === 'geran' ? 2 : 1;
+      GAME.rocheHits += 1;
       if (GAME.rocheHits >= world.rocheHP) collapseRoche();
       this.remove(); return;
     }
@@ -2901,13 +2987,13 @@ function collapseRoche(){
   emitters = emitters.filter(e => !e.onTower);
   for (let k = 0; k < 8; k++) setTimeout(() => explosion(new THREE.Vector3(R0.x + rr(-20, 20), R0.base + 20 + k * 22, R0.z + rr(-20, 20)), 2.4), k * 260);
   setTimeout(() => {
-    world.collapseRoche(); world.setRoche(true);
+    world.collapseRoche(); world.setRoche(world.war);
     for (let k = 0; k < 40; k++) emit(SMOKE, R0.x + rr(-60, 60), R0.base + rr(0, 40), R0.z + rr(-80, 40), rr(-6, 6), rr(2, 8), rr(-6, 6), 40 + rr(0, 20), 30, 160, 0.8, 0.8 + rr(0, 0.2));
     boom(Math.hypot(R0.x - camera.position.x, R0.z - camera.position.z), 6); flashI = 200; flashLight.position.set(R0.x, R0.base + 40, R0.z);
     if (P.alive && Math.hypot(P.pos.x - R0.x, P.pos.z - R0.z) < 80 && P.pos.y < R0.base + 210) crash('crash');
   }, 2200);
   msg = say(DT.rocheDownMsg); msgT = 6;
-  for (const b of bandits) if (!b.ambient && b.tgId === 'roche' && b.state !== 'down'){ b.retarget(); if (b.state === 'dive') b.state = 'cruise'; }
+  for (const b of bandits) if (b.tgId === 'roche' && b.state !== 'down'){ b.retarget(); if (b.state === 'dive') b.state = 'cruise'; }
 }
 // the artillery that the recon drones direct: three shells near the target
 function salvo(){
@@ -3078,7 +3164,7 @@ function updateRounds(dt){
     const near = q => { const t = L2 ? clamp(_v.copy(q).sub(_rp).dot(_rd) / L2, 0, 1) : 0; return _v.copy(_rp).addScaledVector(_rd, t).distanceTo(q); };
     if (r.owner === 'aa'){
       let hit = false;
-      for (const b of bandits) if (b.state !== 'down' && near(b.pos) < 2.6){ b.shootDown(); explosion(b.pos.clone(), b.type === 'geran' ? 1.5 : 0.8); if (GAME.mode === 'defend' && !b.ambient){ GAME.stopped++; GAME.aa++; } hit = true; break; }
+      for (const b of bandits) if (b.state !== 'down' && !b.scripted && near(b.pos) < 2.6){ b.shootDown(); explosion(b.pos.clone(), b.type === 'geran' ? 1.5 : 0.8); if (GAME.mode === 'defend' && !b.ambient){ GAME.stopped++; GAME.aa++; } hit = true; break; }
       if (hit){ rounds.splice(i, 1); continue; }
     } else if (P.alive && near(P.pos) < 0.9){ crash('hit'); rounds.splice(i, 1); continue; }
     if (r.life <= 0 || r.p.y < world.groundAt(r.p.x, r.p.z)){ rounds.splice(i, 1); continue; }
@@ -3134,18 +3220,85 @@ function updateAA(dt){
     }
   }
 }
-// the war goes on around the pilot when exploring: drones over the town, air defence firing, impacts
-let warT = 12;
+// ---------------------------------------------------------------- the resistance: Leopard 2 tanks at the Grossbasel bridgeheads fire on the columns
+const leos = [], shells = [];
+function makeLeo(x, z, yaw){
+  const y = world.groundAt(x, z), grp = new THREE.Group(), tur = new THREE.Group();
+  const hb = new GB(512), tb = new GB(256), OL = [0.3, 0.32, 0.22], DK = [0.13, 0.13, 0.12];
+  hb.box(0, 1.15, 0, 3.6, 1.0, 7.6, 0, OL); hb.box(0, 0.95, 3.9, 3.5, 0.6, 0.6, 0, OL, null, 0.6);
+  for (const sd of [-1, 1]){ hb.box(sd * 1.65, 0.55, 0, 0.6, 1.0, 7.8, 0, DK); hb.box(sd * 1.9, 1.05, 0.3, 0.12, 0.7, 6.6, 0, OL); }
+  tb.box(0, 0.45, -0.4, 3.4, 0.9, 4.4, 0, OL); tb.box(0, 0.45, 2.0, 2.4, 0.8, 1.2, 0, OL, null, 0.35);
+  tb.box(0, 0.5, 4.6, 0.2, 0.2, 5.4, 0, DK); tb.box(0, 0.5, 3.6, 0.32, 0.32, 0.8, 0, DK); tb.box(0.9, 1.05, -0.8, 0.8, 0.4, 0.8, 0, DK);
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  grp.add(hb.mesh(mat)); tur.add(tb.mesh(mat)); tur.position.set(0, 1.65, -0.5); grp.add(tur);
+  grp.position.set(x, y, z); grp.rotation.y = yaw;
+  world.gWar.add(grp); world.obstWar.circle(x, z, 4, y + 3);
+  return { grp, tur, pos: new THREE.Vector3(x, y + 2.2, z), cd: rr(2, 8), muzzle: new THREE.Vector3() };
+}
+function updateLeos(dt){
+  for (const l of leos){
+    let tg = null, bd = 1700;
+    for (const v of vehicles) if (v.alive && v.s >= 0){ const d = v.pos.distanceTo(l.pos); if (d < bd){ bd = d; tg = v; } }
+    if (!tg) continue;
+    l.grp.updateMatrixWorld(true);
+    const local = l.grp.worldToLocal(_v.copy(tg.pos));
+    let dy = Math.atan2(local.x, local.z) - l.tur.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    l.tur.rotation.y += clamp(dy, -0.6 * dt, 0.6 * dt);
+    l.cd -= dt;
+    if (l.cd <= 0 && Math.abs(dy) < 0.05){
+      l.cd = rr(7, 12);
+      l.tur.localToWorld(l.muzzle.set(0, 0.5, 7.4));
+      for (let k = 0; k < 10; k++) emit(FIRE, l.muzzle.x, l.muzzle.y, l.muzzle.z, (Math.random() - 0.5) * 6, Math.random() * 3, (Math.random() - 0.5) * 6, 0.18, 6, 2, 1, 0);
+      for (let k = 0; k < 6; k++) emit(SMOKE, l.muzzle.x, l.muzzle.y, l.muzzle.z, (Math.random() - 0.5) * 5, 1 + Math.random() * 2, (Math.random() - 0.5) * 5, 6, 3, 14, 0.6, 0.8);
+      boom(l.muzzle.distanceTo(camera.position), 3);
+      shells.push({ t: bd / 1650, tg, hit: Math.random() < (tg.type === 'tank' ? 0.55 : 0.85) });
+    }
+  }
+  for (let i = shells.length - 1; i >= 0; i--){
+    const sh = shells[i]; sh.t -= dt;
+    if (sh.t > 0) continue;
+    shells.splice(i, 1);
+    if (!sh.tg.alive) continue;
+    if (sh.hit){ sh.tg.kill(); if (GAME.mode === 'defend') GAME.aa++; }
+    else explosion(_v.copy(sh.tg.pos).add(_w.set(rr(-8, 8), 0, rr(-8, 8))).clone(), 1.2);
+  }
+}
+// the opening in Basel: six Shaheds in formation fly at Roche Bau 2, a seventh brings it down; more follow until it falls
+function rocheFormation(n){
+  const R0 = world.rocheAt, a = -0.3, dx = Math.cos(a), dz = Math.sin(a), px = -dz, pz = dx;
+  for (let k = 0; k < n; k++){
+    const side = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 28, back = Math.ceil(k / 2) * 34;
+    const wp = [1500, 900, 400].map(d => [R0.x + dx * (d + back) + px * side, R0.z + dz * (d + back) + pz * side]);
+    const b = new Bandit('geran', world.rocheTarget(), { wp, alt: 140, speed: 1, ambient: GAME.mode !== 'defend' }); b.scripted = true; bandits.push(b);
+  }
+}
+function updateOpening(dt){
+  const O = world.opening;
+  if (!O || !world.war || GAME.rocheDown || (card && card.intro)) return;
+  O.t += dt;
+  if (O.stage === 0 && O.t > 2){ O.stage = 1; rocheFormation(6); }
+  else if (O.stage === 1 && O.t > 12){ O.stage = 2; rocheFormation(1); O.next = O.t + 20; }
+  else if (O.stage === 2 && O.t > O.next){ O.next = O.t + 12; rocheFormation(1); }
+}
+// the war goes on around the pilot when exploring: drones over the town, air defence firing, impacts, columns and the resistance
+let warT = 12, colT = 70;
 function updateWarLife(dt){
+  updateOpening(dt);
   if (GAME.mode !== 'defend'){
     if (world.war && world.ambientTarget){
       warT -= dt;
-      if (warT <= 0){ warT = rr(14, 30); const n = Math.random() < 0.25 ? 3 : 1; for (let k = 0; k < n; k++) bandits.push(new Bandit(pickR(['geran', 'geran', 'lancet', 'molniya']), world.ambientTarget())); }
+      if (warT <= 0 && !(card && card.intro)){ warT = rr(14, 30); const n = Math.random() < 0.25 ? 3 : 1; for (let k = 0; k < n; k++) bandits.push(new Bandit(pickR(['geran', 'geran', 'lancet', 'molniya']), world.ambientTarget())); }
+      if (world.leoSpots && world.routes){ colT -= dt; if (colT <= 0){ colT = rr(170, 240); spawnColumn(); } }
       for (const b of [...bandits]) b.update(dt);
-    } else if (bandits.length) for (const b of [...bandits]) b.remove();
+      for (const v of vehicles) v.update(dt);
+    } else {
+      if (bandits.length) for (const b of [...bandits]) b.remove();
+      if (vehicles.length){ for (const v of vehicles) v.remove(); vehicles.length = 0; }
+    }
     updateRounds(dt); updateFlying(dt);
   }
   if (world.war && aaGuns.length) updateAA(dt);
+  if (world.war && leos.length) updateLeos(dt);
 }
 
 // ---------------------------------------------------------------- the interceptor: it detonates on contact
@@ -3177,16 +3330,18 @@ function resetDefense(){
   for (const f of flying) scene.remove(f.o); flying.length = 0; rounds.length = 0;
   clearDamage();
   Object.assign(GAME, { t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', hitMsg: 0, next: { recon: 8, strike: 25, column: [60, 185], moto: [115, 235] } });
-  if (world.restoreRoche){ world.restoreRoche(); world.setRoche(world.war); }
+  if (world.restoreRoche){ world.restoreRoche(); world.setRoche(false); }
+  if (world.rocheAt) world.opening = { t: 0, stage: 0 };
+  shells.length = 0;
 }
 function spawnColumn(){
   const path = pickR(world.routes);
   const types = ['tank', pickR(['bmp', 'tank']), 'bmp']; if (rnd() < 0.4) types.push('bmp');
-  const speed = clamp(path.len / 170, 7, 14), s0 = 0;
+  const speed = rr(4.5, 5.5), s0 = world.endless ? 0 : Math.max(0, path.len - speed * 230);
   types.forEach((t, k) => vehicles.push(new Vehicle(t, path, s0 - k * 28, speed)));
 }
 function spawnMotos(){
-  const path = pickR(world.motoRoutes || world.routes), n = 4 + Math.floor(rnd() * 3), s0 = 0, sp = clamp(path.len / 95, 12, 24);
+  const path = pickR(world.motoRoutes || world.routes), n = 4 + Math.floor(rnd() * 3), sp = rr(8, 10), s0 = world.endless ? 0 : Math.max(0, path.len - sp * 120);
   for (let k = 0; k < n; k++) vehicles.push(new Vehicle('moto', path, s0 - k * 9, sp, (k % 2 ? 1 : -1) * 2.5));
 }
 function updateDefense(dt){
@@ -3225,13 +3380,14 @@ function update(dt){
   const p0 = P.pos.clone();
   if (!GAME.ended) updateDrone(dt); else { camera.position.copy(P.pos); camera.updateMatrixWorld(); }
   if (GAME.mode === 'defend'){ if (card) card.t += dt; interceptCheck(p0); if (!(card && card.intro)) updateDefense(dt); }
-  else updatePois(dt);
+  else if (GAME.mode === 'explore') updatePois(dt);
+  else if (card) card.t += dt;
   updateWarLife(dt);
   flashI *= Math.exp(-dt * 9); flashLight.intensity = flashI;
   updateEmitters(dt, camera.position);
   stepParticles(SMOKE, dt, false); stepParticles(FIRE, dt, true);
   updateFireLights(dt);
-  if (GAME.mode !== 'defend') for (const p of world.pois) if (p.beacon.visible){ const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); p.beacon.scale.set(1 + d / 250, 1, 1 + d / 250); }
+  if (GAME.mode === 'explore') for (const p of world.pois) if (p.beacon.visible){ const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); p.beacon.scale.set(1 + d / 250, 1, 1 + d / 250); }
   const r = Math.hypot(P.pos.x - world.center[0], P.pos.z - world.center[1]);
   noise = clamp((r - world.R) / 600, 0, 1);
   sky.position.copy(camera.position);
@@ -3312,7 +3468,7 @@ function frame(now){
 }
 openMain();
 const autoMap = WORLDS.findIndex(w => w.id === QS.get('map'));
-if (QS.has('go') && autoMap >= 0) startWorld(autoMap, QS.get('mode') === 'defend' ? 'defend' : 'explore');
+if (QS.has('go') && autoMap >= 0) startWorld(autoMap, ['defend', 'peace'].includes(QS.get('mode')) ? QS.get('mode') : 'explore');
 renderer.setAnimationLoop(frame);
 if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound };
 </script>
