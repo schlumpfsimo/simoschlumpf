@@ -1250,6 +1250,39 @@ function newWorld(id){
   return { id, root, gPeace: peace, gWar: war, hasWar: true, war: false, slabs: [], slabsPeace: [], slabsWar: [], pois: [], terrains: [], ceiling: 3000, R: 3000, center: [0, 0] };
 }
 
+// swissBUILDINGS3D 3.0 (swisstopo, open data): real roof surfaces, roof outlines and footprints, packed by tools/sb_pack.py
+// record: nv, nt, ne (u16), nf, kind (u8), anchor x z, height (f32); vertices i16 dm (x, y above the building's foot, z); triangles, edges u16; footprint i16 dm
+function parseSB(buf){
+  const dv = new DataView(buf), out = [];
+  if (dv.getUint32(0, true) !== 0x31425342) throw new Error('not a BSB1 file');
+  const n = dv.getUint32(4, true); let o = 8;
+  for (let k = 0; k < n; k++){
+    const nv = dv.getUint16(o, true), nt = dv.getUint16(o + 2, true), ne = dv.getUint16(o + 4, true), nf = dv.getUint8(o + 6), kind = dv.getUint8(o + 7);
+    const ax = dv.getFloat32(o + 8, true), az = dv.getFloat32(o + 12, true), h = dv.getFloat32(o + 16, true); o += 20;
+    const V = new Float32Array(nv * 3); for (let i = 0; i < nv * 3; i++){ V[i] = dv.getInt16(o, true) / 10; o += 2; }
+    const I = new Uint16Array(nt * 3); for (let i = 0; i < nt * 3; i++){ I[i] = dv.getUint16(o, true); o += 2; }
+    const E = new Uint16Array(ne * 2); for (let i = 0; i < ne * 2; i++){ E[i] = dv.getUint16(o, true); o += 2; }
+    const pts = []; for (let i = 0; i < nf; i++){ pts.push([ax + dv.getInt16(o, true) / 10, az + dv.getInt16(o + 2, true) / 10]); o += 4; }
+    out.push({ kind, ax, az, h, V, I, E, pts });
+  }
+  return out;
+}
+// a building as surveyed: its roof triangles, and walls hung from every roof edge down to the ground
+function realMesh(g, S, lo, wallCol, roofCol, flatCol, e, roofBurn = 0){
+  const V = S.V, P = i => [S.ax + V[i * 3], lo + V[i * 3 + 1], S.az + V[i * 3 + 2]];
+  for (let t = 0; t < S.I.length; t += 3){
+    const a = P(S.I[t]), b = P(S.I[t + 1]), c = P(S.I[t + 2]);
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, ln = Math.hypot(nx, ny, nz) || 1;
+    const flat = Math.abs(ny / ln) > 0.95;
+    g.tri(a, b, c, flat ? flatCol : roofCol, [flat ? 11 : 10, roofBurn]);
+  }
+  for (let k = 0; k < S.E.length; k += 2){
+    const a = P(S.E[k]), b = P(S.E[k + 1]);
+    g.quad([a[0], lo - 1.5, a[2]], [b[0], lo - 1.5, b[2]], b, a, wallCol, e);
+  }
+}
+
 // burnt-out armour, anti-tank hedgehogs, sandbag positions: written into a war geometry
 function milWreck(gb, x, y, z, yaw, tank, r){
   const H = mix3([0.22, 0.2, 0.18], [0.32, 0.24, 0.18], r()), D = [0.1, 0.1, 0.09], c = Math.cos(yaw), s = Math.sin(yaw);
@@ -1315,6 +1348,8 @@ const BASEL_TXT = {
 };
 async function buildBasel(){
   if (!window.BASEL2) await loadScript('../nostalgia/basel-city.js?v=2');
+  const sbRes = await fetch('basel-buildings.bin'); if (!sbRes.ok) throw new Error('basel-buildings.bin ' + sbRes.status);
+  const SB = parseSB(await sbRes.arrayBuffer());
   const D = window.BASEL2, w = newWorld('basel');
   w.txt = BASEL_TXT;
   // ---- river (the largest water polygon), tests as in /nostalgia
@@ -1362,23 +1397,11 @@ async function buildBasel(){
   const ROOF = ['#8e4b37', '#7a4434', '#6b5a50', '#5e5550', '#9a5a40', '#84503c'].map(hex);
   const SOOT = hex('#1d1b19'), RUB = hex('#7a736a'), CONC = hex('#8d8a84');
   // ---- the Roche towers: Bau 1 (178 m) and Bau 2 (205 m); stepped, white, with ribbon glazing
-  const T2 = obb(pairs([1059, -134, 1032, -130, 1022, -189, 1049, -193]));
-  const T1 = { ...T2, cx: 936, cz: -150, hu: 31, hv: 15 };
+  const near = (x, z, hmin) => SB.filter(b => b.h > hmin).reduce((a, b) => Math.hypot(b.ax - x, b.az - z) < Math.hypot(a.ax - x, a.az - z) ? b : a);
+  const B2 = near(1040, -165, 190), B1 = near(1079, -91, 160);
+  const T2 = obb(B2.pts), T1 = obb(B1.pts);
   const inTongue = (x, z) => { const dx = x - 1040.5, dz = z + 161.5, f0 = Math.cos(-PI * 0.6), f1 = Math.sin(-PI * 0.6), u = dx * f0 + dz * f1, v = -dx * f1 + dz * f0; return u > -40 && u < 255 && Math.abs(v) < 42 - u * 0.07; };
-  const inTower = (x, z) => [T1, T2].some(o => { const dx = x - o.cx, dz = z - o.cz, u = dx * o.c + dz * o.s, v = -dx * o.s + dz * o.c; return Math.abs(u) < o.hu + 4 && Math.abs(v) < o.hv + 4; });
   const rectPts = (o, u0, u1, hv) => [[u0, -hv], [u1, -hv], [u1, hv], [u0, hv]].map(([u, v]) => [o.cx + o.c * u - o.s * v, o.cz + o.s * u + o.c * v]);
-  function roche(g, o, Ht, steps, burn, grid){
-    const base = groundH(o.cx, o.cz) - 1, th = Ht / steps, white = hex('#eeeeea');
-    for (let k = 0; k < steps; k++){
-      const u0 = -o.hu + Math.floor(k / 2) * 4.2, u1 = o.hu - k * 3.8, y0 = base + k * th, y1 = base + (k + 1) * th;
-      const pts = rectPts(o, u0, u1, o.hv);
-      g.walls(pts, y0, y1, white, [9, burn && k > 1 && k < steps - 1 ? burn : 0]);
-      g.cap(pts, y1, hex('#cfcfcb'), [11, 0]);
-      if (grid) grid.poly(pts, y1);
-    }
-  }
-  roche(gP, T1, 178, 7, 0, w.obstPeace); roche(gRi, T2, 205, 8, 0, w.obstPeace);
-  roche(gW, T1, 178, 7, 0.22, w.obstWar);
   {
     // Bau 2 has come down. What stands: a skeleton of bare floor slabs, the concrete core, one sliver of facade.
     // It fell to the west-southwest: a tongue of rubble runs some 250 m into the Wettstein quarter.
@@ -1432,21 +1455,25 @@ async function buildBasel(){
     emitters.push({ kind: 'column', x: T1.cx, y: b1 + 140, z: T1.cz, s: 1.3, acc: 0, war: true });
   }
   // ---- buildings
-  const towersAt = D.TOW.map(t => [t[0], t[1]]);
   let fires = 0, smolder = 0; const STATS = [0, 0, 0, 0]; w.stats = STATS;
   const burning = [];
   const footprints = [];   // for the ground map: [pts, state]
-  for (const [t, h0, name, flat, seed] of D.B){
-    const pts = pairs(flat); if (pts.length < 3) continue;
+  const MB_ = D.LM['Basler Münster'] || [-91, 172], RH = D.B.find(q => /rathaus/i.test(q[2])), RHc = RH ? centroid(pairs(RH[3])) : [-461, -60];
+  let seedN = 0;
+  for (const S of SB){
+    const pts = S.pts; seedN++;
+    if (pts.length < 3) continue;
     const [cx, cz] = centroid(pts);
-    if (inRiver(cx, cz) || inTower(cx, cz)) continue;
-    const r = rng(seed * 31 + 7);
+    if (inRiver(cx, cz)) continue;
+    const isBau2 = S === B2, isBau1 = S === B1;
+    const r = rng(seedN * 7919 + 13);
     const affected = inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 100, gPx = affected ? gRi : gP, gWx = affected ? gRd : gW;
-    let lo = 1e9, hi = -1e9; for (const [x, z] of pts){ const h = groundH(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); }
-    const small = t === 1, area = Math.abs(signedArea(pts));
-    let hh = h0 > 0 ? h0 : small ? 3.5 + r() * 1.5 : 11.5 + Math.floor(r() * 3) * 3.3 + (r() < 0.15 ? 3.3 : 0);
-    if (t === 2) hh = Math.max(hh, 16); if (t === 3 || t === 5) hh = Math.max(hh, 18);
-    const rathaus = /rathaus/i.test(name), tall = hh > 32;
+    let lo = 1e9; for (const [x, z] of pts) lo = Math.min(lo, groundH(x, z));
+    const hi = lo, area = Math.abs(signedArea(pts)), hh = Math.max(2.5, S.h);
+    const small = area < 30 && hh < 6;
+    const sacral = S.kind === 2 || S.kind === 3;
+    const t = sacral ? (pointInPoly(MB_[0], MB_[1], pts) ? 3 : 2) : small ? 1 : S.kind === 5 ? 6 : 0;
+    const rathaus = pointInPoly(RHc[0], RHc[1], pts), tall = hh > 32;
     // the skin: old town styles near the Münster and the Marktplatz, a mix further out, concrete for tall and industrial blocks
     const oldTown = Math.hypot(cx + 300, cz - 50) < 750;
     let wf, fc;
@@ -1454,32 +1481,31 @@ async function buildBasel(){
     else if (rathaus){ wf = 1; fc = hex('#b23a30'); }
     else if (t === 2){ wf = 1; fc = hex('#e3dccd'); }
     else if (t === 3){ wf = 4; fc = [1, 1, 1]; }
-    else if (hh > 60){ wf = 9; fc = hex('#b9bcbd'); }
+    else if (hh > 60){ wf = 9; fc = hex('#c9cbcb'); }
     else if (tall || t === 6){ wf = 7; fc = mul([1, 1, 1], 0.92 + r() * 0.08); }
     else { const pool = oldTown ? [2, 2, 3, 5, 8, 4] : [6, 6, 3, 5, 8, 7, 2]; wf = pool[Math.floor(r() * pool.length)]; fc = mul([1, 1, 1], 0.88 + r() * 0.12); }
     const hue = wf >= 1 && wf <= 8 && fc[0] === fc[1] ? hex(STYLE_HUE[wf - 1]) : fc;
-    const rc = t === 3 ? hex('#6f5a4a') : ROOF[Math.floor(r() * ROOF.length)];
+    const rc = t === 3 ? hex('#6f5a4a') : hh > 60 ? hex('#cfcfcb') : ROOF[Math.floor(r() * ROOF.length)], flatC = hh > 60 ? hex('#cfcfcb') : hex('#8a867e');
     gPx.base = gWx.base = lo;
-    const y0 = lo - 1.5, y1 = hi + hh;
-    const o = obb(pts), fill = area / (4 * o.hu * o.hv), gableOk = !small && !tall && t !== 6 && fill > 0.72 && o.hv < 16;
-    const rh = gableOk ? Math.min(o.hv * (t === 3 ? 1.8 : 1.15), t === 3 ? 22 : 10) : 0;
-    // peace
-    gPx.walls(pts, y0, y1, fc, [wf, 0]);
-    if (gableOk) gPx.gable(o, y1, rh, rc, hue); else gPx.cap(pts, y1, small ? hex('#77706a') : hex('#8a867e'), [11, 0]);
-    w.obstPeace.poly(pts, y1 + rh);
+    const y0 = lo - 1.5, y1 = lo + hh, o = obb(pts);
+    // peace: the building as surveyed
+    realMesh(gPx, S, lo, fc, rc, flatC, [wf, 0]);
+    w.obstPeace.poly(pts, y1);
+    if (isBau2) continue;   // its fall is built with the tower's skeleton and the rubble tongue
     // war
     let d = dmgAt(cx, cz) + (r() - 0.5) * 0.3;
     if (inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 95) d = 1;
     if (t === 3) d = 0.55;            // the Münster burns, but stands
     if (rathaus) d = 0.45;
+    if (isBau1) d = 0;
     const st = d < 0.24 ? 0 : d < 0.42 ? 1 : d < 0.62 ? 2 : 3;
     footprints.push([pts, st, hh]); STATS[st]++;
     const soot = mix3(fc, SOOT, 0.1 + 0.08 * st + r() * 0.1);
     const burn = t === 3 || (st === 1 || st === 2) && area > 60 && r() < (st === 2 ? 0.32 : 0.18);
     if (st === 0){
-      gWx.walls(pts, y0, y1, mul(fc, 0.82), [wf, r() < 0.03 ? 0.3 : 0]);
-      if (gableOk && r() < 0.6) gWx.gable(o, y1, rh, mul(rc, 0.7), mul(hue, 0.72)); else gWx.cap(pts, y1, gableOk ? hex('#2a2725') : hex('#5e5a54'), [11, 0]);
-      w.obstWar.poly(pts, y1 + rh);
+      const roofGone = r() < 0.4;
+      realMesh(gWx, S, lo, mul(fc, 0.82), roofGone ? hex('#2a2725') : mul(rc, 0.7), hex('#5e5a54'), [wf, isBau1 ? 0.25 : r() < 0.03 ? 0.3 : 0], roofGone ? 0.15 : 0);
+      w.obstWar.poly(pts, y1);
     } else if (st === 1){
       const a = 0.68, b = 0.97;
       gWx.walls(pts, y0, (i, k) => hi + hh * lerp(a, b, r()), soot, [wf, burn ? 0.45 : 0.03], 3, 0.45);
@@ -1506,20 +1532,6 @@ async function buildBasel(){
   }
   burning.sort((a, b) => b[2] - a[2]);
   burning.forEach((b, i) => emitters.push({ kind: i < 22 ? 'column' : 'smoke', x: b[0], y: b[3] - b[4] * 0.2, z: b[1], s: i < 22 ? clamp(Math.sqrt(b[2]) / 25, 0.8, 1.6) : 1, acc: Math.random(), war: true, roche: b[5] }));
-  // ---- towers: bell towers, the Münster towers, the old gates
-  for (const [x, z, h, kind, name] of D.TOW){
-    if (inRiver(x, z)) continue;
-    const g0 = groundH(x, z), r = rng(Math.floor(x * 7 + z * 13));
-    gP.base = gW.base = g0;
-    const def = kind === 'defensiv', hh = h > 0 ? h : def ? 22 : 30, side = def ? 8 : 6.5, spire = def ? 7 : hh * 0.3;
-    const col = def || /Georg|Martin/.test(name) ? hex('#b5574a') : hex('#d8d0c0'), roof = def ? hex('#7a4434') : hex('#4f5a4a');
-    const sq = (gb, top, c) => { gb.box(x, (g0 - 1 + top) / 2, z, side, top - g0 + 1, side, 0, c, [1, 0]); };
-    sq(gP, g0 + hh - spire * (def ? 0 : 0.6), col); gP.pyramid(x, g0 + hh - spire * (def ? 0 : 0.6), z, side * 0.75, spire, roof);
-    w.obstPeace.circle(x, z, side * 0.6, g0 + hh);
-    const broken = name === 'Martinsturm' || r() < 0.4;
-    if (broken){ const top = g0 + (hh - spire) * (0.55 + r() * 0.3); gW.walls([[x - side / 2, z - side / 2], [x + side / 2, z - side / 2], [x + side / 2, z + side / 2], [x - side / 2, z + side / 2]], g0 - 1, () => top - r() * 6, mul(col, 0.55), [1, 0.2], 2, 0.6); w.obstWar.circle(x, z, side * 0.6, top); }
-    else { sq(gW, g0 + hh - spire * (def ? 0 : 0.6), mul(col, 0.7)); gW.pyramid(x, g0 + hh - spire * (def ? 0 : 0.6), z, side * 0.75, spire, mul(roof, 0.6)); w.obstWar.circle(x, z, side * 0.6, g0 + hh); }
-  }
   // ---- bridges (OSM bridge ways); in the war the middle of the Mittlere Brücke is gone
   const MB = D.LM['Mittlere Brücke'] || [-290, -233];
   for (const [rw, br, , flat] of D.ROADS){
@@ -2489,8 +2501,11 @@ function drawUI(){
       g.font = '6.5px monospace'; g.fillStyle = 'rgba(244,242,236,0.85)'; wrap(g, it.desc(), W - 100).slice(0, 2).forEach((l, k) => txt(g, l, 56, y + 20 + k * 8)); g.fillStyle = INK;
     });
     g.font = 'bold 7px monospace';
-    txt(g, say(TOUCH && dev !== 'pad' ? S.chooseTouch : dev === 'kb' ? S.chooseKb : S.choosePad), W / 2, H - 14, 'center');
-    if (msgT > 0) txt(g, msg, W / 2, H - 26, 'center');
+    txt(g, say(TOUCH && dev !== 'pad' ? S.chooseTouch : dev === 'kb' ? S.chooseKb : S.choosePad), W / 2, H - 16, 'center');
+    g.font = '5px monospace'; g.fillStyle = 'rgba(244,242,236,0.6)';
+    txt(g, 'BASEL: GEBÄUDE swissBUILDINGS3D 3.0 © swisstopo · KARTE © OpenStreetMap', W / 2, H - 6, 'center'); g.fillStyle = INK;
+    g.font = 'bold 7px monospace';
+    if (msgT > 0) txt(g, msg, W / 2, H - 28, 'center');
     return;
   }
   if (menu && menu.kind === 'pause'){
