@@ -11,7 +11,11 @@
     #touch{ position:fixed; inset:0; z-index:3; display:none; pointer-events:none; }
     #touch .stk{ position:absolute; bottom:26px; width:132px; height:132px; border:2px solid rgba(244,242,236,.45); border-radius:50%; pointer-events:auto; }
     #touch .stk i{ position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px; border-radius:50%; background:rgba(244,242,236,.32); }
-    #touch .tb{ position:absolute; top:10px; padding:8px 11px; font:bold 12px monospace; color:#f4f2ec; background:rgba(0,0,0,.55); border:2px solid rgba(244,242,236,.6); pointer-events:auto; }
+    #touch .tb{ position:absolute; top:10px; padding:8px 11px; font:bold 12px monospace; color:#f4f2ec; background:rgba(0,0,0,.55); border:2px solid rgba(244,242,236,.6); pointer-events:auto; touch-action:none; }
+    #touch .tb.on{ background:rgba(143,216,255,.45); }
+    #touch .sb{ top:auto; bottom:172px; min-width:30px; text-align:center; }
+    #rot{ position:fixed; inset:0; z-index:5; display:none; align-items:center; justify-content:center; text-align:center; padding:24px; background:rgba(0,0,0,.85); color:#f4f2ec; font:bold 15px monospace; pointer-events:none; }
+    @media (orientation:portrait) and (pointer:coarse){ #rot.need{ display:flex; } }
   </style>
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -22,9 +26,14 @@
   <div class="stk" id="stL" style="left:22px"><i></i></div>
   <div class="stk" id="stR" style="right:22px"><i></i></div>
   <div class="tb" id="tbArm" style="left:10px">START</div>
-  <div class="tb" id="tbV" style="left:50%;transform:translateX(-50%)">V</div>
+  <div class="tb" id="tbV" style="right:10px;top:62px">V</div>
   <div class="tb" id="tbP" style="right:10px">II</div>
+  <div class="tb" id="tbM" style="right:56px">MODE</div>
+  <div class="tb sb" id="tbT" style="left:22px">TURBO</div>
+  <div class="tb sb" id="tbCu" style="right:74px">CAM ▲</div>
+  <div class="tb sb" id="tbCd" style="right:22px">▼</div>
 </div>
+<div id="rot">↻</div>
 <script type="module">
 import * as THREE from 'three';
 THREE.ColorManagement.enabled = false;
@@ -125,19 +134,22 @@ const S = {
       fr: ['ESPACE      MOTEURS ON / OFF', 'W / S       MONTER / DESCENDRE', 'A / D       TOURNER', 'FLÈCHES     VOLER', 'MAJ         PLUS VITE', 'Q / E       INCLINER LA CAMÉRA', 'V           AVANT / APRÈS', 'M           MODE DE VOL', 'F           DÉTONER (DÉFENSE)', 'P           PAUSE   L LANGUE'],
       en: ['SPACE       MOTORS ON / OFF', 'W / S       CLIMB / SINK', 'A / D       TURN', 'ARROW KEYS  FLY', 'SHIFT       FASTER', 'Q / E       TILT CAMERA', 'V           BEFORE / AFTER', 'M           FLIGHT MODE', 'F           DETONATE (DEFENCE)', 'P           PAUSE   L LANGUAGE'] },
     pad: {
-      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'LB / RB     KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'START       PAUSE   Y SPRACHE'],
-      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'LB / RB     INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'START       PAUSE   Y LANGUE'],
-      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'LB / RB     TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'START       PAUSE   Y LANGUAGE'] },
+      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'RT          SCHNELLER', 'LB / RB     KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'START       PAUSE   Y SPRACHE'],
+      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'RT          PLUS VITE', 'LB / RB     INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'START       PAUSE   Y LANGUE'],
+      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'RT          FASTER', 'LB / RB     TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'START       PAUSE   Y LANGUAGE'] },
     vr: {
-      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'GRIFFTASTEN KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: BILDGRÖSSE'],
-      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : TAILLE ÉCRAN'],
-      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'GRIPS       TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: SCREEN SIZE'] },
+      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'L-TRIGGER   SCHNELLER', 'GRIFFTASTEN KAMERA NEIGEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: BILDGRÖSSE'],
+      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTE G.  PLUS VITE', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : TAILLE ÉCRAN'],
+      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'L-TRIGGER   FASTER', 'GRIPS       TILT CAMERA', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: SCREEN SIZE'] },
     touch: {
-      de: ['LINKER STICK  HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'START         MOTOREN AN / AUS', 'V             VORHER / NACHHER', 'II            PAUSE'],
-      fr: ['STICK GAUCHE  HAUTEUR ET ROTATION', 'STICK DROIT   VOLER', 'START         MOTEURS ON / OFF', 'V             AVANT / APRÈS', 'II            PAUSE'],
-      en: ['LEFT STICK    HEIGHT AND TURN', 'RIGHT STICK   FLY', 'START         MOTORS ON / OFF', 'V             BEFORE / AFTER', 'II            PAUSE'] },
+      de: ['LINKER STICK  HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'START         MOTOREN AN / AUS', 'TURBO         HALTEN: SCHNELLER', 'CAM ▲ ▼       KAMERA NEIGEN', 'V / ZÜNDEN    VORHER-NACHHER / ABWEHR', 'MODE          FLUGMODUS', 'II            PAUSE'],
+      fr: ['STICK GAUCHE  HAUTEUR ET ROTATION', 'STICK DROIT   VOLER', 'START         MOTEURS ON / OFF', 'TURBO         MAINTENIR : PLUS VITE', 'CAM ▲ ▼       INCLINER LA CAMÉRA', 'V / DÉTONER   AVANT-APRÈS / DÉFENSE', 'MODE          MODE DE VOL', 'II            PAUSE'],
+      en: ['LEFT STICK    HEIGHT AND TURN', 'RIGHT STICK   FLY', 'START         MOTORS ON / OFF', 'TURBO         HOLD: FASTER', 'CAM ▲ ▼       TILT CAMERA', 'V / DETONATE  BEFORE-AFTER / DEFENCE', 'MODE          FLIGHT MODE', 'II            PAUSE'] },
   },
+  turn: { de: 'BITTE DAS GERÄT QUER HALTEN', fr: 'TOURNE L’APPAREIL À L’HORIZONTALE', en: 'PLEASE TURN YOUR DEVICE SIDEWAYS' },
+  flightMode: { de: 'FLUGMODUS', fr: 'MODE DE VOL', en: 'FLIGHT MODE' },
   hintKb: { de: 'W STEIGEN · PFEILE FLIEGEN · A/D DREHEN · FLIEG ZU DEN MARKIERTEN ORTEN', fr: 'W MONTER · FLÈCHES VOLER · A/D TOURNER · VOLE VERS LES LIEUX MARQUÉS', en: 'W CLIMB · ARROWS FLY · A/D TURN · FLY TO THE MARKED PLACES' },
+  hintTouch: { de: 'LINKER STICK HÖHE · RECHTER STICK FLIEGEN · TURBO HALTEN FÜR TEMPO', fr: 'STICK GAUCHE HAUTEUR · STICK DROIT VOLER · TURBO POUR ACCÉLÉRER', en: 'LEFT STICK HEIGHT · RIGHT STICK FLY · HOLD TURBO FOR SPEED' },
   hintPad: { de: 'LINKER STICK HÖHE · RECHTER STICK FLIEGEN · FLIEG ZU DEN MARKIERTEN ORTEN', fr: 'STICK GAUCHE HAUTEUR · STICK DROIT VOLER · VOLE VERS LES LIEUX MARQUÉS', en: 'LEFT STICK HEIGHT · RIGHT STICK FLY · FLY TO THE MARKED PLACES' },
 };
 
@@ -715,7 +727,7 @@ const noteInput = () => { lastInput = performance.now(); };
 // ================================================================ input
 const keys = {};
 const pad = { active: false, pitch: 0, roll: 0, yaw: 0, thr: 0, climb: 0, gim: 0, thrSeen: false, prev: {}, gp: false, navY: 0 };
-const touchIn = { on: false, l: [0, 0], r: [0, 0], used: false };
+const touchIn = { on: false, l: [0, 0], r: [0, 0], used: false, boost: false, camUp: false, camDown: false };
 const device = () => renderer.xr.isPresenting ? 'vr' : pad.gp ? 'pad' : touchIn.used ? 'touch' : 'kb';
 function setPaused(v){
   if (state !== 'fly') v = false;
@@ -849,10 +861,33 @@ cv.addEventListener('pointerdown', e => {
   };
   bind('stL', 'l'); bind('stR', 'r');
   const btn = (id, a) => document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); touchIn.used = true; audioInit(); noteInput(); if (a === 'arm' && card) act('ok'); else act(a); });
-  btn('tbArm', 'arm'); btn('tbV', 'vbtn'); btn('tbP', 'pause');
+  btn('tbArm', 'arm'); btn('tbV', 'vbtn'); btn('tbP', 'pause'); btn('tbM', 'mode');
+  // hold buttons: turbo, camera tilt
+  const hold = (id, key) => {
+    const el = document.getElementById(id);
+    const on = v => e => { e.preventDefault(); e.stopPropagation(); touchIn.used = true; noteInput(); touchIn[key] = v; el.classList.toggle('on', v); if (v) el.setPointerCapture(e.pointerId); };
+    el.addEventListener('pointerdown', on(true)); el.addEventListener('pointerup', on(false)); el.addEventListener('pointercancel', on(false));
+  };
+  hold('tbT', 'boost'); hold('tbCu', 'camUp'); hold('tbCd', 'camDown');
+  // the first touch asks for fullscreen and landscape; held upright, the page asks to turn the phone
+  let fs = false;
+  addEventListener('pointerdown', () => {
+    if (fs) return; fs = true;
+    const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
+    try { const pr = req && req.call(el, { navigationUI: 'hide' }); if (pr && pr.then) pr.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (e) {}
+  }, true);
+  document.getElementById('rot').classList.add('need');
   touchIn.pane = pane;
 })();
-function showTouch(){ if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = def ? (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN') : 'V'; } }
+function showTouch(){
+  if (touchIn.pane){
+    const rot = document.getElementById('rot'); rot.textContent = '↻  ' + say(S.turn);
+    const pos = P.mode === 'POS';
+    document.getElementById('tbCu').style.display = document.getElementById('tbCd').style.display = pos ? '' : 'none';
+    document.getElementById('tbT').style.display = pos ? '' : 'none';
+    document.getElementById('tbM').textContent = say(S.modeName[P.mode]);
+  }
+  if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = def ? (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN') : 'V'; } }
 
 // ================================================================ the drone: camera quadcopter with three flight modes
 // POS: GPS hold and a stabilised camera (easy); ANGL: self-levelling; ACRO: full manual, like a racing drone
@@ -905,7 +940,7 @@ function crash(why){
 }
 const _up = new THREE.Vector3(), _acc = new THREE.Vector3(), _qt = new THREE.Quaternion(), _dq = new THREE.Quaternion(), _ax = new THREE.Vector3();
 function simPOS(dt){
-  const boost = keys.ShiftLeft || keys.ShiftRight ? 1.9 : 1;
+  const boost = keys.ShiftLeft || keys.ShiftRight || touchIn.boost || (pad.active && pad.thr > 0.5) ? 1.9 : 1;
   const climb = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + pad.climb + touchIn.l[1], -1, 1);
   if (P.armed){
     P.yaw -= P.sy * 1.5 * dt;
@@ -1003,7 +1038,7 @@ function updateSticks(dt){
       P.thr = clamp(P.thr + c * dt * 0.7, 0, 1);
     }
   }
-  const gim = (keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0) + pad.gim;
+  const gim = (keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0) + pad.gim + (touchIn.camUp ? 1 : 0) - (touchIn.camDown ? 1 : 0);
   P.gimbal = clamp(P.gimbal + gim * dt * 0.9, -PI / 2, 0.3);
 }
 function updateDrone(dt){
@@ -2043,6 +2078,7 @@ function openPause(){
     { label: () => say(S.resume), act: () => setPaused(false) },
     { label: () => say(S.restart), act: () => { setPaused(false); if (GAME.mode === 'defend') resetDefense(); else for (const p of world.pois){ p.visited = false; p.beacon.visible = true; } respawnStart(); card = null; } },
     { label: () => say(S.otherMap), act: () => { location.href = location.pathname + (lang !== 'de' ? '?lang=' + lang : ''); } },
+    { label: () => say(S.flightMode) + ': ' + say(S.modeName[P.mode]), act: () => toggleMode() },
     { label: () => say(S.language) + ': ' + say(S.langName), act: () => nextLang() },
   ] };
 }
@@ -2157,8 +2193,8 @@ function drawOSD(){
   else if (Math.hypot(P.pos.x - world.center[0], P.pos.z - world.center[1]) > world.R) line = say(S.far);
   else if (!P.armed && !card) line = say(dev === 'kb' ? S.disarmedKb : dev === 'touch' ? S.disarmedTouch : S.disarmedPad);
   if (line && Math.floor(clock * 2) % 2 === 0 || line && (msgT > 0 || !P.alive || def && GAME.hitMsg > 0)) txt(g, line, W / 2, H - 46, 'center');
-  if (def && !card && P.armed && GAME.t < 40){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? DT.detKb : DT.detPad), W / 2, H - 14, 'center'); if (dev === 'kb') txt(g, say(DT.shift), W / 2, H - 24, 'center'); }
-  else if (hintT > 0 && !card && P.armed && !def){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? S.hintKb : S.hintPad), W / 2, H - 14, 'center'); if (world.hasWar) txt(g, say(dev === 'kb' ? S.toggleKb : dev === 'touch' ? S.toggleTouch : S.togglePad), W / 2, H - 24, 'center'); }
+  if (def && !card && P.armed && GAME.t < 40){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? DT.detKb : dev === 'touch' ? DT.detTouch : DT.detPad), W / 2, H - 14, 'center'); if (dev === 'kb') txt(g, say(DT.shift), W / 2, H - 24, 'center'); }
+  else if (hintT > 0 && !card && P.armed && !def){ g.font = 'bold 7px monospace'; txt(g, say(dev === 'kb' ? S.hintKb : dev === 'touch' ? S.hintTouch : S.hintPad), W / 2, H - 14, 'center'); if (world.hasWar) txt(g, say(dev === 'kb' ? S.toggleKb : dev === 'touch' ? S.toggleTouch : S.togglePad), W / 2, H - 24, 'center'); }
 }
 function drawBox(g, x, y, w, h){ g.fillStyle = 'rgba(8,10,12,0.82)'; g.fillRect(x, y, w, h); g.strokeStyle = 'rgba(244,242,236,0.55)'; g.lineWidth = 0.6; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); g.fillStyle = INK; g.strokeStyle = EDGE; g.lineWidth = 2; }
 function drawUI(){
@@ -2220,15 +2256,15 @@ function drawUI(){
     drawBox(g, 40, 22, W - 80, H - 44);
     g.font = 'bold 12px monospace'; txt(g, say(S.paused), W / 2, 38, 'center');
     menu.items.forEach((it, i) => {
-      const y = 52 + i * 17, sel = i === menu.sel;
-      it.box = [70, y, W - 140, 14];
-      if (sel){ g.fillStyle = 'rgba(143,216,255,0.22)'; g.fillRect(70, y, W - 140, 14); g.fillStyle = INK; }
-      g.font = 'bold 8px monospace'; txt(g, (sel ? '▸ ' : '') + it.label(), W / 2, y + 7, 'center');
+      const y = 48 + i * 15, sel = i === menu.sel;
+      it.box = [70, y, W - 140, 13];
+      if (sel){ g.fillStyle = 'rgba(143,216,255,0.22)'; g.fillRect(70, y, W - 140, 13); g.fillStyle = INK; }
+      g.font = 'bold 8px monospace'; txt(g, (sel ? '▸ ' : '') + it.label(), W / 2, y + 6.5, 'center');
     });
-    g.font = 'bold 7px monospace'; txt(g, say(S.controls), W / 2, 130, 'center');
+    g.font = 'bold 7px monospace'; txt(g, say(S.controls), W / 2, 131, 'center');
     g.font = '6.5px monospace';
     const help = S.help[dev] || S.help.kb;
-    say(help).forEach((l, i) => txt(g, l, 74, 142 + i * 8.5));
+    say(help).forEach((l, i) => txt(g, l, 74, 141 + i * 7.6));
     return;
   }
   if (card && state === 'fly'){
@@ -2310,6 +2346,7 @@ const DT = {
   shot: { de: 'ABGESCHOSSEN', fr: 'ABATTU', en: 'SHOT DOWN' },
   hit: { de: 'GETROFFEN', fr: 'TOUCHÉ', en: 'HIT' },
   detKb: { de: 'F: ZÜNDEN · FLIEG IN DAS ZIEL, UM ES ZU STOPPEN', fr: 'F : DÉTONER · FONCE DANS LA CIBLE POUR L’ARRÊTER', en: 'F: DETONATE · FLY INTO THE TARGET TO STOP IT' },
+  detTouch: { de: 'ZÜNDEN TIPPEN · FLIEG IN DAS ZIEL, UM ES ZU STOPPEN', fr: 'TOUCHE DÉTONER · FONCE DANS LA CIBLE POUR L’ARRÊTER', en: 'TAP DETONATE · FLY INTO THE TARGET TO STOP IT' },
   detPad: { de: 'B: ZÜNDEN · FLIEG IN DAS ZIEL, UM ES ZU STOPPEN', fr: 'B : DÉTONER · FONCE DANS LA CIBLE POUR L’ARRÊTER', en: 'B: DETONATE · FLY INTO THE TARGET TO STOP IT' },
   shift: { de: 'SHIFT: VOLLGAS', fr: 'MAJ : PLEIN GAZ', en: 'SHIFT: FULL SPEED' },
   again: { de: 'ENTER: NOCHMAL   P: MENÜ', fr: 'ENTRÉE : RECOMMENCER   P : MENU', en: 'ENTER: AGAIN   P: MENU' },
