@@ -1137,7 +1137,7 @@ function updateSrcSound(s, pos, vel, on){
   _q.copy(camera.quaternion).invert();
   const local = _w.copy(_v).applyQuaternion(_q);
   setP(s.pan.pan, clamp(local.x / dist * 1.1, -1, 1));
-  setP(s.out.gain, (on && !ended ? s.vol : 0) * (local.z > 0 ? 0.75 : 1) * s.reach / (s.reach + dist));
+  setP(s.out.gain, (on && !quiet() ? s.vol : 0) * (local.z > 0 ? 0.75 : 1) * s.reach / (s.reach + dist));
   setP(s.lp.frequency, 250 + 7000 * s.air / (s.air + dist));
 }
 function stopSound(s){
@@ -1145,7 +1145,7 @@ function stopSound(s){
   setTimeout(() => { for (const n of s.stops) n.stop(); s.pan.disconnect(); }, 600);
 }
 function boom(dist, power){
-  if (!AU.ready || ended) return;
+  if (!AU.ready || quiet()) return;
   const ctx = AU.ctx, t0 = ctx.currentTime + dist / 343;
   const amp = Math.min(1.4, power * 120 / (dist + 40));
   if (amp < 0.004) return;
@@ -1161,7 +1161,7 @@ function boom(dist, power){
   o.connect(og); og.connect(AU.master); o.start(t0); o.stop(t0 + 1);
 }
 function gunShot(pos, heavy){
-  if (!AU.ready || ended) return;
+  if (!AU.ready || quiet()) return;
   const dist = pos.distanceTo(camera.position);
   if (dist > 7000) return;
   const ctx = AU.ctx, t0 = ctx.currentTime + dist / 343;
@@ -1199,7 +1199,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyR' && paused) act('restart');
 });
 function act(a){
-  if (ended){ if (endPhase() > 7 && (a === 'arm' || a === 'det')) startRound(); return; }
+  if (ended){ if (endReady() && (a === 'arm' || a === 'det')) startRound(); return; }
   if (a === 'pause') return setPaused(!paused);
   if (paused && (a === 'restart' || a === 'det')) return startRound();
   if (a === 'screen') return cycleGoggle();
@@ -1263,7 +1263,7 @@ const canvasXY = e => { const r = cv.getBoundingClientRect(); return [(e.clientX
 addEventListener('pointerdown', e => {
   audioInit(); noteInput(); mouseDown = true;
   if (seq.active){ if (seq.phase === 'start') startPick(startItemAt(...canvasXY(e))); }
-  else if (ended && endPhase() > 7) startRound();
+  else if (ended && endReady()) startRound();
 });
 addEventListener('pointerup', () => { mouseDown = false; });
 addEventListener('pointercancel', () => { mouseDown = false; });
@@ -1882,7 +1882,7 @@ function updateGuns(dt){
 // a round lasts about five minutes: the waves grow and come faster, and from two minutes on more and more
 // Gerans aim at the theatre; whoever stops many of them plays a little longer
 // waveT counts from the end of the practice; the waves, columns and forest vehicles run on it
-const ROUND = 300, FIRST_GERAN = 15, FIRST_COLUMN = 150, PRACTICE_MAX = 90;
+const ROUND = 300, FIRST_GERAN = 15, FIRST_COLUMN = 150, PRACTICE_MAX = 90, PRACTICE_HINT = 8;
 let nextGeran = FIRST_GERAN, nextColumn = FIRST_COLUMN, nextForest = 0, waveT = 0;
 let practice = null, hintMsg = null, hintT = 0;
 const pending = [];
@@ -1933,17 +1933,42 @@ function updateThreats(dt){
   }
   if (t > nextColumn){ spawnColumn(); nextColumn = t + rr(240, 300); }
 }
-// the practice task while it runs, then a short message when the Shaheds start
+// the practice task only before take-off (at most a few seconds), so it never blocks the view in flight;
+// then a short message when the Shaheds start
 function drawHint(){
   if (seq.active || ended || paused) return;
-  const h = practice ? S.hintPractice : hintT > 0 ? hintMsg : null;
+  const h = practice ? (!P.armed && practice.t < PRACTICE_HINT ? S.hintPractice : null) : hintT > 0 ? hintMsg : null;
   if (h) drawBox(say(h));
 }
 let endedAt = 0, endReason = 'theatre', roundTime = 0;
 const endPhase = () => ended ? (performance.now() - endedAt) / 1000 : 0;
+// when the theatre is hit: a moment of static, then the closing scene shows the strike on the theatre
+// (the trailer scene with "ДЕТИ"), then the result
+const OUTRO_STATIC = 1.2;
+let outro = null;  // { static, deti, detiT } while the closing scene runs
+// the result (and the restart) comes after the closing scene, otherwise 7 s after the end
+const endReady = () => endReason === 'theatre' ? !!outro && outro.detiT >= SEQ_TIME.deti : endPhase() > 7;
+const quiet = () => ended && !outro;  // no game sounds after the end, except in the closing scene
 function centralHit(){
   if (seq.active){ if (seq.phase === 'theater') theaterHit(); }
+  else if (outro) theaterHit();
   else endFeed('theatre');
+}
+function outroUpdate(dt){
+  if (!outro){
+    outro = { static: 0.9, deti: false, detiT: 0 };
+    for (const g of [...gerans]) g.remove();
+    pending.length = 0;
+    restoreCentral();
+    for (let i = burners.length - 1; i >= 0; i--) if (Math.hypot(burners[i].x - CENTRAL.x, burners[i].z) < 40) burners.splice(i, 1);
+    seqTheater(); seq.t = 0;
+  }
+  if (outro.deti){ outro.detiT += dt; return; }
+  seq.t += dt;
+  noise = 0.04;
+  outro.static = Math.max(0, outro.static - dt * 2.5);
+  seqCamTheater(dt);
+  if (!outro.deti && seq.t >= SEQ_TIME.theater){ seqDetiSpot(); outro.deti = true; }
 }
 function endFeed(why){
   if (ended) return;
@@ -2181,7 +2206,8 @@ function drawOSD(){
 }
 
 function drawEnd(){
-  if (endPhase() < 7) return;
+  if (outro && !outro.deti) return;
+  if (!endReady()){ if (outro) drawDeti(); return; }
   oc.textBaseline = 'middle'; oc.lineJoin = 'round';
   oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
   oc.font = 'bold 11px monospace';
@@ -2314,7 +2340,7 @@ function drawPause(){
 
 // ---------------------------------------------------------------- opening sequence
 // the trailer: a text card (texts in S) before each scene; it ends with a rhetorical question and leads into the flight school (ctrl)
-const SEQ_TIME = { t1: 5, column: 5.5, t2: 3.5, hit: 4.6, t3: 6.5, swarm: 10.5, tWest: 5.5, theater: 11, deti: 3.5, tSol: 4, intercept: 7.5, tQ: 4.5, tEnd: 3.5, tTurn: 2, ctrl: CTRL.reduce((a, c) => a + c[0], 0) };
+const SEQ_TIME = { t1: 5, column: 5.5, t2: 3.5, hit: 4.6, t3: 6.5, swarm: 10.5, tWest: 5.5, theater: 15, deti: 3.5, tSol: 4, intercept: 7.5, tQ: 4.5, tEnd: 3.5, tTurn: 2, ctrl: CTRL.reduce((a, c) => a + c[0], 0) };
 const SEQ_NEXT = { t1: 'column', column: 't2', t2: 'hit', hit: 't3', t3: 'swarm', swarm: 'tWest', tWest: 'theater', theater: 'deti', deti: 'tSol', tSol: 'intercept', intercept: 'tQ', tQ: 'tEnd', tEnd: 'tTurn', tTurn: 'ctrl' };
 const SEQ_BLACK = ['start', 't1', 't2', 't3', 'tWest', 'deti', 'tSol', 'tQ', 'tEnd', 'tTurn'];
 // position of the white "Z" on the right side of each vehicle type
@@ -2460,7 +2486,7 @@ function seqTheater(){
 }
 function seqCamTheater(dt){
   const t = seq.t, c = CENTRAL, w = central.frontWord.position;
-  // 0-5.5 s oblique view of the strikes, 5.5-8.5 s move to straight above the word, then hold
+  // 0-5.5 s oblique view of the strikes, 5.5-8.5 s move to straight above the word, then hold until the end of the scene
   const k = sstep(5.5, 8.5, t);
   _v.set(c.x + 100 - Math.min(t, 5.5) * 1.5, central.y + 115 - Math.min(t, 5.5) * 1.5, 16 + Math.min(t, 5.5) * 0.5);
   camera.position.lerpVectors(_v, _w.set(w.x, w.y + 62, w.z), k);
@@ -2551,7 +2577,7 @@ function restoreCentral(){
   central.obs.top = central.y + 21;
 }
 function resetWorld(){
-  ended = false; seq.ptr = null;
+  ended = false; outro = null; seq.ptr = null; camera.up.set(0, 1, 0);
   for (const g of [...gerans]) g.remove();
   for (const v of vehicles){
     scene.remove(v.grp);
@@ -2756,6 +2782,12 @@ function drawStart(){
   txt(say(d === 'vr' ? S.hintVR : d === 'pad' ? S.hintPad : S.hintKb), W / 2, H - 14, 'center');
   if (seq.ptr){ oc.fillStyle = INK; oc.beginPath(); oc.arc(seq.ptr[0], seq.ptr[1], 2.5, 0, 7); oc.fill(); }
 }
+// the painted word, alone on black where it was on the screen
+function drawDeti(){
+  const d = seq.detiSpot || { x: W / 2, y: H / 2, size: 34 };
+  oc.font = 'bold ' + d.size.toFixed(1) + 'px Arial, Helvetica, sans-serif'; oc.textAlign = 'center'; oc.fillStyle = INK;
+  oc.fillText('ДЕТИ', d.x, d.y + d.size * 0.04);
+}
 function drawSeq(){
   oc.textBaseline = 'middle'; oc.lineJoin = 'round'; oc.lineWidth = 2.5; oc.strokeStyle = EDGE; oc.fillStyle = INK;
   const ph = seq.phase;
@@ -2767,11 +2799,7 @@ function drawSeq(){
     lines.forEach((l, i) => txt(l, W / 2, H / 2 + (i - (lines.length - 1) / 2) * lh, 'center'));
     return;
   }
-  if (ph === 'deti'){
-    const d = seq.detiSpot || { x: W / 2, y: H / 2, size: 34 };
-    oc.font = 'bold ' + d.size.toFixed(1) + 'px Arial, Helvetica, sans-serif'; oc.textAlign = 'center'; oc.fillStyle = INK;
-    oc.fillText('ДЕТИ', d.x, d.y + d.size * 0.04);
-  }
+  if (ph === 'deti') drawDeti();
   if (ph === 'ctrl'){
     let t = seq.t, n = 0;
     while (n < CTRL.length - 1 && t >= CTRL[n][0]){ t -= CTRL[n][0]; n++; }
@@ -2811,7 +2839,7 @@ function update(dt){
       for (let i = 0; i < n && P.alive; i++) simStep(dt / n);
       if (P.armed) P.time += dt;
     } else if (!ended && clock - P.deadAt > 0.5) respawn();
-    updateThreats(dt);
+    if (!ended) updateThreats(dt);
   }
   for (const g of [...gerans]) g.update(dt);
   for (const v of vehicles) v.update(dt);
@@ -2834,6 +2862,7 @@ function update(dt){
   for (const f of horizonFires){ const s = f.base * (0.8 + 0.25 * Math.sin(clock * 7 + f.ph) + 0.1 * Math.random()); f.f.scale.set(s, s * 0.8, 1); }
 
   if (seq.active) seqUpdate(dt);
+  else if (ended && endReason === 'theatre' && endPhase() >= OUTRO_STATIC) outroUpdate(dt);
   else {
     camera.position.copy(P.pos).add(_v.set(0, 0.03, -0.04).applyQuaternion(P.q));
     camera.quaternion.copy(P.q).multiply(UPTILT);
@@ -2922,11 +2951,11 @@ if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
 function render(){
   post.uniforms.uTime.value = (performance.now() / 1000) % 600;
   post.uniforms.uNoise.value = noise;
-  post.uniforms.uStatic.value = P.alive ? staticAmt : 1;
+  post.uniforms.uStatic.value = outro ? outro.static : P.alive ? staticAmt : 1;
   post.uniforms.uFlash.value = ended ? 0 : flash;
-  const black = clamp((endPhase() - 5) / 1.5, 0, 1);
+  const black = outro ? (outro.deti ? 1 : 0) : endReason === 'theatre' ? 0 : clamp((endPhase() - 5) / 1.5, 0, 1);
   post.uniforms.uBlack.value = black;
-  post.uniforms.uClean.value = paused ? 1 : 0;
+  post.uniforms.uClean.value = paused || (outro && outro.deti) ? 1 : 0;
   post.uniforms.uOsdTop.value = !P.alive && hitMsg > 0 ? 1 : 0;  // the hit message stays readable over the static
   if (seq.active){
     post.uniforms.uStatic.value = seq.static;
@@ -2941,7 +2970,7 @@ function render(){
     setP(AU.pGain.gain, on ? 0.05 + 0.16 * tf : 0, 0.03);
     setP(AU.pLp.frequency, 900 + 3500 * tf);
     setP(AU.wind.gain, P.alive && !ended ? Math.min(0.3, P.vel.length() / 110 * 0.3) : 0);
-    setP(AU.hiss.gain, seq.active ? (seq.black ? 0 : 0.012 + seq.static * 0.08) : ended ? 0.1 * (1 - black) : P.alive ? noise * 0.04 : 0.07);
+    setP(AU.hiss.gain, seq.active ? (seq.black ? 0 : 0.012 + seq.static * 0.08) : outro ? (outro.deti ? 0 : 0.012 + outro.static * 0.08) : ended ? 0.1 * (1 - black) : P.alive ? noise * 0.04 : 0.07);
   }
 
   const inVR = renderer.xr.isPresenting, t = performance.now();
