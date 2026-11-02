@@ -156,7 +156,7 @@ const S = {
 // ================================================================ scene, light, sky
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(new THREE.Color(0.7, 0.75, 0.8), 0.0005);
-const camera = new THREE.PerspectiveCamera(90, W / H, 0.1, 30000);
+const camera = new THREE.PerspectiveCamera(104, W / H, 0.1, 30000);   // a wide FPV lens; the fisheye bend comes in the post
 scene.add(camera);
 const rt = new THREE.WebGLRenderTarget(RW, RH, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
 const hemi = new THREE.HemisphereLight(0xffffff, 0x555555, 1);
@@ -673,7 +673,7 @@ function makeBeacon(x, y, z){
 // ================================================================ post processing: analog FPV feed; the UI layer stays sharp on top
 function canvasLayer(){ const c = document.createElement('canvas'); c.width = OW; c.height = OH; const t = new THREE.CanvasTexture(c); t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; const g = c.getContext('2d'); g.lineJoin = 'round'; g.miterLimit = 2; return { c, g, t }; }
 const OSD = canvasLayer(), UI = canvasLayer();
-const K = 0.16;
+const K = 0.34;
 const post = new THREE.ShaderMaterial({
   uniforms: {
     tScene: { value: rt.texture }, tOSD: { value: OSD.t }, tUI: { value: UI.t }, uRes: { value: new THREE.Vector2(RW, RH) },
@@ -696,17 +696,23 @@ const post = new THREE.ShaderMaterial({
       vec2 c = uv * 2.0 - 1.0;
       c *= (1.0 + uK * dot(c, c)) / (1.0 + 2.0 * uK);
       vec2 s = c * 0.5 + 0.5;
-      vec3 col = texture2D(tScene, s).rgb;
-      vec3 smear = texture2D(tScene, s - vec2(1.5 / uRes.x, 0.0)).rgb;
-      col = mix(col, smear, 0.25);
+      // interlaced fields a little apart; with a weak link the picture breaks into blocks
+      float odd = mod(row, 2.0);
+      s.x += odd * 0.6 / uRes.x;
+      float blk = step(1.0 - uNoise * 0.45, h(vec2(floor(s.x * uRes.x / 12.0), floor(s.y * uRes.y / 12.0) + tq)));
+      vec2 sb = mix(s, (floor(s * uRes / 12.0) + 0.5) * 12.0 / uRes, blk);
+      vec2 dx = vec2(1.0 / uRes.x, 0.0), dy = vec2(0.0, 1.0 / uRes.y);
+      vec3 col = texture2D(tScene, sb).rgb * 0.4 + (texture2D(tScene, sb + dx).rgb + texture2D(tScene, sb - dx).rgb) * 0.2 + (texture2D(tScene, sb + dy).rgb + texture2D(tScene, sb - dy).rgb) * 0.1;
+      vec3 smear = texture2D(tScene, sb - dx * 3.0).rgb;
+      col = mix(col, smear, 0.18) * (1.0 - odd * 0.04);
       // grade: a little desaturated and warm, like a cheap camera
       float l = dot(col, vec3(0.299, 0.587, 0.114));
       vec3 colour = pow(mix(vec3(l), col, 0.82) * vec3(1.02, 1.0, 0.96), vec3(0.95)) * 1.04;
-      // the analog FPV look of /drone: nearly monochrome, warm, a little colour left for fire
-      float lg = clamp(pow(l * 1.3, 0.85) * 1.15, 0.0, 1.0);
-      vec3 graded = mix(vec3(0.11, 0.10, 0.09), vec3(0.88, 0.85, 0.79), lg) * vec3(1.0, 0.965, 0.9);
-      vec3 chroma = col - vec3((col.r + col.g + col.b) / 3.0);
-      col = mix(colour, graded + chroma * 0.6, uGrade);
+      // a real analog FPV camera: washed out, blacks lifted, low contrast, half the colour gone, highlights blooming
+      vec3 fpv = mix(vec3(l), col, 0.6) * 0.78 + vec3(0.11, 0.115, 0.12);
+      fpv += smoothstep(0.55, 1.0, l) * 0.18;
+      fpv = pow(fpv, vec3(1.05)) * vec3(0.98, 1.0, 1.03);
+      col = mix(colour, fpv, uGrade);
       vec4 o = texture2D(tOSD, vec2(vUv.x + jit, vUv.y));
       col = mix(col, o.rgb, o.a);
       // the analog feed: grain, colour speckle, line noise, sparkles, a little flicker
@@ -2194,12 +2200,12 @@ async function buildDonbas(){
   const rowsIn = (g, f, col, sp, rr) => { g.save(); poly(g, f.pts); g.clip(); g.strokeStyle = col; g.lineWidth = 1; const [cx, cz] = toPx(f.cx, f.cz); g.translate(cx, cz); g.rotate(A + (f.seed % 2 > 1 ? PI / 2 : 0)); for (let t = -260; t < 260; t += sp){ g.beginPath(); g.moveTo(-300, t); g.lineTo(300, t); g.stroke(); } g.restore(); };
   const paint = war => g => {
     const rr = rng(war ? 7 : 3);
-    g.fillStyle = war ? '#77765a' : '#7f8a55'; g.fillRect(0, 0, TW, TW);
+    g.fillStyle = war ? '#6e7a4c' : '#7f8a55'; g.fillRect(0, 0, TW, TW);
     for (const f of fields){
       const front = Math.exp(-(((f.cx - F(f.cz)) / 1300) ** 2));
       let col, t = f.type;
       if (!war) col = ['#c4ab62', '#6d7a2e', '#6b5440', '#6f8c3e'][t];
-      else if (front > 0.35 || nearVillage(f.cx, f.cz)) col = rr() < 0.3 ? '#3a3530' : '#7d7a5a';
+      else if (front > 0.35 || nearVillage(f.cx, f.cz)) col = rr() < 0.3 ? '#5a4c3c' : '#717c4c';
       else col = ['#a8925a', '#4f4a2e', '#6b5644', '#768048'][t];
       poly(g, f.pts); g.fillStyle = col; g.fill();
       if (!war){
@@ -2270,7 +2276,7 @@ async function buildDonbas(){
   w.motoRoutes = [-900, 300, 1100].map(z0 => { const pts = []; for (let k = 0; k <= 50; k++){ const t = k / 50; pts.push([lerp(3300, VIL.x + 150, t), lerp(z0, ROADZ(VIL.x), t) + Math.sin(t * 9 + z0) * 60 * (1 - t)]); } return makePath(pts); });
   w.atmos = {
     peace: { fog: [0.76, 0.8, 0.86], density: 0.00026, zen: [0.28, 0.48, 0.82], hor: [0.76, 0.82, 0.9], sun: [0.4, 0.6, -0.5], sunCol: [1, 0.96, 0.86], sky: [0.85, 0.9, 1], ground: [0.45, 0.45, 0.32], hemi: 1.1, sunI: 1.0 },
-    war: { fog: [0.58, 0.58, 0.56], density: 0.00062, zen: [0.42, 0.44, 0.47], hor: [0.66, 0.66, 0.64], sun: [0.4, 0.4, -0.6], sunCol: [0.85, 0.82, 0.76], sky: [0.8, 0.8, 0.8], ground: [0.42, 0.4, 0.35], hemi: 1.15, sunI: 0.7, haze: 0.7 },
+    war: { fog: [0.66, 0.68, 0.68], density: 0.0005, zen: [0.46, 0.5, 0.55], hor: [0.72, 0.73, 0.72], sun: [0.4, 0.5, -0.6], sunCol: [0.95, 0.92, 0.85], sky: [0.9, 0.92, 0.92], ground: [0.48, 0.46, 0.38], hemi: 1.3, sunI: 0.85, haze: 0.6 },
   };
   w.sound = 'steppe';
   return w;
@@ -2440,6 +2446,9 @@ function drawOSD(){
       if (fr && x > 20 && x < W - 20 && y > 32 && y < H - 15){ g.fillRect(x - 2, y - 1.5, 4, 3); g.strokeRect(x - 2, y - 1.5, 4, 3); g.fillRect(x - 1.5, y - 1, 3, 2); }
     }
   }
+  // horizon sidebars: dotted ladders either side of the centre, with arrows (as in Betaflight)
+  for (const sx of [W / 2 - 74, W / 2 + 74]) for (let k = -4; k <= 4; k++){ const y = H / 2 + k * 11; g.strokeRect(sx - 1.2, y - 1.2, 2.4, 2.4); g.fillRect(sx - 1, y - 1, 2, 2); }
+  txt(g, '>', W / 2 - 82, H / 2, 'center'); txt(g, '<', W / 2 + 82, H / 2, 'center');
   g.beginPath(); g.arc(W / 2, H / 2, 4, 0, 7); g.moveTo(W / 2 - 9, H / 2); g.lineTo(W / 2 + 9, H / 2); g.moveTo(W / 2, H / 2 - 7); g.lineTo(W / 2, H / 2 + 7); stroke2(g);
   if (P.vel.length() > 3){ const [x, y, fr] = toScreen(_w.copy(P.vel).normalize().multiplyScalar(100).add(camera.position)); if (fr && x > 0 && x < W && y > 0 && y < H){ g.strokeRect(x - 2, y - 2, 4, 4); g.fillRect(x - 1, y - 1, 2, 2); } }
   drawCompass(g);
@@ -2488,9 +2497,9 @@ function drawOSD(){
   const lq = Math.round(clamp(100 - Math.max(0, dist - world.R * 0.8) / (world.R * 0.008), 0, 99));
   if (!(lq < 30 && blink)) txt(g, 'LQ ' + lq, W - 8, 21, 'right');
   if (def && world.homeHP) txt(g, say(DT.homeName[world.id]) + ' ' + Math.max(0, Math.round(100 - GAME.homeHits / world.homeHP * 100)) + '%', W - 8, 32, 'right');
-  const volts = 16.8 - 3.6 * P.used - 0.7 * clamp(P.T / MAXT, 0, 1);
-  if (!(volts < 13.6 && blink)) txt(g, volts.toFixed(1) + 'V', 8, H - 10);
-  txt(g, 'THR ' + Math.round(clamp(P.mode === 'ACRO' ? P.thr : P.T / MAXT, 0, 1) * 100), 8, H - 21);
+  const volts = 25.2 - 5.4 * P.used - 1.1 * clamp(P.T / MAXT, 0, 1), cell = volts / 6;   // a 6S pack
+  txt(g, 'THR ' + Math.round(clamp(P.mode === 'ACRO' ? P.thr : P.T / MAXT, 0, 1) * 100), 8, H - 32);
+  if (!(cell < 3.5 && blink)){ txt(g, volts.toFixed(1) + 'V', 8, H - 21); txt(g, cell.toFixed(2) + 'V', 8, H - 10); }
   txt(g, Math.round(P.vel.length() * 3.6) + ' KMH', W - 8, H - 21, 'right');
   txt(g, Math.round(P.pos.y - world.groundAt(P.pos.x, P.pos.z)) + ' M', W - 8, H - 10, 'right');
   txt(g, P.mode === 'POS' ? 'CAM' : P.mode, W / 2, H - 10, 'center');
