@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BON · DÉPÊCHE</title>
-<meta name="description" content="Die Morgenzeitung auf 72 mm: Wetter, Schlagzeilen, Basel, Wikipedia und Abfahrten.">
+<meta name="description" content="Die Morgenzeitung auf 72 mm: Wetter, Schlagzeilen, Basel, Wikipedia und Abfahrten. Dazu ganze Artikel zum Auswählen.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3ED%3C/text%3E%3C/svg%3E">
@@ -37,7 +37,7 @@ header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px so
 .back:hover,.back:focus-visible{background:#000;color:#fff}
 .brand span{color:var(--muted);font-weight:400;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
 /* Am Handy: zuerst Drucken, dann der Bon, dann die Einstellungen */
-main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"knoepfe" "vorschau" "einst";column-gap:32px}
+main{padding-top:14px;padding-bottom:40px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"modus" "knoepfe" "vorschau" "einst";column-gap:32px}
 .knoepfe,.einst{display:flex;flex-direction:column;gap:6px;min-width:0}
 .knoepfe{grid-area:knoepfe} .einst{grid-area:einst} .vorschau{grid-area:vorschau}
 label,.label{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
@@ -78,6 +78,29 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
 .quellen{margin:0;padding:0;list-style:none;font-size:.78rem;border-top:1px solid #000}
 .quellen li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #ddd}
 .quellen .ok{color:var(--ok)} .quellen .err{color:var(--err)} .quellen .warte{color:var(--muted)}
+/* Umschalter Zeitung / Lesen */
+.modus{grid-area:modus;display:grid;grid-template-columns:1fr 1fr;border:1px solid #000;margin-bottom:6px}
+.modus button{margin:0;padding:10px;font-size:.78rem;border:0;background:#fff;color:#000}
+.modus button+button{border-left:1px solid #000}
+.modus button[aria-selected="true"]{background:#000;color:#fff}
+/* Lesen: das Menü mit den Schlagzeilen, sehr klein, damit 25 auf einen Blick passen */
+.lesen{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr);row-gap:6px}
+.lesen-spalte{display:flex;flex-direction:column;gap:6px;min-width:0}
+.menu{border-top:1px solid #000}
+.menu h3{margin:10px 0 0;padding:0 0 3px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid #000}
+.eintrag{display:grid;grid-template-columns:10px 16px minmax(0,1fr);column-gap:6px;align-items:baseline;margin:0;padding:5px 2px;width:100%;border:0;border-bottom:1px solid #ddd;background:#fff;color:#000;text-transform:none;letter-spacing:0;font-size:11.5px;line-height:1.3;text-align:left}
+.eintrag::before{content:"";width:9px;height:9px;border:1px solid #000;background:#fff;align-self:start;margin-top:2px}
+.eintrag[aria-pressed="true"]::before{background:#000}
+.eintrag:hover{background:#f0f0f0;color:#000}
+.eintrag .nr{color:var(--muted);text-align:right;font-size:10px}
+.eintrag .t b{font-weight:700}
+.eintrag .q{grid-column:3;color:var(--muted);font-size:10px;margin-top:1px}
+.lesen-knoepfe{position:sticky;bottom:0;background:#fff;padding-bottom:max(6px,env(safe-area-inset-bottom,0px));border-top:1px solid #000;z-index:5}
+.lesen-knoepfe button{margin-top:6px}
+.lesen-knoepfe .msg{margin:2px 0 0}
+.lesen-vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.lesen-vorschau .label{align-self:stretch;margin-top:8px}
+.lesen-vorschau .papier+.papier{margin-top:10px}
 /* Vorschau: der Bon genau so, wie er aus dem Drucker kommt */
 .vorschau{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
 .vorschau .label{align-self:stretch;margin-top:8px}
@@ -86,7 +109,10 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
 .papier .leer{margin:0;padding:24px 16px;text-align:center;color:var(--muted);font-size:.8rem}
 .mass{margin:0;font-size:.78rem;color:var(--muted)}
 @media (min-width:860px){
-  main{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto 1fr;grid-template-areas:"knoepfe vorschau" "einst vorschau";align-items:start}
+  main{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto auto 1fr;grid-template-areas:"modus modus" "knoepfe vorschau" "einst vorschau";align-items:start}
+  .lesen{grid-template-columns:minmax(0,1fr) 380px;column-gap:32px;align-items:start}
+  .lesen-vorschau{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
+  .lesen-knoepfe{position:static}
   .vorschau{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
 }
 </style>
@@ -96,17 +122,37 @@ button.ghost{background:#fff;color:#000} button.ghost:hover{background:#000;colo
   <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Dépêche du Matin · über die Bon-Post</span></a></div>
 </header>
 <main>
-  <div class="knoepfe">
+  <div class="modus" role="tablist" aria-label="Ansicht">
+    <button type="button" role="tab" id="tabZeitung" aria-selected="true">Zeitung</button>
+    <button type="button" role="tab" id="tabLesen" aria-selected="false">Lesen</button>
+  </div>
+  <section class="lesen" id="lesen" hidden>
+    <div class="lesen-spalte">
+      <p class="hint" id="lesenStand">Die Schlagzeilen werden geladen …</p>
+      <div class="menu" id="menu"></div>
+      <div class="lesen-knoepfe">
+        <button id="lesenDrucken" disabled>Antippen, was du lesen willst</button>
+        <p class="msg" id="lesenMsg" role="status" aria-live="polite"></p>
+      </div>
+      <p class="hint">Jede Stunde holt GitHub zu 25 Schlagzeilen den ganzen Artikel. Steht er hinter einer Bezahlschranke, gibt es nur den Anfang, das steht dann als «nur Anfang» dabei. Jeder Artikel kommt als eigener Bon.</p>
+    </div>
+    <div class="lesen-vorschau">
+      <span class="label">So wird gedruckt</span>
+      <div id="lesenBons" style="width:min(100%,360px)"><div class="papier"><p class="leer">Noch nichts ausgewählt.</p></div></div>
+      <p class="mass" id="lesenMass"></p>
+    </div>
+  </section>
+  <div class="knoepfe" data-zeitung>
     <button id="drucken" disabled>Drucken</button>
     <button class="ghost" id="neu">Neu laden</button>
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
   </div>
-  <div class="vorschau">
+  <div class="vorschau" data-zeitung>
     <span class="label">So wird gedruckt</span>
     <div class="papier"><canvas id="bon" hidden></canvas><p class="leer" id="leer">Die Zeitung wird gesetzt …</p></div>
     <p class="mass" id="mass"></p>
   </div>
-  <div class="einst">
+  <div class="einst" data-zeitung>
     <label for="halt">Haltestelle für die Abfahrten</label>
     <input id="halt" autocomplete="off" enterkeyhint="done" placeholder="z. B. Basel, Bahnhof SBB">
     <p class="hint" id="haltHint">Tram, Bus oder Bahnhof, so wie im SBB-Fahrplan.</p>
@@ -775,6 +821,35 @@ async function schriftenLaden(text){
   await Promise.all(fs.map(f => document.fonts.load(f, text).catch(() => {})));
 }
 
+// Baustein auf die Leinwand setzen und mit derselben festen Schwelle wie der Mac schwarz-weiss machen:
+// Die Vorschau ist der Druck. hoehe36: Höhe auf ein Vielfaches von 36 Punkten auffüllen (siehe bonHtml36).
+async function rastern(baustein, cv, o = {}){
+  // Schriften zuerst laden, auch die erweiterten Buchstaben, sonst misst die Leinwand mit einer Ersatzschrift
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  const probe = baustein(g, RAND, INNEN);
+  await schriftenLaden('Dépêche du Matin ' + probe.ops.filter(o => o.t).map(o => o.t).join(' '));
+  const { h, ops } = baustein(g, RAND, INNEN);
+  let H = Math.ceil(h + 8);
+  if (o.hoehe36) H = Math.ceil(H / 36) * 36;
+  if (H > MAX_H) return null;
+  cv.width = BREITE; cv.height = H;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
+  g.textBaseline = 'alphabetic';
+  for (const o of ops) {
+    if (o.art === 'rect') { g.fillStyle = '#000'; g.fillRect(Math.round(o.x), Math.round(o.y), Math.round(o.w), o.h); }
+    else if (o.art === 'text') { g.fillStyle = o.farbe || '#000'; g.font = o.f; g.fillText(o.t, o.x, o.y); }
+    else if (o.art === 'icon') piktogramm(g, o.tag, o.nacht, o.x, o.y, o.s);
+  }
+  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
+  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
+    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
+    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
+    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
+  }
+  g.putImageData(img, 0, 0);
+  return { W: BREITE, H, bits, cv };
+}
+
 async function setzen(){
   const jetzt = new Date();
   const s = schlagzeilen();
@@ -794,30 +869,9 @@ async function setzen(){
     maerkteTeil(),
     fuss(jetzt),
   );
-  // Schriften zuerst laden, auch die erweiterten Buchstaben, sonst misst die Leinwand mit einer Ersatzschrift
-  const g = leinwand.getContext('2d', { willReadFrequently: true });
-  const probe = zeitung(g, RAND, INNEN);
-  await schriftenLaden('Dépêche du Matin ' + probe.ops.filter(o => o.t).map(o => o.t).join(' '));
-  const { h, ops } = zeitung(g, RAND, INNEN);
-  const H = Math.ceil(h + 8);
-  if (H > MAX_H) { raster = null; $('mass').textContent = 'Zu lang zum Drucken. Bitte Teile ausschalten.'; return; }
-  leinwand.width = BREITE; leinwand.height = H;
-  g.fillStyle = '#fff'; g.fillRect(0, 0, BREITE, H);
-  g.textBaseline = 'alphabetic';
-  for (const o of ops) {
-    if (o.art === 'rect') { g.fillStyle = '#000'; g.fillRect(Math.round(o.x), Math.round(o.y), Math.round(o.w), o.h); }
-    else if (o.art === 'text') { g.fillStyle = o.farbe || '#000'; g.font = o.f; g.fillText(o.t, o.x, o.y); }
-    else if (o.art === 'icon') piktogramm(g, o.tag, o.nacht, o.x, o.y, o.s);
-  }
-  // Mit derselben festen Schwelle wie der Mac schwarz-weiss machen: Die Vorschau ist der Druck
-  const img = g.getImageData(0, 0, BREITE, H), px = img.data, bpr = BREITE >> 3, bits = new Uint8Array(bpr * H);
-  for (let j = 0, i = 0; j < BREITE * H; j++, i += 4) {
-    const schwarz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2] < SCHWELLE;
-    if (schwarz) bits[(j / BREITE | 0) * bpr + ((j % BREITE) >> 3)] |= 0x80 >> (j & 7);
-    px[i] = px[i + 1] = px[i + 2] = schwarz ? 0 : 255;
-  }
-  g.putImageData(img, 0, 0);
-  raster = { W: BREITE, H, bits };
+  const r = await rastern(zeitung, leinwand);
+  if (!r) { raster = null; $('mass').textContent = 'Zu lang zum Drucken. Bitte Teile ausschalten.'; return; }
+  raster = r; const H = r.H;
   leinwand.hidden = false; $('leer').hidden = true;
   $('mass').textContent = `Bon etwa ${Math.round(H / 80 + 2)} cm lang`;   // + etwa 2 cm Rand oben wegen dem Messer
   $('drucken').disabled = false;
@@ -831,9 +885,14 @@ async function bonHtml(raster){
   return `<img src="${await pngDataUrl(raster)}" style="display:block;width:72mm;height:${mm}mm;image-rendering:pixelated">`;
 }
 
+// Punktgenau nach der Regel aus NEUE-APP.md: Höhe ein Vielfaches von 36 Punkten, Breite 272 CSS-Pixel
+async function bonHtml36(raster){
+  return `<img src="${await pngDataUrl(raster)}" style="display:block;width:272px;height:${raster.H * 17 / 36}px;image-rendering:pixelated">`;
+}
+
 // Kleines 1-Bit-Graustufen-PNG (Weiss = 1), deutlich kleiner als ein Canvas-PNG
-async function pngDataUrl({ W, H, bits }){
-  if (!('CompressionStream' in window)) return leinwand.toDataURL('image/png');
+async function pngDataUrl({ W, H, bits, cv }){
+  if (!('CompressionStream' in window)) return (cv || leinwand).toDataURL('image/png');
   const bpr = W >> 3, raw = new Uint8Array((bpr + 1) * H);
   for (let y = 0; y < H; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
   const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
@@ -999,12 +1058,160 @@ async function planLaden(){
   }
 }
 
+// ---------------------------------------------------------------- Lesen: Schlagzeilen im Menü, ganze Artikel auf Bon
+// bon/depeche/lesen.json legt .github/workflows/bon-lesen.yml jede Stunde ab (25 Schlagzeilen mit Artikeltext).
+let lesen = null;                 // { stand, items }
+const gewaehlt = new Set();       // Nummern
+const lesenBons = new Map();      // nr -> { raster, papier }
+const lesenMsg = (t, k = '') => { $('lesenMsg').textContent = t; $('lesenMsg').className = 'msg ' + k; };
+const ohneBild = t => String(t || '').replace(/[\p{Extended_Pictographic}‍️]/gu, '').replace(/\s+/g, ' ').trim();
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const wann = d => isoTag(new Date(d)) === isoTag(new Date()) ? uhr(d) : new Date(d).toLocaleDateString('de-CH', { timeZone: TZ, day: 'numeric', month: 'short' });
+const host = u => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return ''; } };
+const zeichenVon = it => it.text.zeichen || (it.anriss || '').length;
+const cmGeschaetzt = it => Math.max(8, Math.round(zeichenVon(it) / 165 + 9));   // grob: Kopf etwa 9 cm, dann 165 Zeichen pro cm
+
+function menuZeigen(){
+  if (!lesen) return;
+  let rub = '', html = '';
+  for (const it of lesen.items) {
+    if (it.rubrik !== rub) { rub = it.rubrik; html += `<h3>${esc(rub)}</h3>`; }
+    const info = [it.quelle, wann(it.datum), it.text.voll ? `≈ ${cmGeschaetzt(it)} cm` : 'nur Anfang'].join(' · ');
+    html += `<button type="button" class="eintrag" data-nr="${it.nr}" aria-pressed="${gewaehlt.has(it.nr)}"><span class="nr">${it.nr}</span>`
+      + `<span class="t">${it.kicker ? `<b>${esc(ohneBild(it.kicker))}:</b> ` : ''}${esc(ohneBild(it.titel))}</span><span class="q">${esc(info)}</span></button>`;
+  }
+  $('menu').innerHTML = html;
+}
+
+function lesenKnopf(){
+  const n = gewaehlt.size;
+  $('lesenDrucken').disabled = !n;
+  $('lesenDrucken').textContent = n ? `${n} Artikel drucken` : 'Antippen, was du lesen willst';
+}
+
+// Ein Artikel als eigener Bon
+function artikelBon(it){
+  const t = it.text, voll = t.voll && t.absaetze.length;
+  const datum = new Date(it.datum).toLocaleDateString('de-CH', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'long' }).replace('.,', ',') + ', ' + uhr(it.datum) + ' Uhr';
+  const brot = (s, o = {}) => absatz([T(ohneBild(s), F.serif(19, 500, o.kursiv))], { lh: 25, align: o.align || 'justify' });
+  const text = (voll ? t.absaetze : [{ a: 'p', t: it.anriss }, ...t.absaetze]).filter(p => ohneBild(p.t)).map((p, i) => {
+    if (p.a === 'h') return stapel(leer(i ? 10 : 0), absatz([T(ohneBild(p.t), F.serif(21, 700))], { lh: 26 }), leer(4));
+    if (p.a === 'li') return stapel(haengend([T('–', F.serif(19, 700))], [T(ohneBild(p.t), F.serif(19, 500))], 22, { lh: 25 }), leer(4));
+    if (p.a === 'z') return stapel(leer(4), linie(1, 0, 6), absatz([T(ohneBild(p.t), F.serif(20, 500, true))], { lh: 26, align: 'center' }), linie(1, 6, 10));
+    return stapel(brot(p.t), leer(9));
+  });
+  const ende = voll && !t.gekuerzt ? null
+    : absatz([T(voll ? 'Gekürzt. Den Rest gibt es online.' : 'Der Rest steht hinter der Bezahlschranke.', F.serif(17, 500, true))], { lh: 22 });
+  return stapel(
+    leer(2),
+    zweiseitig([T(sperren('Dépêche · Lesen'), F.sans(13, 700))], [T(`Nr. ${it.nr}`, F.sans(13, 700))], 17),
+    linie(3, 4, 0), linie(1, 3, 12),
+    absatz([T(sperren(it.rubrik), F.sans(13, 700))], { lh: 17 }),
+    leer(6),
+    it.kicker && absatz([T(ohneBild(it.kicker), F.sans(16, 700))], { lh: 20 }),
+    absatz([T(ohneBild(it.titel), F.serif(32, 700))], { lh: 37 }),
+    leer(8),
+    absatz([T(it.quelle, F.sans(14, 700)), t.autor && T(' · ' + ohneBild(t.autor), F.sans(14, 500))], { lh: 18 }),
+    absatz([T(datum, F.sans(14, 500))], { lh: 18 }),
+    linie(1, 8, 14),
+    text,
+    ende,
+    leer(10), linie(1), leer(8),
+    absatz([T(host(t.url || it.url), F.sans(13, 700))], { lh: 17, align: 'center' }),
+    absatz([T(`Dépêche du Matin · gesetzt ${uhr(new Date())} Uhr`, F.sans(12, 500))], { lh: 16, align: 'center' }),
+  );
+}
+
+let lesenLaeuft = Promise.resolve();
+const lesenVorschau = () => (lesenLaeuft = lesenLaeuft.then(lesenSetzen, lesenSetzen));
+async function lesenSetzen(){
+  if (!lesen) return;
+  const box = $('lesenBons');
+  for (const [nr, b] of lesenBons) if (!gewaehlt.has(nr)) { b.papier.remove(); lesenBons.delete(nr); }
+  for (const it of lesen.items) {
+    if (!gewaehlt.has(it.nr) || lesenBons.has(it.nr)) continue;
+    const papier = document.createElement('div'); papier.className = 'papier';
+    const cv = document.createElement('canvas'); papier.append(cv);
+    const raster = await rastern(artikelBon(it), cv, { hoehe36: true });
+    if (!gewaehlt.has(it.nr)) continue;   // inzwischen wieder abgewählt
+    if (!raster) { papier.innerHTML = `<p class="leer">Nr. ${it.nr} ist zu lang zum Drucken.</p>`; }
+    lesenBons.set(it.nr, { raster, papier, titel: it.titel });
+  }
+  // in der Reihenfolge des Menüs zeigen
+  const ordnung = [...lesenBons.keys()].sort((a, b) => a - b);
+  box.replaceChildren(...ordnung.map(nr => lesenBons.get(nr).papier));
+  if (!ordnung.length) box.innerHTML = '<div class="papier"><p class="leer">Noch nichts ausgewählt.</p></div>';
+  const cm = ordnung.reduce((n, nr) => n + (lesenBons.get(nr).raster ? Math.round(lesenBons.get(nr).raster.H / 80 + 2) : 0), 0);
+  $('lesenMass').textContent = ordnung.length ? `${ordnung.length} ${ordnung.length === 1 ? 'Bon' : 'Bons'}, zusammen etwa ${cm} cm` : '';
+}
+
+async function lesenLaden(){
+  try {
+    lesen = await holen('lesen.json');
+    if (!lesen?.items?.length) throw new Error('leer');
+    const alter = Math.round((Date.now() - new Date(lesen.stand)) / 6e4);
+    $('lesenStand').textContent = `${lesen.items.length} Schlagzeilen, zusammengestellt ${wann(lesen.stand)}${isoTag(new Date(lesen.stand)) === isoTag(new Date()) ? ' Uhr' : ''}`
+      + (alter > 180 ? ' (schon etwas alt)' : '') + '. Antippen zum Auswählen.';
+    $('lesenStand').className = 'hint';
+    for (const nr of [...gewaehlt]) if (!lesen.items.some(x => x.nr === nr)) gewaehlt.delete(nr);
+    menuZeigen(); lesenKnopf();
+  } catch (e) {
+    $('lesenStand').textContent = 'Die Schlagzeilen sind gerade nicht erreichbar. Bitte später nochmals versuchen.';
+    $('lesenStand').className = 'hint err';
+  }
+}
+
+$('menu').addEventListener('click', e => {
+  const b = e.target.closest('.eintrag'); if (!b) return;
+  const nr = +b.dataset.nr;
+  gewaehlt.has(nr) ? gewaehlt.delete(nr) : gewaehlt.add(nr);
+  b.setAttribute('aria-pressed', String(gewaehlt.has(nr)));
+  lesenKnopf(); lesenMsg(''); lesenVorschau();
+});
+
+// Jeder Artikel ist eine eigene Einreichung, nacheinander: so schneidet das Messer jeden einzeln ab
+$('lesenDrucken').addEventListener('click', async () => {
+  $('lesenDrucken').disabled = true;
+  await lesenVorschau();
+  const liste = [...gewaehlt].sort((a, b) => a - b).filter(nr => lesenBons.get(nr)?.raster);
+  const n = liste.length, titel = liste.map((nr, i) => `Lesen ${i + 1}/${n}: ${kurz(lesenBons.get(nr).titel, 40)}`);
+  window.bonProtokoll?.warten(titel);
+  let ok = 0;
+  try {
+    for (const [i, nr] of liste.entries()) {
+      lesenMsg(n > 1 ? `Sende ${i + 1} von ${n} …` : 'Sende …');
+      const d = await bonpost({ inhalt: await bonHtml36(lesenBons.get(nr).raster), titel: titel[i], quelle: 'website-depeche-lesen' });
+      if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+      ok++; gewaehlt.delete(nr);
+    }
+    lesenMsg(n > 1 ? `Alle ${n} gesendet. Die Bons kommen in ein paar Minuten.` : 'Gesendet. Der Bon kommt innert einer Minute.', 'ok');
+  } catch (e) {
+    lesenMsg(`${ok} von ${n} gesendet. Fehler: ${e.message}. Nochmals drücken für den Rest.`, 'err');
+  } finally {
+    menuZeigen(); lesenKnopf(); lesenVorschau();
+  }
+});
+
+// Umschalter: #lesen in der Adresse öffnet gleich das Menü (gut als Lesezeichen)
+function modus(m){
+  const l = m === 'lesen';
+  document.querySelectorAll('[data-zeitung]').forEach(e => e.hidden = l);
+  $('lesen').hidden = !l;
+  $('tabZeitung').setAttribute('aria-selected', String(!l));
+  $('tabLesen').setAttribute('aria-selected', String(l));
+  if (l && !lesen) lesenLaden();
+  history.replaceState(null, '', l ? '#lesen' : location.pathname + location.search);
+}
+$('tabZeitung').addEventListener('click', () => modus('zeitung'));
+$('tabLesen').addEventListener('click', () => modus('lesen'));
+
 quellenZeigen();
 if (AUTO) {
   // GitHub wartet auf data-fertig: «ok» oder die Fehlermeldung
   allesNeu().then(() => drucken('auto-depeche'))
     .then(() => { document.body.dataset.fertig = 'ok'; }, e => { document.body.dataset.fertig = 'Fehler: ' + e.message; });
 } else {
+  if (location.hash === '#lesen') modus('lesen');
   allesNeu();
   planLaden();
 }

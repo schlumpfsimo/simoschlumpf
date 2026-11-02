@@ -141,6 +141,10 @@ Startprompt für einen neuen Chat:
   (Artikel des Tages, «Was geschah am», «Schon gewusst?», Bild des Tages).
 - Kurse der EZB: `api.frankfurter.dev/v1/latest?base=CHF`.
 - Schlagzeilen: `/feed/data/news.json` liegt auf derselben Website und wird stündlich aufgefrischt.
+- Ganze Artikel: Der Browser kann Zeitungsseiten nicht abrufen (CORS). `.github/workflows/bon-lesen.yml` holt jede
+  Stunde zu 25 Schlagzeilen den Text (Readability + jsdom) und legt ihn als `bon/depeche/lesen.json` ab (Menü «Lesen»
+  der Dépêche). Es fragt ehrlich als «BonDepeche» an. Wer das sperrt (Le Monde, Guardian, RFI, Tagesschau, bz …),
+  wird übersprungen. Bot-Sperren nicht umgehen. Google-News-Links löst das Skript zur echten Adresse auf.
 - Ölpreis (Brent, WTI): keine freie Quelle mit CORS. `.github/workflows/bon-maerkte.yml` holt die Kurse
   alle drei Stunden bei Yahoo Finance und legt sie als `bon/depeche/maerkte.json` ab.
 
