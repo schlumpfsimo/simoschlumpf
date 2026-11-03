@@ -3,7 +3,8 @@ import pickle, struct, sys, numpy as np
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
 B = pickle.load(open(sys.argv[1], 'rb'))
-ZS = 0.99635          # the north-south scale of the /nostalgia map
+import os
+ZS = float(os.environ.get('SB_ZS', '0.99635'))          # the north-south scale of the /nostalgia map (1 for plain LV95)
 KIND = {'Hochhaus': 1, 'Sakrales Gebaeude': 2, 'Sakraler Turm': 3, 'Turm': 3, 'Kapelle': 2, 'Im Bau': 5}
 out = bytearray(b'BSB1') + struct.pack('<I', 0)
 n = 0; tot_t = tot_e = tot_v = 0
