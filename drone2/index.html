@@ -2008,23 +2008,33 @@ function terrainPatch(cx, cz, size, step0, hf, mat, box, sf){
   return new THREE.Mesh(g, mat);
 }
 const SLOPE = [0, 0];
+// an aerial photo; on failure null (the caller falls back to a coarser one), so one image the device cannot decode never stops the landscape
 function orthoTex(url){
-  return new Promise((res, rej) => new THREE.TextureLoader().load(url, t => { t.anisotropy = 8; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; res(t); }, undefined, rej));
+  return new Promise(res => new THREE.TextureLoader().load(url, t => { t.anisotropy = 8; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; res(t); }, undefined, e => { console.warn('ortho', url, e); res(null); }));
 }
+// phones and tablets get smaller photos: decoding and holding the big ones can run them out of memory
+const SMALL_GPU = (navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 1100) || (navigator.deviceMemory && navigator.deviceMemory <= 4) || QS.has('lite');
 async function buildValley(){
   const T0 = performance.now(), tick = l => { if (location.hash === '#dbg') console.log('T:', l, Math.round(performance.now() - T0)); };
   const w = newWorld('valley');
   w.txt = VALLEY_TXT; w.hasWar = false;
   const get = async (u, kind) => { const r = await fetch(u); if (!r.ok) throw new Error(u + ' ' + r.status); return kind === 'json' ? r.json() : r.arrayBuffer(); };
-  const [demBuf, sbBuf, trBuf, TLM, OC, OV, OF] = await Promise.all([
+  const sm = SMALL_GPU ? '-sm' : '';
+  let [demBuf, sbBuf, trBuf, TLM, OC, OV, OF] = await Promise.all([
     get('baerschwil-dem.bin'), get('baerschwil-buildings.bin'), get('baerschwil-trees.bin'), get('baerschwil-tlm.json', 'json'),
-    orthoTex('baerschwil-ortho.jpg'), orthoTex('baerschwil-ortho-village.jpg'), orthoTex('baerschwil-ortho-far.jpg')]);
+    orthoTex('baerschwil-ortho' + sm + '.jpg'), orthoTex('baerschwil-ortho-village' + sm + '.jpg'), orthoTex('baerschwil-ortho-far.jpg')]);
+  if (!OC && !sm) OC = await orthoTex('baerschwil-ortho-sm.jpg');
+  if (!OV && !sm) OV = await orthoTex('baerschwil-ortho-village-sm.jpg');
   const stage = async (l, pct) => { tick(l); loadInfo = pct + ' %'; await new Promise(r => setTimeout(r, 0)); };
   await stage('fetch', 30);
   const [GF, GC, GV] = parseBWD(demBuf); for (const G of [GF, GC, GV]) addSlopes(G);
   await stage('dem', 35);
   // ortho boxes [x0, z0, sx, sz]: SWISSIMAGE (swisstopo) at 0.67 m, 2 m and 9.5 m per pixel
-  const BOX_C = [-4000, -4500, 8000, 7000], BOX_V = [-1000, -1000, 2000, 2000], BOX_F = [-9750, -9750, 19500, 19500];
+  let BOX_C = [-4000, -4500, 8000, 7000], BOX_V = [-1000, -1000, 2000, 2000], BOX_F = [-9750, -9750, 19500, 19500];
+  // whatever photo failed, the next coarser one takes its place
+  if (!OF){ OF = OC || OV; BOX_F = OC ? BOX_C : BOX_V; }
+  if (!OC){ OC = OF; BOX_C = BOX_F; }
+  if (!OV){ OV = OC; BOX_V = BOX_C; }
   const inCore = (x, z, m = 0) => x > -4000 + m && x < 4000 - m && z > -4500 + m && z < 2500 - m;
   const groundH = (x, z) => {
     if (inGrid(GV, x, z)) return gridH(GV, x, z);
@@ -2036,7 +2046,8 @@ async function buildValley(){
   const slopeAt = (x, z) => { const G = inGrid(GV, x, z) ? GV : inGrid(GC, x, z) ? GC : GF; SLOPE[0] = gridA(G, G.gx, x, z); SLOPE[1] = gridA(G, G.gz, x, z); };
   // ---- terrain: 500 m chunks, each an LOD (village 4 / 8 / 32 m, core 8 / 32 m), then the far land at 50 m and a horizon ring.
   // Only the coarse level is built at load (and the fine ones near the start); the rest are built in flight, nearest first.
-  const matC = terrainMat(OC, null, null, true), matV = terrainMat(OV, null, null, true), matF = terrainMat(OF, null, null, true);
+  const tmat = t => t ? terrainMat(t, null, null, true) : new THREE.MeshLambertMaterial({ color: new THREE.Color(0.32, 0.42, 0.24) });
+  const matC = tmat(OC), matV = tmat(OV), matF = tmat(OF);
   const lods = [];
   const fillLod = L => {
     const { cx, cz, vil } = L, lv = vil ? [[4, 0, matV, BOX_V], [8, 520, matV, BOX_V]] : [[8, 0, matC, BOX_C]];
@@ -2099,7 +2110,7 @@ async function buildValley(){
   const O = w.obstPeace, SB = parseSB(sbBuf), CH = new Chunks();
   const PLASTER = ['#f4ede0', '#efe4cf', '#e8dcc6', '#f2efe8', '#e6dccd', '#efe6d6', '#ddd6ca', '#f1e3cc'].map(hex);
   const ROOF = ['#7a4a3a', '#6b4636', '#5d4a42', '#81503d', '#4f4a47'].map(hex);
-  w.ortho = { tex: OC, box: BOX_C };
+  if (OC) w.ortho = { tex: OC, box: BOX_C };
   const KI = VALLEY_TXT.pois.kirche, kx = KI.e - 2602250, kz = 1248100 - KI.n;
   let seedN = 0;
   for (const S of SB){
@@ -2530,7 +2541,7 @@ async function startWorld(i, mode = 'explore'){
     loadInfo = '';
   } catch (err){
     console.error(err);
-    state = 'menu'; openMain(); msg = say(S.loadFail); msgT = 5; return;
+    state = 'menu'; openMain(); msg = say(S.loadFail) + ' (' + String(err && err.message || err).slice(0, 60) + ')'; msgT = 15; return;
   }
   world.def = def;
   post.uniforms.uGrade.value = world.grade ?? 1;
