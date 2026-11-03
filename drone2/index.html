@@ -295,8 +295,8 @@ function buildingMat(){
   const m = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   m.onBeforeCompile = sh => {
     sh.uniforms.uTime = U_TIME; sh.uniforms.uFacade = { value: FACADE_TEX }; Object.assign(sh.uniforms, BLD_U);
-    sh.vertexShader = 'attribute vec2 aE;\nattribute float aB;\nattribute vec2 aI;\nuniform sampler2D uState;\nuniform float uWarOn;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vSt;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
-      vE = aE; vB = aB; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`).replace('#include <project_vertex>', `#include <project_vertex>
+    sh.vertexShader = 'attribute vec2 aE;\nattribute float aB;\nattribute vec2 aI;\nattribute vec3 aU;\nuniform sampler2D uState;\nuniform float uWarOn;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vSt;\nvarying vec3 vWP;\nvarying vec3 vWN;\nvarying vec3 vU;\nvarying float vId;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
+      vE = aE; vB = aB; vU = aU; vId = aI.x; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`).replace('#include <project_vertex>', `#include <project_vertex>
       vSt = vec3(0.0);
       if (aI.x > -0.5){
         vec3 stt = uWarOn > 0.5 ? texelFetch(uState, ivec2(int(mod(aI.x, 128.0)), int(floor(aI.x / 128.0))), 0).rgb : vec3(0.0);
@@ -304,7 +304,7 @@ function buildingMat(){
         vSt = vec3(st, stt.g, stt.b);
         if ((aI.y < 0.5 && st > 1.5) || (aI.y > 1.5 && st < 1.5)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       }`);
-    sh.fragmentShader = 'uniform float uTime;\nuniform sampler2D uFacade;\nuniform sampler2D uOrtho;\nuniform vec4 uOrthoBox;\nuniform float uOrthoOn;\nvarying vec3 vSt;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + GLSL_NOISE + sh.fragmentShader
+    sh.fragmentShader = 'uniform float uTime;\nuniform sampler2D uFacade;\nuniform sampler2D uOrtho;\nuniform vec4 uOrthoBox;\nuniform float uOrthoOn;\nvarying vec3 vSt;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\nvarying vec3 vU;\nvarying float vId;\n' + GLSL_NOISE + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
         float win = 0.0, cellId = 0.0, burnF = max(vE.y, vSt.y), soot = max(smoothstep(0.005, 0.35, vE.y), vSt.z);
         diffuseColor.rgb *= 0.93 + 0.14 * n1(vWP.xz * 0.35 + vWP.y * 0.21);
@@ -347,6 +347,96 @@ function buildingMat(){
             win = max(max(nave, door), slit);
             cellId = floor(u / 4.6) * 7.13 + floor(hy / 4.0) * 13.7;
             diffuseColor.rgb = mix(vec3(0.95, 0.95, 0.93) * (0.97 + 0.05 * n1(vWP.xz * 0.5 + vWP.y * 0.3)), vec3(0.07, 0.065, 0.06), win);
+          } else if (sk < 16.5){
+            // facades drawn from rules, laid out along each surveyed wall (corner to corner), different for every building:
+            // 12 house (variant + shopfronts, − Gründerzeit), 13 historic stone building, 14 modern, 15 industrial hall, 16 farmhouse with barn
+            float va = vE.x - sk;
+            bool loc = vU.y > 0.01;
+            float lu = loc ? vU.x : u, L = loc ? vU.y : 1e4, eave = loc ? vU.z : 1e4;
+            float hy = max(vWP.y - vB, 0.0);
+            bool gab = hy > eave - 0.25;                       // in the gable, above the eaves
+            bool rural = vId < -0.5;                           // the village (no war state): wider bays, smaller windows, more shutters
+            float sd = vId > -0.5 ? vId : floor(vB * 3.7 + 0.5);
+            float r1 = h1(vec2(sd, 1.3)), r2 = h1(vec2(sd, 2.7)), r3 = h1(vec2(sd, 4.1)), r4 = h1(vec2(sd, 6.9)), r5 = h1(vec2(sd, 8.3));
+            vec3 base = diffuseColor.rgb, wallC = base, glassC = vec3(0.07, 0.075, 0.08);
+            bool barnPart = sk > 15.5 && (va < 0.1 || lu > L * 0.45);
+            float isDoor = 0.0;
+            if (sk > 14.5 && sk < 15.5){
+              // industrial: ribbed sheet or concrete, a high row of windows, a roller door
+              float rib = 0.82 + 0.18 * smoothstep(0.3, 0.5, abs(fract(lu / 0.22) - 0.5));
+              wallC = base * (r1 < 0.5 ? rib : 0.93 + 0.07 * n1(vec2(lu * 0.4, hy * 0.4)));
+              float bw = L / max(1.0, floor(L / 4.0)), bx = (fract(lu / bw) - 0.5) * bw;
+              win = step(abs(bx), bw * 0.42) * step(4.2, hy) * step(hy, min(5.4, eave - 0.4));
+              isDoor = step(abs(lu - L * 0.5), 2.0) * step(hy, 4.0) * step(9.0, L) * step(h1(vec2(sd, floor(L * 10.0))), 0.5);
+              cellId = floor(lu / bw) * 7.13 + sd;
+            } else if (barnPart){
+              // the barn: vertical boards gone grey-brown, a big door, a few small openings
+              float bd = fract(lu / 0.19);
+              wallC = vec3(0.4, 0.32, 0.24) * (0.8 + 0.2 * h1(vec2(floor(lu / 0.19), sd))) * (0.85 + 0.15 * smoothstep(0.0, 0.12, bd)) * (0.9 + 0.1 * n1(vec2(lu * 0.2, hy * 0.6)));
+              wallC = hy < 0.9 ? base * 0.75 : wallC;   // stone footing
+              isDoor = step(abs(lu - L * (va > 0.1 ? 0.72 : 0.5)), 1.8) * step(hy, 3.8) * step(7.0, L);
+              float bw = 3.2, bx = (fract(lu / bw) - 0.5) * bw;
+              win = step(abs(bx), 0.3) * step(2.4, hy) * step(hy, 2.9) * step(0.6, h1(vec2(floor(lu / bw), sd)));
+              cellId = floor(lu / bw) * 7.13 + sd;
+            } else if (sk > 12.5 && sk < 13.5){
+              // historic stone building (stations, schools): ashlar, rusticated base, tall windows with round arches above
+              float fh = 4.4 + 0.6 * r1, g0 = fh * 1.1, fl = hy < g0 ? 0.0 : 1.0 + floor((hy - g0) / fh), fhh = hy < g0 ? g0 : fh, wy = hy < g0 ? hy : mod(hy - g0, fh);
+              float course = floor(hy / 0.55), joint = fract(lu / 1.15 + 0.5 * mod(course, 2.0));
+              float line = 1.0 - (1.0 - smoothstep(0.0, 0.05, fract(hy / 0.55))) * 0.25 - (1.0 - smoothstep(0.0, 0.03, joint)) * 0.15;
+              wallC = base * line * (fl < 0.5 ? 0.88 : 1.0) * (0.94 + 0.06 * h1(vec2(floor(lu / 1.15), course)));
+              float nb = max(1.0, floor(L / (3.4 + 0.6 * r2) + 0.3)), bw = L / nb, bx = (fract(lu / bw) - 0.5) * bw;
+              float ww = min(bw * 0.42, 1.7), top = fhh * 0.82, bot = fl < 0.5 ? 0.9 : 1.0;
+              float arch = top - ww * 0.5 + sqrt(max(0.0, ww * ww * 0.25 - bx * bx));
+              win = step(abs(bx), ww * 0.5) * step(bot, wy) * step(wy, arch) * step(hy + 0.5, eave);
+              cellId = floor(lu / bw) * 7.13 + fl * 13.7 + sd;
+              glassC = vec3(0.06, 0.065, 0.07) + 0.1 * h1(vec2(cellId, 9.1));
+              glassC = mix(glassC, vec3(0.75, 0.73, 0.68), (1.0 - step(0.05, abs(bx))) + (1.0 - step(0.05, abs(wy - top * 0.62))));
+            } else {
+              // a house: storeys and window bays from the building's own numbers; shutters, stone surrounds, a footing, a door, perhaps a shop
+              bool modern = sk > 13.5, grand = va < -0.1, shop = va > 0.1;
+              float fh = modern ? 2.85 + 0.25 * r1 : grand ? 3.4 + 0.45 * r1 : 2.75 + 0.45 * r1;
+              float g0 = grand || shop ? fh * 1.25 : fh;
+              float fl = hy < g0 ? 0.0 : 1.0 + floor((hy - g0) / fh), fhh = hy < g0 ? g0 : fh, wy = hy < g0 ? hy : mod(hy - g0, fh);
+              float bay = (modern ? 3.0 + 1.6 * r2 : grand ? 2.7 + 0.6 * r2 : 2.8 + 1.4 * r2) + (rural ? 0.9 : 0.0);
+              float nb = max(1.0, floor(L / bay + 0.3)), bw = L / nb, bx = (fract(lu / bw) - 0.5) * bw, bi = floor(lu / bw);
+              float ww = modern ? min(bw * (0.5 + 0.25 * r3), 2.8) : min(bw * (0.34 + 0.1 * r3), rural ? 1.15 : 1.3);
+              float wh = (modern ? 0.5 : grand ? 0.58 : 0.46) * fhh, sill = modern ? 0.85 : grand ? 0.75 : 0.8;
+              bool sm = L < 2.4;
+              win = sm ? 0.0 : step(abs(bx), ww * 0.5) * step(sill, wy) * step(wy, sill + wh) * step(hy + 0.3, eave);
+              // the gable: one small attic window in the middle, nothing else
+              if (gab){ bx = lu - L * 0.5; wy = hy - eave; sill = 0.8; wh = 1.0; ww = 0.8; win = step(abs(bx), 0.4) * step(0.8, wy) * step(wy, 1.8) * step(4.0, L); }
+              if (shop && fl < 0.5) win = step(abs(bx), bw * 0.42) * step(0.35, wy) * step(wy, g0 - 0.55);
+              // one wall in a few has the front door in its middle bay
+              isDoor = (fl < 0.5 && !(shop) && !gab && L > 5.0 && abs(bi - floor(nb * 0.5)) < 0.5 && h1(vec2(sd, floor(L * 10.0))) < 0.45) ? step(abs(bx), 0.55) * step(wy, 2.15) : 0.0;
+              if (isDoor > 0.5) win = 0.0;
+              cellId = bi * 7.13 + fl * 13.7 + sd;
+              // plaster, weathered; a darker footing; a cornice under the eaves of the grand ones
+              wallC = base * (0.93 + 0.07 * n1(vec2(lu * 0.35, hy * 0.2))) * (1.0 - 0.06 * smoothstep(1.5, 0.0, hy));
+              if (hy < (grand ? 1.1 : 0.6)) wallC = mix(base, vec3(0.55, 0.53, 0.5), 0.6) * 0.8;
+              if (grand && fl > 0.5 && wy < 0.2) wallC *= 0.86;
+              if (modern && wy < 0.22) wallC *= 0.9;
+              float wx = abs(bx) - ww * 0.5, wyc = min(wy - sill, sill + wh - wy);
+              if (!modern && !sm && !(shop && fl < 0.5)){
+                // stone surrounds (grey or red sandstone), or plain painted ones
+                float frame = 0.13;
+                bool inF = wx < frame && wx > 0.0 && wy > sill - frame && wy < sill + wh + frame || abs(bx) < ww * 0.5 + frame && (wyc < 0.0 && wyc > -frame);
+                vec3 stone = r2 > 0.72 ? vec3(0.56, 0.36, 0.3) : vec3(0.66, 0.63, 0.57);
+                if (inF && (grand || r3 > 0.45)) wallC = stone * (0.9 + 0.1 * n1(vec2(lu, hy) * 3.0));
+                else if (inF) wallC = mix(base, vec3(0.95), 0.4);
+                // shutters folded back beside the window
+                if (r4 < (grand ? 0.15 : rural ? 0.75 : 0.6) && !gab && wx > frame && wx < ww * 0.5 + frame && wy > sill && wy < sill + wh){
+                  vec3 sc = r5 < 0.35 ? vec3(0.27, 0.36, 0.27) : r5 < 0.6 ? vec3(0.36, 0.25, 0.17) : r5 < 0.85 ? vec3(0.5, 0.5, 0.48) : vec3(0.45, 0.2, 0.16);
+                  wallC = sc * (0.82 + 0.18 * step(0.5, fract(wy * 11.0)));
+                }
+              }
+              // glass: dark, some panes catching the sky, the frames and glazing bars of old windows
+              glassC = vec3(0.06, 0.065, 0.075) + 0.13 * h1(vec2(cellId, 9.1)) * vec3(0.8, 0.9, 1.0) + vec3(0.03) * smoothstep(0.3, 1.0, (wy - sill) / max(wh, 0.1));
+              if (!modern && !(shop && fl < 0.5)) glassC = mix(glassC, vec3(0.82, 0.81, 0.78), max(1.0 - step(0.04, abs(bx)), 1.0 - step(0.04, abs(wy - sill - wh * 0.66))));
+            }
+            if (isDoor > 0.5){ wallC = vec3(0.24, 0.17, 0.11) * (0.85 + 0.15 * step(0.5, fract(lu / 0.15))); }
+            glassC = mix(glassC, vec3(0.02, 0.018, 0.016), soot * step(0.3, h1(vec2(cellId, 5.3))));
+            wallC *= 1.0 - soot * 0.35 * n1(vWP.xz * 0.45 + vWP.y * 0.35);
+            diffuseColor.rgb = mix(wallC, glassC, win);
           } else {
             float fy = fract(vWP.y / 4.1);
             win = step(0.38, fy) * (0.75 + 0.25 * step(0.5, fract(u / 1.6)));
@@ -457,15 +547,18 @@ const BLD_MAT = buildingMat();
 
 // ================================================================ geometry builder: merged triangles with colour and building data
 class GB {
-  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.base = 0; this.id = -1; this.var = 0; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); this.B = new Float32Array(size); this.I = new Float32Array(size * 2); }
-  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2], ['B', 1], ['I', 2]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
-  v(x, y, z, c, e){
+  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.base = 0; this.id = -1; this.var = 0; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); this.B = new Float32Array(size); this.I = new Float32Array(size * 2); this.U = new Float32Array(size * 3); }
+  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2], ['B', 1], ['I', 2], ['U', 3]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
+  v(x, y, z, c, e, wu = 0, wl = 0, we = 0){
     if (this.n >= this.size) this.grow();
     const i = this.n++;
     this.P[i * 3] = x; this.P[i * 3 + 1] = y; this.P[i * 3 + 2] = z;
     this.C[i * 3] = c[0]; this.C[i * 3 + 1] = c[1]; this.C[i * 3 + 2] = c[2];
-    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0; this.B[i] = this.base; this.I[i * 2] = this.id; this.I[i * 2 + 1] = this.var;
+    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0; this.B[i] = this.base; this.I[i * 2] = this.id; this.I[i * 2 + 1] = this.var; this.U[i * 3] = wu; this.U[i * 3 + 1] = wl; this.U[i * 3 + 2] = we;
   }
+  // a wall quad that knows where it is along its whole wall (ua … ub of L) and the wall's eave height, so the facade lays out its bays
+  // from corner to corner and keeps storeys out of the gable
+  wq(a, b, c, d, col, e, ua, ub, L, eave){ const V = (p, u) => this.v(p[0], p[1], p[2], col, e, u, L, eave); V(a, ua); V(b, ub); V(c, ub); V(a, ua); V(c, ub); V(d, ua); }
   tri(a, b, c, col, e){ this.v(a[0], a[1], a[2], col, e); this.v(b[0], b[1], b[2], col, e); this.v(c[0], c[1], c[2], col, e); }
   quad(a, b, c, d, col, e){ this.tri(a, b, c, col, e); this.tri(a, c, d, col, e); }
   // oriented box: centre, size, yaw (and optional pitch / roll for debris)
@@ -551,6 +644,7 @@ class GB {
     g.setAttribute('aE', new THREE.BufferAttribute(this.E.slice(0, n * 2), 2));
     g.setAttribute('aB', new THREE.BufferAttribute(this.B.slice(0, n), 1));
     g.setAttribute('aI', new THREE.BufferAttribute(this.I.slice(0, n * 2), 2));
+    g.setAttribute('aU', new THREE.BufferAttribute(this.U.slice(0, n * 3), 3));
     g.computeVertexNormals();
     g.computeBoundingSphere();
     return new THREE.Mesh(g, mat);
@@ -995,7 +1089,7 @@ function act(a){
   if (paused) return;
   if (a === 'vbtn') a = GAME.mode === 'defend' || world.war ? 'det' : 'toggle';
   if (GAME.ended){ if ((a === 'ok' || a === 'arm' || a === 'det') && GAME.endT > 2){ resetDefense(); respawnStart(); } return; }
-  if (a === 'det'){ if (P.alive && P.kind === 'recon'){ if (world.war) markTarget(); } else if ((GAME.mode === 'defend' || world.war) && P.alive && P.armed) detonate(); return; }
+  if (a === 'det'){ if (P.alive && P.kind === 'recon'){ if (combat()) markTarget(); } else if ((GAME.mode === 'defend' || world.war) && P.alive && P.armed) detonate(); return; }
   if (a === 'kind'){ switchDrone(); return; }
   if (card && (a === 'ok' || a === 'arm' && device() !== 'kb')){ closeCard(); return; }
   if (a === 'ok') return;
@@ -1108,7 +1202,7 @@ function showTouch(){
     document.getElementById('tbT').style.display = pos ? '' : 'none';
     document.getElementById('tbM').textContent = say(S.modeName[P.mode]);
   }
-  if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = world && (def || world.war) ? (P.kind === 'recon' ? (lang === 'fr' ? 'MARQUER' : lang === 'en' ? 'MARK' : 'MARKIEREN') : (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN')) : 'V'; document.getElementById('tbK').style.display = world && world.war ? '' : 'none'; } }
+  if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = world && (def || world.war) ? (P.kind === 'recon' ? (lang === 'fr' ? 'MARQUER' : lang === 'en' ? 'MARK' : 'MARKIEREN') : (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN')) : 'V'; document.getElementById('tbK').style.display = combat() ? '' : 'none'; } }
 
 // ================================================================ the drone: camera quadcopter with three flight modes
 // POS: GPS hold and a stabilised camera (easy); ANGL: self-levelling; ACRO: full manual, like a racing drone
@@ -1389,6 +1483,17 @@ function parseSB(buf){
   return out;
 }
 // a building as surveyed: its roof triangles, and walls hung from every roof edge down to the ground
+// how much of a surveyed roof is flat (by area): flat roofs mean modern buildings, pitched ones older houses
+function roofFlat(S){
+  const V = S.V; let fa = 0, ta = 0;
+  for (let t = 0; t < S.I.length; t += 3){
+    const a = S.I[t] * 3, b = S.I[t + 1] * 3, c = S.I[t + 2] * 3;
+    const ux = V[b] - V[a], uy = V[b + 1] - V[a + 1], uz = V[b + 2] - V[a + 2], vx = V[c] - V[a], vy = V[c + 1] - V[a + 1], vz = V[c + 2] - V[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, ar = Math.hypot(nx, ny, nz);
+    ta += ar; if (Math.abs(ny) > 0.97 * ar) fa += ar;
+  }
+  return ta ? fa / ta : 0;
+}
 function realMesh(g, S, lo, wallCol, roofCol, flatCol, e, roofBurn = 0, roofSkin = 20){
   const V = S.V, P = i => [S.ax + V[i * 3], lo + V[i * 3 + 1], S.az + V[i * 3 + 2]];
   for (let t = 0; t < S.I.length; t += 3){
@@ -1399,10 +1504,19 @@ function realMesh(g, S, lo, wallCol, roofCol, flatCol, e, roofBurn = 0, roofSkin
     const rcol = typeof roofCol === 'function' ? roofCol(Math.max(a[1], b[1], c[1]) - lo) : roofCol;
     g.tri(a, b, c, flat && roofSkin === 20 ? flatCol : rcol, [flat && roofSkin === 20 ? 21 : roofSkin, roofBurn]);
   }
+  // the roof edges, grouped into whole walls by their line in plan (a gable's two sloping halves are one wall)
+  const groups = new Map(), segs = [];
   for (let k = 0; k < S.E.length; k += 2){
     const a = P(S.E[k]), b = P(S.E[k + 1]);
-    g.quad([a[0], lo - 1.5, a[2]], [b[0], lo - 1.5, b[2]], b, a, wallCol, e);
+    let ang = Math.atan2(b[2] - a[2], b[0] - a[0]); if (ang < 0) ang += PI; if (ang > PI - 0.01) ang -= PI;
+    const dx = Math.cos(ang), dz = Math.sin(ang), off = -a[0] * dz + a[2] * dx, key = Math.round(ang * 40) + ',' + Math.round(off * 1.5);
+    let gr = groups.get(key); if (!gr){ gr = { p0: 1e9, p1: -1e9, eave: 1e9 }; groups.set(key, gr); }
+    const pa = a[0] * dx + a[2] * dz, pb = b[0] * dx + b[2] * dz;
+    gr.p0 = Math.min(gr.p0, pa, pb); gr.p1 = Math.max(gr.p1, pa, pb); gr.eave = Math.min(gr.eave, a[1] - lo, b[1] - lo);
+    segs.push([a, b, gr, pa, pb]);
   }
+  for (const [a, b, gr, pa, pb] of segs)
+    g.wq([a[0], lo - 1.5, a[2]], [b[0], lo - 1.5, b[2]], b, a, wallCol, e, pa - gr.p0, pb - gr.p0, gr.p1 - gr.p0, gr.eave);
 }
 
 // burnt-out armour, anti-tank hedgehogs, sandbag positions: written into a war geometry
@@ -1516,7 +1630,9 @@ async function buildBasel(){
   const gP = new GB(1 << 20), gW = new GB(1 << 20), gRi = new GB(1 << 16), gRd = new GB(1 << 18);   // gRi/gRd: Bau 2 and its quarter, standing and fallen
   const FAC = ['#d9cbb0', '#cdbb9c', '#e3d8c4', '#c9a990', '#b8b2a6', '#d7c49a', '#c58f78', '#e6e0d2', '#a9a49a', '#d4b9a6'].map(hex);
   const ROOF = ['#7d4b38', '#6e4333', '#865240', '#5f4a40', '#744636'].map(hex);
-  const PLASTER = ['#fbf3e3', '#f7e6c4', '#f2dcc0', '#f4efe6', '#ead8c8', '#f6e9d2', '#e9e4dc', '#f3e1cf', '#eedfc4'].map(hex);
+  // Basel's plaster: cream, ochre, pale salmon, grey-green, white; a few stronger
+  const PLASTER = ['#efe6d2', '#e6d6b4', '#e9d3bd', '#ded9cc', '#e4cfb0', '#d9c2a4', '#cfd1c3', '#f1ece2', '#e3c9b3', '#d8cdb8', '#c9b99a', '#e7dcc3'].map(hex);
+  const MODERN = ['#d6d3cb', '#c8c4ba', '#e0dbd0', '#bdb9b0', '#d4cbbb'].map(hex);
   const SOOT = hex('#1d1b19'), RUB = hex('#7a736a'), CONC = hex('#8d8a84');
   // ---- the Roche towers: Bau 1 (178 m) and Bau 2 (205 m); stepped, white, with ribbon glazing
   const near = (x, z, hmin) => SB.filter(b => b.h > hmin).reduce((a, b) => Math.hypot(b.ax - x, b.az - z) < Math.hypot(a.ax - x, a.az - z) ? b : a);
@@ -1607,8 +1723,16 @@ async function buildBasel(){
     else if (messe){ wf = 7; fc = [1, 1, 1]; }
     else if (roche){ wf = 19; fc = hex('#efefeb'); }
     else if (sacral){ wf = 9; fc = [1, 1, 1]; }
-    else if (tall || t === 6){ wf = 8; fc = mul([1, 1, 1], 0.93 + r() * 0.07); }
-    else { const q = r(); wf = oldTown ? (q < 0.55 ? 2 : q < 0.8 ? 3 : 4) : (q < 0.45 ? 4 : q < 0.75 ? 2 : q < 0.9 ? 8 : 3); fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+    else {
+      // by the building's own shape: pitched roof and large → a historic stone building (stations, schools, the Kaserne);
+      // flat roof → modern (single windows, not ribbons; only the Roche towers have those); a large low flat hall → industrial;
+      // otherwise a house: in the old town plain or with shutters, outside the Gründerzeit blocks, shops on the ground floor in the centre
+      const flatR = roofFlat(S) > 0.6, q = r(), centre = Math.hypot(cx + 250, cz - 30) < 800;
+      if (!flatR && area > 1100 && hh < 40 && !oldTown){ wf = 13; fc = r() < 0.6 ? hex('#cdb898') : hex('#b98a72'); }
+      else if (flatR && area > 2500 && hh < 18){ wf = 15; fc = mul(hex('#a9a7a1'), 0.9 + r() * 0.15); }
+      else if (flatR || tall || t === 6){ wf = 14; fc = MODERN[Math.floor(r() * MODERN.length)]; }
+      else { wf = 12 + (centre && hh > 8 && q < 0.55 ? 0.25 : !oldTown && q > 0.35 ? -0.25 : 0); fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+    }
     const hue = wf >= 1 && wf <= 10 ? hex(STYLE_HUE[wf - 1]).map((v, i) => v * fc[i]) : fc;
     const rc = roofSkin === 22 ? [0.95, 0.95, 0.95] : ROOF[Math.floor(r() * ROOF.length)], flatC = [0.95, 0.95, 0.95];
     const y0 = lo - 1.5, y1 = lo + hh, o = obb(pts);
@@ -2108,7 +2232,7 @@ async function buildValley(){
   // ---- buildings: swissBUILDINGS3D 3.0, roofs as surveyed, walls in plain Jura tones; roofs tinted by the aerial photo
   w.obstPeace = new HGrid(-4000, -4500, 8000, 4);
   const O = w.obstPeace, SB = parseSB(sbBuf), CH = new Chunks();
-  const PLASTER = ['#f4ede0', '#efe4cf', '#e8dcc6', '#f2efe8', '#e6dccd', '#efe6d6', '#ddd6ca', '#f1e3cc'].map(hex);
+  const PLASTER = ['#f4ede0', '#efe4cf', '#e8dcc6', '#f2efe8', '#e6dccd', '#efe6d6', '#ddd6ca', '#f1e3cc', '#e9e0cb', '#f6f3ec'].map(hex);
   const ROOF = ['#7a4a3a', '#6b4636', '#5d4a42', '#81503d', '#4f4a47'].map(hex);
   if (OC) w.ortho = { tex: OC, box: BOX_C };
   const KI = VALLEY_TXT.pois.kirche, kx = KI.e - 2602250, kz = 1248100 - KI.n;
@@ -2124,8 +2248,15 @@ async function buildValley(){
     if (lukas){ wf = 11; fc = [0.97, 0.97, 0.95]; }
     else if (sacral){ wf = 9; fc = [1, 1, 1]; }
     else if (area < 30 && hh < 6){ wf = 10; fc = hex('#9d978c'); }
-    else if (area > 900 && hh < 30){ wf = 8; fc = mul([1, 1, 1], 0.86 + r() * 0.08); }
-    else { const q = r(); wf = q < 0.55 ? 1 : q < 0.9 ? 3 : 2; fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+    else {
+      // Jura village: farmhouses with the barn under the same roof, plain houses with shutters, modern ones with flat roofs, halls
+      const flatR = roofFlat(S) > 0.6, q = r();
+      if (flatR && area > 500){ wf = 15; fc = mul(hex('#a6a49d'), 0.9 + r() * 0.15); }
+      else if (!flatR && area > 650 && hh < 16){ wf = 16; fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+      else if (!flatR && area > 180 && hh < 14 && q < 0.6){ wf = 16.25; fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+      else if (flatR){ wf = 14; fc = mul(hex('#dcd8cf'), 0.92 + r() * 0.08); }
+      else { wf = 12; fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+    }
     const g = CH.at(cx, cz); g.base = lo;
     // the church: brown tiles as in the aerial photo, the tower's helm in weathered copper
     const roofC = lukas ? (dy => dy > 17 ? [0.36, 0.52, 0.45] : [0.5, 0.3, 0.22]) : ROOF[Math.floor(r() * ROOF.length)];
@@ -2680,14 +2811,14 @@ function drawOSD(){
   if (P.vel.length() > 3){ const [x, y, fr] = toScreen(_w.copy(P.vel).normalize().multiplyScalar(100).add(camera.position)); if (fr && x > 0 && x < W && y > 0 && y < H){ g.strokeRect(x - 2, y - 2, 4, 4); g.fillRect(x - 1, y - 1, 2, 2); } }
   drawCompass(g);
   // the task of this drone, under the compass
-  if (world.war){ g.font = 'bold 6px monospace'; txt(g, say(P.kind === 'recon' ? DT.kindRecon : DT.kindFpv) + (P.kind === 'recon' ? (dev === 'kb' ? ' [F]' : dev === 'touch' ? '' : ' [B]') : ''), W / 2, 40, 'center'); g.font = 'bold 9px monospace'; }
+  if (combat()){ g.font = 'bold 6px monospace'; txt(g, say(P.kind === 'recon' ? DT.kindRecon : DT.kindFpv) + (P.kind === 'recon' ? (dev === 'kb' ? ' [F]' : dev === 'touch' ? '' : ' [B]') : ''), W / 2, 40, 'center'); g.font = 'bold 9px monospace'; }
   // the recon drone: a range-finding reticle, and the fire missions with their time to impact
   if (P.kind === 'recon'){
     if ((clock * 10 | 0) % 3 === 0) aimCache = aimPoint();
     g.beginPath(); for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]){ g.moveTo(W / 2 + sx * 16, H / 2 + sy * 10); g.lineTo(W / 2 + sx * 16, H / 2 + sy * 16); g.lineTo(W / 2 + sx * 10, H / 2 + sy * 16); } stroke2(g);
     g.font = 'bold 7px monospace';
     txt(g, 'RNG ' + (aimCache ? Math.round(aimCache.distanceTo(camera.position)) : '---'), W / 2 + 22, H / 2 + 20, 'left');
-    if (world.war) txt(g, ARTY.cool > 0 ? 'ARTY ' + Math.ceil(ARTY.cool) + 's' : 'ARTY RDY', W / 2 - 22, H / 2 + 20, 'right');
+    if (combat()) txt(g, ARTY.cool > 0 ? 'ARTY ' + Math.ceil(ARTY.cool) + 's' : 'ARTY RDY', W / 2 - 22, H / 2 + 20, 'right');
     g.font = 'bold 9px monospace';
   }
   for (const m of ARTY.missions){
@@ -3583,6 +3714,8 @@ function updateLeos(dt){
 }
 // ---------------------------------------------------------------- the recon drone: a camera quad that marks targets for the artillery
 const ARTY = { cool: 0, missions: [] };
+// fighting going on: the war, or a defence round (also in peaceful Bärschwil); the recon drone and the artillery belong to it
+const combat = () => !!world && (world.war || GAME.mode === 'defend');
 // the point on the ground (or the vehicle) under the crosshair, by marching along the camera's line of sight
 function aimPoint(maxD = 1800){
   const d = _w.set(0, 0, -1).applyQuaternion(camera.quaternion), p = camera.position.clone();
@@ -3612,7 +3745,7 @@ function updateArty(dt){
   }
 }
 function switchDrone(){
-  if (!world || !world.war || GAME.ended) return;
+  if (!combat() || GAME.ended) return;
   P.kind = P.kind === 'recon' ? 'fpv' : 'recon';
   respawnStart(); staticAmt = 1;
   msg = say(P.kind === 'recon' ? DT.kindRecon : DT.kindFpv); msgT = 3; beep(1000, 0.08);
@@ -3639,7 +3772,7 @@ let warT = 30, colT = 150;
 function updateWarLife(dt){
   updateOpening(dt);
   updateBlds(dt);
-  if (world.war) updateArty(dt);
+  if (combat()) updateArty(dt);
   if (GAME.mode !== 'defend'){
     if (world.war && world.ambientTarget){
       warT -= dt;
@@ -3844,7 +3977,7 @@ openMain();
 const autoMap = WORLDS.findIndex(w => w.id === QS.get('map'));
 if (QS.has('go') && autoMap >= 0) startWorld(autoMap, ['defend', 'peace'].includes(QS.get('mode')) ? QS.get('mode') : 'explore');
 renderer.setAnimationLoop(frame);
-if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound, BSTATE, damageAt, STATE_TEX, placeDrone, get renderer(){ return renderer; } };
+if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound, BSTATE, damageAt, STATE_TEX, placeDrone, ARTY, get renderer(){ return renderer; } };
 </script>
 </body>
 </html>
