@@ -284,18 +284,28 @@ const FACADE_TEX = (() => {
 // approximate wall colour of each skin (rubble, soot)
 const STYLE_HUE = ['#dedbd4', '#e2ddd3', '#e4dccb', '#ddd2bd', '#b9604f', '#b8392c', '#2f3a3c', '#d0cdc5', '#cdb79a', '#d6d3cc'];
 // the orthophoto for roofs, set per world
-const BLD_U = { uOrtho: { value: null }, uOrthoBox: { value: new THREE.Vector4(0, 0, 1, 1) }, uOrthoOn: { value: 0 } };
+// the state of every building in a small texture: R 0 intact / 1 damaged / 2 ruin, G fire, B soot
+const STATE_TEX = new THREE.DataTexture(new Uint8Array(128 * 128 * 4), 128, 128, THREE.RGBAFormat);
+STATE_TEX.magFilter = STATE_TEX.minFilter = THREE.NearestFilter; STATE_TEX.needsUpdate = true;
+const BLD_U = { uOrtho: { value: null }, uOrthoBox: { value: new THREE.Vector4(0, 0, 1, 1) }, uOrthoOn: { value: 0 }, uState: { value: STATE_TEX }, uWarOn: { value: 0 } };
 
 // buildings: vertex colours; aE.x = skin (0 none, 1-10 facade tile, 19 ribbon glazing, 20 tiled roof, 21 flat roof, 22 glazed roof), aE.y = fire and soot; aB = foot of the building
 function buildingMat(){
   const m = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   m.onBeforeCompile = sh => {
     sh.uniforms.uTime = U_TIME; sh.uniforms.uFacade = { value: FACADE_TEX }; Object.assign(sh.uniforms, BLD_U);
-    sh.vertexShader = 'attribute vec2 aE;\nattribute float aB;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
-      vE = aE; vB = aB; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`);
-    sh.fragmentShader = 'uniform float uTime;\nuniform sampler2D uFacade;\nuniform sampler2D uOrtho;\nuniform vec4 uOrthoBox;\nuniform float uOrthoOn;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + GLSL_NOISE + sh.fragmentShader
+    sh.vertexShader = 'attribute vec2 aE;\nattribute float aB;\nattribute vec2 aI;\nuniform sampler2D uState;\nuniform float uWarOn;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vSt;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
+      vE = aE; vB = aB; vWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);`).replace('#include <project_vertex>', `#include <project_vertex>
+      vSt = vec3(0.0);
+      if (aI.x > -0.5){
+        vec3 stt = uWarOn > 0.5 ? texelFetch(uState, ivec2(int(mod(aI.x, 128.0)), int(floor(aI.x / 128.0))), 0).rgb : vec3(0.0);
+        float st = floor(stt.r * 255.0 + 0.5);
+        vSt = vec3(st, stt.g, stt.b);
+        if ((aI.y < 0.5 && st > 1.5) || (aI.y > 1.5 && st < 1.5)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+      }`);
+    sh.fragmentShader = 'uniform float uTime;\nuniform sampler2D uFacade;\nuniform sampler2D uOrtho;\nuniform vec4 uOrthoBox;\nuniform float uOrthoOn;\nvarying vec3 vSt;\nvarying vec2 vE;\nvarying float vB;\nvarying vec3 vWP;\nvarying vec3 vWN;\n' + GLSL_NOISE + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
-        float win = 0.0, cellId = 0.0, soot = smoothstep(0.005, 0.35, vE.y);
+        float win = 0.0, cellId = 0.0, burnF = max(vE.y, vSt.y), soot = max(smoothstep(0.005, 0.35, vE.y), vSt.z);
         diffuseColor.rgb *= 0.93 + 0.14 * n1(vWP.xz * 0.35 + vWP.y * 0.21);
         float sk = floor(vE.x + 0.5);
         vec3 nU = vWN * (vWN.y < 0.0 ? -1.0 : 1.0);   // the surveyed solids are wound inwards: the roof normal, facing up
@@ -358,21 +368,21 @@ function buildingMat(){
           diffuseColor.rgb *= 0.75 + 0.35 * n1(vWP.xz * 3.1) * n1(vWP.xz * 0.37 + 4.0);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        if (vE.y > 0.0){
+        if (burnF > 0.0){
           // fire behind the windows: it flickers, burns brightest low in the opening, and lights the wall above it
           float r = h1(vec2(cellId, 3.7));
-          float on = step(1.0 - vE.y, r);
+          float on = step(1.0 - burnF, r);
           float fl = 0.5 + 0.5 * n1(vec2(uTime * (2.5 + r * 4.0), r * 31.0)) * (0.75 + 0.25 * sin(uTime * 13.0 + r * 50.0));
           float fyw = fract(max(vWP.y - vB, 0.0) / 3.25);
           vec3 fireC = mix(vec3(1.0, 0.42, 0.08), vec3(1.0, 0.78, 0.38), n1(vWP.xz * 0.9 + vec2(0.0, uTime * 1.7)));
           totalEmissiveRadiance += fireC * on * win * fl * (2.0 - fyw * 1.4);
-          totalEmissiveRadiance += vec3(0.9, 0.3, 0.06) * on * (1.0 - win) * smoothstep(0.7, 1.0, fyw) * fl * 0.35 * vE.y;
+          totalEmissiveRadiance += vec3(0.9, 0.3, 0.06) * on * (1.0 - win) * smoothstep(0.7, 1.0, fyw) * fl * 0.35 * burnF;
           // embers in rubble and charred slabs: glowing cracks that breathe; the rest charcoal
           if (vE.x < 0.5){
             float e = n1(vWP.xz * 2.1 + vWP.y) * n1(vWP.xz * 0.6 + 3.0);
             float br = 0.55 + 0.45 * sin(uTime * 1.1 + vWP.x * 0.7 + vWP.z * 0.5);
-            totalEmissiveRadiance += vec3(1.0, 0.27, 0.04) * smoothstep(0.3, 0.48, e) * min(vE.y * 2.5, 1.0) * br * 1.6;
-            diffuseColor.rgb *= 1.0 - min(vE.y, 0.6) * 0.6;
+            totalEmissiveRadiance += vec3(1.0, 0.27, 0.04) * smoothstep(0.3, 0.48, e) * min(burnF * 2.5, 1.0) * br * 1.6;
+            diffuseColor.rgb *= 1.0 - min(max(burnF, soot * 0.5), 0.6) * 0.6;
           }
         }`);
   };
@@ -434,14 +444,14 @@ const BLD_MAT = buildingMat();
 
 // ================================================================ geometry builder: merged triangles with colour and building data
 class GB {
-  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.base = 0; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); this.B = new Float32Array(size); }
-  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2], ['B', 1]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
+  constructor(size = 1 << 15){ this.n = 0; this.size = size; this.base = 0; this.id = -1; this.var = 0; this.P = new Float32Array(size * 3); this.C = new Float32Array(size * 3); this.E = new Float32Array(size * 2); this.B = new Float32Array(size); this.I = new Float32Array(size * 2); }
+  grow(){ this.size *= 2; for (const [k, s] of [['P', 3], ['C', 3], ['E', 2], ['B', 1], ['I', 2]]){ const a = new Float32Array(this.size * s); a.set(this[k]); this[k] = a; } }
   v(x, y, z, c, e){
     if (this.n >= this.size) this.grow();
     const i = this.n++;
     this.P[i * 3] = x; this.P[i * 3 + 1] = y; this.P[i * 3 + 2] = z;
     this.C[i * 3] = c[0]; this.C[i * 3 + 1] = c[1]; this.C[i * 3 + 2] = c[2];
-    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0; this.B[i] = this.base;
+    this.E[i * 2] = e ? e[0] : 0; this.E[i * 2 + 1] = e ? e[1] : 0; this.B[i] = this.base; this.I[i * 2] = this.id; this.I[i * 2 + 1] = this.var;
   }
   tri(a, b, c, col, e){ this.v(a[0], a[1], a[2], col, e); this.v(b[0], b[1], b[2], col, e); this.v(c[0], c[1], c[2], col, e); }
   quad(a, b, c, d, col, e){ this.tri(a, b, c, col, e); this.tri(a, c, d, col, e); }
@@ -527,6 +537,7 @@ class GB {
     g.setAttribute('color', new THREE.BufferAttribute(this.C.slice(0, n * 3), 3));
     g.setAttribute('aE', new THREE.BufferAttribute(this.E.slice(0, n * 2), 2));
     g.setAttribute('aB', new THREE.BufferAttribute(this.B.slice(0, n), 1));
+    g.setAttribute('aI', new THREE.BufferAttribute(this.I.slice(0, n * 2), 2));
     g.computeVertexNormals();
     g.computeBoundingSphere();
     return new THREE.Mesh(g, mat);
@@ -574,6 +585,13 @@ class HGrid {
     for (let z = Math.floor(z0 / c) * c + c / 2; z < z1; z += c) for (let x = Math.floor(x0 / c) * c + c / 2; x < x1; x += c)
       if (pointInPoly(x, z, pts)) this.put(this.idx(x, z), top);
     const [cx, cz] = centroid(pts); this.put(this.idx(cx, cz), top);
+  }
+  polySet(pts, top){
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (const [x, z] of pts){ x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    const c = this.cell;
+    for (let z = Math.floor(z0 / c) * c + c / 2; z < z1; z += c) for (let x = Math.floor(x0 / c) * c + c / 2; x < x1; x += c){ const k = this.idx(x, z); if (k >= 0 && pointInPoly(x, z, pts)) this.h[k] = top; }
+    const [cx, cz] = centroid(pts), kc = this.idx(cx, cz); if (kc >= 0) this.h[kc] = top;
   }
   circle(x, z, r, top){
     const c = this.cell;
@@ -710,7 +728,7 @@ function updateFireLights(dt){
     const e = l.userData.e;
     if (!e){ l.intensity = 0; continue; }
     l.position.set(e.x, e.y + 4 * (e.s || 1), e.z);
-    l.intensity = (2.2 + Math.sin(U_TIME.value * 13 + e.x) * 0.5 + Math.random() * 0.6) * (e.s || 1) * 18;
+    l.intensity = (2.2 + Math.sin(U_TIME.value * 13 + e.x) * 0.5 + Math.random() * 0.6) * (e.s || 1) * 11;
   }
 }
 
@@ -720,11 +738,11 @@ const BEACON_MAT = new THREE.ShaderMaterial({
   uniforms: { uTime: U_TIME, uCol: { value: new THREE.Color(0.55, 0.85, 1.0) } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: `uniform float uTime; uniform vec3 uCol; varying vec2 vUv;
-    void main(){ float a = (1.0 - vUv.y) * (0.55 + 0.25 * sin(vUv.y * 40.0 - uTime * 3.0)); gl_FragColor = vec4(uCol * a * 0.28, 1.0); }`
+    void main(){ float a = (1.0 - vUv.y) * (0.55 + 0.25 * sin(vUv.y * 40.0 - uTime * 3.0)); gl_FragColor = vec4(uCol * a * 0.12, 1.0); }`
 });
 function makeBeacon(x, y, z){
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 220, 10, 1, true), BEACON_MAT);
-  m.position.set(x, y + 110, z);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 160, 8, 1, true), BEACON_MAT);
+  m.position.set(x, y + 80, z);
   return m;
 }
 
@@ -767,9 +785,11 @@ const post = new THREE.ShaderMaterial({
       float l = dot(col, vec3(0.299, 0.587, 0.114));
       vec3 colour = pow(mix(vec3(l), col, 0.82) * vec3(1.02, 1.0, 0.96), vec3(0.95)) * 1.04;
       // a real analog FPV camera: washed out, blacks lifted, low contrast, half the colour gone, highlights blooming
-      vec3 fpv = mix(vec3(l), col, 0.6) * 0.78 + vec3(0.11, 0.115, 0.12);
-      fpv += smoothstep(0.55, 1.0, l) * 0.18;
-      fpv = pow(fpv, vec3(1.05)) * vec3(0.98, 1.0, 1.03);
+      // graded as in /drone: a warm, nearly monochrome tone curve with only a trace of colour, blacks a little lifted
+      float lg = clamp(pow(l * 1.25, 0.85) * 1.12, 0.0, 1.0);
+      vec3 fpv = mix(vec3(0.12, 0.11, 0.10), vec3(0.88, 0.85, 0.79), lg) * vec3(1.0, 0.965, 0.9);
+      fpv += (col - vec3((col.r + col.g + col.b) / 3.0)) * 0.45;
+      fpv += smoothstep(0.7, 1.0, lg) * 0.08;
       col = mix(colour, fpv, uGrade);
       vec4 o = texture2D(tOSD, vec2(vUv.x + jit, vUv.y));
       col = mix(col, o.rgb, o.a);
@@ -822,165 +842,81 @@ function toScreen(p){
   return [x, y, front];
 }
 
-// ================================================================ sound, built from scratch: everything synthesised, a little city reverb on what is loud
+// ================================================================ audio
 const AU = { ctx: null, ready: false };
 function audioInit(){
   if (AU.ctx){ if (AU.ctx.state === 'suspended' && !paused) AU.ctx.resume(); return; }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   const ctx = new AC(); AU.ctx = ctx;
-  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.connect(ctx.destination);
-  AU.master = gainNode(0.85); AU.master.connect(comp);
-  const sr = ctx.sampleRate, len = sr * 2;
-  const mk = (n, f) => { const b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0); f(d, n); return b; };
-  AU.noise = mk(len, d => { for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; });
-  AU.brown = mk(len, d => { let v = 0; for (let i = 0; i < d.length; i++){ v = (v + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = v * 3.5; } });
-  // fire: sparse pops and crackles over a soft roar
-  AU.crackleBuf = mk(len, d => { let v = 0; for (let i = 0; i < d.length; i++){ v = v * 0.96 + (Math.random() * 2 - 1) * 0.04; d[i] = v * 0.6; if (Math.random() < 0.0009){ const L = 40 + Math.random() * 300, a = 0.4 + Math.random() * 0.6; for (let k = 0; k < L && i + k < d.length; k++) d[i + k] += (Math.random() * 2 - 1) * a * Math.exp(-k / (L * 0.25)); } } });
-  AU.curve = new Float32Array(1024); for (let i = 0; i < 1024; i++){ const x = i / 511.5 - 1; AU.curve[i] = 7 * x / (1 + 6 * Math.abs(x)); }
-  // the city answers: a reverb from a decaying noise with early reflections off the walls
-  const rl = Math.floor(sr * 2.6), ir = ctx.createBuffer(2, rl, sr);
-  for (let ch = 0; ch < 2; ch++){ const d = ir.getChannelData(ch); let lp = 0; for (let i = 0; i < rl; i++){ lp = lp * 0.6 + (Math.random() * 2 - 1) * 0.4; d[i] = lp * Math.pow(1 - i / rl, 3.2) * 0.5; } for (const t of [0.031, 0.047, 0.083, 0.121, 0.17]) d[Math.floor((t + ch * 0.004) * sr)] += 0.5 - t; }
-  AU.rev = ctx.createConvolver(); AU.rev.buffer = ir; AU.revGain = gainNode(0.55); AU.rev.connect(AU.revGain); AU.revGain.connect(AU.master);
-  AU.send = gainNode(1); AU.send.connect(AU.rev);
-  // the drone: four motors, each a saw with an octave above, through a resonant body; and the wash of the props
-  AU.motorLp = ctx.createBiquadFilter(); AU.motorLp.type = 'lowpass'; AU.motorLp.Q.value = 1.5;
-  AU.motorPk = ctx.createBiquadFilter(); AU.motorPk.type = 'peaking'; AU.motorPk.frequency.value = 2400; AU.motorPk.gain.value = 6; AU.motorPk.Q.value = 1.2;
-  AU.motorGain = gainNode(0); AU.motorLp.connect(AU.motorPk); AU.motorPk.connect(AU.motorGain); AU.motorGain.connect(AU.master);
-  AU.motors = [0, 1, 2, 3].map(i => { const a = osc('sawtooth', 200), b = osc('triangle', 400), ga = gainNode(0.2), gb = gainNode(0.08); a.connect(ga); b.connect(gb); ga.connect(AU.motorLp); gb.connect(AU.motorLp); return { a, b, det: 1 + (i - 1.5) * 0.009 }; });
-  AU.wash = loopNoise('bandpass', 3200, 0.7);
-  AU.wind = loopNoise('lowpass', 400, 0.5); AU.windF = AU.wind.filter;
-  AU.hiss = loopNoise('highpass', 2600, 0.6);
-  AU.rumble = loopNoise('lowpass', 90, 0.7, AU.brown);
-  AU.battle = loopNoise('bandpass', 700, 0.5, AU.brown);
-  AU.crackle = loopNoise('highpass', 700, 0.5, AU.crackleBuf);
-  AU.roar = loopNoise('lowpass', 380, 0.6, AU.brown);
-  AU.water = loopNoise('bandpass', 1100, 0.4);
-  AU.city = loopNoise('lowpass', 600, 0.5, AU.brown);
+  const comp = ctx.createDynamicsCompressor(); comp.connect(ctx.destination);
+  AU.master = ctx.createGain(); AU.master.gain.value = 0.9; AU.master.connect(comp);
+  const len = ctx.sampleRate * 2, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  AU.noise = buf;
+  // motors
+  AU.pLp = ctx.createBiquadFilter(); AU.pLp.type = 'lowpass'; AU.pLp.frequency.value = 2500; AU.pLp.Q.value = 2;
+  AU.pGain = gainNode(0); AU.pLp.connect(AU.pGain); AU.pGain.connect(AU.master);
+  AU.pOsc = [1, 1.013, 0.988, 1.022].map(mult => { const o = osc('sawtooth', 100), g = gainNode(0.22); o.connect(g); g.connect(AU.pLp); return { o, mult }; });
+  AU.wind = loopNoise('bandpass', 800, 0.6);
+  AU.hiss = loopNoise('highpass', 1600, 0.7);
+  AU.rumble = loopNoise('lowpass', 110, 0.8);
+  AU.crackle = loopNoise('highpass', 1800, 0.5);
+  AU.water = loopNoise('bandpass', 1300, 0.4);
+  AU.city = loopNoise('lowpass', 500, 0.5);
+  const sl = Math.floor(ctx.sampleRate * 0.3), sb = ctx.createBuffer(1, sl, ctx.sampleRate), sd = sb.getChannelData(0);
+  for (let i = 0; i < sl; i++){ const t = i / ctx.sampleRate; sd[i] = (Math.random() * 2 - 1) * Math.exp(-t * 28) * 0.8 + Math.sin(t * 2 * Math.PI * 95) * Math.exp(-t * 18) * 0.7; }
+  AU.shot = sb;
+  AU.curve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++){ const x = i / 511.5 - 1; AU.curve[i] = 7 * x / (1 + 6 * Math.abs(x)); }
   AU.ready = true;
 }
-function noiseSrc(buf = AU.noise){ const s = AU.ctx.createBufferSource(); s.buffer = buf; s.loop = true; s.start(0, Math.random() * (buf.duration - 0.1)); return s; }
+function noiseSrc(){ const s = AU.ctx.createBufferSource(); s.buffer = AU.noise; s.loop = true; s.start(0, Math.random() * 1.9); return s; }
 function osc(type, f){ const o = AU.ctx.createOscillator(); o.type = type; o.frequency.value = f; o.start(); return o; }
 function gainNode(v){ const g = AU.ctx.createGain(); g.gain.value = v; return g; }
 function setP(param, v, tc = 0.05){ param.setTargetAtTime(v, AU.ctx.currentTime, tc); }
-function loopNoise(type, f, q, buf){ const n = noiseSrc(buf), fl = AU.ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const g = gainNode(0); n.connect(fl); fl.connect(g); g.connect(AU.master); g.filter = fl; return g; }
-// a one-shot: a buffer source through a filter, a gain envelope, some reverb
-function shot(buf, t0, filt, f0, f1, dur, amp, rev = 0.3, rate = 1){
-  const ctx = AU.ctx, n = ctx.createBufferSource(); n.buffer = buf; n.playbackRate.value = rate;
-  const fl = ctx.createBiquadFilter(); fl.type = filt; fl.frequency.setValueAtTime(f0, t0); fl.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
-  const g = ctx.createGain(); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(amp, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0003, t0 + dur);
-  n.connect(fl); fl.connect(g); g.connect(AU.master); if (rev){ const s = gainNode(rev); g.connect(s); s.connect(AU.send); }
-  n.start(t0, Math.random() * 1.5); n.stop(t0 + dur + 0.05);
-}
-function tone(type, t0, f0, f1, dur, amp, rev = 0){
-  const ctx = AU.ctx, o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(Math.max(10, f1), t0 + dur);
-  const g = ctx.createGain(); g.gain.setValueAtTime(amp, t0); g.gain.exponentialRampToValueAtTime(0.0003, t0 + dur);
-  o.connect(g); g.connect(AU.master); if (rev){ const s = gainNode(rev); g.connect(s); s.connect(AU.send); }
-  o.start(t0); o.stop(t0 + dur + 0.05);
-}
-function beep(f, len, v = 0.06){ if (!AU.ready) return; tone('square', AU.ctx.currentTime, f, f, len, v); }
-// an explosion at a distance: a sub thump, the body, a crack when close; the far ones mostly reverb
-function boom(dist, power){
+function loopNoise(type, f, q){ const n = noiseSrc(), fl = AU.ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const g = gainNode(0); n.connect(fl); fl.connect(g); g.connect(AU.master); return g; }
+function beep(f, len, v = 0.08){
   if (!AU.ready) return;
-  const t0 = AU.ctx.currentTime + dist / 343, amp = Math.min(1.3, power * 110 / (dist + 45));
-  if (amp < 0.004) return;
-  const near = 120 / (120 + dist);
-  tone('sine', t0, 70, 26, 1.1, amp * 0.9);
-  shot(AU.brown, t0, 'lowpass', 300 + 4200 * near, 80, 2.6, amp * 1.4, 0.25 + (1 - near) * 0.6);
-  if (dist < 400) shot(AU.noise, t0, 'highpass', 2200, 900, 0.09, amp * 0.8 * near, 0.4);
-  if (dist < 250) shot(AU.noise, t0 + 0.25, 'bandpass', 1800, 600, 1.2, amp * 0.12, 0.2, 0.6);   // debris falling
+  const t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain();
+  o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + len + 0.02);
 }
-const thump = v => boom(2600, v * 9);
-function gunShot(pos, heavy){
+// a distant impact: a low thump with a rumbling tail
+function thump(v){
   if (!AU.ready) return;
-  const dist = pos.distanceTo(camera.position); if (dist > 5000) return;
-  const t0 = AU.ctx.currentTime + dist / 343, amp = (heavy ? 1.0 : 0.6) * 90 / (90 + dist), near = 150 / (150 + dist);
-  shot(AU.noise, t0, 'highpass', heavy ? 600 : 1200, 300, heavy ? 0.12 : 0.07, amp * (0.3 + near), 0.5);
-  tone('sine', t0, heavy ? 110 : 160, 50, heavy ? 0.16 : 0.08, amp * 0.6);
-}
-function whistle(pos, delay){
-  if (!AU.ready) return;
-  const dist = pos.distanceTo(camera.position); if (dist > 2200) return;
-  const t0 = AU.ctx.currentTime + Math.max(0, delay - 1.5), a = 0.14 * 300 / (300 + dist);
-  const o = AU.ctx.createOscillator(); o.frequency.setValueAtTime(1700, t0); o.frequency.exponentialRampToValueAtTime(420, t0 + 1.5);
-  const g = gainNode(0); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(a, t0 + 1.2); g.gain.linearRampToValueAtTime(0, t0 + 1.5);
-  o.connect(g); g.connect(AU.master); o.start(t0); o.stop(t0 + 1.6);
-  shot(AU.noise, t0, 'bandpass', 2400, 700, 1.5, a * 0.6, 0.1);
+  const t = AU.ctx.currentTime, n = AU.ctx.createBufferSource(); n.buffer = AU.noise;
+  const lp = AU.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(260, t); lp.frequency.exponentialRampToValueAtTime(60, t + 2.5);
+  const g = gainNode(0); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 3);
+  n.connect(lp); lp.connect(g); g.connect(AU.master); n.start(t, Math.random()); n.stop(t + 3.1);
 }
 function chirp(){
   if (!AU.ready) return;
-  const t = AU.ctx.currentTime, f = 2600 + Math.random() * 2200, k = 2 + Math.floor(Math.random() * 4);
-  for (let i = 0; i < k; i++) tone('sine', t + i * 0.11, f, f * (0.7 + Math.random() * 0.6), 0.08, 0.016);
+  const t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain(), f = 2600 + Math.random() * 2200, k = 2 + Math.floor(Math.random() * 4);
+  o.type = 'sine'; g.gain.value = 0;
+  for (let i = 0; i < k; i++){ const s = t + i * 0.11; o.frequency.setValueAtTime(f, s); o.frequency.exponentialRampToValueAtTime(f * (0.7 + Math.random() * 0.6), s + 0.07); g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(0.018, s + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.09); }
+  o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + k * 0.11 + 0.1);
 }
 function bell(f, v, len = 2.5){
   if (!AU.ready) return;
   const t = AU.ctx.currentTime;
-  for (const [m, a] of [[1, 1], [2.32, 0.5], [3.95, 0.3], [5.4, 0.15]]) tone('sine', t, f * m, f * m, len / m, v * a, 0.3);
+  for (const [m, a] of [[1, 1], [2.32, 0.5], [3.95, 0.3], [5.4, 0.15]]){
+    const o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); o.type = 'sine'; o.frequency.value = f * m;
+    g.gain.setValueAtTime(v * a, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len / m);
+    o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + len);
+  }
 }
-// the Swiss "general alarm": a rising and falling tone over the town
+// the Swiss "general alarm": a rising and falling tone, far away
 let siren = null;
 function sirenStart(){
   if (!AU.ready || siren) return;
-  const o = osc('sawtooth', 680), o2 = osc('sine', 682), lfo = osc('sine', 1 / 6), lg = gainNode(220), g = gainNode(0), lp = AU.ctx.createBiquadFilter();
-  lp.type = 'lowpass'; lp.frequency.value = 1200;
-  lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);
-  o.connect(g); o2.connect(g); g.connect(lp); lp.connect(AU.master); const s = gainNode(0.8); lp.connect(s); s.connect(AU.send); setP(g.gain, 0.012, 3);
+  const o = osc('sine', 450), o2 = osc('triangle', 452), lfo = osc('sine', 1 / 6), lg = gainNode(220), g = gainNode(0), lp = AU.ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 1400;
+  lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency); o.frequency.value = 680; o2.frequency.value = 682;
+  o.connect(g); o2.connect(g); g.connect(lp); lp.connect(AU.master); setP(g.gain, 0.018, 3);
   siren = { o, o2, lfo, g, end: clock + 45 };
 }
 function sirenStop(){ if (!siren) return; const s = siren; siren = null; setP(s.g.gain, 0, 2); setTimeout(() => { for (const n of [s.o, s.o2, s.lfo]) n.stop(); }, 6000); }
-// moving sources: a filter for distance, a panner, a little reverb
-function srcChain(){
-  const lp = AU.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 800;
-  const out = gainNode(0), pan = AU.ctx.createStereoPanner(), s = gainNode(0.15);
-  lp.connect(out); out.connect(pan); pan.connect(AU.master); out.connect(s); s.connect(AU.send);
-  return { lp, out, pan };
-}
-function makeBanditSound(type){
-  const ch = srcChain();
-  if (type === 'geran' || type === 'orlan'){
-    // a two-stroke engine: the moped sound of the Shahed (deeper) and the Orlan (smaller, higher)
-    const base = type === 'geran' ? rr(88, 102) : rr(150, 175);
-    const o1 = osc('sawtooth', base), o2 = osc('square', base / 2), lfo = osc('sine', rr(8, 12));
-    const g1 = gainNode(0.5), g2 = gainNode(0.3), lg = gainNode(0.2), sh = AU.ctx.createWaveShaper(); sh.curve = AU.curve;
-    o1.connect(g1); o2.connect(g2); g1.connect(sh); g2.connect(sh); sh.connect(ch.lp); lfo.connect(lg); lg.connect(g1.gain);
-    const n = noiseSrc(), bp = AU.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = base * 3; bp.Q.value = 2; const ng = gainNode(0.25); n.connect(bp); bp.connect(ng); ng.connect(ch.lp);
-    return { ...ch, oscs: [[o1, base], [o2, base / 2]], stops: [o1, o2, lfo, n], vol: type === 'geran' ? 0.65 : 0.45, reach: type === 'geran' ? 480 : 300, air: 240 };
-  }
-  // electric motors: whine and the hiss of the propeller
-  const n = noiseSrc(), bp = AU.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 0.7;
-  const ng = gainNode(0.7); n.connect(bp); bp.connect(ng); ng.connect(ch.lp);
-  const wf = type === 'lancet' ? rr(2400, 2700) : type === 'zala' ? rr(1700, 1900) : rr(1300, 1500);
-  const w = osc('sine', wf), wg = gainNode(0.05); w.connect(wg); wg.connect(ch.lp);
-  const s = osc('sawtooth', wf / 8), sg = gainNode(0.07); s.connect(sg); sg.connect(ch.lp);
-  return { ...ch, oscs: [[w, wf], [s, wf / 8]], stops: [n, w, s], vol: 0.4, reach: 170, air: 150 };
-}
-function makeVehicleSound(moto){
-  const ch = srcChain();
-  if (moto){
-    const f = rr(70, 90), o = osc('sawtooth', f), g = gainNode(0.5), sh = AU.ctx.createWaveShaper(), lfo = osc('square', f / 4), lg = gainNode(0.25); sh.curve = AU.curve;
-    o.connect(g); g.connect(sh); sh.connect(ch.lp); lfo.connect(lg); lg.connect(g.gain);
-    return { ...ch, oscs: [[o, f]], stops: [o, lfo], vol: 0.35, reach: 80, air: 100 };
-  }
-  // a diesel, the clatter of the tracks, the whine of the drive
-  const f = rr(34, 44), o = osc('sawtooth', f), g = gainNode(0.6), sh = AU.ctx.createWaveShaper(); sh.curve = AU.curve;
-  o.connect(g); g.connect(sh); sh.connect(ch.lp);
-  const n = noiseSrc(), bp = AU.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 520; bp.Q.value = 1.4;
-  const ng = gainNode(0.35), lfo = osc('square', rr(6, 9)), lg = gainNode(0.3);
-  n.connect(bp); bp.connect(ng); ng.connect(ch.lp); lfo.connect(lg); lg.connect(ng.gain);
-  const wh = osc('sine', rr(900, 1100)), wg = gainNode(0.02); wh.connect(wg); wg.connect(ch.lp);
-  return { ...ch, oscs: [[o, f], [wh, 1000]], stops: [o, n, lfo, wh], vol: 0.75, reach: 80, air: 80 };
-}
-function updateSrcSound(s, pos, vel, on){
-  _v.copy(pos).sub(camera.position);
-  const dist = _v.length() + 0.001, vrad = _v.dot(_w.copy(vel).sub(P.vel)) / dist, dop = clamp(343 / (343 + vrad), 0.5, 2);
-  for (const [o, f] of s.oscs) setP(o.frequency, f * dop);
-  _q.copy(camera.quaternion).invert();
-  const local = _w.copy(_v).applyQuaternion(_q);
-  setP(s.pan.pan, clamp(local.x / dist * 1.1, -1, 1));
-  setP(s.out.gain, (on && !paused ? s.vol : 0) * (local.z > 0 ? 0.75 : 1) * s.reach / (s.reach + dist));
-  setP(s.lp.frequency, 250 + 7000 * s.air / (s.air + dist));
-}
-function stopSound(s){ setP(s.out.gain, 0, 0.08); setTimeout(() => { for (const n of s.stops) n.stop(); s.pan.disconnect(); }, 600); }
 
 // ================================================================ state
 let clock = 0, last = performance.now(), paused = false;
@@ -1561,11 +1497,6 @@ async function buildBasel(){
     return d < 10 ? lerp(1.0, h, smooth(d / 10)) : h;
   };
   w.groundAt = groundH;
-  // ---- damage: strikes, a few heavy zones, noise
-  const R0 = rng(1912);
-  const strikes = [[1000, -160, 190, 1.1], [-344, 1250, 160, 0.9], [1002, -1072, 150, 0.9], [461, -698, 170, 0.85], [-290, -233, 90, 0.8], [180, -320, 140, 0.7], [-700, 600, 130, 0.7]];
-  for (let k = 0; k < 70; k++){ const b = D.B[Math.floor(R0() * D.B.length)], p = b[3]; strikes.push([p[0], p[1], 30 + R0() * 100, 0.5 + R0() * 0.5]); }
-  const dmgAt = (x, z) => { let d = 0; for (const s of strikes){ const t = 1 - smooth(Math.hypot(x - s[0], z - s[1]) / s[2]); if (t > 0) d = Math.max(d, t * s[3]); } return d + 0.2 + 0.9 * (fbm(x / 160, z / 160, 3) - 0.5); };
   w.obstPeace = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3); w.obstWar = new HGrid(BX0, BZ0, Math.max(BSX, BSZ), 3);
   const gP = new GB(1 << 20), gW = new GB(1 << 20), gRi = new GB(1 << 16), gRd = new GB(1 << 18);   // gRi/gRd: Bau 2 and its quarter, standing and fallen
   const FAC = ['#d9cbb0', '#cdbb9c', '#e3d8c4', '#c9a990', '#b8b2a6', '#d7c49a', '#c58f78', '#e6e0d2', '#a9a49a', '#d4b9a6'].map(hex);
@@ -1630,11 +1561,10 @@ async function buildBasel(){
     for (let k = 0; k < 4; k++){ const y = b1 + 40 + r() * 90, u = (r() - 0.5) * 20; emitters.push({ kind: 'fire', x: T1.cx + T1.c * u - T1.s * (T1.hv + 1), y, z: T1.cz + T1.s * u + T1.c * (T1.hv + 1), s: 1.4, acc: 0, war: true }); }
     emitters.push({ kind: 'column', x: T1.cx, y: b1 + 140, z: T1.cz, s: 1.3, acc: 0, war: true });
   }
-  // ---- buildings
-  let fires = 0, smolder = 0; const STATS = [0, 0, 0, 0]; w.stats = STATS;
-  const burning = [];
-  const footprints = [];   // for the ground map: [pts, state]
-  const CP = new Chunks(), CW = new Chunks();
+  // ---- buildings: one intact mesh, seen in peace and in war; for each building a ruin, shown only once it has been destroyed.
+  // A small texture holds every building's state (intact, damaged, ruin; fire; soot), so the city changes where things hit.
+  const CP = new Chunks(), CR = new Chunks();
+  const BLDS = []; w.blds = BLDS;
   const MB_ = D.LM['Basler Münster'] || [-91, 172], RH = D.B.find(q => /rathaus/i.test(q[2])), RHc = RH ? centroid(pairs(RH[3])) : [-461, -60];
   let seedN = 0;
   for (const S of SB){
@@ -1644,7 +1574,7 @@ async function buildBasel(){
     if (inRiver(cx, cz)) continue;
     const isBau2 = S === B2, isBau1 = S === B1;
     const r = rng(seedN * 7919 + 13);
-    const affected = inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 100, gPx = affected ? gRi : CP.at(cx, cz), gWx = affected ? gRd : CW.at(cx, cz);
+    const affected = inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 100;
     let lo = 1e9; for (const [x, z] of pts) lo = Math.min(lo, groundH(x, z));
     const hi = lo, area = Math.abs(signedArea(pts)), hh = Math.max(2.5, S.h);
     const small = area < 30 && hh < 6;
@@ -1665,60 +1595,53 @@ async function buildBasel(){
     else if (tall || t === 6){ wf = 8; fc = mul([1, 1, 1], 0.93 + r() * 0.07); }
     else { const q = r(); wf = oldTown ? (q < 0.55 ? 2 : q < 0.8 ? 3 : 4) : (q < 0.45 ? 4 : q < 0.75 ? 2 : q < 0.9 ? 8 : 3); fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
     const hue = wf >= 1 && wf <= 10 ? hex(STYLE_HUE[wf - 1]).map((v, i) => v * fc[i]) : fc;
-    // roofs take their colour from the aerial photo: a white vertex colour, darkened in the war
     const rc = roofSkin === 22 ? [0.95, 0.95, 0.95] : ROOF[Math.floor(r() * ROOF.length)], flatC = [0.95, 0.95, 0.95];
-    gPx.base = gWx.base = lo;
     const y0 = lo - 1.5, y1 = lo + hh, o = obb(pts);
-    // peace: the building as surveyed
-    realMesh(gPx, S, lo, fc, rc, flatC, [wf, 0], 0, roofSkin);
-    w.obstPeace.poly(pts, y1);
-    if (isBau2) continue;   // its fall is built with the tower's skeleton and the rubble tongue
-    // war
-    let d = dmgAt(cx, cz) + (r() - 0.5) * 0.3;
-    if (inTongue(cx, cz) || Math.hypot(cx - 1040.5, cz + 161.5) < 95) d = 1;
-    if (t === 3) d = 0.55;            // the Münster burns, but stands
-    if (rathaus) d = 0.45;
-    if (isBau1) d = 0;
-    const st = d < 0.24 ? 0 : d < 0.42 ? 1 : d < 0.62 ? 2 : 3;
-    footprints.push([pts, st, hh]); STATS[st]++;
-    const soot = mix3(fc, SOOT, 0.1 + 0.08 * st + r() * 0.1);
-    const burn = t === 3 || (st === 1 || st === 2) && area > 60 && r() < (st === 2 ? 0.32 : 0.18);
-    if (st === 0){
-      const roofGone = r() < 0.4;
-      realMesh(gWx, S, lo, mul(fc, 0.82), roofGone ? [0.3, 0.29, 0.28] : mul(rc, 0.72), [0.6, 0.6, 0.6], [wf, isBau1 ? 0.25 : r() < 0.03 ? 0.3 : 0.03], roofGone ? 0.15 : 0, roofSkin);
-      w.obstWar.poly(pts, y1);
-    } else if (st === 1){
-      const a = 0.68, b = 0.97;
-      gWx.walls(pts, y0, (i, k) => hi + hh * lerp(a, b, r()), soot, [wf, burn ? 0.45 : 0.03], 3, 0.45);
-      gWx.cap(pts, hi + hh * 0.6, hex('#2f2c29'), [0, burn ? 0.6 : 0.1]);
-      w.obstWar.poly(pts, y1);
-    } else if (st === 2){
-      gWx.walls(pts, y0, (i, k) => hi + hh * lerp(0.22, 0.9, r()), mix3(soot, SOOT, 0.18), [wf, burn ? 0.6 : 0.06], 3, 0.45);
-      // what is left of the floors: charred slabs, some hanging
-      for (let k = 1, floors = Math.floor(hh * 0.85 / 3.25); k < floors; k++){
-        if (r() < 0.4) continue;
-        const f = 0.45 + r() * 0.45;
-        gWx.box(o.cx + (r() - 0.5) * o.hu * 0.4, lo + k * 3.25, o.cz + (r() - 0.5) * o.hv * 0.4, o.hu * 2 * f, 0.32, o.hv * 2 * f, Math.atan2(-o.s, o.c), [0.17, 0.16, 0.15], [0, burn ? 0.5 : 0.08], (r() - 0.5) * 0.35, (r() - 0.5) * 0.3);
-      }
-      gWx.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, hue, 0.3), r, 0.4);
-      w.obstWar.poly(pts, y1);
-    } else {
+    if (affected){
+      // the quarter of Roche Bau 2: standing until the tower falls, then the fallen version (built with the tower's rubble)
+      gRi.base = gRd.base = lo;
+      realMesh(gRi, S, lo, fc, rc, flatC, [wf, 0], 0, roofSkin);
+      w.obstPeace.poly(pts, y1);
+      if (isBau2) continue;
+      if (isBau1){ realMesh(gRd, S, lo, mul(fc, 0.82), mul(rc, 0.72), [0.6, 0.6, 0.6], [wf, 0.25], 0, roofSkin); w.obstWar.poly(pts, y1); continue; }
       const hgt = clamp(hh * 0.26, 2, 14);
-      gWx.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(soot, SOOT, 0.3), [wf, 0.2], 3, 0.45);
-      const sm = smolder < 260 && r() < 0.35;
-      const g0 = gWx.n;
-      gWx.rubble(pts, lo, hgt, mix3(RUB, hue, 0.35), r, 2.5 + hh * 0.12);
-      if (sm) for (let i = g0; i < gWx.n; i++) gWx.E[i * 2 + 1] = 0.35;   // embers glow in the heap
-      const nd = Math.min(8, 2 + Math.floor(area / 120));
-      for (let k = 0; k < nd; k++){ const u = (r() - 0.5) * o.hu * 1.6, v = (r() - 0.5) * o.hv * 1.6, x = o.cx + o.c * u - o.s * v, z = o.cz + o.s * u + o.c * v;
-        gWx.box(x, lo + hgt * (0.3 + r() * 0.5), z, 2 + r() * 6, 0.35, 1.5 + r() * 3, r() * 6.28, mul(CONC, 0.6 + r() * 0.3), null, (r() - 0.5) * 1.2, (r() - 0.5) * 1.2); }
+      gRd.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(fc, SOOT, 0.4), [wf, 0.2], 3, 0.45);
+      gRd.rubble(pts, lo, hgt, mix3(RUB, hue, 0.35), r, 2.5 + hh * 0.12);
       w.obstWar.poly(pts, lo + hgt + 1);
-      if (sm){ smolder++; emitters.push({ kind: 'smoke', x: cx, y: lo + hgt, z: cz, s: 0.7 + Math.min(1, area / 600), acc: Math.random(), war: true, roche: affected }); }
+      continue;
     }
-    if (burn && fires < 240){ fires++; burning.push([cx, cz, area, y1, hh, affected]); emitters.push({ kind: 'fire', x: cx, y: st === 1 ? hi + hh * 0.75 : lo + 2 + hh * 0.3, z: cz, s: clamp(Math.sqrt(area) / 12, 0.8, 2.4), acc: Math.random(), war: true, roche: affected }); }
+    if (BLDS.length >= 16384){ const g0 = CP.at(cx, cz); g0.base = lo; g0.id = -1; realMesh(g0, S, lo, fc, rc, flatC, [wf, 0], 0, roofSkin); w.obstPeace.poly(pts, y1); w.obstWar.poly(pts, y1); continue; }
+    const id = BLDS.length, gI = CP.at(cx, cz), gR = CR.at(cx, cz);
+    // intact, as surveyed
+    gI.base = lo; gI.id = id; gI.var = 0;
+    realMesh(gI, S, lo, fc, rc, flatC, [wf, 0], 0, roofSkin);
+    gI.id = -1;
+    w.obstPeace.poly(pts, y1); w.obstWar.poly(pts, y1);
+    // the ruin it would become: tall buildings burn out to shells, low ones collapse into heaps
+    const shell = !small && r() < (hh > 16 ? 0.7 : 0.35);
+    gR.base = lo; gR.id = id; gR.var = 2;
+    let ruinTop;
+    if (shell){
+      gR.walls(pts, y0, (i, k) => hi + hh * lerp(0.3, 0.92, r()), mix3(fc, SOOT, 0.35), [wf, 0.06], 3, 0.45);
+      for (let k = 1, floors = Math.floor(hh * 0.85 / 3.25); k < floors; k++){
+        if (r() < 0.45) continue;
+        const f = 0.45 + r() * 0.45;
+        gR.box(o.cx + (r() - 0.5) * o.hu * 0.4, lo + k * 3.25, o.cz + (r() - 0.5) * o.hv * 0.4, o.hu * 2 * f, 0.32, o.hv * 2 * f, Math.atan2(-o.s, o.c), [0.17, 0.16, 0.15], null, (r() - 0.5) * 0.35, (r() - 0.5) * 0.3);
+      }
+      gR.rubble(pts, lo, 1.5 + r() * 2.5, mix3(RUB, hue, 0.3), r, 0.4);
+      ruinTop = lo + hh * 0.9;
+    } else {
+      const hgt = clamp(hh * 0.26, 1.5, 12);
+      gR.walls(pts, y0, (i, k) => lo + Math.max(0.8, hh * r() * r() * 0.45), mix3(fc, SOOT, 0.4), [wf, 0.06], 3, 0.45);
+      gR.rubble(pts, lo, hgt, mix3(RUB, hue, 0.35), r, 2.5 + hh * 0.12);
+      const nd = Math.min(6, 1 + Math.floor(area / 150));
+      for (let k = 0; k < nd; k++){ const u = (r() - 0.5) * o.hu * 1.6, v = (r() - 0.5) * o.hv * 1.6, x = o.cx + o.c * u - o.s * v, z = o.cz + o.s * u + o.c * v;
+        gR.box(x, lo + hgt * (0.3 + r() * 0.5), z, 2 + r() * 6, 0.35, 1.5 + r() * 3, r() * 6.28, mul(CONC, 0.6 + r() * 0.3), null, (r() - 0.5) * 1.2, (r() - 0.5) * 1.2); }
+      ruinTop = lo + hgt + 1;
+    }
+    gR.id = -1;
+    BLDS.push({ id, cx, cz, pts, lo, hh, area, y1, ruinTop, st: 0, fire: 0, soot: 0, em: null, landmark: munster || rathaus || roche || messe });
   }
-  burning.sort((a, b) => b[2] - a[2]);
-  burning.forEach((b, i) => emitters.push({ kind: i < 22 ? 'column' : 'smoke', x: b[0], y: b[3] - b[4] * 0.2, z: b[1], s: i < 22 ? clamp(Math.sqrt(b[2]) / 25, 0.8, 1.6) : 1, acc: Math.random(), war: true, roche: b[5] }));
   // ---- bridges (OSM bridge ways); in the war the middle of the Mittlere Brücke is gone
   const MB = D.LM['Mittlere Brücke'] || [-290, -233];
   for (const [rw, br, , flat] of D.ROADS){
@@ -1837,34 +1760,14 @@ async function buildBasel(){
   const TW = 2048, TH = Math.round(2048 * BSZ / BSX), mpp = BSX / TW;
   const toPx = (x, z) => [(x - BX0) / mpp, (z - BZ0) / mpp];
   const path = (g, flat, close) => { g.beginPath(); for (let i = 0; i < flat.length; i += 2){ const [px, pz] = toPx(flat[i], flat[i + 1]); if (i) g.lineTo(px, pz); else g.moveTo(px, pz); } if (close) g.closePath(); };
-  // the war overlay: transparent where the photo shows through
+  // the war overlay: transparent where the photo shows through; at the start only the parks are trampled and grey.
+  // Craters, scorch and dust come later, where things hit.
   const paint = war => (g) => {
     g.clearRect(0, 0, TW, TH);
-    for (const p of D.GREEN){ path(g, p, true); g.fillStyle = 'rgba(58,50,38,0.55)'; g.fill(); }
-    if (war){
-      const rr = rng(77);
-      for (const [pts, st, hh] of footprints){
-        if (st < 2) continue;
-        const [cx, cz] = centroid(pts), [px, pz] = toPx(cx, cz), rad = (Math.sqrt(Math.abs(signedArea(pts))) * 0.9 + hh * 0.4) / mpp;
-        const gr = g.createRadialGradient(px, pz, 0, px, pz, rad * 1.6);
-        gr.addColorStop(0, st === 3 ? 'rgba(118,110,100,0.9)' : 'rgba(25,22,20,0.7)'); gr.addColorStop(1, 'rgba(60,56,52,0)');
-        g.fillStyle = gr; g.fillRect(px - rad * 2, pz - rad * 2, rad * 4, rad * 4);
-      }
-      // the dust of the collapsed tower lies over the whole quarter
-      { const [px, pz] = toPx(1000, -300), rad = 520 / mpp, gr = g.createRadialGradient(px, pz, 0, px, pz, rad);
-        gr.addColorStop(0, 'rgba(176,172,163,0.9)'); gr.addColorStop(0.45, 'rgba(160,156,148,0.55)'); gr.addColorStop(1, 'rgba(150,146,138,0)');
-        g.fillStyle = gr; g.fillRect(px - rad, pz - rad, rad * 2, rad * 2); }
-      for (let k = 0; k < 900; k++){
-        const s = strikes[Math.floor(rr() * strikes.length)], a = rr() * 6.28, d = rr() * s[2], [px, pz] = toPx(s[0] + Math.cos(a) * d, s[1] + Math.sin(a) * d), rad = (3 + rr() * 14) / mpp;
-        const gr = g.createRadialGradient(px, pz, 0, px, pz, rad);
-        gr.addColorStop(0, 'rgba(15,13,12,0.8)'); gr.addColorStop(1, 'rgba(15,13,12,0)');
-        g.fillStyle = gr; g.fillRect(px - rad, pz - rad, rad * 2, rad * 2);
-      }
-    }
+    for (const p of D.GREEN){ path(g, p, true); g.fillStyle = 'rgba(80,72,56,0.3)'; g.fill(); }
   };
   const texW = canvasTexture(TW, TH, paint(true));
-  const craters = densityTex([BX0, BZ0, BSX, BSZ], 256, (x, z) => clamp(dmgAt(x, z) - 0.25, 0, 1) * 0.5);
-  const matP = terrainMat(ORTHO, null, null, true), matW = terrainMat(ORTHO, craters, texW, true);
+  const matP = terrainMat(ORTHO, null, null, true), matW = terrainMat(ORTHO, null, texW, true);
   w.ortho = { tex: ORTHO, box: [BX0, BZ0, BSX, BSZ] };
   const inner = heightMesh(BX0, BZ0, BSX, BSZ, 600, 500, groundH, matP);
   w.root.add(inner);
@@ -1880,8 +1783,8 @@ async function buildBasel(){
   water.position.y = 0.4; w.root.add(water);
   w.gPeace.add(gP.mesh()); w.gWar.add(gW.mesh());
   w.chunks = [];
-  for (const m of CP.meshes()){ w.gPeace.add(m); w.chunks.push(m); }
-  for (const m of CW.meshes()){ w.gWar.add(m); w.chunks.push(m); }
+  for (const m of CP.meshes()){ w.root.add(m); w.chunks.push(m); }
+  for (const m of CR.meshes()){ w.gWar.add(m); w.chunks.push(m); }
   // ---- Bau 2 and its quarter: standing or fallen; in the defence it falls when the drones have hit it often enough
   {
     const up = gRi.mesh(), down = gRd.mesh(); w.root.add(up, down);
@@ -2460,7 +2363,8 @@ function setWar(v){
   if (w.setTerrain) w.setTerrain(v);
   if (w.setRoche) w.setRoche(v && GAME.rocheDown);
   setAtmosphere(v ? w.atmos.war : w.atmos.peace);
-  post.uniforms.uGrade.value = v ? (w.grade ?? 1) : Math.min(w.grade ?? 1, 0.45);
+  post.uniforms.uGrade.value = v ? (w.grade ?? 1) : Math.min(w.grade ?? 1, 0.6);
+  BLD_U.uWarOn.value = v ? 1 : 0;
   SMOKE.mat.uniforms.uTint.value.setRGB(...(v ? [0.13, 0.12, 0.115] : [0.5, 0.5, 0.5]));
   SMOKE.mat.uniforms.uLit.value.setRGB(...(v ? [0.55, 0.47, 0.4] : [0.8, 0.8, 0.8]));
   if (!v){ SMOKE.P.fill(0); FIRE.P.fill(0); }
@@ -2496,6 +2400,7 @@ async function startWorld(i, mode = 'explore'){
   if (world.leoSpots) for (const [x, z, yaw] of world.leoSpots) leos.push(makeLeo(x, z, yaw));
   GAME.rocheDown = false; GAME.rocheHits = 0;
   if (world.restoreRoche) world.restoreRoche();
+  bldInit(); initialDamage();
   if (world.rocheAt) world.opening = { t: 0, stage: 0 };
   for (const p of world.pois){ p.y = world.groundAt(p.x, p.z); p.visited = false; p.beacon = makeBeacon(p.x, p.y, p.z); world.root.add(p.beacon); }
   world.gPeace.visible = world.gWar.visible = false;
@@ -2782,34 +2687,25 @@ function drawUI(){
 }
 
 // ================================================================ ambience
-let ambT = 0, boomT = 8, battleT = 3;
+let ambT = 0, boomT = 8;
 function updateAudio(dt){
   if (!AU.ready) return;
   const flying = state === 'fly' && !paused;
-  const tf = clamp(P.T / MAXT, 0, 1), on = flying && P.alive && P.armed, sp = P.vel.length();
-  // the four motors: each spins to its own share of the thrust, so a roll or a flip is heard
-  const recon = P.kind === 'recon', base = recon ? 110 : 150, range = recon ? 520 : 980;
-  const pr = clamp(P.sp, -1, 1), rr_ = clamp(P.sr, -1, 1), yw = clamp(P.sy, -1, 1);
-  const mix = [[1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, -1]];
-  AU.motors.forEach((m, i) => {
-    const share = clamp(tf * (1 + 0.18 * (mix[i][0] * pr + mix[i][1] * rr_) + 0.08 * mix[i][2] * yw), 0, 1);
-    const f = (base + range * Math.sqrt(share) + sp * 0.6) * m.det;
-    setP(m.a.frequency, f, 0.025); setP(m.b.frequency, f * 2.01, 0.025);
-  });
-  setP(AU.motorGain.gain, on ? (recon ? 0.025 : 0.04) + (recon ? 0.06 : 0.11) * tf : 0, 0.03);
-  setP(AU.motorLp.frequency, 700 + 4200 * tf, 0.05);
-  setP(AU.wash.gain, on ? (0.01 + 0.05 * tf) * (1 + sp / 40) : 0, 0.05);
-  setP(AU.wind.gain, flying && P.alive ? Math.min(0.3, sp / 70 * 0.3) : 0, 0.1); setP(AU.windF.frequency, 250 + sp * 55, 0.1);
-  const fx = state === 'fly' ? (P.alive ? Math.max(noise, Math.min(1, feedShock)) * 0.06 : 0.08) : 0.015;
-  setP(AU.hiss.gain, fx, 0.03);
-  if (!flying || !world){ for (const n of [AU.rumble, AU.crackle, AU.roar, AU.water, AU.city, AU.battle]) setP(n.gain, 0, 0.3); sirenStop(); return; }
+  const tf = clamp(P.T / MAXT, 0, 1), on = flying && P.alive && P.armed;
+  const f = (P.kind === 'recon' ? 85 + 380 * Math.sqrt(tf) : 110 + 620 * Math.sqrt(tf)) + P.vel.length() * 0.8;
+  for (const { o, mult } of AU.pOsc) setP(o.frequency, f * mult, 0.03);
+  setP(AU.pGain.gain, on ? 0.035 + 0.12 * tf : 0, 0.03);
+  setP(AU.pLp.frequency, 800 + 3000 * tf);
+  setP(AU.wind.gain, flying && P.alive ? Math.min(0.25, P.vel.length() / 90 * 0.25) : 0);
+  const fx = state === 'fly' ? (P.alive ? Math.max(noise, Math.min(1, feedShock)) * 0.05 : 0.07) : 0.02;
+  setP(AU.hiss.gain, fx);
+  if (!flying || !world){ for (const n of [AU.rumble, AU.crackle, AU.water, AU.city]) setP(n.gain, 0, 0.3); sirenStop(); return; }
   const war = world.war, agl = P.pos.y - world.groundAt(P.pos.x, P.pos.z), low = clamp(1 - agl / 250, 0.15, 1);
-  // fire close by: crackle and roar
-  let fd = 1e9; if (war) for (const e of emitters) if (e.kind === 'fire' && !(e.roche && !GAME.rocheDown)){ const d = Math.hypot(e.x - P.pos.x, e.y - P.pos.y, e.z - P.pos.z) / (e.s || 1); if (d < fd) fd = d; }
-  const fk = war ? clamp(1 - fd / 90, 0, 1) : 0;
-  setP(AU.crackle.gain, fk * fk * 0.5, 0.2); setP(AU.roar.gain, fk * 0.25, 0.3);
-  setP(AU.rumble.gain, war ? 0.22 * low + 0.06 : 0, 0.5);
-  setP(AU.city.gain, world.id === 'basel' && !war ? 0.05 * low : 0, 0.5);
+  // nearest fire
+  let fd = 1e9; if (war) for (const e of emitters) if (e.kind === 'fire'){ const d = Math.hypot(e.x - P.pos.x, e.y - P.pos.y, e.z - P.pos.z); if (d < fd) fd = d; }
+  setP(AU.crackle.gain, war ? clamp(1 - fd / 120, 0, 1) * 0.12 : 0, 0.2);
+  setP(AU.rumble.gain, war ? 0.11 * low + 0.03 : 0, 0.5);
+  setP(AU.city.gain, world.id === 'basel' && !war ? 0.06 * low : 0, 0.5);
   let wd = 1e9; if (world.riverZ) wd = Math.hypot(Math.abs(P.pos.z - world.riverZ(P.pos.x)), agl);
   setP(AU.water.gain, world.id === 'valley' ? clamp(1 - wd / 160, 0, 1) * 0.09 : 0, 0.3);
   ambT -= dt;
@@ -2819,31 +2715,23 @@ function updateAudio(dt){
     if (world.id === 'valley' && world.cows){ let cd = 1e9; for (const c of world.cows) cd = Math.min(cd, Math.hypot(c[0] - P.pos.x, c[1] - P.pos.y, c[2] - P.pos.z)); if (cd < 260 && Math.random() < 0.7) bell(700 + Math.random() * 300, 0.03 * (1 - cd / 260), 0.9); }
     if (world.id === 'basel' && !war && Math.random() < 0.04) bell(392, 0.04, 4);
   }
+  // the war goes on: distant impacts, now and then a siren in Basel
   if (war){
-    // far away the battle goes on: bursts of small arms and the odd heavy gun
-    battleT -= dt;
-    if (battleT <= 0){
-      battleT = 0.8 + Math.random() * 4;
-      const t0 = AU.ctx.currentTime, n = 3 + Math.floor(Math.random() * 10), gap = 0.06 + Math.random() * 0.08, a = 0.02 + Math.random() * 0.03;
-      for (let k = 0; k < n; k++) shot(AU.noise, t0 + k * gap, 'bandpass', 900, 500, 0.06, a, 0.8);
-      if (Math.random() < 0.2) boom(2000 + Math.random() * 2500, 3);
-    }
-    setP(AU.battle.gain, 0.03, 0.5);
     boomT -= dt;
     if (boomT <= 0){
-      boomT = 6 + Math.random() * 16;
-      const a = Math.random() * 6.28, d = Math.random() < 0.3 ? 250 + Math.random() * 450 : 700 + Math.random() * 2200, x = P.pos.x + Math.cos(a) * d, z = P.pos.z + Math.sin(a) * d, y = world.groundAt(x, z);
+      boomT = 15 + Math.random() * 25;
+      const a = Math.random() * 6.28, d = Math.random() < 0.15 ? 250 + Math.random() * 450 : 700 + Math.random() * 2200, x = P.pos.x + Math.cos(a) * d, z = P.pos.z + Math.sin(a) * d, y = world.groundAt(x, z);
       const fall = d < 700 ? 1.6 : 0;
       if (fall) whistle(_v.set(x, y, z), fall);
       setTimeout(() => {
         if (!world || !world.war) return;
         impact(x, y, z);
-        if (d < 700){ addDamage(x, Math.max(y, solidAt(x, z) - 2), z, 1.2, true); boom(d, 2.5); feedShock = Math.max(feedShock, clamp(150 / (d + 25), 0, 1)); }
-        else boom(d, 2);
+        if (d < 700){ addDamage(x, Math.max(y, solidAt(x, z) - 2), z, 1.2, true); damageAt(x, z, 18, 0.85); boom(d, 2.5); feedShock = Math.max(feedShock, clamp(1.6 - d / 450, 0, 1)); }
+        else setTimeout(() => thump(clamp(0.5 - d / 7000, 0.12, 0.5)), d / 343 * 1000);
       }, fall * 1000);
     }
-    if (world.id === 'basel'){ if (!siren && Math.random() < dt / 120) sirenStart(); if (siren && clock > siren.end) sirenStop(); }
-  } else { sirenStop(); setP(AU.battle.gain, 0, 0.5); }
+    if (world.id === 'basel'){ if (!siren && Math.random() < dt / 300) sirenStart(); if (siren && clock > siren.end) sirenStop(); }
+  } else sirenStop();
 }
 // an impact far away: a flash, a short burst of fire, a dirty cloud
 function impact(x, y, z){
@@ -2940,6 +2828,153 @@ function addDamage(x, y, z, big, warOnly = false){
   if (damage.length > 70){ const d = damage.shift(); if (d.m.parent) d.m.parent.remove(d.m); d.m.geometry.dispose(); emitters = emitters.filter(e => !d.fires.includes(e)); }
 }
 function clearDamage(){ for (const d of damage){ if (d.m.parent) d.m.parent.remove(d.m); d.m.geometry.dispose(); } damage.length = 0; emitters = emitters.filter(e => !e.dyn); }
+
+// ---------------------------------------------------------------- buildings that break over time (as in /drone): a hit sets a house on fire or brings it down
+const BSTATE = { list: null, grid: null, burning: [], t: 0, ext: 60 };
+function bldInit(){
+  const L = world.blds; BSTATE.list = L || null; BSTATE.burning = []; BSTATE.grid = new Map();
+  STATE_TEX.image.data.fill(0); STATE_TEX.needsUpdate = true;
+  if (!L) return;
+  BSTATE.ext = 60; for (const b of L) BSTATE.ext = Math.max(BSTATE.ext, Math.sqrt(b.area) * 0.5 + 30);
+  for (const b of L){ b.st = 0; b.fire = 0; b.soot = 0; b.em = null; const k = Math.floor(b.cx / 60) + ',' + Math.floor(b.cz / 60); if (!BSTATE.grid.has(k)) BSTATE.grid.set(k, []); BSTATE.grid.get(k).push(b); }
+}
+function bldWrite(b){ const d = STATE_TEX.image.data, i = b.id * 4; d[i] = b.st; d[i + 1] = Math.round(b.fire * 255); d[i + 2] = Math.round(b.soot * 255); STATE_TEX.needsUpdate = true; }
+function bldUnlight(b){ if (b.em){ const em = b.em; emitters = emitters.filter(e => !em.includes(e)); b.em = null; } }
+function bldReset(){
+  if (!BSTATE.list) return;
+  for (const b of BSTATE.list){ if (b.st === 2) world.obstWar.polySet(b.pts, b.y1); b.st = 0; b.fire = 0; b.soot = 0; bldUnlight(b); }
+  STATE_TEX.image.data.fill(0); STATE_TEX.needsUpdate = true; BSTATE.burning = [];
+}
+function damageAt(x, z, rad, power){
+  if (!BSTATE.list) return;
+  const k0 = Math.floor(x / 60), l0 = Math.floor(z / 60), K = Math.ceil((rad + BSTATE.ext) / 60);
+  for (let i = -K; i <= K; i++) for (let j = -K; j <= K; j++){
+    const L = BSTATE.grid.get((k0 + i) + ',' + (l0 + j)); if (!L) continue;
+    for (const b of L){
+      const d = Math.max(0, Math.hypot(b.cx - x, b.cz - z) - Math.sqrt(b.area) * 0.5);
+      if (d > rad) continue;
+      let p = power * (1 - d / rad) + rr(-0.15, 0.15);
+      if (b.landmark) p *= 0.55;   // the great stone and concrete buildings take more
+      if (p > 0.78 && b.st < 2){ bldUnlight(b); b.st = 2; b.fire = Math.max(b.fire, rr(0.5, 0.9)); b.soot = 1; world.obstWar.polySet(b.pts, b.ruinTop); }
+      else if (p > 0.32){ b.st = Math.max(b.st, 1); b.fire = Math.max(b.fire, clamp(p, 0.2, 0.75)); b.soot = Math.max(b.soot, 0.75); }
+      else if (p > 0.1){ b.soot = Math.max(b.soot, 0.4); if (b.st === 0) b.st = 1; }
+      else continue;
+      bldWrite(b);
+      if (b.fire > 0.15) igniteBld(b);
+    }
+  }
+}
+function igniteBld(b){
+  if (b.em && b.em.some(e => e.kind === 'fire')) return;
+  bldUnlight(b);
+  const s0 = clamp(Math.sqrt(b.area) / 12, 0.7, 2.2), top = b.st === 2 ? b.lo + 2 : b.lo + b.hh * 0.7;
+  b.em = [{ kind: 'fire', x: b.cx, y: top, z: b.cz, s: s0, s0, acc: 0, war: true, bld: true }, { kind: b.area > 500 ? 'column' : 'smoke', x: b.cx, y: top + 3, z: b.cz, s: Math.min(1.4, s0 * 0.8), acc: 0, war: true, bld: true }];
+  emitters.push(...b.em);
+  if (!BSTATE.burning.includes(b)) BSTATE.burning.push(b);
+  while (BSTATE.burning.length > 80){ const o = BSTATE.burning.shift(); bldUnlight(o); o.fire = 0; bldWrite(o); }
+}
+// fires burn down over minutes: the flames go first, the smoke a little later, the embers last
+function updateBlds(dt){
+  if (!BSTATE.list || !world.war) return;
+  BSTATE.t += dt; if (BSTATE.t < 1) return;
+  const step = BSTATE.t; BSTATE.t = 0;
+  for (let i = BSTATE.burning.length - 1; i >= 0; i--){
+    const b = BSTATE.burning[i];
+    b.fire = Math.max(0, b.fire - step / 200);
+    if (b.em){
+      const f = b.em.find(e => e.kind === 'fire');
+      if (f){ f.s = f.s0 * (0.35 + 0.65 * b.fire / 0.8); if (b.fire < 0.12){ emitters = emitters.filter(e => e !== f); b.em = b.em.filter(e => e !== f); } }
+    }
+    if (b.fire <= 0){ bldUnlight(b); BSTATE.burning.splice(i, 1); }
+    bldWrite(b);
+  }
+}
+// a little at the start: a few fresh hits in the city, some soot here and there
+function initialDamage(){
+  const L = BSTATE.list; if (!L) return;
+  const r = rng(1940);
+  for (let k = 0, n = 0; k < 40 && n < 4; k++){ const b = L[Math.floor(r() * L.length)]; if (b.landmark || Math.hypot(b.cx - 1040, b.cz + 160) < 350 || Math.hypot(b.cx + 461, b.cz + 69) < 150) continue; damageAt(b.cx, b.cz, 26, 1); n++; }
+  for (let k = 0; k < L.length * 0.01; k++){ const b = L[Math.floor(r() * L.length)]; b.soot = Math.max(b.soot, 0.3); if (b.st === 0) b.st = 1; bldWrite(b); }
+}
+// ---------------------------------------------------------------- sound sources that move
+function srcChain(){
+  const lp = AU.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 800;
+  const out = gainNode(0), pan = AU.ctx.createStereoPanner();
+  lp.connect(out); out.connect(pan); pan.connect(AU.master);
+  return { lp, out, pan };
+}
+function makeBanditSound(type){
+  const ch = srcChain();
+  if (type === 'geran' || type === 'orlan'){
+    // piston engine: the "moped" sound of a Shahed, smaller and higher for the Orlan
+    const base = type === 'geran' ? rr(88, 104) : rr(150, 175);
+    const o1 = osc('sawtooth', base), o2 = osc('square', base / 2), lfo = osc('sine', rr(7, 11));
+    const g1 = gainNode(0.55), g2 = gainNode(0.35), lg = gainNode(0.18), sh = AU.ctx.createWaveShaper(); sh.curve = AU.curve;
+    o1.connect(g1); o2.connect(g2); g1.connect(sh); g2.connect(sh); sh.connect(ch.lp); lfo.connect(lg); lg.connect(g1.gain);
+    return { ...ch, oscs: [[o1, base], [o2, base / 2]], stops: [o1, o2, lfo], vol: type === 'geran' ? 0.6 : 0.45, reach: type === 'geran' ? 450 : 300, air: 220 };
+  }
+  const n = noiseSrc(), bp = AU.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.7;
+  const ng = gainNode(0.8); n.connect(bp); bp.connect(ng); ng.connect(ch.lp);
+  const wf = type === 'lancet' ? rr(2400, 2700) : type === 'zala' ? rr(1700, 1900) : rr(1300, 1500);
+  const w = osc('sine', wf), wg = gainNode(0.05); w.connect(wg); wg.connect(ch.lp);
+  const s = osc('sawtooth', wf / 8), sg = gainNode(0.07); s.connect(sg); sg.connect(ch.lp);
+  return { ...ch, oscs: [[w, wf], [s, wf / 8]], stops: [n, w, s], vol: 0.4, reach: 160, air: 140 };
+}
+function makeVehicleSound(moto){
+  const ch = srcChain();
+  if (moto){
+    const f = rr(70, 90), o = osc('sawtooth', f), g = gainNode(0.5), sh = AU.ctx.createWaveShaper(); sh.curve = AU.curve;
+    o.connect(g); g.connect(sh); sh.connect(ch.lp);
+    return { ...ch, oscs: [[o, f]], stops: [o], vol: 0.35, reach: 70, air: 90 };
+  }
+  const f = rr(36, 46), o = osc('sawtooth', f), g = gainNode(0.6), sh = AU.ctx.createWaveShaper(); sh.curve = AU.curve;
+  o.connect(g); g.connect(sh); sh.connect(ch.lp);
+  const n = noiseSrc(), bp = AU.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 420; bp.Q.value = 1.2;
+  const ng = gainNode(0.3), lfo = osc('square', rr(6, 9)), lg = gainNode(0.25);
+  n.connect(bp); bp.connect(ng); ng.connect(ch.lp); lfo.connect(lg); lg.connect(ng.gain);
+  return { ...ch, oscs: [[o, f]], stops: [o, n, lfo], vol: 0.7, reach: 70, air: 70 };
+}
+function updateSrcSound(s, pos, vel, on){
+  _v.copy(pos).sub(camera.position);
+  const dist = _v.length() + 0.001, vrad = _v.dot(_w.copy(vel).sub(P.vel)) / dist, dop = clamp(343 / (343 + vrad), 0.5, 2);
+  for (const [o, f] of s.oscs) setP(o.frequency, f * dop);
+  _q.copy(camera.quaternion).invert();
+  const local = _w.copy(_v).applyQuaternion(_q);
+  setP(s.pan.pan, clamp(local.x / dist * 1.1, -1, 1));
+  setP(s.out.gain, (on && !paused ? s.vol : 0) * (local.z > 0 ? 0.75 : 1) * s.reach / (s.reach + dist));
+  setP(s.lp.frequency, 250 + 7000 * s.air / (s.air + dist));
+}
+function stopSound(s){ setP(s.out.gain, 0, 0.08); setTimeout(() => { for (const n of s.stops) n.stop(); s.pan.disconnect(); }, 600); }
+function boom(dist, power){
+  if (!AU.ready) return;
+  const ctx = AU.ctx, t0 = ctx.currentTime + dist / 343, amp = Math.min(1.4, power * 120 / (dist + 40));
+  if (amp < 0.004) return;
+  const n = ctx.createBufferSource(); n.buffer = AU.noise;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(300 + 4500 * 120 / (120 + dist), t0); lp.frequency.exponentialRampToValueAtTime(90, t0 + 1.8);
+  const g = ctx.createGain(); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(amp, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0005, t0 + 2.4);
+  n.connect(lp); lp.connect(g); g.connect(AU.master); n.start(t0, Math.random()); n.stop(t0 + 2.6);
+  const o = ctx.createOscillator(); o.frequency.setValueAtTime(75, t0); o.frequency.exponentialRampToValueAtTime(28, t0 + 0.7);
+  const og = ctx.createGain(); og.gain.setValueAtTime(amp, t0); og.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.9);
+  o.connect(og); og.connect(AU.master); o.start(t0); o.stop(t0 + 1);
+}
+function gunShot(pos, heavy){
+  if (!AU.ready) return;
+  const dist = pos.distanceTo(camera.position); if (dist > 5000) return;
+  const ctx = AU.ctx, t0 = ctx.currentTime + dist / 343;
+  const s = ctx.createBufferSource(); s.buffer = AU.shot; s.playbackRate.value = (heavy ? 0.7 : 1) * (0.92 + Math.random() * 0.16);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 250 + 7000 * 80 / (80 + dist);
+  const g = ctx.createGain(); g.gain.value = (heavy ? 0.9 : 0.6) * 90 / (90 + dist);
+  s.connect(lp); lp.connect(g); g.connect(AU.master); s.start(t0);
+}
+function whistle(pos, delay){
+  if (!AU.ready) return;
+  const dist = pos.distanceTo(camera.position); if (dist > 2000) return;
+  const ctx = AU.ctx, t0 = ctx.currentTime + Math.max(0, delay - 1.4);
+  const o = ctx.createOscillator(); o.frequency.setValueAtTime(1500, t0); o.frequency.exponentialRampToValueAtTime(450, t0 + 1.4);
+  const g = ctx.createGain(); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.12 * 300 / (300 + dist), t0 + 1.2); g.gain.linearRampToValueAtTime(0, t0 + 1.4);
+  o.connect(g); g.connect(AU.master); o.start(t0); o.stop(t0 + 1.5);
+}
 
 // ---------------------------------------------------------------- Russian drones
 // recon drones circle over the target and direct the artillery; strike drones dive on it
@@ -3098,6 +3133,7 @@ class Bandit {
       this.remove(); return;
     }
     addDamage(this.pos.x, Math.max(y, this.pos.y - 3), this.pos.z, big, this.ambient);
+    damageAt(this.pos.x, this.pos.z, this.type === 'geran' ? 30 : 16, this.type === 'geran' ? 1 : 0.8);
     if (!this.ambient && Math.hypot(this.pos.x - world.home.x, this.pos.z - world.home.z) < 70) GAME.homeHits += this.type === 'geran' ? 2 : 1;
     this.remove();
   }
@@ -3133,7 +3169,7 @@ function salvo(){
     setTimeout(() => {
       if (GAME.mode !== 'defend' || GAME.ended) return;
       const y = solidAt(x, z);
-      explosion(new THREE.Vector3(x, y + 1, z), 1.8); addDamage(x, world.groundAt(x, z) < y - 2 ? y - 2 : world.groundAt(x, z), z, 1.5);
+      explosion(new THREE.Vector3(x, y + 1, z), 1.8); addDamage(x, world.groundAt(x, z) < y - 2 ? y - 2 : world.groundAt(x, z), z, 1.5); damageAt(x, z, 14, 0.9);
       if (d < 60 && hm === world.home) GAME.homeHits++;
       if (P.alive && P.pos.distanceTo(_v.set(x, y, z)) < 15) crash('hit');
     }, delay * 1000);
@@ -3206,7 +3242,7 @@ class Vehicle {
       if (!world.endless) endRound('column');
       else {
         this.s = this.path.len - 3; this.shellT = (this.shellT ?? 2) - dt;
-        if (this.shellT <= 0 && this.type !== 'moto'){ this.shellT = rr(5, 8); const h = world.home; explosion(new THREE.Vector3(h.x + rr(-15, 15), solidAt(h.x, h.z), h.z + rr(-15, 15)), 1.6); GAME.homeHits++; }
+        if (this.shellT <= 0 && this.type !== 'moto'){ this.shellT = rr(5, 8); const h = world.home; explosion(new THREE.Vector3(h.x + rr(-15, 15), solidAt(h.x, h.z), h.z + rr(-15, 15)), 1.6); damageAt(h.x, h.z, 25, 0.7); GAME.homeHits++; }
       }
     }
     if (rnd() < dt * 6 && speed > 2) emit(SMOKE, this.pos.x, this.pos.y + 0.6, this.pos.z, 0, 1, 0, 5, 1.5, this.type === 'moto' ? 6 : 12, 0.45, 0.85);
@@ -3276,7 +3312,7 @@ function updateFlying(dt){
 }
 // rounds: gravity, a tracer every third, a hit on the drone ends it
 const TR_MAX = 300, trPos = new Float32Array(TR_MAX * 6);
-const tracers = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(trPos, 3)), new THREE.LineBasicMaterial({ color: 0xffb070, transparent: true, blending: THREE.AdditiveBlending, fog: false }));
+const tracers = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(trPos, 3)), new THREE.LineBasicMaterial({ color: 0xffb070, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, fog: false }));
 tracers.frustumCulled = false; scene.add(tracers);
 function fireRound(from, aim, v0, tracer, owner = 'veh'){
   if (rounds.length > 500) return;
@@ -3320,8 +3356,8 @@ function makeAA(x, z){
 }
 function updateAA(dt){
   for (const a of aaGuns){
-    if (!a.target || a.target.state === 'down' || !a.target.grp.parent || a.target.pos.distanceTo(a.pos) > 1900){
-      a.target = null; let bd = 1900;
+    if (!a.target || a.target.state === 'down' || !a.target.grp.parent || a.target.pos.distanceTo(a.pos) > 1200){
+      a.target = null; let bd = 1200;
       for (const b of bandits) if (b.state !== 'down'){ const d = b.pos.distanceTo(a.pos); if (d < bd){ bd = d; a.target = b; } }
     }
     const t = a.target;
@@ -3345,7 +3381,7 @@ function updateAA(dt){
         if (a.n % 2) gunShot(a.muzzle, false);
       }
       emit(FIRE, a.muzzle.x, a.muzzle.y, a.muzzle.z, 0, 0, 0, 0.06, 2.2, 1, 1, 0);
-      if (a.burst <= 0) a.cd = rr(1.2, 3);
+      if (a.burst <= 0) a.cd = rr(4, 9);
     }
   }
 }
@@ -3375,7 +3411,7 @@ function updateLeos(dt){
     l.tur.rotation.y += clamp(dy, -0.6 * dt, 0.6 * dt);
     l.cd -= dt;
     if (l.cd <= 0 && Math.abs(dy) < 0.05){
-      l.cd = rr(7, 12);
+      l.cd = rr(14, 24);
       l.tur.localToWorld(l.muzzle.set(0, 0.5, 7.4));
       for (let k = 0; k < 10; k++) emit(FIRE, l.muzzle.x, l.muzzle.y, l.muzzle.z, (Math.random() - 0.5) * 6, Math.random() * 3, (Math.random() - 0.5) * 6, 0.18, 6, 2, 1, 0);
       for (let k = 0; k < 6; k++) emit(SMOKE, l.muzzle.x, l.muzzle.y, l.muzzle.z, (Math.random() - 0.5) * 5, 1 + Math.random() * 2, (Math.random() - 0.5) * 5, 6, 3, 14, 0.6, 0.8);
@@ -3417,7 +3453,7 @@ function updateArty(dt){
     ARTY.missions.splice(i, 1);
     for (let k = 0; k < 4; k++){
       const x = m.x + rr(-16, 16), z = m.z + rr(-16, 16), y = solidAt(x, z);
-      setTimeout(() => { if (!world) return; explosion(new THREE.Vector3(x, y + 1, z), 1.8); addDamage(x, world.groundAt(x, z), z, 1.2, true);
+      setTimeout(() => { if (!world) return; explosion(new THREE.Vector3(x, y + 1, z), 1.8); addDamage(x, world.groundAt(x, z), z, 1.2, true); damageAt(x, z, 12, 0.85);
         for (const v of vehicles) if (v.alive && Math.hypot(v.pos.x - x, v.pos.z - z) < 12 && Math.random() < (v.type === 'tank' ? 0.6 : 0.9)){ v.kill(); if (GAME.mode === 'defend') GAME.kills++; confirm(say(DT.vnames[v.type])); } }, k * 450);
     }
   }
@@ -3446,15 +3482,16 @@ function updateOpening(dt){
   else if (O.stage === 2 && O.t > O.next){ O.next = O.t + 12; rocheFormation(1); }
 }
 // the war goes on around the pilot when exploring: drones over the town, air defence firing, impacts, columns and the resistance
-let warT = 12, colT = 70;
+let warT = 30, colT = 150;
 function updateWarLife(dt){
   updateOpening(dt);
+  updateBlds(dt);
   if (world.war) updateArty(dt);
   if (GAME.mode !== 'defend'){
     if (world.war && world.ambientTarget){
       warT -= dt;
-      if (warT <= 0 && !(card && card.intro)){ warT = rr(14, 30); const n = Math.random() < 0.25 ? 3 : 1; for (let k = 0; k < n; k++) bandits.push(new Bandit(pickR(['geran', 'geran', 'lancet', 'molniya']), world.ambientTarget())); }
-      if (world.leoSpots && world.routes){ colT -= dt; if (colT <= 0){ colT = rr(170, 240); spawnColumn(); } }
+      if (warT <= 0 && !(card && card.intro)){ warT = rr(45, 90); const n = Math.random() < 0.08 ? 2 : 1; for (let k = 0; k < n; k++) bandits.push(new Bandit(pickR(['geran', 'geran', 'lancet', 'molniya']), world.ambientTarget())); }
+      if (world.leoSpots && world.routes){ colT -= dt; if (colT <= 0){ colT = rr(300, 480); spawnColumn(); } }
       for (const b of [...bandits]) b.update(dt);
       for (const v of vehicles) v.update(dt);
     } else {
@@ -3499,6 +3536,7 @@ function resetDefense(){
   if (world.restoreRoche){ world.restoreRoche(); world.setRoche(false); }
   if (world.rocheAt) world.opening = { t: 0, stage: 0 };
   shells.length = 0;
+  bldReset(); initialDamage();
 }
 function spawnColumn(){
   const path = pickR(world.routes);
@@ -3652,7 +3690,7 @@ openMain();
 const autoMap = WORLDS.findIndex(w => w.id === QS.get('map'));
 if (QS.has('go') && autoMap >= 0) startWorld(autoMap, ['defend', 'peace'].includes(QS.get('mode')) ? QS.get('mode') : 'explore');
 renderer.setAnimationLoop(frame);
-if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound };
+if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound, BSTATE, damageAt, STATE_TEX };
 </script>
 </body>
 </html>
