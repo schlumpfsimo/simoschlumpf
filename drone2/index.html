@@ -213,6 +213,7 @@ const GLSL_NOISE = `
 // 0 neutral plaster (tinted; also the valley and the Donbas)   1 old town: surrounds of grey sandstone   2 old town with shutters
 // 3 Gründerzeit block   4 Münster: red sandstone, lancets   5 Rathaus: painted red, gold frieze, arcades
 // 6 glass curtain wall (Messeturm)   7 post-war: window bands and parapets   8 sandstone church, round arches   9 blank wall
+// (skin 11, drawn in the shader, not the atlas: a white village church, dark only its windows and door)
 const ATLAS_N = 10;
 const FACADE_TEX = (() => {
   const T = 256, NX = ATLAS_N, c = document.createElement('canvas'); c.width = T * NX; c.height = T * 2;
@@ -334,6 +335,18 @@ function buildingMat(){
             wallC *= 1.0 - soot * (0.2 + 0.6 * column * above * (0.5 + 0.5 * h1(vec2(cellId, 2.2))));
             wallC *= 1.0 - soot * 0.3 * n1(vWP.xz * 0.45 + vWP.y * 0.35);
             diffuseColor.rgb = mix(wallC, glassC, win);
+          } else if (sk < 11.5){
+            // a village church: lime-washed white all over; dark only the tall round-arched windows, the door and the slits high in the tower
+            float hy = max(vWP.y - vB, 0.0);
+            float cx = abs(fract(u / 4.6) - 0.5) * 4.6;
+            float nave = step(cx, 0.85) * step(3.2, hy) * step(hy, 7.0 + sqrt(max(0.0, 0.72 - cx * cx)));
+            float dx = abs(fract(u / 19.0) - 0.5) * 19.0;
+            float door = step(dx, 1.25) * step(hy, 2.5 + 0.8 * sqrt(max(0.0, 1.0 - dx * dx / 1.56)));
+            float tu = abs(fract(u / 2.4) - 0.5) * 2.4, ty = fract((hy - 12.0) / 8.0);
+            float slit = step(12.0, hy) * step(tu, 0.32) * step(0.5, ty) * step(ty, 0.82);
+            win = max(max(nave, door), slit);
+            cellId = floor(u / 4.6) * 7.13 + floor(hy / 4.0) * 13.7;
+            diffuseColor.rgb = mix(vec3(0.95, 0.95, 0.93) * (0.97 + 0.05 * n1(vWP.xz * 0.5 + vWP.y * 0.3)), vec3(0.07, 0.065, 0.06), win);
           } else {
             float fy = fract(vWP.y / 4.1);
             win = step(0.38, fy) * (0.75 + 0.25 * step(0.5, fract(u / 1.6)));
@@ -1382,7 +1395,8 @@ function realMesh(g, S, lo, wallCol, roofCol, flatCol, e, roofBurn = 0, roofSkin
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
     const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, ln = Math.hypot(nx, ny, nz) || 1;
     const flat = Math.abs(ny / ln) > 0.95;
-    g.tri(a, b, c, flat && roofSkin === 20 ? flatCol : roofCol, [flat && roofSkin === 20 ? 21 : roofSkin, roofBurn]);
+    const rcol = typeof roofCol === 'function' ? roofCol(Math.max(a[1], b[1], c[1]) - lo) : roofCol;
+    g.tri(a, b, c, flat && roofSkin === 20 ? flatCol : rcol, [flat && roofSkin === 20 ? 21 : roofSkin, roofBurn]);
   }
   for (let k = 0; k < S.E.length; k += 2){
     const a = P(S.E[k]), b = P(S.E[k + 1]);
@@ -1839,235 +1853,321 @@ async function buildBasel(){
   return w;
 }
 
-// ================================================================ THE MOUNTAIN VALLEY: an Alpine valley in summer, invented
+// ================================================================ BÄRSCHWIL: a Jura village and the valleys round it, from swisstopo data
+// texts researched from HLS, Wikipedia, baerschwil.ch, ISOS and geo.admin.ch; positions in LV95 (e, n)
 const VALLEY_TXT = {
-  name: { de: 'BERGTAL', fr: 'VALLÉE DE MONTAGNE', en: 'MOUNTAIN VALLEY' },
-  desc: { de: 'Ein Alpental im Sommer: ein Dorf, Wald, Alpweiden und Gipfel. So sieht Frieden aus.', fr: 'Une vallée alpine en été : un village, la forêt, les alpages et les sommets. Voilà à quoi ressemble la paix.', en: 'An Alpine valley in summer: a village, forest, pastures and peaks. This is what peace looks like.' },
-  introT: { de: 'EIN TAL IN DEN ALPEN', fr: 'UNE VALLÉE DANS LES ALPES', en: 'A VALLEY IN THE ALPS' },
+  name: { de: 'BÄRSCHWIL', fr: 'BÄRSCHWIL', en: 'BÄRSCHWIL' },
+  desc: {
+    de: 'Ein Jura-Dorf an der Birs – zwischen Fringeli, Laufental und Sprachgrenze.',
+    fr: 'Un village jurassien sur la Birse – entre le Fringeli, le Laufonnais et la frontière des langues.',
+    en: 'A Jura village on the Birs – between the Fringeli ridge, the Laufen valley and the language border.',
+  },
+  introT: { de: 'BÄRSCHWIL, SOLOTHURNER JURA', fr: 'BÄRSCHWIL, JURA SOLEUROIS', en: 'BÄRSCHWIL, SOLOTHURN JURA' },
   intro: {
-    de: 'Ein Sommertag. Kein Rauch, keine Gräben, keine Sirenen. Diese Landschaft zeigt, was auf dem Spiel steht – und was Menschen anderswo verloren haben. Flieg zu den markierten Orten.',
-    fr: 'Une journée d’été. Pas de fumée, pas de tranchées, pas de sirènes. Ce paysage montre ce qui est en jeu – et ce que d’autres ont perdu ailleurs. Vole vers les lieux marqués.',
-    en: 'A summer day. No smoke, no trenches, no sirens. This landscape shows what is at stake – and what people elsewhere have lost. Fly to the marked places.' },
+    de: 'Bärschwil liegt in einem Seitental der Birs, am Nordfuss des Fringeli, wo die Kantone Solothurn, Basel-Landschaft und Jura aneinandergrenzen. Wir fliegen über Kirche, Schule, Gipsgruben, Bahnlinie und Wald – und fragen bei jedem Ort, was Frieden hier möglich macht.',
+    fr: 'Bärschwil se trouve dans un vallon latéral de la Birse, au pied nord du Fringeli, là où se touchent les cantons de Soleure, de Bâle-Campagne et du Jura. Nous survolons l’église, l’école, les carrières de gypse, le chemin de fer et la forêt – et demandons à chaque lieu ce que la paix y rend possible.',
+    en: 'Bärschwil lies in a side valley of the Birs, at the northern foot of the Fringeli, where the cantons of Solothurn, Basel-Landschaft and Jura meet. We fly over church, school, gypsum pits, railway and forest – and ask at each place what peace makes possible here.',
+  },
   pois: {
-    school: { t: { de: 'DORFSCHULE', fr: 'ÉCOLE DU VILLAGE', en: 'VILLAGE SCHOOL' },
-      x: { de: 'Hier gehen Kinder ohne Angst zur Schule. In Kriegs- und Krisengebieten können Millionen Kinder nicht lernen – weil Schulen zerstört, besetzt oder der Weg dorthin zu gefährlich ist.',
-           fr: 'Ici, les enfants vont à l’école sans peur. Dans les zones de guerre et de crise, des millions d’enfants ne peuvent pas apprendre – parce que les écoles sont détruites, occupées, ou que le chemin est trop dangereux.',
-           en: 'Here children go to school without fear. In war and crisis zones, millions of children cannot learn – because schools are destroyed, occupied, or the way there is too dangerous.' } },
-    church: { t: { de: 'DORFKIRCHE', fr: 'ÉGLISE DU VILLAGE', en: 'VILLAGE CHURCH' },
-      x: { de: 'Die Schweiz vermittelt seit Langem zwischen Konfliktparteien und vertritt als Schutzmacht Staaten, die nicht mehr miteinander sprechen. Frieden braucht Menschen, die auch dann noch reden, wenn es schwierig wird.',
-           fr: 'La Suisse sert depuis longtemps de médiatrice entre des parties en conflit et représente, comme puissance protectrice, des États qui ne se parlent plus. La paix a besoin de gens qui continuent à parler quand cela devient difficile.',
-           en: 'Switzerland has long mediated between parties in conflict and, as a protecting power, represents states that no longer talk to each other. Peace needs people who keep talking even when it gets hard.' } },
-    bridge: { t: { de: 'HOLZBRÜCKE', fr: 'PONT EN BOIS', en: 'WOODEN BRIDGE' },
-      x: { de: 'Eine Brücke, ein Fluss, zwei Dorfteile. Strom, sauberes Wasser, offene Wege – was hier selbstverständlich ist, fehlt im Krieg als Erstes.',
-           fr: 'Un pont, une rivière, deux parties du village. L’électricité, l’eau potable, des chemins ouverts – ce qui va de soi ici est la première chose qui manque en temps de guerre.',
-           en: 'A bridge, a river, two halves of a village. Electricity, clean water, open roads – what is taken for granted here is the first thing to go in a war.' } },
-    forest: { t: { de: 'SCHUTZWALD', fr: 'FORÊT PROTECTRICE', en: 'PROTECTION FOREST' },
-      x: { de: 'Dieser Wald schützt das Dorf vor Lawinen und Steinschlag. Er ist über hundert Jahre gewachsen. Im Krieg brennen ganze Wälder in wenigen Tagen ab.',
-           fr: 'Cette forêt protège le village des avalanches et des chutes de pierres. Elle a mis plus de cent ans à pousser. En temps de guerre, des forêts entières brûlent en quelques jours.',
-           en: 'This forest protects the village from avalanches and rockfall. It has grown for more than a hundred years. In war, whole forests burn down in a few days.' } },
-    alp: { t: { de: 'ALP', fr: 'ALPAGE', en: 'ALPINE PASTURE' },
-      x: { de: 'Im Sommer weidet das Vieh auf der Alp. In vermintem Land wäre das unmöglich: Minen und Blindgänger machen Wiesen und Felder für Jahrzehnte gefährlich.',
-           fr: 'En été, le bétail pâture à l’alpage. Sur une terre minée, ce serait impossible : mines et munitions non explosées rendent prés et champs dangereux pendant des décennies.',
-           en: 'In summer the cattle graze on the alpine pasture. On mined land this would be impossible: mines and unexploded shells make meadows and fields dangerous for decades.' } },
-    hut: { t: { de: 'BERGHÜTTE', fr: 'CABANE DE MONTAGNE', en: 'MOUNTAIN HUT' },
-      x: { de: 'Von hier oben sind keine Grenzen zu sehen. Grenzen sind von Menschen gemacht – und Menschen entscheiden, wie sie miteinander umgehen.',
-           fr: 'D’ici, on ne voit aucune frontière. Les frontières sont faites par les humains – et ce sont les humains qui décident comment ils se traitent.',
-           en: 'From up here, no borders can be seen. Borders are made by people – and people decide how they treat each other.' } },
+    kirche: {
+      t: { de: 'KIRCHE ST. LUKAS', fr: 'ÉGLISE SAINT-LUC', en: 'ST LUKE’S CHURCH' },
+      x: {
+        de: 'Die Kirche St. Lukas wird 1548 erstmals erwähnt; ihr spätgotischer Turm steht bis heute. Fast 500 Jahre ohne Zerstörung – im Krieg gehören Kirchen, Moscheen und Kulturgüter oft zu den ersten Zielen.',
+        fr: 'L’église Saint-Luc est mentionnée pour la première fois en 1548 ; sa tour gothique tardive est toujours debout. Près de 500 ans sans destruction – en temps de guerre, lieux de culte et biens culturels sont souvent parmi les premières cibles.',
+        en: 'St Luke’s Church is first recorded in 1548; its late-Gothic tower still stands. Almost 500 years without destruction – in war, churches, mosques and cultural heritage are often among the first targets.',
+      },
+      e: 2602608, n: 1248057,
+    },
+    schule: {
+      t: { de: 'KREISSCHULE', fr: 'ÉCOLE DU VILLAGE', en: 'VILLAGE SCHOOL' },
+      x: {
+        de: 'In der Kreisschule Bärschwil-Grindel lernen Kinder aus zwei Dörfern zusammen. Hier ist der Schulweg sicher – in Kriegsgebieten können Millionen Kinder nicht lernen, weil Schulen zerstört oder besetzt sind.',
+        fr: 'À l’école intercommunale de Bärschwil-Grindel, les enfants de deux villages apprennent ensemble. Ici, le chemin de l’école est sûr – dans les zones de guerre, des millions d’enfants ne peuvent pas apprendre, car les écoles sont détruites ou occupées.',
+        en: 'At the Bärschwil-Grindel district school, children from two villages learn together. Here the way to school is safe – in war zones, millions of children cannot learn because schools are destroyed or occupied.',
+      },
+      e: 2602717, n: 1248136,
+    },
+    gips: {
+      t: { de: 'GIPSGRUBE GUPF', fr: 'CARRIÈRE DE GYPSE', en: 'GYPSUM PIT' },
+      x: {
+        de: 'Am Gupf wurde bis 1910 Gips abgebaut, danach am Kirchacker bis 1957; heute sind die Stollen zugeschüttet. Hier wurde Gestein für Häuser gefördert – im Krieg werden Häuser in Minuten zu Schutt.',
+        fr: 'Au Gupf, on a extrait du gypse jusqu’en 1910, puis au Kirchacker jusqu’en 1957 ; les galeries sont aujourd’hui comblées. Ici, on tirait de la roche pour bâtir des maisons – la guerre les réduit en gravats en quelques minutes.',
+        en: 'Gypsum was mined at the Gupf until 1910, then at Kirchacker until 1957; the tunnels have since been filled in. Rock was dug here to build houses – war turns houses into rubble in minutes.',
+      },
+      e: 2602968, n: 1247961,
+    },
+    wald: {
+      t: { de: 'LANDSBERG', fr: 'LANDSBERG', en: 'LANDSBERG' },
+      x: {
+        de: 'Der bewaldete Landsberg mit der Roten Flue erhebt sich 748 m hoch über dem Birstal. Hier kann man frei wandern – in vielen ehemaligen Kriegsgebieten liegen noch Jahrzehnte später Minen in Wäldern und Feldern.',
+        fr: 'Le Landsberg boisé, avec sa Rote Flue, s’élève à 748 m au-dessus de la vallée de la Birse. Ici, on se promène librement – dans de nombreuses anciennes zones de guerre, des mines restent enfouies dans les forêts et les champs des décennies plus tard.',
+        en: 'The wooded Landsberg with its Rote Flue cliff rises to 748 m above the Birs valley. Here you can hike freely – in many former war zones, landmines still lie in forests and fields decades later.',
+      },
+      e: 2601659, n: 1249018,
+    },
+    birs: {
+      t: { de: 'DIE BIRS', fr: 'LA BIRSE', en: 'THE BIRS' },
+      x: {
+        de: 'Die Birs bildet die Nordgrenze von Bärschwil; schon im 17. Jahrhundert trieb ihr Wasser hier eine Eisenschmelze an. Sauberes Wasser fliesst einfach vorbei – im Krieg werden Wasserwerke und Leitungen oft als Erstes zerstört.',
+        fr: 'La Birse forme la limite nord de Bärschwil ; dès le XVIIe siècle, son eau actionnait ici une fonderie de fer. L’eau propre coule simplement – en temps de guerre, stations et conduites d’eau sont souvent détruites en premier.',
+        en: 'The Birs forms Bärschwil’s northern boundary; as early as the 17th century its water powered an iron smelter here. Clean water simply flows by – in war, waterworks and pipes are often the first to be destroyed.',
+      },
+      e: 2602100, n: 1250140,
+    },
+    bahnhof: {
+      t: { de: 'BÄRSCHWIL STATION', fr: 'GARE DE BÄRSCHWIL', en: 'BÄRSCHWIL STATION' },
+      x: {
+        de: 'Seit 1875 fährt hier die Jurabahn Basel–Delémont; bis 1952 brachte eine Pferdebahn den Bärschwiler Gips zum Bahnhof. Offene Verbindungen sind Frieden – im Krieg werden Bahnlinien gesprengt und Grenzen geschlossen.',
+        fr: 'Depuis 1875, la ligne du Jura Bâle–Delémont passe ici ; jusqu’en 1952, un chemin de fer hippomobile amenait le gypse de Bärschwil à la gare. Des liaisons ouvertes, c’est la paix – en guerre, on fait sauter les voies et on ferme les frontières.',
+        en: 'The Jura railway Basel–Delémont has run here since 1875; until 1952 a horse-drawn railway brought Bärschwil’s gypsum to the station. Open connections are peace – in war, railways are blown up and borders closed.',
+      },
+      e: 2602900, n: 1249930,
+    },
+    hof: {
+      t: { de: 'HOF OBER FRINGELI', fr: 'FERME DU FRINGELI', en: 'FRINGELI FARM' },
+      x: {
+        de: 'Auf dem Hof Ober Fringeli werden Schafe und Kühe biologisch gehalten. Felder bestellen und Ernte einbringen braucht Frieden – Krieg vertreibt Bauernfamilien und lässt Menschen hungern.',
+        fr: 'À la ferme d’Ober Fringeli, on élève moutons et vaches en bio. Cultiver les champs et rentrer la récolte demande la paix – la guerre chasse les familles paysannes et affame les populations.',
+        en: 'At Ober Fringeli farm, sheep and cows are raised organically. Working the fields and bringing in the harvest needs peace – war drives farming families away and leaves people hungry.',
+      },
+      e: 2603155, n: 1246921,
+    },
+    sprache: {
+      t: { de: 'SPRACHGRENZE', fr: 'FRONTIÈRE DES LANGUES', en: 'LANGUAGE BORDER' },
+      x: {
+        de: 'Auf dem Fringeli-Grat endet Bärschwil; südlich beginnt Corban im Kanton Jura, wo man Französisch spricht. Hier trennt eine Sprachgrenze nur Wörter, nicht Menschen – anderswo werden Sprachen zum Grund für Hass und Krieg.',
+        fr: 'Sur la crête du Fringeli s’arrête Bärschwil ; au sud commence Corban, dans le canton du Jura, où l’on parle français. Ici, la frontière des langues sépare des mots, pas des gens – ailleurs, la langue devient un motif de haine et de guerre.',
+        en: 'Bärschwil ends on the Fringeli ridge; to the south begins Corban in the canton of Jura, where people speak French. Here a language border separates words, not people – elsewhere, language becomes a reason for hatred and war.',
+      },
+      e: 2603160, n: 1246650,
+    },
+    laufental: {
+      t: { de: 'LAUFENTAL', fr: 'LAUFONNAIS', en: 'LAUFEN VALLEY' },
+      x: {
+        de: 'Wahlen gehört zum Laufental, das 1989 mit 51,7 % Ja an der Urne beschloss, von Bern zu Basel-Landschaft zu wechseln – vollzogen am 1. Januar 1994. Eine Grenze, verschoben mit Stimmzetteln statt mit Waffen.',
+        fr: 'Wahlen fait partie du Laufonnais, qui a décidé en 1989, par 51,7 % de oui, de passer de Berne à Bâle-Campagne – chose faite le 1er janvier 1994. Une frontière déplacée par des bulletins de vote, pas par des armes.',
+        en: 'Wahlen is part of the Laufen valley, which voted in 1989, with 51.7% yes, to move from Bern to Basel-Landschaft – completed on 1 January 1994. A border moved by ballots, not by weapons.',
+      },
+      e: 2605825, n: 1250054,
+    },
   },
 };
+// ---- BÄRSCHWIL: surveyed by swisstopo. Local metres: x = E − 2602250, z = 1248100 − N (origin: Rüttiweg 17)
+// swissALTI3D heights in three nested grids (tools/dem_pack.py): far 50 m, core 8 m, village 4 m
+function parseBWD(buf){
+  const dv = new DataView(buf);
+  if (dv.getUint32(0, true) !== 0x31445742) throw new Error('not a BWD1 file');
+  const n = dv.getUint32(4, true), G = []; let o = 8;
+  for (let k = 0; k < n; k++){
+    const x0 = dv.getFloat32(o, true), z0 = dv.getFloat32(o + 4, true), step = dv.getFloat32(o + 8, true), hmin = dv.getFloat32(o + 12, true);
+    const nx = dv.getUint32(o + 16, true), nz = dv.getUint32(o + 20, true); o += 24;
+    const q = new Uint16Array(buf.slice(o, o + nx * nz * 2)), h = new Float32Array(nx * nz); o += nx * nz * 2;
+    for (let i = 0; i < h.length; i++) h[i] = hmin + q[i] / 20;
+    G.push({ x0, z0, step, nx, nz, h, x1: x0 + (nx - 1) * step, z1: z0 + (nz - 1) * step });
+  }
+  return G;
+}
+function gridH(G, x, z){
+  const u = clamp((x - G.x0) / G.step, 0, G.nx - 1.0001), v = clamp((z - G.z0) / G.step, 0, G.nz - 1.0001);
+  const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, H = G.h, k = j * G.nx + i;
+  return lerp(lerp(H[k], H[k + 1], fu), lerp(H[k + G.nx], H[k + G.nx + 1], fu), fv);
+}
+const inGrid = (G, x, z, m = 0) => x >= G.x0 + m && x <= G.x1 - m && z >= G.z0 + m && z <= G.z1 - m;
+// a square of terrain, its own LOD level: heights, analytic normals (no seams between chunks), ortho UVs, a skirt against cracks
+function terrainPatch(cx, cz, size, step, hf, mat, box){
+  const n = Math.round(size / step), N = n + 1, M = N + 2, x0 = cx - size / 2, z0 = cz - size / 2;
+  const pos = new Float32Array(M * M * 3), nrm = new Float32Array(M * M * 3), uv = new Float32Array(M * M * 2);
+  for (let j = 0; j < M; j++) for (let i = 0; i < M; i++){
+    const ii = clamp(i - 1, 0, n), jj = clamp(j - 1, 0, n), x = x0 + ii * step, z = z0 + jj * step, k = j * M + i;
+    const skirt = i === 0 || j === 0 || i === M - 1 || j === M - 1, e = step;
+    pos[k * 3] = x - cx; pos[k * 3 + 1] = hf(x, z) - (skirt ? 4 + step * 0.6 : 0); pos[k * 3 + 2] = z - cz;
+    const gx = (hf(x + e, z) - hf(x - e, z)) / (2 * e), gz = (hf(x, z + e) - hf(x, z - e)) / (2 * e), l = Math.hypot(gx, 1, gz);
+    nrm[k * 3] = -gx / l; nrm[k * 3 + 1] = 1 / l; nrm[k * 3 + 2] = -gz / l;
+    uv[k * 2] = (x - box[0]) / box[2]; uv[k * 2 + 1] = 1 - (z - box[1]) / box[3];
+  }
+  const idx = new Uint32Array((M - 1) * (M - 1) * 6); let t = 0;
+  for (let j = 0; j < M - 1; j++) for (let i = 0; i < M - 1; i++){
+    const a = j * M + i, b = a + M, c = a + 1, d = b + 1;
+    idx[t++] = a; idx[t++] = b; idx[t++] = c; idx[t++] = c; idx[t++] = b; idx[t++] = d;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(new THREE.BufferAttribute(idx, 1)); g.computeBoundingSphere();
+  return new THREE.Mesh(g, mat);
+}
+function orthoTex(url){
+  return new Promise((res, rej) => new THREE.TextureLoader().load(url, t => { t.anisotropy = 8; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; res(t); }, undefined, rej));
+}
 async function buildValley(){
   const w = newWorld('valley');
   w.txt = VALLEY_TXT; w.hasWar = false;
-  const VC = x => 230 * Math.sin(x / 1500 + 0.4) + 90 * Math.sin(x / 560 + 1.3);
-  const RIV = x => VC(x) + 25 * Math.sin(x / 260);
-  const ROAD = x => VC(x) - 105 + 25 * Math.sin(x / 700);
-  const floorY = x => x * 0.018;
-  const forestMask = (x, z) => {
-    const d = z - VC(x);
-    if (x > -560 && x < 360 && d < -230 && d > -820) return true;   // the protection forest above the village
-    return fbm(x / 650 + 3, z / 650, 3) > 0.5;
+  const get = async (u, kind) => { const r = await fetch(u); if (!r.ok) throw new Error(u + ' ' + r.status); return kind === 'json' ? r.json() : r.arrayBuffer(); };
+  const [demBuf, sbBuf, trBuf, TLM, OC, OV, OF] = await Promise.all([
+    get('baerschwil-dem.bin'), get('baerschwil-buildings.bin'), get('baerschwil-trees.bin'), get('baerschwil-tlm.json', 'json'),
+    orthoTex('baerschwil-ortho.jpg'), orthoTex('baerschwil-ortho-village.jpg'), orthoTex('baerschwil-ortho-far.jpg')]);
+  const [GF, GC, GV] = parseBWD(demBuf);
+  // ortho boxes [x0, z0, sx, sz]: SWISSIMAGE (swisstopo) at 0.67 m, 2 m and 9.5 m per pixel
+  const BOX_C = [-4000, -4500, 8000, 7000], BOX_V = [-1000, -1000, 2000, 2000], BOX_F = [-9750, -9750, 19500, 19500];
+  const inCore = (x, z, m = 0) => x > -4000 + m && x < 4000 - m && z > -4500 + m && z < 2500 - m;
+  const groundH = (x, z) => {
+    if (inGrid(GV, x, z)) return gridH(GV, x, z);
+    if (inGrid(GC, x, z)) return gridH(GC, x, z);
+    const h = gridH(GF, x, z), o = Math.max(GF.x0 - x, x - GF.x1, GF.z0 - z, z - GF.z1, 0);
+    return o > 0 ? h + smooth(o / 4000) * (120 + 320 * fbm(x / 2600, z / 2600, 3)) : h;
   };
-  const vH = (x, z) => {
-    const d = z - VC(x), ad = Math.abs(d);
-    const t = smooth((ad - 170) / 2400), m = smooth((ad - 260) / 900);
-    let h = floorY(x) + 3 * fbm(x / 120, z / 120, 2) + Math.pow(t, 1.15) * 1750;
-    h += m * (ridged(x / 1100, z / 1100, 5) * 900 - 230) * (0.4 + 0.6 * t);
-    h += smooth((ad - 120) / 300) * 40 * (fbm(x / 300, z / 300, 3) - 0.5);
-    const rd = Math.abs(z - RIV(x));
-    if (rd < 26) h -= 2.4 * smooth(1 - rd / 26);
-    return h;
-  };
-  w.groundAt = vH;
-  const SZ = 9600;
-  w.obstPeace = new HGrid(-SZ / 2, -SZ / 2, SZ, 6);
-  const col = (x, y, z, ny) => {
-    const d = z - VC(x), ad = Math.abs(d), n = fbm(x / 160, z / 160, 3), fy = floorY(x);
-    const snowY = 1550 + 180 * fbm(x / 500, z / 500, 3);
-    if (y > snowY && ny > 0.5) return mix3([0.86, 0.88, 0.92], [0.97, 0.98, 1.0], n);
-    if (ny < 0.7 || y > snowY - 120) return mix3([0.42, 0.4, 0.37], [0.56, 0.54, 0.5], n);
-    if (Math.abs(z - RIV(x)) < 22) return [0.52, 0.5, 0.45];
-    if (forestMask(x, z) && y > fy + 25 && y < 1500) return [0.14 + n * 0.05, 0.25 + n * 0.06, 0.11];
-    if (y > 1250) return mix3([0.42, 0.5, 0.28], [0.5, 0.5, 0.36], n);
-    if (ad < 420){ const s = hash2(Math.floor((x + z * 0.35) / 42), Math.floor(d / 90)); return mix3([0.34, 0.53, 0.2], [0.55, 0.6, 0.28], s * 0.7 + n * 0.3); }
-    return mix3([0.3, 0.48, 0.18], [0.46, 0.55, 0.25], n);
-  };
-  w.root.add(heightMesh(-SZ / 2, -SZ / 2, SZ, SZ, 480, 480, vH, terrainMat(null, null), col));
-  // far mountains all around
-  const inMain = (x, z) => Math.abs(x) < SZ / 2 - 1 && Math.abs(z) < SZ / 2 - 1;
-  const far = heightMesh(-19200, -19200, 38400, 38400, 96, 96, (x, z) => { const r = Math.max(Math.abs(x), Math.abs(z)); return vH(x, z) + smooth((r - SZ / 2) / 3000) * (400 + ridged(x / 2500, z / 2500, 4) * 1500); }, terrainMat(null, null),
-    (x, y, z, ny) => y > 1800 && ny > 0.45 ? [0.92, 0.93, 0.97] : ny < 0.7 ? [0.45, 0.44, 0.42] : [0.3, 0.42, 0.24], inMain);
-  w.root.add(far);
-  // river: a ribbon following the valley floor
+  w.groundAt = groundH;
+  // ---- terrain: 500 m chunks, each an LOD (village 4 / 8 / 32 m, core 8 / 32 m), then the far land at 50 m and a horizon ring
+  const matC = terrainMat(OC, null, null, true), matV = terrainMat(OV, null, null, true), matF = terrainMat(OF, null, null, true);
+  for (let cz = -4250; cz < 2500; cz += 500) for (let cx = -3750; cx < 4000; cx += 500){
+    const lod = new THREE.LOD(), vil = Math.abs(cx) < 1000 && Math.abs(cz) < 1000;
+    lod.position.set(cx, 0, cz);
+    if (vil){ lod.addLevel(terrainPatch(cx, cz, 500, 4, groundH, matV, BOX_V), 0); lod.addLevel(terrainPatch(cx, cz, 500, 8, groundH, matV, BOX_V), 520); }
+    else lod.addLevel(terrainPatch(cx, cz, 500, 8, groundH, matC, BOX_C), 0);
+    lod.addLevel(terrainPatch(cx, cz, 500, 32, groundH, matC, BOX_C), vil ? 1300 : 1100);
+    w.root.add(lod);
+  }
   {
-    const pos = [], idx = [];
-    let i = 0;
-    for (let x = -SZ / 2; x <= SZ / 2; x += 12, i++){
-      const zc = RIV(x), y = floorY(x) + 3 * fbm(x / 120, zc / 120, 2) - 0.9;
-      pos.push(x, y, zc - 11, x, y, zc + 11);
-      if (i) idx.push((i - 1) * 2, (i - 1) * 2 + 1, i * 2, (i - 1) * 2 + 1, i * 2 + 1, i * 2);
+    // the far land: 50 m, sunk under the core so the two never fight
+    const farH = (x, z) => gridH(GF, x, z) - (inCore(x, z, 1) ? 40 : 0);
+    for (let cz = -9750 + 1625; cz < 9750; cz += 3250) for (let cx = -9750 + 1625; cx < 9750; cx += 3250){
+      const m = terrainPatch(cx, cz, 3250, 50, farH, matF, BOX_F); m.position.set(cx, 0, cz); w.root.add(m);
     }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-    w.root.add(waterMesh(g, [0.38, 0.6, 0.62], 0.9));
+    const ring = heightMesh(-42000, -42000, 84000, 84000, 168, 168, groundH, terrainMat(null, null),
+      (x, y, z, ny) => mix3([0.27, 0.36, 0.2], [0.4, 0.44, 0.3], fbm(x / 3000, z / 3000, 2)), (x, z) => Math.abs(x) < 9700 && Math.abs(z) < 9700);
+    w.root.add(ring);
   }
-  const gb = new GB(1 << 18), r = rng(4242), O = w.obstPeace;
-  // road
+  // ---- water: the Birs as a ribbon on its bed; every stream counts for the sound
+  const WSEG = [], WB = new Map(), WBK = 60;
+  for (const l of TLM.water) for (let i = 1; i < l.p.length; i++){
+    const s = [l.p[i - 1], l.p[i]]; WSEG.push(s);
+    for (let x = Math.floor(Math.min(s[0][0], s[1][0]) / WBK); x <= Math.floor(Math.max(s[0][0], s[1][0]) / WBK); x++)
+      for (let z = Math.floor(Math.min(s[0][1], s[1][1]) / WBK); z <= Math.floor(Math.max(s[0][1], s[1][1]) / WBK); z++){ const k = x + ',' + z; if (!WB.has(k)) WB.set(k, []); WB.get(k).push(s); }
+  }
+  w.waterDist = (x, z) => {
+    const bx = Math.floor(x / WBK), bz = Math.floor(z / WBK); let best = 1e9;
+    for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++){ const l = WB.get((bx + i) + ',' + (bz + j)); if (!l) continue;
+      for (const [a, b] of l){ const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz, t = L ? clamp(((x - a[0]) * dx + (z - a[1]) * dz) / L, 0, 1) : 0; best = Math.min(best, Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz)); } }
+    return best;
+  };
   {
-    const asph = [0.34, 0.34, 0.35];
-    for (let x = -SZ / 2; x < SZ / 2; x += 10){
-      const za = ROAD(x), zb = ROAD(x + 10), yy = (xx, zz) => vH(xx, zz) + 0.12;
-      gb.quad([x, yy(x, za - 3), za - 3], [x + 10, yy(x + 10, zb - 3), zb - 3], [x + 10, yy(x + 10, zb + 3), zb + 3], [x, yy(x, za + 3), za + 3], asph);
+    const pos = [], idx = []; let base = 0;
+    for (const l of TLM.water){
+      if (!l.b) continue;
+      const P = []; for (let i = 0; i < l.p.length; i++){ const a = l.p[Math.max(0, i - 1)], b = l.p[Math.min(l.p.length - 1, i + 1)], [x, z] = l.p[i];
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1, y = groundH(x, z) + 0.35; P.push([x, y, z, -dz / L, dx / L]); }
+      for (let i = 0; i < P.length; i++){ const [x, y, z, nx, nz] = P[i], hw = 8; pos.push(x + nx * hw, y, z + nz * hw, x - nx * hw, y, z - nz * hw); if (i) idx.push(base + (i - 1) * 2, base + i * 2, base + (i - 1) * 2 + 1, base + (i - 1) * 2 + 1, base + i * 2, base + i * 2 + 1); }
+      base += P.length * 2;
+    }
+    if (idx.length){ const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere(); w.root.add(waterMesh(g, [0.36, 0.46, 0.42], 0.8)); }
+  }
+  // ---- buildings: swissBUILDINGS3D 3.0, roofs as surveyed, walls in plain Jura tones; roofs tinted by the aerial photo
+  w.obstPeace = new HGrid(-4000, -4500, 8000, 4);
+  const O = w.obstPeace, SB = parseSB(sbBuf), CH = new Chunks();
+  const PLASTER = ['#f4ede0', '#efe4cf', '#e8dcc6', '#f2efe8', '#e6dccd', '#efe6d6', '#ddd6ca', '#f1e3cc'].map(hex);
+  const ROOF = ['#7a4a3a', '#6b4636', '#5d4a42', '#81503d', '#4f4a47'].map(hex);
+  w.ortho = { tex: OC, box: BOX_C };
+  let seedN = 0;
+  for (const S of SB){
+    const pts = S.pts; seedN++;
+    if (pts.length < 3) continue;
+    const r = rng(seedN * 7919 + 77), [cx, cz] = centroid(pts);
+    let lo = 1e9; for (const [x, z] of pts) lo = Math.min(lo, groundH(x, z));
+    const area = Math.abs(signedArea(pts)), hh = Math.max(2.5, S.h), sacral = S.kind === 2 || S.kind === 3;
+    let wf, fc;
+    // facade atlas: 1 plain plaster, 3 with shutters, 2 stone surrounds, 8 industrial bands, 10 blank (sheds); the church is white plaster
+    if (sacral){ wf = 11; fc = [0.97, 0.97, 0.95]; }
+    else if (area < 30 && hh < 6){ wf = 10; fc = hex('#9d978c'); }
+    else if (area > 900 && hh < 30){ wf = 8; fc = mul([1, 1, 1], 0.86 + r() * 0.08); }
+    else { const q = r(); wf = q < 0.55 ? 1 : q < 0.9 ? 3 : 2; fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
+    const g = CH.at(cx, cz); g.base = lo;
+    // the church: brown tiles as in the aerial photo, the tower's helm in weathered copper
+    const roofC = sacral ? (dy => dy > 17 ? [0.36, 0.52, 0.45] : [0.5, 0.3, 0.22]) : ROOF[Math.floor(r() * ROOF.length)];
+    realMesh(g, S, lo, fc, roofC, [0.85, 0.85, 0.83], [wf, 0], 0, 20);
+    O.poly(pts, lo + hh);
+  }
+  w.chunks = [];
+  for (const m of CH.meshes()){ w.root.add(m); w.chunks.push(m); }
+  // ---- trees: one per vegetation height cell (BAFU / LFI vegetation height model), conifer or broadleaf by the forest mix
+  {
+    const dv = new DataView(trBuf); if (dv.getUint32(0, true) !== 0x31545742) throw new Error('not a BWT1 file');
+    const n = dv.getUint32(4, true), XZ = new Int16Array(trBuf, 8, n * 2), HC = new Uint8Array(trBuf, 8 + n * 4, n * 2), rt = rng(1515);
+    const cells = new Map(), cell = k => { let c = cells.get(k); if (!c){ c = { cone: [], crown: [], trunk: [] }; cells.set(k, c); } return c; };
+    for (let i = 0; i < n; i++){
+      const x = XZ[i * 2] / 4, z = XZ[i * 2 + 1] / 4, h = Math.max(4, HC[i * 2] / 4), con = HC[i * 2 + 1] / 255, y = groundH(x, z);
+      if (O.at(x, z) > y + 1.5) continue;            // a building stands here now
+      const c = cell(Math.floor((x + 4000) / 1000) + ',' + Math.floor((z + 4500) / 1000)), k = 0.8 + rt() * 0.4, yaw = rt() * 6.28;
+      if (rt() < con){
+        const rad = 0.9 + h * 0.17;
+        c.cone.push([x, y + h * 0.18, z, rad, h * 0.84, rad, yaw, 0.08 * k, 0.17 * k, 0.09 * k]);
+        if (h < 12) c.trunk.push([x, y - 0.3, z, 1.6, h * 0.25, 1.6, 0, 0.26, 0.2, 0.14]);
+      } else {
+        const cr = 1.2 + h * 0.24, ty = h - cr * 1.1;
+        c.crown.push([x, y + ty + cr * 0.55, z, cr, cr * 0.95, cr, yaw, 0.16 * k, 0.27 * k, 0.1 * k, (rt() - 0.5) * 0.3, (rt() - 0.5) * 0.3]);
+        if (h < 15) c.trunk.push([x, y - 0.3, z, 1.8, ty + 1, 1.8, 0, 0.27, 0.22, 0.16]);
+      }
+      O.circle(x, z, 1.4, y + h);
+    }
+    for (const c of cells.values()) for (const [list, geo] of [[c.cone, G_CONE], [c.crown, G_CROWN], [c.trunk, G_TRUNK]]){
+      if (!list.length) continue;
+      const m = treeSet(list, geo); m.userData.cull = geo === G_TRUNK ? 900 : 1700; w.root.add(m); w.chunks.push(m);
     }
   }
-  const occupied = [];
-  const free = (x, z, rad) => occupied.every(([ox, oz, or]) => Math.hypot(x - ox, z - oz) > rad + or) && Math.abs(z - RIV(x)) > 34 + rad && Math.abs(z - ROAD(x)) > 8 + rad;
-  const baseAt = (x, z, hu, hv, yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); let lo = 1e9; for (const [u, v] of [[-hu, -hv], [hu, -hv], [hu, hv], [-hu, hv]]) lo = Math.min(lo, vH(x + c * u - s * v, z + s * u + c * v)); return lo; };
-  const rectAt = (x, z, hu, hv, c, s) => [[-hu, -hv], [hu, -hv], [hu, hv], [-hu, hv]].map(([u, v]) => [x + c * u - s * v, z + s * u + c * v]);
-  // a chalet: stone base, timber upper floor, a low wide roof
-  const chalet = (x, z, hu, hv, yaw, big) => {
-    const c = Math.cos(yaw), s = Math.sin(yaw), y0 = baseAt(x, z, hu, hv, yaw) - 1.5, pts = rectAt(x, z, hu, hv, c, s);
-    gb.base = y0 + 1.5;
-    const stoneTop = y0 + 1.5 + 3, woodTop = stoneTop + (big ? 6 : 4.5);
-    gb.walls(pts, y0, stoneTop, [0.86, 0.85, 0.8], [1, 0]);
-    gb.walls(pts, stoneTop, woodTop, mix3([0.42, 0.27, 0.15], [0.5, 0.34, 0.2], r()), [1, 0]);
-    const o = { cx: x, cz: z, hu, hv, c, s };
-    gb.gable(o, woodTop, hv * 0.62, [0.33, 0.29, 0.27], [0.45, 0.3, 0.17], 1.4);
-    gb.box(x - s * (hv + 0.8), stoneTop + 1.0, z + c * (hv + 0.8), hu * 1.6, 0.25, 1.4, -yaw, [0.4, 0.26, 0.15]);
-    O.poly(pts, woodTop + hv * 0.62);
+  // ---- points of interest
+  for (const [key, t] of Object.entries(VALLEY_TXT.pois)) w.pois.push({ key, x: t.e - 2602250, z: 1248100 - t.n, title: t.t, text: t.x });
+  // ---- cattle on the pastures round the village
+  const gb = new GB(1 << 14), rc = rng(4252), cows = [];
+  const flat = (x, z) => Math.hypot(groundH(x + 4, z) - groundH(x - 4, z), groundH(x, z + 4) - groundH(x, z - 4)) < 1.6;
+  const free = (x, z, rad) => { const y = groundH(x, z); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) if (O.at(x + i * rad, z + j * rad) > y + 0.3) return false; return w.waterDist(x, z) > 25; };
+  for (let herd = 0, tries = 0; herd < 4 && tries < 400; tries++){
+    const hx = (rc() - 0.5) * 1800, hz = (rc() - 0.5) * 1800;
+    if (Math.hypot(hx, hz) < 120 || !flat(hx, hz) || !free(hx, hz, 30)) continue;
+    herd++;
+    for (let k = 0; k < 9; k++){
+      const x = hx + (rc() - 0.5) * 70, z = hz + (rc() - 0.5) * 70; if (!flat(x, z) || !free(x, z, 4)) continue;
+      const y = groundH(x, z), yaw = rc() * 6.28, c = Math.cos(yaw), s = Math.sin(yaw), cl = rc() < 0.6 ? [0.45, 0.32, 0.22] : [0.85, 0.82, 0.76];
+      gb.box(x, y + 1.05, z, 2.1, 0.95, 0.9, yaw, cl); gb.box(x + c * 1.25, y + 1.25, z - s * 1.25, 0.6, 0.55, 0.5, yaw, mul(cl, 0.8));
+      gb.box(x + c * 0.7, y + 0.3, z - s * 0.7, 0.3, 0.6, 0.7, yaw, mul(cl, 0.7)); gb.box(x - c * 0.7, y + 0.3, z + s * 0.7, 0.3, 0.6, 0.7, yaw, mul(cl, 0.7));
+      cows.push([x, y, z]);
+    }
+  }
+  if (gb.n) w.root.add(gb.mesh());
+  w.cows = cows;
+  // ---- roads (swissTLM3D): a graph, so a column can come up from the Birs valley along the real roads
+  const NODES = new Map(), key = p => Math.round(p[0] / 2) + ',' + Math.round(p[1] / 2);
+  const node = p => { const k = key(p); let n = NODES.get(k); if (!n){ n = { p, e: [] }; NODES.set(k, n); } return n; };
+  for (const r of TLM.roads){ const cost = r.k <= 9 ? 1 : r.k === 10 ? 1.6 : 2.5; for (let i = 1; i < r.p.length; i++){ const a = node(r.p[i - 1]), b = node(r.p[i]), L = Math.hypot(b.p[0] - a.p[0], b.p[1] - a.p[1]) * cost; a.e.push([b, L]); b.e.push([a, L]); } }
+  const nearest = (x, z) => { let best = null, bd = 1e9; for (const n of NODES.values()){ const d = Math.hypot(n.p[0] - x, n.p[1] - z); if (d < bd && n.e.length){ bd = d; best = n; } } return best; };
+  const route = (from, to) => {
+    const a = nearest(...from), b = nearest(...to); if (!a || !b) return null;
+    const dist = new Map([[a, 0]]), prev = new Map(), open = [a], done = new Set();
+    while (open.length){
+      let bi = 0; for (let i = 1; i < open.length; i++) if (dist.get(open[i]) < dist.get(open[bi])) bi = i;
+      const u = open.splice(bi, 1)[0]; if (u === b) break; if (done.has(u)) continue; done.add(u);
+      for (const [v, L] of u.e){ const d = dist.get(u) + L; if (d < (dist.get(v) ?? 1e18)){ dist.set(v, d); prev.set(v, u); open.push(v); } }
+    }
+    if (!prev.has(b)) return null;
+    const pts = []; for (let n = b; n; n = prev.get(n)) pts.push(n.p);
+    return pts.reverse();
   };
-  // the village
-  const VX = 0, vz = VC(VX);
-  const church = [-150, VC(-150) - 175], school = [210, VC(210) - 150];
-  occupied.push([church[0], church[1], 26], [school[0], school[1], 28]);
-  for (let k = 0, tries = 0; k < 46 && tries < 3000; tries++){
-    const x = VX + (r() - 0.5) * 1000, d = (r() - 0.5) * 560, z = VC(x) + d;
-    const hu = 5 + r() * 2.2, hv = 4.2 + r() * 1.6;
-    if (!free(x, z, hu + 4)) continue;
-    occupied.push([x, z, hu + 3]);
-    chalet(x, z, hu, hv, Math.atan2(VC(x + 1) - VC(x), 1) + PI / 2 + (r() - 0.5) * 0.5, r() < 0.3);
-    k++;
-  }
-  // church: white nave, tower with a spire
+  const school = w.pois.find(p => p.key === 'schule') || { x: 467, z: -36 };
+  w.home = { x: school.x, z: school.z };
+  w.routes = [];
+  for (const from of [[3300, -4300], [-3700, -2300], [3800, -1300]]){ const p = route(from, [school.x, school.z]); if (p && p.length > 4) w.routes.push(makePath(p)); }
+  if (!w.routes.length) w.routes.push(makePath([[3000, -3000], [school.x, school.z]]));
+  w.attackDir = Math.atan2(-0.8, 0.6);                  // from the north-east, down the Laufental
+  // ---- start: on the Rüttiweg in front of number 17, looking down into the village
   {
-    const [x, z] = church, yaw = Math.atan2(VC(x + 1) - VC(x), 1), c = Math.cos(yaw), s = Math.sin(yaw), y0 = vH(x, z) - 1.5;
-    const pts = rectAt(x, z, 12, 6, c, s);
-    gb.walls(pts, y0, y0 + 11.5, [0.93, 0.92, 0.88], [1, 0]);
-    gb.gable({ cx: x, cz: z, hu: 12, hv: 6, c, s }, y0 + 11.5, 6, [0.3, 0.3, 0.32], [0.93, 0.92, 0.88], 0.5);
-    const tx = x + c * 14, tz = z + s * 14;
-    gb.box(tx, y0 + 17, tz, 6, 34, 6, -yaw, [0.93, 0.92, 0.88], [1, 0]);
-    gb.pyramid(tx, y0 + 34, tz, 4.6, 16, [0.28, 0.28, 0.3], PI / 4 + yaw);
-    O.poly(pts, y0 + 17.5); O.circle(tx, tz, 4, y0 + 50);
-    w.pois.push({ key: 'church', x: x + c * 4, z: z + s * 4 });
+    let sx = 2.5, sz = -8.3, bd = 1e9;
+    for (const r of TLM.roads) for (let i = 1; i < r.p.length; i++){
+      const a = r.p[i - 1], c = r.p[i], dx = c[0] - a[0], dz = c[1] - a[1], L = dx * dx + dz * dz || 1;
+      const t = clamp(((2.5 - a[0]) * dx + (-8.3 - a[1]) * dz) / L, 0, 1), x = a[0] + t * dx, z = a[1] + t * dz, d = Math.hypot(x - 2.5, z + 8.3);
+      if (d < bd && O.at(x, z) < groundH(x, z)){ bd = d; sx = x; sz = z; }
+    }
+    const ch = w.pois.find(p => p.key === 'kirche') || { x: 358, z: 43 };
+    w.start = [sx, sz, yawTo(sx, sz, ch.x, ch.z)];
   }
-  // school: three floors, a sports field
-  {
-    const [x, z] = school, yaw = Math.atan2(VC(x + 1) - VC(x), 1), c = Math.cos(yaw), s = Math.sin(yaw), y0 = baseAt(x, z, 17, 7, yaw) - 1.5;
-    const pts = rectAt(x, z, 17, 7, c, s);
-    gb.walls(pts, y0, y0 + 12, [0.92, 0.87, 0.74], [1, 0]);
-    gb.gable({ cx: x, cz: z, hu: 17, hv: 7, c, s }, y0 + 12, 4, [0.45, 0.25, 0.2], [0.92, 0.87, 0.74], 0.8);
-    O.poly(pts, y0 + 16);
-    const fx = x - s * 32, fz = z + c * 32, fy = vH(fx, fz) + 0.12;
-    gb.quad(...rectAt(fx, fz, 20, 12, c, s).map(([px, pz]) => [px, fy, pz]), [0.36, 0.6, 0.26]);
-    for (const sg of [-1, 1]){ const gx = fx + c * sg * 19, gz = fz + s * sg * 19; gb.box(gx, fy + 1.1, gz, 0.15, 2.2, 5, -yaw, [0.95, 0.95, 0.95]); }
-    w.pois.push({ key: 'school', x, z });
-  }
-  // covered wooden bridge
-  {
-    const x = 40, z = RIV(x), y = vH(x, z - 20) + 1.2;
-    gb.box(x, y - 0.4, z, 4.5, 0.8, 34, 0, [0.42, 0.28, 0.16]);
-    for (const sg of [-1, 1]) gb.box(x + sg * 2.2, y + 1.4, z, 0.2, 2.8, 34, 0, [0.4, 0.26, 0.15]);
-    gb.gable({ cx: x, cz: z, hu: 17, hv: 2.3, c: 0, s: 1 }, y + 2.8, 1.6, [0.32, 0.28, 0.26], [0.4, 0.26, 0.15], 0.6);
-    w.slabsPeace.push([x, z, 0, 1, 17.5, 2.6, y - 0.8, y + 4.6]);
-    for (let zz = ROAD(x); zz < z - 16; zz += 6) gb.quad([x - 2, vH(x - 2, zz) + 0.25, zz], [x + 2, vH(x + 2, zz) + 0.25, zz], [x + 2, vH(x + 2, zz + 6) + 0.25, zz + 6], [x - 2, vH(x - 2, zz + 6) + 0.25, zz + 6], [0.55, 0.5, 0.42]);
-    w.pois.push({ key: 'bridge', x, z });
-  }
-  // hay barns on the slopes
-  for (let k = 0, tries = 0; k < 70 && tries < 4000; tries++){
-    const x = (r() - 0.5) * 7000, d = (r() < 0.5 ? -1 : 1) * (180 + r() * 700), z = VC(x) + d, y = vH(x, z);
-    if (y > 1250 || forestMask(x, z) || !free(x, z, 6)) continue;
-    const gx = vH(x + 4, z) - vH(x - 4, z), gz = vH(x, z + 4) - vH(x, z - 4); if (Math.hypot(gx, gz) > 6) continue;
-    occupied.push([x, z, 5]);
-    const yaw = r() * PI, c = Math.cos(yaw), s = Math.sin(yaw), y0 = baseAt(x, z, 3.2, 2.6, yaw) - 1, pts = rectAt(x, z, 3.2, 2.6, c, s);
-    gb.walls(pts, y0, y0 + 4.5, [0.33, 0.22, 0.13]); gb.gable({ cx: x, cz: z, hu: 3.2, hv: 2.6, c, s }, y0 + 4.5, 1.8, [0.3, 0.27, 0.25], [0.33, 0.22, 0.13], 0.5);
-    O.poly(pts, y0 + 6.5); k++;
-  }
-  // cows
-  const cows = [];
-  const cow = (x, z) => { const y = vH(x, z), yaw = r() * 6.28, c = Math.cos(yaw), s = Math.sin(yaw), cl = r() < 0.5 ? [0.45, 0.3, 0.2] : [0.82, 0.78, 0.72];
-    gb.box(x, y + 1.05, z, 2.1, 0.95, 0.9, yaw, cl); gb.box(x + c * 1.25, y + 1.25, z - s * 1.25, 0.6, 0.55, 0.5, yaw, mul(cl, 0.8));
-    gb.box(x + c * 0.7, y + 0.3, z - s * 0.7, 0.3, 0.6, 0.7, yaw, mul(cl, 0.7)); gb.box(x - c * 0.7, y + 0.3, z + s * 0.7, 0.3, 0.6, 0.7, yaw, mul(cl, 0.7)); cows.push([x, y, z]); };
-  for (let k = 0; k < 26; k++){ const x = 500 + r() * 900, z = VC(x) + 60 + r() * 200; if (Math.abs(z - RIV(x)) > 30) cow(x, z); }
-  // the alp: a high pasture with huts and cattle
-  let alp = null;
-  for (let d = -650; d > -1700 && !alp; d -= 20){ const x = 1500, z = VC(x) + d, y = vH(x, z); const gx = vH(x + 10, z) - vH(x - 10, z), gz = vH(x, z + 10) - vH(x, z - 10); if (y > 1050 && Math.hypot(gx, gz) < 7 && !forestMask(x, z)) alp = [x, z]; }
-  alp = alp || [1500, VC(1500) - 1100];
-  for (let k = 0; k < 3; k++){ const x = alp[0] + k * 16 - 16, z = alp[1] + (k % 2) * 12, yaw = 0.3, c = Math.cos(yaw), s = Math.sin(yaw), y0 = baseAt(x, z, 5, 4, yaw) - 1, pts = rectAt(x, z, 5, 4, c, s);
-    gb.walls(pts, y0, y0 + 5, k ? [0.35, 0.24, 0.15] : [0.8, 0.78, 0.74], [k ? 0 : 1, 0]); gb.gable({ cx: x, cz: z, hu: 5, hv: 4, c, s }, y0 + 5, 2.6, [0.35, 0.33, 0.32], [0.35, 0.24, 0.15], 0.8); O.poly(pts, y0 + 8); occupied.push([x, z, 8]); }
-  for (let k = 0; k < 16; k++){ const a = r() * 6.28, d = 30 + r() * 110; cow(alp[0] + Math.cos(a) * d, alp[1] + Math.sin(a) * d * 0.7); }
-  w.pois.push({ key: 'alp', x: alp[0], z: alp[1] });
-  // the mountain hut, high on the other side
-  let hut = null, bestErr = 1e9;
-  for (let x = -2600; x <= -1000; x += 100) for (let d = 1300; d < 3400; d += 50){
-    const z = VC(x) + d, y = vH(x, z), gx = vH(x + 8, z) - vH(x - 8, z), gz = vH(x, z + 8) - vH(x, z - 8), err = Math.abs(y - 1850) + Math.hypot(gx, gz) * 25;
-    if (err < bestErr){ bestErr = err; hut = [x, z]; }
-  }
-  {
-    const [x, z] = hut, y0 = baseAt(x, z, 7, 5, 0.2) - 1.5, c = Math.cos(0.2), s = Math.sin(0.2), pts = rectAt(x, z, 7, 5, c, s);
-    gb.walls(pts, y0, y0 + 7.5, [0.62, 0.6, 0.56], [1, 0]); gb.gable({ cx: x, cz: z, hu: 7, hv: 5, c, s }, y0 + 7.5, 2.4, [0.3, 0.3, 0.32], [0.62, 0.6, 0.56], 0.6);
-    O.poly(pts, y0 + 10); occupied.push([x, z, 9]);
-    w.pois.push({ key: 'hut', x, z });
-  }
-  w.pois.push({ key: 'forest', x: -100, z: VC(-100) - 520 });
-  // forest: conifers, and alders along the river
-  const crowns = [], trunks = [];
-  for (let k = 0, tries = 0; k < 16000 && tries < 90000; tries++){
-    const x = (r() - 0.5) * (SZ - 400), z = (r() - 0.5) * (SZ - 400), y = vH(x, z);
-    if (!forestMask(x, z) || y < floorY(x) + 25 || y > 1480) continue;
-    const gx = vH(x + 5, z) - vH(x - 5, z), gz = vH(x, z + 5) - vH(x, z - 5); if (Math.hypot(gx, gz) > 9) continue;
-    if (!free(x, z, 2)) continue;
-    const h = 11 + r() * 12, rad = 2 + r() * 1.6, g = 0.6 + r() * 0.4;
-    trunks.push([x, y - 0.5, z, 1.4, 3, 1.4, 0, 0.3, 0.22, 0.15]);
-    crowns.push([x, y + 1.5, z, rad, h, rad, r() * 6, 0.1 * g, 0.24 * g, 0.12 * g]);
-    O.circle(x, z, 1.5, y + h); k++;
-  }
-  for (let x = -SZ / 2 + 200; x < SZ / 2 - 200; x += 9 + r() * 30){
-    if (r() < 0.4) continue;
-    const z = RIV(x) + (r() < 0.5 ? -1 : 1) * (15 + r() * 6), y = vH(x, z), h = 6 + r() * 5, cr = 2 + r() * 1.5;
-    if (!free(x, z, 0) && Math.abs(z - RIV(x)) > 30) continue;
-    trunks.push([x, y, z, 1.2, h * 0.6, 1.2, 0, 0.3, 0.24, 0.18]);
-    crowns.push([x, y + h * 0.6, z, cr, cr * 1.2, cr, r() * 6, 0.22 + r() * 0.08, 0.4 + r() * 0.1, 0.15]);
-    O.circle(x, z, 1.2, y + h + cr);
-  }
-  const cone = crowns.slice(0, crowns.length).map(t => t);
-  const coneSet = cone.filter(t => t[4] > 9), roundSet = cone.filter(t => t[4] <= 9);
-  w.root.add(treeSet(trunks, G_TRUNK), treeSet(coneSet, G_CONE), treeSet(roundSet, G_CROWN));
-  w.root.add(gb.mesh());
-  w.cows = cows; w.riverZ = RIV;
-  w.home = { x: school[0], z: school[1] }; w.attackDir = 0;
-  { const pts = []; for (let x = 4400; x > school[0]; x -= 20) pts.push([x, ROAD(x)]); pts.push([school[0], ROAD(school[0])]); w.routes = [makePath(pts)]; }
-  for (const p of w.pois){ const t = VALLEY_TXT.pois[p.key]; p.title = t.t; p.text = t.x; }
-  w.start = [560, ROAD(560), yawTo(560, ROAD(560), 0, VC(0))];
-  w.center = [0, 0]; w.R = 4300; w.ceiling = 3600;
-  w.atmos = { peace: { fog: [0.74, 0.82, 0.92], density: 0.00014, zen: [0.22, 0.42, 0.8], hor: [0.72, 0.82, 0.93], sun: [0.35, 0.75, 0.4], sunCol: [1, 0.97, 0.9], sky: [0.85, 0.9, 1], ground: [0.4, 0.45, 0.3], hemi: 1.05, sunI: 1.05 } };
+  w.center = [0, -600]; w.R = 4200; w.ceiling = 2600;
+  w.atmos = { peace: { fog: [0.76, 0.82, 0.9], density: 0.00011, zen: [0.24, 0.43, 0.78], hor: [0.74, 0.82, 0.92], sun: [0.35, 0.75, 0.4], sunCol: [1, 0.97, 0.9], sky: [0.85, 0.9, 1], ground: [0.38, 0.44, 0.3], hemi: 1.0, sunI: 1.1 } };
   w.sound = 'valley'; w.grade = 0.5;
   return w;
 }
@@ -2706,7 +2806,7 @@ function updateAudio(dt){
   setP(AU.crackle.gain, war ? clamp(1 - fd / 120, 0, 1) * 0.12 : 0, 0.2);
   setP(AU.rumble.gain, war ? 0.11 * low + 0.03 : 0, 0.5);
   setP(AU.city.gain, world.id === 'basel' && !war ? 0.06 * low : 0, 0.5);
-  let wd = 1e9; if (world.riverZ) wd = Math.hypot(Math.abs(P.pos.z - world.riverZ(P.pos.x)), agl);
+  let wd = 1e9; if (world.riverZ) wd = Math.hypot(Math.abs(P.pos.z - world.riverZ(P.pos.x)), agl); else if (world.waterDist) wd = Math.hypot(world.waterDist(P.pos.x, P.pos.z), agl);
   setP(AU.water.gain, world.id === 'valley' ? clamp(1 - wd / 160, 0, 1) * 0.09 : 0, 0.3);
   ambT -= dt;
   if (ambT <= 0){
@@ -3589,7 +3689,7 @@ function update(dt){
   updateWarLife(dt);
   flashI *= Math.exp(-dt * 9); flashLight.intensity = flashI;
   feedShock *= Math.exp(-dt * 2.2);
-  if (world.chunks && (clock * 3 | 0) !== (world.chunkT | 0)){ world.chunkT = clock * 3; for (const m of world.chunks){ const b = m.geometry.boundingSphere; m.visible = b.center.distanceTo(camera.position) - b.radius < 2400; } }
+  if (world.chunks && (clock * 3 | 0) !== (world.chunkT | 0)){ world.chunkT = clock * 3; for (const m of world.chunks){ const b = m.boundingSphere || m.geometry.boundingSphere; m.visible = b.center.distanceTo(camera.position) - b.radius < (m.userData.cull || 2400); } }
   updateEmitters(dt, camera.position);
   stepParticles(SMOKE, dt, false); stepParticles(FIRE, dt, true);
   updateFireLights(dt);
@@ -3690,7 +3790,7 @@ openMain();
 const autoMap = WORLDS.findIndex(w => w.id === QS.get('map'));
 if (QS.has('go') && autoMap >= 0) startWorld(autoMap, ['defend', 'peace'].includes(QS.get('mode')) ? QS.get('mode') : 'explore');
 renderer.setAnimationLoop(frame);
-if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound, BSTATE, damageAt, STATE_TEX };
+if (location.hash === '#dbg') window.__d = { get bandits(){ return bandits; }, aaGuns, P, get world(){ return world; }, startWorld, setWar, camera, THREE, scene, act, get state(){ return state; }, get card(){ return card; }, closeCard, update, render, get emitters(){ return emitters; }, SMOKE, FIRE, GAME, bandits, vehicles, detonate, endRound, BSTATE, damageAt, STATE_TEX, placeDrone, get renderer(){ return renderer; } };
 </script>
 </body>
 </html>
