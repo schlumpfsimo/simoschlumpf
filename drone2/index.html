@@ -934,6 +934,7 @@ function sirenStop(){ if (!siren) return; const s = siren; siren = null; setP(s.
 // ================================================================ state
 let clock = 0, last = performance.now(), paused = false;
 let state = 'menu';          // 'menu' | 'loading' | 'fly'
+let loadInfo = '';           // what the loading screen says it is doing
 let world = null;            // the landscape being flown
 let card = null;             // the info card on screen: { title, text, t }
 let menu = null;             // an open menu: { kind, items, sel }
@@ -1967,21 +1968,32 @@ function parseBWD(buf){
   }
   return G;
 }
-function gridH(G, x, z){
+function gridA(G, H, x, z){
   const u = clamp((x - G.x0) / G.step, 0, G.nx - 1.0001), v = clamp((z - G.z0) / G.step, 0, G.nz - 1.0001);
-  const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, H = G.h, k = j * G.nx + i;
+  const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * G.nx + i;
   return lerp(lerp(H[k], H[k + 1], fu), lerp(H[k + G.nx], H[k + G.nx + 1], fu), fv);
+}
+const gridH = (G, x, z) => gridA(G, G.h, x, z);
+// slopes once per grid (central differences over about 8 m), so terrain normals cost two lookups and agree across LOD levels
+function addSlopes(G){
+  const d = Math.max(1, Math.round(8 / G.step)), { nx, nz, h } = G; G.gx = new Float32Array(nx * nz); G.gz = new Float32Array(nx * nz);
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++){
+    const i0 = Math.max(0, i - d), i1 = Math.min(nx - 1, i + d), j0 = Math.max(0, j - d), j1 = Math.min(nz - 1, j + d), k = j * nx + i;
+    G.gx[k] = (h[j * nx + i1] - h[j * nx + i0]) / ((i1 - i0) * G.step); G.gz[k] = (h[j1 * nx + i] - h[j0 * nx + i]) / ((j1 - j0) * G.step);
+  }
 }
 const inGrid = (G, x, z, m = 0) => x >= G.x0 + m && x <= G.x1 - m && z >= G.z0 + m && z <= G.z1 - m;
 // a square of terrain, its own LOD level: heights, analytic normals (no seams between chunks), ortho UVs, a skirt against cracks
-function terrainPatch(cx, cz, size, step0, hf, mat, box){
+function terrainPatch(cx, cz, size, step0, hf, mat, box, sf){
   const n = Math.round(size / step0), step = size / n, N = n + 1, M = N + 2, x0 = cx - size / 2, z0 = cz - size / 2;
   const pos = new Float32Array(M * M * 3), nrm = new Float32Array(M * M * 3), uv = new Float32Array(M * M * 2);
   for (let j = 0; j < M; j++) for (let i = 0; i < M; i++){
     const ii = clamp(i - 1, 0, n), jj = clamp(j - 1, 0, n), x = x0 + ii * step, z = z0 + jj * step, k = j * M + i;
     const skirt = i === 0 || j === 0 || i === M - 1 || j === M - 1, e = 8;   // one normal for every LOD level
     pos[k * 3] = x - cx; pos[k * 3 + 1] = hf(x, z) - (skirt ? 4 + step * 0.6 : 0); pos[k * 3 + 2] = z - cz;
-    const gx = (hf(x + e, z) - hf(x - e, z)) / (2 * e), gz = (hf(x, z + e) - hf(x, z - e)) / (2 * e), l = Math.hypot(gx, 1, gz);
+    let gx, gz;
+    if (sf){ sf(x, z); gx = SLOPE[0]; gz = SLOPE[1]; } else { gx = (hf(x + e, z) - hf(x - e, z)) / (2 * e); gz = (hf(x, z + e) - hf(x, z - e)) / (2 * e); }
+    const l = Math.hypot(gx, 1, gz);
     nrm[k * 3] = -gx / l; nrm[k * 3 + 1] = 1 / l; nrm[k * 3 + 2] = -gz / l;
     uv[k * 2] = (x - box[0]) / box[2]; uv[k * 2 + 1] = 1 - (z - box[1]) / box[3];
   }
@@ -1995,17 +2007,22 @@ function terrainPatch(cx, cz, size, step0, hf, mat, box){
   g.setIndex(new THREE.BufferAttribute(idx, 1)); g.computeBoundingSphere();
   return new THREE.Mesh(g, mat);
 }
+const SLOPE = [0, 0];
 function orthoTex(url){
   return new Promise((res, rej) => new THREE.TextureLoader().load(url, t => { t.anisotropy = 8; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; res(t); }, undefined, rej));
 }
 async function buildValley(){
+  const T0 = performance.now(), tick = l => { if (location.hash === '#dbg') console.log('T:', l, Math.round(performance.now() - T0)); };
   const w = newWorld('valley');
   w.txt = VALLEY_TXT; w.hasWar = false;
   const get = async (u, kind) => { const r = await fetch(u); if (!r.ok) throw new Error(u + ' ' + r.status); return kind === 'json' ? r.json() : r.arrayBuffer(); };
   const [demBuf, sbBuf, trBuf, TLM, OC, OV, OF] = await Promise.all([
     get('baerschwil-dem.bin'), get('baerschwil-buildings.bin'), get('baerschwil-trees.bin'), get('baerschwil-tlm.json', 'json'),
     orthoTex('baerschwil-ortho.jpg'), orthoTex('baerschwil-ortho-village.jpg'), orthoTex('baerschwil-ortho-far.jpg')]);
-  const [GF, GC, GV] = parseBWD(demBuf);
+  const stage = async (l, pct) => { tick(l); loadInfo = pct + ' %'; await new Promise(r => setTimeout(r, 0)); };
+  await stage('fetch', 30);
+  const [GF, GC, GV] = parseBWD(demBuf); for (const G of [GF, GC, GV]) addSlopes(G);
+  await stage('dem', 35);
   // ortho boxes [x0, z0, sx, sz]: SWISSIMAGE (swisstopo) at 0.67 m, 2 m and 9.5 m per pixel
   const BOX_C = [-4000, -4500, 8000, 7000], BOX_V = [-1000, -1000, 2000, 2000], BOX_F = [-9750, -9750, 19500, 19500];
   const inCore = (x, z, m = 0) => x > -4000 + m && x < 4000 - m && z > -4500 + m && z < 2500 - m;
@@ -2016,26 +2033,42 @@ async function buildValley(){
     return o > 0 ? h + smooth(o / 4000) * (120 + 320 * fbm(x / 2600, z / 2600, 3)) : h;
   };
   w.groundAt = groundH;
-  // ---- terrain: 500 m chunks, each an LOD (village 4 / 8 / 32 m, core 8 / 32 m), then the far land at 50 m and a horizon ring
+  const slopeAt = (x, z) => { const G = inGrid(GV, x, z) ? GV : inGrid(GC, x, z) ? GC : GF; SLOPE[0] = gridA(G, G.gx, x, z); SLOPE[1] = gridA(G, G.gz, x, z); };
+  // ---- terrain: 500 m chunks, each an LOD (village 4 / 8 / 32 m, core 8 / 32 m), then the far land at 50 m and a horizon ring.
+  // Only the coarse level is built at load (and the fine ones near the start); the rest are built in flight, nearest first.
   const matC = terrainMat(OC, null, null, true), matV = terrainMat(OV, null, null, true), matF = terrainMat(OF, null, null, true);
+  const lods = [];
+  const fillLod = L => {
+    const { cx, cz, vil } = L, lv = vil ? [[4, 0, matV, BOX_V], [8, 520, matV, BOX_V]] : [[8, 0, matC, BOX_C]];
+    for (const [st, d, m, b] of lv) L.lod.addLevel(terrainPatch(cx, cz, 500, st, groundH, m, b, slopeAt), d);
+    L.lod.levels.find(l => l.object === L.coarse).distance = vil ? 1300 : 1100;
+    L.lod.levels.sort((a, b) => a.distance - b.distance);
+    L.done = true;
+  };
   for (let cz = -4250; cz < 2500; cz += 500) for (let cx = -3750; cx < 4000; cx += 500){
-    const lod = new THREE.LOD(), vil = Math.abs(cx) < 1000 && Math.abs(cz) < 1000;
-    lod.position.set(cx, 0, cz);
-    if (vil){ lod.addLevel(terrainPatch(cx, cz, 500, 4, groundH, matV, BOX_V), 0); lod.addLevel(terrainPatch(cx, cz, 500, 8, groundH, matV, BOX_V), 520); }
-    else lod.addLevel(terrainPatch(cx, cz, 500, 8, groundH, matC, BOX_C), 0);
-    lod.addLevel(terrainPatch(cx, cz, 500, 32, groundH, matC, BOX_C), vil ? 1300 : 1100);
-    w.root.add(lod);
+    const lod = new THREE.LOD(), vil = Math.abs(cx) < 1000 && Math.abs(cz) < 1000, coarse = terrainPatch(cx, cz, 500, 32, groundH, matC, BOX_C, slopeAt);
+    lod.position.set(cx, 0, cz); lod.addLevel(coarse, 0); w.root.add(lod);
+    const L = { lod, coarse, cx, cz, vil, done: false }; lods.push(L);
+    if (Math.hypot(cx, cz) < 1300) fillLod(L);
   }
+  w.updateLods = cam => {
+    let best = null, bd = 1e9;
+    for (const L of lods) if (!L.done){ const d = Math.hypot(L.cx - cam.x, L.cz - cam.z); if (d < bd){ bd = d; best = L; } }
+    if (best && bd < 1700) fillLod(best);
+    if (!best) w.updateLods = null;
+  };
+  await stage('terrain', 50);
   {
     // the far land: 50 m, sunk under the core so the two never fight
     const farH = (x, z) => gridH(GF, x, z) - (inCore(x, z, 1) ? 75 : 0);
     for (let cz = -9750 + 1625; cz < 9750; cz += 3250) for (let cx = -9750 + 1625; cx < 9750; cx += 3250){
-      const m = terrainPatch(cx, cz, 3250, 50, farH, matF, BOX_F); m.position.set(cx, 0, cz); w.root.add(m);
+      const m = terrainPatch(cx, cz, 3250, 50, farH, matF, BOX_F, slopeAt); m.position.set(cx, 0, cz); w.root.add(m);
     }
     const ring = heightMesh(-42250, -42250, 84500, 84500, 169, 169, groundH, terrainMat(null, null),
       (x, y, z, ny) => mix3([0.27, 0.36, 0.2], [0.4, 0.44, 0.3], fbm(x / 3000, z / 3000, 2)), (x, z) => Math.abs(x) < 9740 && Math.abs(z) < 9740);
     w.root.add(ring);
   }
+  await stage('far', 55);
   // ---- water: the Birs as a ribbon on its bed; every stream counts for the sound
   const WSEG = [], WB = new Map(), WBK = 60;
   for (const l of TLM.water) for (let i = 1; i < l.p.length; i++){
@@ -2060,6 +2093,7 @@ async function buildValley(){
     }
     if (idx.length){ const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere(); w.root.add(waterMesh(g, [0.36, 0.46, 0.42], 0.8)); }
   }
+  await stage('water', 60);
   // ---- buildings: swissBUILDINGS3D 3.0, roofs as surveyed, walls in plain Jura tones; roofs tinted by the aerial photo
   w.obstPeace = new HGrid(-4000, -4500, 8000, 4);
   const O = w.obstPeace, SB = parseSB(sbBuf), CH = new Chunks();
@@ -2089,6 +2123,7 @@ async function buildValley(){
   }
   w.chunks = [];
   for (const m of CH.meshes()){ w.root.add(m); w.chunks.push(m); }
+  await stage('buildings', 75);
   // ---- trees: one per vegetation height cell (BAFU / LFI vegetation height model), conifer or broadleaf by the forest mix
   {
     const dv = new DataView(trBuf); if (dv.getUint32(0, true) !== 0x31545742) throw new Error('not a BWT1 file');
@@ -2115,6 +2150,7 @@ async function buildValley(){
       const m = treeSet(list, geo); m.userData.cull = geo === G_TRUNK ? 900 : 1700; w.root.add(m); w.chunks.push(m);
     }
   }
+  await stage('trees', 90);
   // ---- points of interest
   for (const [key, t] of Object.entries(VALLEY_TXT.pois)) w.pois.push({ key, x: t.e - 2602250, z: 1248100 - t.n, title: t.t, text: t.x });
   // ---- cattle on the pastures round the village
@@ -2152,11 +2188,13 @@ async function buildValley(){
     const pts = []; for (let n = b; n; n = prev.get(n)) pts.push(n.p);
     return pts.reverse();
   };
+  tick('graph');
   const school = w.pois.find(p => p.key === 'schule') || { x: 467, z: -36 };
   w.home = { x: school.x, z: school.z };
   w.routes = [];
   for (const from of [[3300, -4300], [-3700, -2300], [3800, -1300]]){ const p = route(from, [school.x, school.z]); if (p && p.length > 4) w.routes.push(makePath(p)); }
   if (!w.routes.length) w.routes.push(makePath([[3000, -3000], [school.x, school.z]]));
+  tick('routes');
   w.attackDir = Math.atan2(-0.8, 0.6);                  // from the north-east, down the Laufental
   // ---- start: on the Rüttiweg in front of number 17, looking down into the village
   {
@@ -2484,11 +2522,12 @@ function toggleWar(){
 }
 async function startWorld(i, mode = 'explore'){
   const def = WORLDS[i];
-  menu = null; state = 'loading'; drawUI(); UI.t.needsUpdate = true; render();
+  menu = null; state = 'loading'; loadInfo = '5 %'; drawUI(); UI.t.needsUpdate = true; render();
   await new Promise(r => setTimeout(r, 60));
   try {
     emitters = [];
     world = await def.build();
+    loadInfo = '';
   } catch (err){
     console.error(err);
     state = 'menu'; openMain(); msg = say(S.loadFail); msgT = 5; return;
@@ -2709,7 +2748,7 @@ function drawUI(){
   g.setTransform(OW / W, 0, 0, OH / H, 0, 0); g.clearRect(0, 0, W, H);
   g.textBaseline = 'middle'; g.lineWidth = 2; g.strokeStyle = EDGE; g.fillStyle = INK;
   const dev = device();
-  if (state === 'loading'){ g.font = 'bold 10px monospace'; txt(g, say(S.loading), W / 2, H / 2, 'center'); return; }
+  if (state === 'loading'){ g.font = 'bold 10px monospace'; txt(g, say(S.loading), W / 2, H / 2, 'center'); if (loadInfo) txt(g, loadInfo, W / 2, H / 2 + 16, 'center'); return; }
   if (menu && menu.kind === 'mode'){
     g.font = 'bold 13px monospace'; txt(g, say(WORLDS[menu.world].txt.name), W / 2, 30, 'center');
     g.font = 'bold 7px monospace'; txt(g, say(DT.modeT), W / 2, 48, 'center');
@@ -3692,6 +3731,7 @@ function update(dt){
   updateWarLife(dt);
   flashI *= Math.exp(-dt * 9); flashLight.intensity = flashI;
   feedShock *= Math.exp(-dt * 2.2);
+  if (world.updateLods) world.updateLods(camera.position);
   if (world.chunks && (clock * 3 | 0) !== (world.chunkT | 0)){ world.chunkT = clock * 3; for (const m of world.chunks){ const b = m.boundingSphere || m.geometry.boundingSphere; m.visible = b.center.distanceTo(camera.position) - b.radius < (m.userData.cull || 2400); } }
   updateEmitters(dt, camera.position);
   stepParticles(SMOKE, dt, false); stepParticles(FIRE, dt, true);
