@@ -24,7 +24,7 @@ def grid(x0, z0, step, nx, nz):
     src = A
     if step >= 8:                                   # pre-filter so coarse grids are averages, not samples
         from scipy.ndimage import uniform_filter
-        src = uniform_filter(A, size=int(step / 2))
+        src = uniform_filter(A, size=int(step / 2) | 1)   # odd: centred
     return map_coordinates(src, [row, col], order=1, mode='nearest').astype(np.float32)
 out = bytearray(b'BWD1') + struct.pack('<I', 3)
 for (x0, z0, step, nx, nz) in [(-9750, -9750, 50, 391, 391), (-4000, -4500, 8, 1001, 876), (-1000, -1000, 4, 501, 501)]:

@@ -6,7 +6,7 @@ H = np.asarray(Image.open(sys.argv[1]).convert('RGB')).astype(np.int16)
 M = np.asarray(Image.open(sys.argv[2]).convert('RGBA')).astype(np.int16)
 LEG = np.array([(255, 255, 255), (253, 253, 169), (255, 255, 87), (234, 250, 0), (169, 243, 0), (100, 232, 0), (0, 200, 29), (0, 157, 139), (0, 104, 91), (0, 60, 50)])
 MID = np.array([0, 0.5, 1.5, 2.5, 4, 10, 17.5, 25, 35, 45])
-d = ((H[:, :, None, :] - LEG[None, None]) ** 2).sum(-1); veg = MID[d.argmin(-1)]
+veg = np.concatenate([MID[((H[r:r + 250, :, None, :] - LEG[None, None]) ** 2).sum(-1).argmin(-1)] for r in range(0, H.shape[0], 250)])   # in row blocks: memory
 laub = np.where(M[..., 3] > 0, np.clip(M[..., 0] / 85.0, 0, 1), 1.0)
 forest = M[..., 3] > 0
 rng = np.random.default_rng(1240)

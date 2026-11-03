@@ -1974,12 +1974,12 @@ function gridH(G, x, z){
 }
 const inGrid = (G, x, z, m = 0) => x >= G.x0 + m && x <= G.x1 - m && z >= G.z0 + m && z <= G.z1 - m;
 // a square of terrain, its own LOD level: heights, analytic normals (no seams between chunks), ortho UVs, a skirt against cracks
-function terrainPatch(cx, cz, size, step, hf, mat, box){
-  const n = Math.round(size / step), N = n + 1, M = N + 2, x0 = cx - size / 2, z0 = cz - size / 2;
+function terrainPatch(cx, cz, size, step0, hf, mat, box){
+  const n = Math.round(size / step0), step = size / n, N = n + 1, M = N + 2, x0 = cx - size / 2, z0 = cz - size / 2;
   const pos = new Float32Array(M * M * 3), nrm = new Float32Array(M * M * 3), uv = new Float32Array(M * M * 2);
   for (let j = 0; j < M; j++) for (let i = 0; i < M; i++){
     const ii = clamp(i - 1, 0, n), jj = clamp(j - 1, 0, n), x = x0 + ii * step, z = z0 + jj * step, k = j * M + i;
-    const skirt = i === 0 || j === 0 || i === M - 1 || j === M - 1, e = step;
+    const skirt = i === 0 || j === 0 || i === M - 1 || j === M - 1, e = 8;   // one normal for every LOD level
     pos[k * 3] = x - cx; pos[k * 3 + 1] = hf(x, z) - (skirt ? 4 + step * 0.6 : 0); pos[k * 3 + 2] = z - cz;
     const gx = (hf(x + e, z) - hf(x - e, z)) / (2 * e), gz = (hf(x, z + e) - hf(x, z - e)) / (2 * e), l = Math.hypot(gx, 1, gz);
     nrm[k * 3] = -gx / l; nrm[k * 3 + 1] = 1 / l; nrm[k * 3 + 2] = -gz / l;
@@ -2028,12 +2028,12 @@ async function buildValley(){
   }
   {
     // the far land: 50 m, sunk under the core so the two never fight
-    const farH = (x, z) => gridH(GF, x, z) - (inCore(x, z, 1) ? 40 : 0);
+    const farH = (x, z) => gridH(GF, x, z) - (inCore(x, z, 1) ? 75 : 0);
     for (let cz = -9750 + 1625; cz < 9750; cz += 3250) for (let cx = -9750 + 1625; cx < 9750; cx += 3250){
       const m = terrainPatch(cx, cz, 3250, 50, farH, matF, BOX_F); m.position.set(cx, 0, cz); w.root.add(m);
     }
-    const ring = heightMesh(-42000, -42000, 84000, 84000, 168, 168, groundH, terrainMat(null, null),
-      (x, y, z, ny) => mix3([0.27, 0.36, 0.2], [0.4, 0.44, 0.3], fbm(x / 3000, z / 3000, 2)), (x, z) => Math.abs(x) < 9700 && Math.abs(z) < 9700);
+    const ring = heightMesh(-42250, -42250, 84500, 84500, 169, 169, groundH, terrainMat(null, null),
+      (x, y, z, ny) => mix3([0.27, 0.36, 0.2], [0.4, 0.44, 0.3], fbm(x / 3000, z / 3000, 2)), (x, z) => Math.abs(x) < 9740 && Math.abs(z) < 9740);
     w.root.add(ring);
   }
   // ---- water: the Birs as a ribbon on its bed; every stream counts for the sound
@@ -2045,14 +2045,14 @@ async function buildValley(){
   }
   w.waterDist = (x, z) => {
     const bx = Math.floor(x / WBK), bz = Math.floor(z / WBK); let best = 1e9;
-    for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++){ const l = WB.get((bx + i) + ',' + (bz + j)); if (!l) continue;
+    for (let i = -3; i <= 3; i++) for (let j = -3; j <= 3; j++){ const l = WB.get((bx + i) + ',' + (bz + j)); if (!l) continue;
       for (const [a, b] of l){ const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz, t = L ? clamp(((x - a[0]) * dx + (z - a[1]) * dz) / L, 0, 1) : 0; best = Math.min(best, Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz)); } }
     return best;
   };
   {
     const pos = [], idx = []; let base = 0;
     for (const l of TLM.water){
-      if (!l.b) continue;
+      if (!l.b && !(l.n || '').startsWith('Birs')) continue;
       const P = []; for (let i = 0; i < l.p.length; i++){ const a = l.p[Math.max(0, i - 1)], b = l.p[Math.min(l.p.length - 1, i + 1)], [x, z] = l.p[i];
         const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1, y = groundH(x, z) + 0.35; P.push([x, y, z, -dz / L, dx / L]); }
       for (let i = 0; i < P.length; i++){ const [x, y, z, nx, nz] = P[i], hw = 8; pos.push(x + nx * hw, y, z + nz * hw, x - nx * hw, y, z - nz * hw); if (i) idx.push(base + (i - 1) * 2, base + i * 2, base + (i - 1) * 2 + 1, base + (i - 1) * 2 + 1, base + i * 2, base + i * 2 + 1); }
@@ -2066,22 +2066,24 @@ async function buildValley(){
   const PLASTER = ['#f4ede0', '#efe4cf', '#e8dcc6', '#f2efe8', '#e6dccd', '#efe6d6', '#ddd6ca', '#f1e3cc'].map(hex);
   const ROOF = ['#7a4a3a', '#6b4636', '#5d4a42', '#81503d', '#4f4a47'].map(hex);
   w.ortho = { tex: OC, box: BOX_C };
+  const KI = VALLEY_TXT.pois.kirche, kx = KI.e - 2602250, kz = 1248100 - KI.n;
   let seedN = 0;
   for (const S of SB){
     const pts = S.pts; seedN++;
     if (pts.length < 3) continue;
     const r = rng(seedN * 7919 + 77), [cx, cz] = centroid(pts);
     let lo = 1e9; for (const [x, z] of pts) lo = Math.min(lo, groundH(x, z));
-    const area = Math.abs(signedArea(pts)), hh = Math.max(2.5, S.h), sacral = S.kind === 2 || S.kind === 3;
+    const area = Math.abs(signedArea(pts)), hh = Math.max(2.5, S.h), lukas = (S.kind === 2 || S.kind === 3) && Math.hypot(cx - kx, cz - kz) < 40, sacral = S.kind === 2 || S.kind === 3;
     let wf, fc;
     // facade atlas: 1 plain plaster, 3 with shutters, 2 stone surrounds, 8 industrial bands, 10 blank (sheds); the church is white plaster
-    if (sacral){ wf = 11; fc = [0.97, 0.97, 0.95]; }
+    if (lukas){ wf = 11; fc = [0.97, 0.97, 0.95]; }
+    else if (sacral){ wf = 9; fc = [1, 1, 1]; }
     else if (area < 30 && hh < 6){ wf = 10; fc = hex('#9d978c'); }
     else if (area > 900 && hh < 30){ wf = 8; fc = mul([1, 1, 1], 0.86 + r() * 0.08); }
     else { const q = r(); wf = q < 0.55 ? 1 : q < 0.9 ? 3 : 2; fc = PLASTER[Math.floor(r() * PLASTER.length)]; }
     const g = CH.at(cx, cz); g.base = lo;
     // the church: brown tiles as in the aerial photo, the tower's helm in weathered copper
-    const roofC = sacral ? (dy => dy > 17 ? [0.36, 0.52, 0.45] : [0.5, 0.3, 0.22]) : ROOF[Math.floor(r() * ROOF.length)];
+    const roofC = lukas ? (dy => dy > 17 ? [0.36, 0.52, 0.45] : [0.5, 0.3, 0.22]) : ROOF[Math.floor(r() * ROOF.length)];
     realMesh(g, S, lo, fc, roofC, [0.85, 0.85, 0.83], [wf, 0], 0, 20);
     O.poly(pts, lo + hh);
   }
@@ -2091,7 +2093,7 @@ async function buildValley(){
   {
     const dv = new DataView(trBuf); if (dv.getUint32(0, true) !== 0x31545742) throw new Error('not a BWT1 file');
     const n = dv.getUint32(4, true), XZ = new Int16Array(trBuf, 8, n * 2), HC = new Uint8Array(trBuf, 8 + n * 4, n * 2), rt = rng(1515);
-    const cells = new Map(), cell = k => { let c = cells.get(k); if (!c){ c = { cone: [], crown: [], trunk: [] }; cells.set(k, c); } return c; };
+    const treeObst = [], cells = new Map(), cell = k => { let c = cells.get(k); if (!c){ c = { cone: [], crown: [], trunk: [] }; cells.set(k, c); } return c; };
     for (let i = 0; i < n; i++){
       const x = XZ[i * 2] / 4, z = XZ[i * 2 + 1] / 4, h = Math.max(4, HC[i * 2] / 4), con = HC[i * 2 + 1] / 255, y = groundH(x, z);
       if (O.at(x, z) > y + 1.5) continue;            // a building stands here now
@@ -2105,8 +2107,9 @@ async function buildValley(){
         c.crown.push([x, y + ty + cr * 0.55, z, cr, cr * 0.95, cr, yaw, 0.16 * k, 0.27 * k, 0.1 * k, (rt() - 0.5) * 0.3, (rt() - 0.5) * 0.3]);
         if (h < 15) c.trunk.push([x, y - 0.3, z, 1.8, ty + 1, 1.8, 0, 0.27, 0.22, 0.16]);
       }
-      O.circle(x, z, 1.4, y + h);
+      treeObst.push(x, z, y + h);
     }
+    for (let i = 0; i < treeObst.length; i += 3) O.circle(treeObst[i], treeObst[i + 1], 1.4, treeObst[i + 2]);
     for (const c of cells.values()) for (const [list, geo] of [[c.cone, G_CONE], [c.crown, G_CROWN], [c.trunk, G_TRUNK]]){
       if (!list.length) continue;
       const m = treeSet(list, geo); m.userData.cull = geo === G_TRUNK ? 900 : 1700; w.root.add(m); w.chunks.push(m);

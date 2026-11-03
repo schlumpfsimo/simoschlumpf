@@ -35,7 +35,7 @@ roads = fetch('ch.swisstopo.swisstlm3d-strassen')
 res['roads'] = [{'k': f['properties']['objektart'], 'n': f['properties'].get('strassenname'), 'p': [[round(x - E0, 1), round(N0 - y, 1)] for x, y, *_ in line]}
                 for f in roads for line in lines(f['geometry']) if f['properties']['objektart'] <= 11]
 wat = fetch('ch.swisstopo.swisstlm3d-gewaessernetz')
-res['water'] = [{'k': f['properties']['objektart'], 'n': f['properties'].get('name'), 'p': [[round(x - E0, 1), round(N0 - y, 1)] for x, y, *_ in line]}
+res['water'] = [{'k': f['properties']['objektart'], 'n': f['properties'].get('name'), 'b': 1 if (f['properties'].get('name') or '').startswith('Birs') else 0, 'p': [[round(x - E0, 1), round(N0 - y, 1)] for x, y, *_ in line]}
                 for f in wat for line in lines(f['geometry'])]
 json.dump(res, open(sys.argv[1], 'w'), separators=(',', ':'))
 from collections import Counter
