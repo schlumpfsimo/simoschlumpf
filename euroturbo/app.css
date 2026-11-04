@@ -160,3 +160,15 @@ textarea.note{width:100%;min-height:64px;padding:8px;border:1px solid #000;backg
 .seg button{padding:5px 12px;border:1px solid #000;background:#fff;text-transform:uppercase;font-size:.72rem;letter-spacing:.04em;margin-right:-1px}
 .seg button.active{background:#000;color:#fff}
 .seg button span{color:inherit;opacity:.7;font-weight:400}
+/* ---------- Export / E-Mail ---------- */
+.xbar{display:flex;justify-content:flex-end;gap:4px;margin:6px 0 2px}
+.mfgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0 8px;margin-bottom:12px}
+details.mf{margin:3px 0}
+details.mf summary{display:flex;gap:6px;align-items:center;font-size:.8rem;text-transform:uppercase;letter-spacing:.03em}
+details.mf summary .btn{margin-left:auto}
+details.mf .chips{margin-top:6px;max-height:220px;overflow:auto}
+label.ck{display:inline-flex;align-items:center;gap:4px;padding:1px 6px 1px 2px;font-size:.75rem;border:1px solid #999;cursor:pointer;white-space:nowrap}
+label.ck.lead{border-color:#000;font-weight:700}
+label.ck:has(input:checked){background:#000;color:#fff;border-color:#000}
+label.ck:has(input:checked) .muted{color:#ccc}
+label.ck input{margin:0}
