@@ -333,7 +333,7 @@ function spawn(i){
 }
 const ctl = { pitch: 0, roll: 0, yaw: 0, thrRate: 0, boost: false };
 let invert = false;
-try { invert = localStorage.getItem('flug-invert') === '1'; } catch (e) {}
+try { invert = localStorage.getItem('flight-invert') === '1'; } catch (e) {}
 function step(dt){
   if (P.crashed > 0){ P.crashed -= dt; if (P.crashed <= 0) spawn(place); return; }
   P.thr = clamp(P.thr + ctl.thrRate * dt * 0.5, 0, 1);
@@ -384,7 +384,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (!renderer.xr.isPresenting && started) setPaused(true); });
 function toggleInvert(){
-  invert = !invert; try { localStorage.setItem('flug-invert', invert ? '1' : '0'); } catch (e) {}
+  invert = !invert; try { localStorage.setItem('flight-invert', invert ? '1' : '0'); } catch (e) {}
   flash(invert ? '↑ = NASE HOCH' : '↑ = NASE RUNTER', 1.5);
 }
 // look around with the mouse (or a finger): drag; it springs back when let go

@@ -1,5 +1,5 @@
 # swissALTIREGIO (swisstopo, 10 m, its 40 m overview) + national border (swissBOUNDARIES3D via api3.geo.admin.ch)
-# -> flug/schweiz.bin.gz: one 100 m height grid of Switzerland and its surroundings, a lake mask and the border line.
+# -> flight/schweiz.bin.gz: one 100 m height grid of Switzerland and its surroundings, a lake mask and the border line.
 # Usage: pack.py SWISSALTIREGIO_TIF LAND_GEOJSON OUT
 # Heights in whole metres, predicted from the left, upper and upper-left neighbour (like PNG's "paeth-lite"),
 # the zigzagged residual in one byte; 255 escapes to a raw uint16 in a second list. Lakes: flat areas of the DEM.
