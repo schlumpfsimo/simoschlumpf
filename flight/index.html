@@ -80,7 +80,7 @@ const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const statusEl = document.getElementById('status'), goBtn = document.getElementById('go');
 const overlay = document.getElementById('overlay'), msgEl = document.getElementById('msg');
 
-// ---------------------------------------------------------------- data: flug/schweiz.bin.gz, packed by tools/pack.py
+// ---------------------------------------------------------------- data: flight/schweiz.bin.gz, packed by tools/pack.py
 // grid: x = E − E0 (east), z = N1 − N (south), STEP metres per cell; heights in whole metres
 let NX, NZ, E0, N1, STEP, H, WATER, BORDER;
 async function load(){
