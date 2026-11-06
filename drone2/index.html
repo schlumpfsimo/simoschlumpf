@@ -3731,12 +3731,13 @@ let lastFeed = 0;
 const feedRT = new THREE.WebGLRenderTarget(OW, OH, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
 const vrScene = new THREE.Scene(); vrScene.background = new THREE.Color(0);
 const vrCam = new THREE.PerspectiveCamera();
-const GOGGLE_SCALES = [1.8, 2.34, 1.36];
+// 3 m away, sized by its width in degrees, so the whole picture fits inside the lenses
+const GOGGLE_DIST = 3, GOGGLE_SCALES = [62, 74, 52].map(a => GOGGLE_DIST * Math.tan(a * Math.PI / 360) / 0.7);
 let goggleSize = 0;
 try { goggleSize = (+localStorage.getItem('dronesim-vr-size') || 0) % GOGGLE_SCALES.length; } catch (e) {}
 const goggle = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.05), new THREE.ShaderMaterial({
   uniforms: { map: { value: feedRT.texture }, uScale: { value: GOGGLE_SCALES[goggleSize] } }, depthTest: false, depthWrite: false,
-  vertexShader: `uniform float uScale; varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * uScale, -1.5, 1.0); }`,
+  vertexShader: `uniform float uScale; varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * uScale, -${GOGGLE_DIST.toFixed(1)}, 1.0); }`,
   fragmentShader: `uniform sampler2D map; varying vec2 vUv; void main(){ gl_FragColor = texture2D(map, vUv); }`
 }));
 goggle.frustumCulled = false; vrScene.add(goggle);

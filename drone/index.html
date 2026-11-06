@@ -2709,7 +2709,7 @@ function ptrOnGoggle(c){
   _m.copy(renderer.xr.getCamera().matrixWorld).invert();
   const o = _v.setFromMatrixPosition(c.matrixWorld).applyMatrix4(_m), d = _w.set(0, 0, -1).transformDirection(c.matrixWorld).transformDirection(_m);
   if (d.z >= -1e-3) return null;
-  const t = (-1.5 - o.z) / d.z, sc = GOGGLE_SCALES[goggleSize];
+  const t = (-GOGGLE_DIST - o.z) / d.z, sc = GOGGLE_SCALES[goggleSize];
   return [((o.x + d.x * t) / (1.4 * sc) + 0.5) * W, (0.5 - (o.y + d.y * t) / (1.05 * sc)) * H];
 }
 // controllers on the start screen and in the trailer: Quest (point + trigger, sticks, A) or a gamepad (d-pad or stick, A)
@@ -2890,14 +2890,14 @@ const vrScene = new THREE.Scene();
 vrScene.background = new THREE.Color(0);
 const vrCam = new THREE.PerspectiveCamera();
 const vrCtrls = [renderer.xr.getController(0), renderer.xr.getController(1)];
-// the quad is placed in view space, so it stays fixed to the head in both eyes; base size 1.4 m = 50 degrees at 1.5 m,
-// uScale makes it wider (right stick click cycles the sizes)
-const GOGGLE_SCALES = [1.8, 2.34, 1.36]; // ~80, ~95, ~65 degrees wide
+// the quad is placed in view space, so it stays fixed to the head in both eyes; it sits 3 m away and is sized by its
+// width in degrees, so the whole picture fits inside the lenses (right stick click cycles the sizes)
+const GOGGLE_DIST = 3, GOGGLE_SCALES = [62, 74, 52].map(a => GOGGLE_DIST * Math.tan(a * Math.PI / 360) / 0.7);
 let goggleSize = 0;
 try { goggleSize = (+localStorage.getItem('interceptor-vr-size') || 0) % GOGGLE_SCALES.length; } catch (e) {}
 const goggle = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.05), new THREE.ShaderMaterial({
   uniforms: { map: { value: feedRT.texture }, uScale: { value: GOGGLE_SCALES[goggleSize] } }, depthTest: false, depthWrite: false,
-  vertexShader: `uniform float uScale; varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * uScale, -1.5, 1.0); }`,
+  vertexShader: `uniform float uScale; varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * uScale, -${GOGGLE_DIST.toFixed(1)}, 1.0); }`,
   fragmentShader: `uniform sampler2D map; varying vec2 vUv; void main(){ gl_FragColor = texture2D(map, vUv); }`
 }));
 goggle.frustumCulled = false;
