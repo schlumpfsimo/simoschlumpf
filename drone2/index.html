@@ -994,7 +994,7 @@ function act(a){
   if (paused) return;
   if (a === 'vbtn') a = GAME.mode === 'defend' || world.war ? 'det' : 'toggle';
   if (GAME.ended){ if ((a === 'ok' || a === 'arm' || a === 'det') && GAME.endT > 2){ resetDefense(); respawnStart(); } return; }
-  if (a === 'det'){ if (P.alive && P.kind === 'recon'){ if (world.war) markTarget(); } else if ((GAME.mode === 'defend' || world.war) && P.alive && P.armed) detonate(); return; }
+  if (a === 'det'){ if (P.alive && P.kind === 'recon'){ if (world.war && ARTY_ON) markTarget(); } else if ((GAME.mode === 'defend' || world.war) && P.alive && P.armed) detonate(); return; }
   if (a === 'kind'){ switchDrone(); return; }
   if (card && (a === 'ok' || a === 'arm' && device() !== 'kb')){ closeCard(); return; }
   if (a === 'ok') return;
@@ -1107,7 +1107,7 @@ function showTouch(){
     document.getElementById('tbT').style.display = pos ? '' : 'none';
     document.getElementById('tbM').textContent = say(S.modeName[P.mode]);
   }
-  if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = world && (def || world.war) ? (P.kind === 'recon' ? (lang === 'fr' ? 'MARQUER' : lang === 'en' ? 'MARK' : 'MARKIEREN') : (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN')) : 'V'; document.getElementById('tbK').style.display = world && world.war ? '' : 'none'; } }
+  if (touchIn.pane) touchIn.pane.style.display = state === 'fly' && !menu && !renderer.xr.isPresenting ? 'block' : 'none'; if (touchIn.pane) { const b = document.getElementById('tbV'); const def = GAME.mode === 'defend'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.style.display = world && (world.hasWar || def) ? '' : 'none'; b.textContent = world && (def || world.war) ? (P.kind === 'recon' ? (lang === 'fr' ? 'MARQUER' : lang === 'en' ? 'MARK' : 'MARKIEREN') : (lang === 'fr' ? 'DÉTONER' : lang === 'en' ? 'DETONATE' : 'ZÜNDEN')) : 'V'; document.getElementById('tbK').style.display = ARTY_ON && world && world.war ? '' : 'none'; } }
 
 // ================================================================ the drone: camera quadcopter with three flight modes
 // POS: GPS hold and a stabilised camera (easy); ANGL: self-levelling; ACRO: full manual, like a racing drone
@@ -2630,14 +2630,14 @@ function drawOSD(){
   if (P.vel.length() > 3){ const [x, y, fr] = toScreen(_w.copy(P.vel).normalize().multiplyScalar(100).add(camera.position)); if (fr && x > 0 && x < W && y > 0 && y < H){ g.strokeRect(x - 2, y - 2, 4, 4); g.fillRect(x - 1, y - 1, 2, 2); } }
   drawCompass(g);
   // the task of this drone, under the compass
-  if (world.war){ g.font = 'bold 6px monospace'; txt(g, say(P.kind === 'recon' ? DT.kindRecon : DT.kindFpv) + (P.kind === 'recon' ? (dev === 'kb' ? ' [F]' : dev === 'touch' ? '' : ' [B]') : ''), W / 2, 40, 'center'); g.font = 'bold 9px monospace'; }
+  if (world.war && (ARTY_ON || P.kind === 'fpv')){ g.font = 'bold 6px monospace'; txt(g, say(P.kind === 'recon' ? DT.kindRecon : DT.kindFpv) + (P.kind === 'recon' ? (dev === 'kb' ? ' [F]' : dev === 'touch' ? '' : ' [B]') : ''), W / 2, 40, 'center'); g.font = 'bold 9px monospace'; }
   // the recon drone: a range-finding reticle, and the fire missions with their time to impact
   if (P.kind === 'recon'){
     if ((clock * 10 | 0) % 3 === 0) aimCache = aimPoint();
     g.beginPath(); for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]){ g.moveTo(W / 2 + sx * 16, H / 2 + sy * 10); g.lineTo(W / 2 + sx * 16, H / 2 + sy * 16); g.lineTo(W / 2 + sx * 10, H / 2 + sy * 16); } stroke2(g);
     g.font = 'bold 7px monospace';
     txt(g, 'RNG ' + (aimCache ? Math.round(aimCache.distanceTo(camera.position)) : '---'), W / 2 + 22, H / 2 + 20, 'left');
-    if (world.war) txt(g, ARTY.cool > 0 ? 'ARTY ' + Math.ceil(ARTY.cool) + 's' : 'ARTY RDY', W / 2 - 22, H / 2 + 20, 'right');
+    if (world.war && ARTY_ON) txt(g, ARTY.cool > 0 ? 'ARTY ' + Math.ceil(ARTY.cool) + 's' : 'ARTY RDY', W / 2 - 22, H / 2 + 20, 'right');
     g.font = 'bold 9px monospace';
   }
   for (const m of ARTY.missions){
@@ -2844,6 +2844,10 @@ function impact(x, y, z){
 
 // ================================================================ DEFENCE: an interceptor drone against Russian drones, tanks and motorcycles
 // Not a game about scores: every drone that gets through hits something, and the damage stays.
+// switched off for now (the code stays, set to true to bring it back):
+// ARTY_ON: the recon drone that marks targets for the artillery, and the Russian recon drones that direct theirs
+// MOTOS_ON: the motorcycle groups across the fields
+const ARTY_ON = false, MOTOS_ON = false;
 const GAME = { mode: 'explore', t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', next: {}, hitMsg: 0, hitWhat: '', hitTitle: '' };
 const ROUND = 300;
 const DT = {
@@ -2851,7 +2855,7 @@ const DT = {
   explore: { de: 'ORTE ERKUNDEN', fr: 'EXPLORER DES LIEUX', en: 'EXPLORE PLACES' },
   exploreD: { de: 'Flieg zu markierten Orten und erfahre, was Krieg für Menschen bedeutet.', fr: 'Vole vers des lieux marqués et découvre ce que la guerre signifie pour les gens.', en: 'Fly to marked places and learn what war means for people.' },
   defend: { de: 'ABWEHR', fr: 'DÉFENSE', en: 'DEFENCE' },
-  defendD: { de: 'Mit Abfangdrohnen gegen russische Drohnen, Panzer und Motorräder. Erleben, wofür es Frieden braucht.', fr: 'Avec des drones intercepteurs contre des drones, des chars et des motos russes. Vivre pourquoi la paix est nécessaire.', en: 'With interceptor drones against Russian drones, tanks and motorcycles. Experience why peace is needed.' },
+  defendD: { de: 'Mit Abfangdrohnen gegen russische Drohnen und Panzer. Erleben, wofür es Frieden braucht.', fr: 'Avec des drones intercepteurs contre des drones et des chars russes. Vivre pourquoi la paix est nécessaire.', en: 'With interceptor drones against Russian drones and tanks. Experience why peace is needed.' },
   peace: { de: 'FRIEDENSFLUG', fr: 'VOL EN TEMPS DE PAIX', en: 'PEACETIME FLIGHT' },
   peaceD: { de: 'Die Landschaft, wie sie heute ist. Kein Auftrag, kein Krieg – einfach fliegen.', fr: 'Le paysage tel qu’il est aujourd’hui. Pas de mission, pas de guerre – simplement voler.', en: 'The landscape as it is today. No mission, no war – just fly.' },
   peaceT: { de: 'FRIEDENSZEIT', fr: 'TEMPS DE PAIX', en: 'PEACETIME' },
@@ -2887,14 +2891,14 @@ const DT = {
            en: 'Imagine Basel being attacked like Kyiv or Kharkiv. The drones go for the Roche towers first. Once one collapses, they turn to the Minster and the university hospital. The night only ends when the hospital is destroyed. You fly interceptor drones that destroy themselves when they hit.' } },
     valley: {
       t: { de: 'ABWEHR – DAS TAL WIRD ANGEGRIFFEN', fr: 'DÉFENSE – LA VALLÉE EST ATTAQUÉE', en: 'DEFENCE – THE VALLEY IS ATTACKED' },
-      x: { de: 'Ein friedlicher Sommertag – und dann kommen die Drohnen. Panzer und Motorräder fahren die Talstrasse hinauf. Du fliegst Abfangdrohnen und schützt die Dorfschule. Achte darauf, was jeder Einschlag in diesem Tal hinterlässt.',
-           fr: 'Une paisible journée d’été – puis les drones arrivent. Des chars et des motos remontent la route de la vallée. Tu pilotes des drones intercepteurs et tu protèges l’école du village. Regarde ce que chaque impact laisse dans cette vallée.',
-           en: 'A peaceful summer day – and then the drones come. Tanks and motorcycles drive up the valley road. You fly interceptor drones and protect the village school. Notice what every impact leaves behind in this valley.' } },
+      x: { de: 'Ein friedlicher Sommertag – und dann kommen die Drohnen. Panzer fahren die Talstrasse hinauf. Du fliegst Abfangdrohnen und schützt die Dorfschule. Achte darauf, was jeder Einschlag in diesem Tal hinterlässt.',
+           fr: 'Une paisible journée d’été – puis les drones arrivent. Des chars remontent la route de la vallée. Tu pilotes des drones intercepteurs et tu protèges l’école du village. Regarde ce que chaque impact laisse dans cette vallée.',
+           en: 'A peaceful summer day – and then the drones come. Tanks drive up the valley road. You fly interceptor drones and protect the village school. Notice what every impact leaves behind in this valley.' } },
     donbas: {
       t: { de: 'ABWEHR – AN DER FRONT', fr: 'DÉFENSE – SUR LE FRONT', en: 'DEFENCE – AT THE FRONT' },
-      x: { de: 'So sieht der Krieg im Donbass heute aus: Aufklärungsdrohnen lenken die Artillerie, Shahed- und Lancet-Drohnen fliegen auf das Dorf, Panzer kommen über die Strasse und Motorradgruppen stossen über die Felder vor. Du fliegst Abfangdrohnen und schützt das Dorf.',
-           fr: 'Voici à quoi ressemble la guerre dans le Donbass aujourd’hui : des drones de reconnaissance guident l’artillerie, des drones Shahed et Lancet volent vers le village, des chars arrivent par la route et des groupes de motos avancent à travers les champs. Tu pilotes des drones intercepteurs et tu protèges le village.',
-           en: 'This is what the war in the Donbas looks like today: recon drones direct the artillery, Shahed and Lancet drones fly at the village, tanks come down the road and motorcycle groups push across the fields. You fly interceptor drones and protect the village.' } },
+      x: { de: 'So sieht der Krieg im Donbass heute aus: Shahed- und Lancet-Drohnen fliegen auf das Dorf, Panzer kommen über die Strasse. Du fliegst Abfangdrohnen und schützt das Dorf.',
+           fr: 'Voici à quoi ressemble la guerre dans le Donbass aujourd’hui : des drones Shahed et Lancet volent vers le village, des chars arrivent par la route. Tu pilotes des drones intercepteurs et tu protèges le village.',
+           en: 'This is what the war in the Donbas looks like today: Shahed and Lancet drones fly at the village, tanks come down the road. You fly interceptor drones and protect the village.' } },
   },
   artyLoading: { de: 'ARTILLERIE LÄDT', fr: 'ARTILLERIE EN RECHARGE', en: 'ARTILLERY RELOADING' },
   artyAway: { de: 'ZIEL MARKIERT – ARTILLERIE FEUERT', fr: 'CIBLE MARQUÉE – L’ARTILLERIE TIRE', en: 'TARGET MARKED – ARTILLERY FIRING' },
@@ -3086,7 +3090,7 @@ const BTYPES = {
   zala:    { name: 'ZALA',     role: 'recon',  speed: 24, alt: [160, 300], color: 0x3c3f3d },
   molniya: { name: 'MOLNIJA',  role: 'strike', speed: 30, alt: [35, 70],   color: 0xb0a084, dive: 1.5, diveDist: 140, miss: 0.4 },
   lancet:  { name: 'LANCET',   role: 'strike', speed: 32, alt: [140, 240], color: 0x474c44, dive: 2.3, diveDist: 320, miss: 0.2, weave: true },
-  geran:   { name: 'GERAN-2 / SHAHED', role: 'strike', speed: 50, alt: [80, 300], color: 0x5d5c58, dive: 1.3, miss: 0.45 },
+  geran:   { name: 'GERAN-2 / SHAHED', role: 'strike', speed: 34, alt: [80, 300], color: 0x5d5c58, dive: 1.3, miss: 0.45 },
 };
 function makeBanditModel(type){
   const t = BTYPES[type], grp = new THREE.Group();
@@ -3562,7 +3566,7 @@ function updateArty(dt){
   }
 }
 function switchDrone(){
-  if (!world || !world.war || GAME.ended) return;
+  if (!ARTY_ON || !world || !world.war || GAME.ended) return;
   P.kind = P.kind === 'recon' ? 'fpv' : 'recon';
   respawnStart(); staticAmt = 1;
   msg = say(P.kind === 'recon' ? DT.kindRecon : DT.kindFpv); msgT = 3; beep(1000, 0.08);
@@ -3582,14 +3586,14 @@ function updateOpening(dt){
   O.t += dt;
   if (O.stage === 0 && O.t > 2){ O.stage = 1; rocheFormation(6); }
   else if (O.stage === 1 && O.t > 12){ O.stage = 2; rocheFormation(1); O.next = O.t + 20; }
-  else if (O.stage === 2 && O.t > O.next){ O.next = O.t + 12; rocheFormation(1); }
+  else if (O.stage === 2 && O.t > O.next && GAME.mode !== 'defend'){ O.next = O.t + 12; rocheFormation(1); }
 }
 // the war goes on around the pilot when exploring: drones over the town, air defence firing, impacts, columns and the resistance
 let warT = 30, colT = 150;
 function updateWarLife(dt){
   updateOpening(dt);
   updateBlds(dt);
-  if (world.war) updateArty(dt);
+  if (world.war && ARTY_ON) updateArty(dt);
   if (GAME.mode !== 'defend'){
     if (world.war && world.ambientTarget){
       warT -= dt;
@@ -3635,7 +3639,7 @@ function resetDefense(){
   for (const v of vehicles) v.remove(); vehicles.length = 0;
   for (const f of flying) scene.remove(f.o); flying.length = 0; rounds.length = 0;
   clearDamage();
-  Object.assign(GAME, { t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', hitMsg: 0, next: { recon: 8, strike: 25, column: [60, 185], moto: [115, 235] } });
+  Object.assign(GAME, { t: 0, stopped: 0, kills: 0, aa: 0, leaks: 0, used: 0, homeHits: 0, rocheHits: 0, rocheDown: false, ended: false, endT: 0, endWhy: '', hitMsg: 0, next: { recon: 8, strike: 25, pending: [], column: [60, 185], moto: MOTOS_ON ? [115, 235] : [] } });
   if (world.restoreRoche){ world.restoreRoche(); world.setRoche(false); }
   if (world.rocheAt) world.opening = { t: 0, stage: 0 };
   shells.length = 0;
@@ -3643,7 +3647,7 @@ function resetDefense(){
 }
 function spawnColumn(){
   const path = pickR(world.routes);
-  const types = ['tank', pickR(['bmp', 'tank']), 'bmp']; if (rnd() < 0.4) types.push('bmp');
+  const types = ['tank', 'bmp'];  // two vehicles, otherwise too hard (it was tank, tank or BMP, BMP, sometimes a fourth)
   const speed = rr(4.5, 5.5), s0 = world.endless ? 0 : Math.max(0, path.len - speed * 230);
   types.forEach((t, k) => vehicles.push(new Vehicle(t, path, s0 - k * 28, speed)));
 }
@@ -3655,14 +3659,16 @@ function updateDefense(dt){
   if (GAME.ended){ GAME.endT += dt; return; }
   GAME.t += dt;
   const T = GAME.t, N = GAME.next;
-  if (T > N.recon){ bandits.push(new Bandit(rnd() < 0.5 ? 'orlan' : 'zala')); N.recon = T + rr(60, 80); }
+  if (ARTY_ON && T > N.recon){ bandits.push(new Bandit(rnd() < 0.5 ? 'orlan' : 'zala')); N.recon = T + rr(60, 80); }
   if (T > N.strike){
-    const swarm = T > 100 && rnd() < 0.3 ? 2 + Math.floor(rnd() * 3) : 1;
-    for (let k = 0; k < swarm; k++){ const r = rnd(); bandits.push(new Bandit(swarm > 1 || r < 0.5 ? 'geran' : r < 0.75 ? 'molniya' : 'lancet')); }
-    N.strike = T + Math.max(4, lerp(22, 9, T / ROUND)) * rr(0.7, 1.3);
+    // waves as in /drone: one drone at first, up to four near the end; every 40 s at first, every 14 s at the end
+    const k = Math.min(1.3, T / ROUND), n = 1 + Math.floor(k * 3 + rnd() * 1.3);
+    for (let i = 0; i < n; i++){ const r = rnd(); N.pending.push({ at: T + i * rr(3, 8), type: T > 180 && r < 0.25 ? 'lancet' : T > 80 && r < 0.45 ? 'molniya' : 'geran' }); }
+    N.strike = T + (40 - 26 * Math.min(1, k)) * rr(0.8, 1.2);
   }
+  for (let i = N.pending.length - 1; i >= 0; i--) if (T >= N.pending[i].at){ bandits.push(new Bandit(N.pending[i].type)); N.pending.splice(i, 1); }
   if (N.column.length && T > N.column[0]){ N.column.shift(); spawnColumn(); if (world.endless) N.column.push(T + rr(140, 200)); }
-  if (N.moto.length && T > N.moto[0]){ N.moto.shift(); spawnMotos(); if (world.endless) N.moto.push(T + rr(110, 160)); }
+  if (MOTOS_ON && N.moto.length && T > N.moto[0]){ N.moto.shift(); spawnMotos(); if (world.endless) N.moto.push(T + rr(110, 160)); }
   for (const b of [...bandits]) b.update(dt);
   for (const v of vehicles) v.update(dt);
   updateRounds(dt); updateFlying(dt);

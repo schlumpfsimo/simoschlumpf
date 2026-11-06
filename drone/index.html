@@ -25,7 +25,7 @@ THREE.ColorManagement.enabled = false;
 
 // ---------------------------------------------------------------- setup
 // W, H: OSD layout units; RW, RH: camera pixels (analog look); OW, OH: output pixels (sharp OSD and menus)
-const W = 320, H = 240, RW = 480, RH = 360, OW = 1024, OH = 768;
+const W = 320, H = 240, RW = 800, RH = 600, OW = 1024, OH = 768;
 const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
 renderer.setPixelRatio(1);
 renderer.setSize(OW, OH, false);
@@ -2027,7 +2027,7 @@ function setVision(name){
   TH.value = th ? 1 : 0;
   if (th){ FOG.setRGB(0.15, 0.15, 0.15); scene.fog.density = 0.0001; } else { FOG.setRGB(0.72, 0.70, 0.66); scene.fog.density = 0.00015; }
   post.uniforms.uTherm.value = th ? 1 : 0;
-  post.uniforms.uGain.value = th ? 1.0 : 1.3;
+  post.uniforms.uGain.value = th ? 1.0 : 1.25;
   sunSprite.visible = !th;
   smokeOpacity = th ? 0.25 : 1;
   trMat.opacity = th ? 1 : 0.45;
@@ -2041,11 +2041,11 @@ const oc = osd.getContext('2d');
 const osdTex = new THREE.CanvasTexture(osd);
 osdTex.minFilter = osdTex.magFilter = THREE.LinearFilter;
 osdTex.generateMipmaps = false;
-const K = 0.2;
+const K = 0.34;
 const post = new THREE.ShaderMaterial({
   uniforms: {
     tScene: { value: rt.texture }, tOSD: { value: osdTex }, uRes: { value: new THREE.Vector2(RW, RH) },
-    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.3 }, uTherm: { value: 0 }, uBlack: { value: 0 }, uClean: { value: 0 }, uOsdTop: { value: 0 }
+    uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uK: { value: K }, uGain: { value: 1.25 }, uTherm: { value: 0 }, uBlack: { value: 0 }, uClean: { value: 0 }, uOsdTop: { value: 0 }
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader: `
@@ -2054,37 +2054,56 @@ const post = new THREE.ShaderMaterial({
     varying vec2 vUv;
     float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main(){
+      // the analog FPV feed as in /drone2: soft, interlaced, washed out, grain and colour speckle, blocks on a weak link
       vec2 uv = vUv;
       vec2 px = floor(vUv * uRes);
       float tq = floor(uTime * 30.0);
       float row = floor(uv.y * uRes.y);
-      float jit = (h(vec2(row, tq)) - 0.5) * (0.003 + uNoise * 0.06) * step(0.7 - uNoise * 0.6, h(vec2(row * 0.37, tq + 1.7)));
-      jit += sin(uv.y * 30.0 + uTime * 2.0) * 0.0008;
+      float jit = (h(vec2(row, tq)) - 0.5) * (0.004 + uNoise * 0.06) * step(0.62 - uNoise * 0.5, h(vec2(floor(row / 3.0) * 0.37, tq + 1.7)));
+      jit += sin(uv.y * 30.0 + uTime * 2.0) * 0.0006;
       jit *= 1.0 - uClean;
       uv.x += jit;
       vec2 c = uv * 2.0 - 1.0;
       c *= (1.0 + uK * dot(c, c)) / (1.0 + 2.0 * uK);
       vec2 s = c * 0.5 + 0.5;
-      vec3 col = texture2D(tScene, s).rgb;
-      vec3 smear = texture2D(tScene, s - vec2(1.5 / uRes.x, 0.0)).rgb + texture2D(tScene, s - vec2(3.5 / uRes.x, 0.0)).rgb;
-      col = mix(col, smear * 0.5, 0.3);
+      float odd = mod(row, 2.0);
+      s.x += odd * 0.6 / uRes.x;
+      float blk = step(1.0 - uNoise * 0.45, h(vec2(floor(s.x * uRes.x / 12.0), floor(s.y * uRes.y / 12.0) + tq)));
+      vec2 sb = mix(s, (floor(s * uRes / 12.0) + 0.5) * 12.0 / uRes, blk);
+      vec2 dx = vec2(1.0 / uRes.x, 0.0), dy = vec2(0.0, 1.0 / uRes.y);
+      vec3 col = texture2D(tScene, sb).rgb * 0.52 + (texture2D(tScene, sb + dx).rgb + texture2D(tScene, sb - dx).rgb) * 0.16 + (texture2D(tScene, sb + dy).rgb + texture2D(tScene, sb - dy).rgb) * 0.08;
+      vec3 smear = texture2D(tScene, sb - dx * 3.0).rgb;
+      col = mix(col, smear, 0.18) * (1.0 - odd * 0.04);
+      // warm, nearly monochrome tone curve with a trace of colour, blacks a little lifted, highlights blooming; thermal: grey
       float l = dot(col, vec3(0.299, 0.587, 0.114));
-      l = clamp(pow(l * uGain, 0.85) * 1.15, 0.0, 1.0);
-      vec3 graded = mix(vec3(0.11, 0.10, 0.09), vec3(0.88, 0.85, 0.79), l) * vec3(1.0, 0.965, 0.9);
-      vec3 chroma = col - vec3((col.r + col.g + col.b) / 3.0);
-      col = mix(graded + chroma * 0.5, vec3(mix(0.03, 0.96, l)), uTherm);
+      float lg = clamp(pow(l * uGain, 0.85) * 1.12, 0.0, 1.0);
+      vec3 fpv = mix(vec3(0.12, 0.11, 0.10), vec3(0.88, 0.85, 0.79), lg) * vec3(1.0, 0.965, 0.9);
+      fpv += (col - vec3((col.r + col.g + col.b) / 3.0)) * 0.45;
+      fpv += smoothstep(0.7, 1.0, lg) * 0.08;
+      col = mix(fpv, vec3(mix(0.03, 0.96, lg)), uTherm);
       vec4 o = texture2D(tOSD, vec2(vUv.x + jit, vUv.y));
       col = mix(col, o.rgb, o.a);
       float n = h(px + vec2(tq * 7.13, tq * 3.7));
-      col += (n - 0.5) * (0.05 + uNoise * 0.55);
-      col += step(1.0 - uNoise * 0.03, h(px * 1.31 + tq)) * 0.8;
+      float lineN = h(vec2(row, tq * 2.1)) - 0.5;
+      col += (n - 0.5) * (0.1 + uNoise * 0.55);
+      col += lineN * (0.03 + uNoise * 0.22);
+      col += (vec3(h(px + tq * 1.1), h(px + tq * 2.3), h(px + tq * 3.7)) - 0.5) * (0.06 + uNoise * 0.3);
+      col += step(1.0 - (0.0015 + uNoise * 0.05), h(px * 1.31 + tq)) * 0.7;
+      col *= 0.95 + 0.05 * h(vec2(tq, 1.0));
       float band = fract(vUv.y + uTime * 0.11);
-      col *= 1.0 - 0.06 * smoothstep(0.0, 0.04, band) * smoothstep(0.1, 0.04, band);
-      vec2 vc = vUv - 0.5; col *= 1.0 - dot(vc, vc) * 0.85;
-      float sn = h(vec2(px.x * 0.5 + tq, px.y * 1.7 + tq * 13.0));
-      float ln = h(vec2(row, tq * 1.3));
-      col = mix(col, vec3(sn * 0.75 + ln * 0.25) * vec3(0.92, 0.9, 0.86), uStatic);
-      vec4 o3 = texture2D(tOSD, vec2(vUv.x + sin(vUv.y * 30.0 + uTime * 2.0) * 0.0008, vUv.y));
+      col *= 1.0 - 0.05 * smoothstep(0.0, 0.04, band) * smoothstep(0.1, 0.04, band);
+      vec2 vc = vUv - 0.5; col *= 1.0 - dot(vc, vc) * 0.8;
+      // signal lost: analog snow, a rolling sync bar, torn bands
+      float rowR = h(vec2(row, tq * 1.7));
+      float seg = floor(px.x / (1.0 + floor(rowR * 4.0)));
+      float snow = h(vec2(seg * 1.13 + tq * 17.0, row * 0.71 + tq * 5.3)); snow = snow * snow * 1.35;
+      float roll = fract(vUv.y * 0.9 + uTime * 0.7);
+      float bar = smoothstep(0.0, 0.05, roll) * smoothstep(0.24, 0.12, roll);
+      float tear = step(0.9, h(vec2(floor(row / 5.0), tq)));
+      vec3 st = vec3(snow) * (1.0 - bar * 0.6) + (rowR - 0.5) * 0.28 + tear * 0.22;
+      st *= vec3(0.95, 0.94, 0.98) + vec3(h(px + 1.7 + tq), h(px + 3.1 + tq), h(px + 5.3 + tq)) * 0.14;
+      col = mix(col, clamp(st, 0.0, 1.0), max(uStatic, uNoise * uNoise * 0.55 * step(0.45, h(vec2(floor(row / 9.0), tq * 0.5)))));
+      vec4 o3 = texture2D(tOSD, vec2(vUv.x + sin(vUv.y * 30.0 + uTime * 2.0) * 0.0006, vUv.y));
       col = mix(col, o3.rgb, o3.a * uOsdTop);
       col = mix(col, vec3(1.0, 0.97, 0.9), uFlash);
       col = mix(col, vec3(0.0), uBlack);
@@ -3017,6 +3036,19 @@ function watchQuality(rawDt){
   if (quality.cool <= 0 && avg > limit && quality.level < quality.levels.length - 1){ quality.level++; applyQuality(); quality.cool = 3; }
 }
 const vrQuality = () => applyQuality();
+// the feed does not need every pixel: when frames get slow, render fewer of them (as in /drone2)
+const RES = { f: 1, acc: 0, n: 0, good: 0 };
+function watchRes(raw){
+  if (seq.active || paused || raw > 0.5) return;
+  RES.acc += raw; RES.n++;
+  if (RES.acc < 1.5) return;
+  const avg = RES.acc / RES.n, limit = renderer.xr.isPresenting ? 1 / 60 : 1 / 38; RES.acc = 0; RES.n = 0;
+  let f = RES.f;
+  if (avg > limit && f > 0.5) f = Math.max(0.5, f - 0.1);
+  else if (avg < limit * 0.75){ if (++RES.good > 3 && f < 1){ f = Math.min(1, f + 0.1); RES.good = 0; } }
+  else RES.good = 0;
+  if (f !== RES.f){ RES.f = f; const w = Math.round(RW * f), h = Math.round(RH * f); rt.setSize(w, h); post.uniforms.uRes.value.set(w, h); }
+}
 if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
   if (!ok) return;
   const b = document.createElement('button');
@@ -3085,7 +3117,7 @@ function render(){
 
 function frame(now){
   const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
-  if (!document.hidden) watchQuality(Math.min(raw, 0.25));
+  if (!document.hidden){ watchQuality(Math.min(raw, 0.25)); watchRes(raw); }
   readPads();
   if (performance.now() - lastInput > IDLE_MS){
     if (!seq.active) resetToStart();
