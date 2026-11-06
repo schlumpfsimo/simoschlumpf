@@ -139,9 +139,9 @@ const S = {
       fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'RT          GAZ', 'LB / RB     INCLINER LA CAMÉRA', 'B           DÉTONER / AVANT-APRÈS', 'X           MODE DE VOL', 'START       PAUSE   Y LANGUE'],
       en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'RT          THROTTLE', 'LB / RB     TILT CAMERA', 'B           DETONATE / BEFORE-AFTER', 'X           FLIGHT MODE', 'START       PAUSE   Y LANGUAGE'] },
     vr: {
-      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'L-TRIGGER   GAS', 'GRIFFTASTEN KAMERA NEIGEN', 'B           ZÜNDEN / VORHER-NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: BILDGRÖSSE'],
-      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTE G.  GAZ', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'B           DÉTONER / AVANT-APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : TAILLE ÉCRAN'],
-      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'L-TRIGGER   THROTTLE', 'GRIPS       TILT CAMERA', 'B           DETONATE / BEFORE-AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: SCREEN SIZE'] },
+      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'L-TRIGGER   GAS', 'GRIFFTASTEN KAMERA NEIGEN', 'R-TRIGGER   ZÜNDEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: BILDGRÖSSE'],
+      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTE G.  GAZ', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'GÂCHETTE D.  DÉTONER', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : TAILLE ÉCRAN'],
+      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'L-TRIGGER   THROTTLE', 'GRIPS       TILT CAMERA', 'R-TRIGGER   DETONATE', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: SCREEN SIZE'] },
     touch: {
       de: ['LINKER STICK  HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'START         MOTOREN AN / AUS', 'TURBO         HALTEN: SCHNELLER', 'CAM ▲ ▼       KAMERA NEIGEN', 'V / ZÜNDEN    VORHER-NACHHER / ABWEHR', 'MODE          FLUGMODUS', 'II            PAUSE'],
       fr: ['STICK GAUCHE  HAUTEUR ET ROTATION', 'STICK DROIT   VOLER', 'START         MOTEURS ON / OFF', 'TURBO         MAINTENIR : PLUS VITE', 'CAM ▲ ▼       INCLINER LA CAMÉRA', 'V / DÉTONER   AVANT-APRÈS / DÉFENSE', 'MODE          MODE DE VOL', 'II            PAUSE'],
@@ -1018,7 +1018,7 @@ function readPads(){
       if (src.handedness === 'right'){
         pad.roll = expo(dead(ax[2] || 0)); pad.pitch = -expo(dead(ax[3] || 0));
         if (bt[1] && bt[1].pressed) pad.gim += 1;
-        edge('A', bt[4] && bt[4].pressed, menu || card || GAME.ended ? 'ok' : 'arm'); edge('B', bt[5] && bt[5].pressed, GAME.mode === 'defend' || world && world.war ? 'det' : 'toggle'); edge('RS', bt[3] && bt[3].pressed, 'screen');
+        edge('A', bt[4] && bt[4].pressed, menu || card || GAME.ended ? 'ok' : 'arm'); edge('RT', bt[0] && bt[0].value > 0.6, 'det'); edge('B', bt[5] && bt[5].pressed, 'toggle'); edge('RS', bt[3] && bt[3].pressed, 'screen');
       } else if (src.handedness === 'left'){
         pad.yaw = expo(dead(ax[2] || 0)); pad.climb = -dead(ax[3] || 0); ny = ax[3] || 0;
         pad.thr = bt[0] ? bt[0].value : 0;
