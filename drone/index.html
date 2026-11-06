@@ -3041,22 +3041,66 @@ function ptrOnScreen(c){
 // immersive: an XR camera on a rig that follows the drone camera; where you look when it starts is the drone's nose
 const immRig = new THREE.Group(), immCam = new THREE.PerspectiveCamera(90, 1, 0.04, 22000);
 immRig.add(immCam); scene.add(immRig);
-// the OSD stays in front of the eyes, a little transparent
-const hud = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.05), new THREE.ShaderMaterial({
+// the OSD stays fixed straight ahead of the drone, 2.5 m out: look around and it stays where the nose points
+const hud = new THREE.Mesh(new THREE.PlaneGeometry(1.4 * 2.6, 1.05 * 2.6), new THREE.ShaderMaterial({
   uniforms: { tA: { value: HUD_TEX[0] }, tB: { value: HUD_TEX[1] || HUD_TEX[0] } }, transparent: true, depthTest: false, depthWrite: false,
-  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * 2.6, -2.5, 1.0); }`,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: `uniform sampler2D tA, tB; varying vec2 vUv; void main(){ vec4 a = texture2D(tA, vUv), b = texture2D(tB, vUv); vec4 c = mix(a, b, b.a); gl_FragColor = vec4(c.rgb, max(a.a, b.a) * 0.9); }`
 }));
 hud.frustumCulled = false; hud.renderOrder = 1000; hud.visible = false; scene.add(hud);
+// the analog feed over the immersive view, in every eye: warm cast, grain, line noise, sparkles, a rolling band,
+// vignette, and snow when the link weakens or breaks (the same values as the feed of the screen)
+const feedFx = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 }, uNoise: { value: 0 }, uStatic: { value: 0 }, uFlash: { value: 0 }, uBlack: { value: 0 } },
+  transparent: true, depthTest: false, depthWrite: false,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `
+    uniform float uTime, uNoise, uStatic, uFlash, uBlack; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    void main(){
+      vec2 px = floor(gl_FragCoord.xy / 2.5);
+      float tq = floor(uTime * 30.0), row = px.y;
+      // a warm, washed-out cast and the vignette, as a tinted layer
+      vec3 col = vec3(0.55, 0.5, 0.42); float a = 0.16;
+      vec2 vc = vUv - 0.5; float vig = clamp(dot(vc, vc) * 1.6, 0.0, 0.7);
+      col = mix(col, vec3(0.0), vig / max(a + vig, 0.001)); a = a + vig * (1.0 - a);
+      // grain and line noise: lighter or darker per pixel, laid over the cast (one 'over' step each)
+      float g = (h(px + vec2(tq * 7.13, tq * 3.7)) - 0.5) * (0.16 + uNoise * 0.9) + (h(vec2(row, tq * 2.1)) - 0.5) * (0.06 + uNoise * 0.4);
+      vec3 gc = (g > 0.0 ? vec3(1.0) : vec3(0.0)) + (vec3(h(px + tq * 1.1), h(px + tq * 2.3), h(px + tq * 3.7)) - 0.5) * 0.5;
+      float ga = clamp(abs(g), 0.0, 1.0);
+      float spark = step(1.0 - (0.0015 + uNoise * 0.05), h(px * 1.31 + tq)) * 0.8;
+      ga = max(ga, spark); gc = mix(gc, vec3(1.0), spark);
+      float band = fract(vUv.y + uTime * 0.11), bd = 0.1 * smoothstep(0.0, 0.04, band) * smoothstep(0.1, 0.04, band);
+      vec3 c1 = col; float a1 = a;
+      a = a1 + ga * (1.0 - a1);
+      col = (gc * ga + c1 * a1 * (1.0 - ga)) / max(a, 0.001);
+      col = mix(col, vec3(0.0), bd / max(a + bd, 0.001)); a = a + bd * (1.0 - a);
+      // signal lost: analog snow with a rolling sync bar and torn bands
+      float rowR = h(vec2(row, tq * 1.7));
+      float snow = h(vec2(floor(px.x / (1.0 + floor(rowR * 4.0))) * 1.13 + tq * 17.0, row * 0.71 + tq * 5.3)); snow = snow * snow * 1.35;
+      float roll = fract(vUv.y * 0.9 + uTime * 0.7), bar = smoothstep(0.0, 0.05, roll) * smoothstep(0.24, 0.12, roll);
+      float tear = step(0.9, h(vec2(floor(row / 5.0), tq)));
+      vec3 st = clamp(vec3(snow) * (1.0 - bar * 0.6) + (rowR - 0.5) * 0.28 + tear * 0.22, 0.0, 1.0);
+      float sa = max(uStatic, uNoise * uNoise * 0.55 * step(0.45, h(vec2(floor(row / 9.0), tq * 0.5))));
+      col = mix(col, st, sa); a = mix(a, 1.0, sa);
+      col = mix(col, vec3(1.0, 0.97, 0.9), uFlash); a = max(a, uFlash);
+      col = mix(col, vec3(0.0), uBlack); a = max(a, uBlack);
+      gl_FragColor = vec4(col, a);
+    }`
+}));
+feedFx.frustumCulled = false; feedFx.renderOrder = 999; feedFx.visible = false; scene.add(feedFx);
 const _ax0 = new THREE.Vector3(), _immP = new THREE.Vector3();
 const imm = { on: false, yaw: new THREE.Quaternion(), pos: new THREE.Vector3() };
 function renderImmersive(){
   if (!imm.on){ const yaw = headPose(); imm.on = true; imm.yaw.setFromAxisAngle(_ax0.set(0, 1, 0), yaw).invert(); imm.pos.copy(_hp); }
   immRig.quaternion.copy(camera.quaternion).multiply(imm.yaw);
   immRig.position.copy(camera.position).sub(_immP.copy(imm.pos).applyQuaternion(immRig.quaternion));
-  hud.visible = true;
+  hud.position.copy(camera.position).add(_immP.set(0, 0, -2.5).applyQuaternion(camera.quaternion));
+  hud.quaternion.copy(camera.quaternion);
+  for (const k in feedFx.material.uniforms) if (post.uniforms[k]) feedFx.material.uniforms[k].value = post.uniforms[k].value;
+  hud.visible = feedFx.visible = true;
   renderer.render(scene, immCam);
-  hud.visible = false;
+  hud.visible = feedFx.visible = false;
 }
 function renderVR(useImm){
   if (useImm) return renderImmersive();
