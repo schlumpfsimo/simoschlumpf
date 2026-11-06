@@ -2514,7 +2514,7 @@ async function startWorld(i, mode = 'explore'){
   setWar(world.hasWar);
   state = 'fly'; paused = false; hintT = 14; clock = 0;
   GAME.mode = mode;
-  P.kind = mode === 'defend' ? 'fpv' : 'recon'; respawnStart();
+  P.kind = mode === 'defend' || !ARTY_ON ? 'fpv' : 'recon'; respawnStart();  // for now only the FPV drone, also when exploring
   if (mode === 'defend'){
     for (const p of world.pois) p.beacon.visible = false;
     resetDefense();
