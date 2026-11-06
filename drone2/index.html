@@ -139,9 +139,9 @@ const S = {
       fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'RT          GAZ', 'LB / RB     INCLINER LA CAMÉRA', 'B           DÉTONER / AVANT-APRÈS', 'X           MODE DE VOL', 'START       PAUSE   Y LANGUE'],
       en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'RT          THROTTLE', 'LB / RB     TILT CAMERA', 'B           DETONATE / BEFORE-AFTER', 'X           FLIGHT MODE', 'START       PAUSE   Y LANGUAGE'] },
     vr: {
-      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'L-TRIGGER   GAS', 'GRIFFTASTEN KAMERA NEIGEN', 'R-TRIGGER   ZÜNDEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: BILDGRÖSSE'],
-      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTE G.  GAZ', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'GÂCHETTE D.  DÉTONER', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : TAILLE ÉCRAN'],
-      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'L-TRIGGER   THROTTLE', 'GRIPS       TILT CAMERA', 'R-TRIGGER   DETONATE', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: SCREEN SIZE'] },
+      de: ['A           MOTOREN / WEITER', 'LINKER STICK HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'L-TRIGGER   GAS', 'GRIFFTASTEN KAMERA NEIGEN', 'R-TRIGGER   ZÜNDEN', 'B           VORHER / NACHHER', 'X           FLUGMODUS', 'Y           PAUSE', 'R-STICK DRÜCKEN: ANSICHT'],
+      fr: ['A           MOTEURS / CONTINUER', 'STICK GAUCHE HAUTEUR ET ROTATION', 'STICK DROIT VOLER', 'GÂCHETTE G.  GAZ', 'GÂCHETTES LAT. INCLINER LA CAMÉRA', 'GÂCHETTE D.  DÉTONER', 'B           AVANT / APRÈS', 'X           MODE DE VOL', 'Y           PAUSE', 'CLIC STICK D. : VUE'],
+      en: ['A           MOTORS / CONTINUE', 'LEFT STICK  HEIGHT AND TURN', 'RIGHT STICK FLY', 'L-TRIGGER   THROTTLE', 'GRIPS       TILT CAMERA', 'R-TRIGGER   DETONATE', 'B           BEFORE / AFTER', 'X           FLIGHT MODE', 'Y           PAUSE', 'R-STICK CLICK: VIEW'] },
     touch: {
       de: ['LINKER STICK  HÖHE UND DREHEN', 'RECHTER STICK FLIEGEN', 'START         MOTOREN AN / AUS', 'TURBO         HALTEN: SCHNELLER', 'CAM ▲ ▼       KAMERA NEIGEN', 'V / ZÜNDEN    VORHER-NACHHER / ABWEHR', 'MODE          FLUGMODUS', 'II            PAUSE'],
       fr: ['STICK GAUCHE  HAUTEUR ET ROTATION', 'STICK DROIT   VOLER', 'START         MOTEURS ON / OFF', 'TURBO         MAINTENIR : PLUS VITE', 'CAM ▲ ▼       INCLINER LA CAMÉRA', 'V / DÉTONER   AVANT-APRÈS / DÉFENSE', 'MODE          MODE DE VOL', 'II            PAUSE'],
@@ -3900,20 +3900,25 @@ function render(){
   post.uniforms.uBlack.value = state === 'fly' ? 0 : 0.6;
   post.uniforms.uDim.value = menu && menu.kind === 'pause' ? 1 : GAME.mode === 'defend' && GAME.ended ? clamp(GAME.endT / 2, 0, 1.4) : card ? 0.25 : 0;
   const inVR = renderer.xr.isPresenting, t = performance.now();
+  // immersive only in flight; menus, cards, pause and the end stay on the screen
+  const useImm = inVR && VR_VIEWS[vrView].immersive && state === 'fly' && !menu && !card && !paused && P.alive && !GAME.ended;
   if (!inVR || t - lastFeed > 1000 / 30){
     lastFeed = t;
     drawOSD(); drawUI();
     OSD.t.needsUpdate = true; UI.t.needsUpdate = true;
-    const xrTarget = renderer.getRenderTarget();
-    renderer.xr.enabled = false;
-    renderer.setRenderTarget(rt);
-    if (state === 'fly') renderer.render(scene, camera); else renderer.clear();
-    renderer.setRenderTarget(inVR ? feedRT : null);
-    renderer.render(postScene, postCam);
-    renderer.xr.enabled = true;
-    renderer.setRenderTarget(xrTarget);
+    if (!useImm){
+      const xrTarget = renderer.getRenderTarget();
+      renderer.xr.enabled = false;
+      renderer.setRenderTarget(rt);
+      if (state === 'fly') renderer.render(scene, camera); else renderer.clear();
+      renderer.setRenderTarget(inVR ? feedRT : null);
+      renderer.render(postScene, postCam);
+      renderer.xr.enabled = true;
+      renderer.setRenderTarget(xrTarget);
+    }
   }
-  if (inVR) renderer.render(vrScene, vrCam);
+  if (inVR) renderVR(useImm);
+  else screenPlaced = 0;
 }
 
 // ================================================================ Meta Quest: a head-locked goggle screen
@@ -3921,21 +3926,79 @@ let lastFeed = 0;
 const feedRT = new THREE.WebGLRenderTarget(OW, OH, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
 const vrScene = new THREE.Scene(); vrScene.background = new THREE.Color(0);
 const vrCam = new THREE.PerspectiveCamera();
-// 3 m away, sized by its width in degrees, so the whole picture fits inside the lenses
-const GOGGLE_DIST = 3, GOGGLE_SCALES = [62, 74, 52].map(a => GOGGLE_DIST * Math.tan(a * Math.PI / 360) / 0.7);
-let goggleSize = 0;
-try { goggleSize = (+localStorage.getItem('dronesim-vr-size') || 0) % GOGGLE_SCALES.length; } catch (e) {}
+const VR_KEY = 'dronesim-vr-view', HUD_TEX = [OSD.t, UI.t];
+// Meta Quest views, the right stick click cycles them:
+// 0-2: a screen that stays put in the room, 4 m away, 56 / 70 / 44 degrees wide; turn your head to look at its corners
+// 3: immersive: the scene is drawn all around you from the drone, you look around with your head (no analog feed effects)
+const VR_VIEWS = [{ deg: 56 }, { deg: 70 }, { deg: 44 }, { immersive: true }];
+const SCREEN_DIST = 4;
+let vrView = 0;
+try { vrView = (+localStorage.getItem(VR_KEY) || 0) % VR_VIEWS.length; } catch (e) {}
 const goggle = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.05), new THREE.ShaderMaterial({
-  uniforms: { map: { value: feedRT.texture }, uScale: { value: GOGGLE_SCALES[goggleSize] } }, depthTest: false, depthWrite: false,
-  vertexShader: `uniform float uScale; varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * uScale, -${GOGGLE_DIST.toFixed(1)}, 1.0); }`,
+  uniforms: { map: { value: feedRT.texture } }, depthTest: false, depthWrite: false, side: THREE.DoubleSide,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: `uniform sampler2D map; varying vec2 vUv; void main(){ gl_FragColor = texture2D(map, vUv); }`
 }));
-goggle.frustumCulled = false; vrScene.add(goggle);
+goggle.frustumCulled = false;
+vrScene.add(goggle);
+const _hp = new THREE.Vector3(), _hq = new THREE.Quaternion(), _hs = new THREE.Vector3(), _he = new THREE.Euler(), _yq = new THREE.Quaternion();
+// the head's position and its heading (yaw only), from the last XR frame
+function headPose(){
+  renderer.xr.getCamera().matrixWorld.decompose(_hp, _hq, _hs);
+  _he.setFromQuaternion(_hq, 'YXZ');
+  return _he.y;
+}
+// the screen straight ahead of the head, at eye height
+function placeScreen(){
+  const v = VR_VIEWS[vrView];
+  if (!v.deg) return;
+  goggle.scale.setScalar(2 * SCREEN_DIST * Math.tan(v.deg * Math.PI / 360) / 1.4);
+  const yaw = headPose();
+  goggle.position.set(_hp.x - Math.sin(yaw) * SCREEN_DIST, _hp.y, _hp.z - Math.cos(yaw) * SCREEN_DIST);
+  goggle.rotation.set(0, yaw, 0);
+}
+let screenPlaced = 0;  // frames in VR before the screen is placed: the first frames have no head pose yet
 function cycleGoggle(){
   if (!renderer.xr.isPresenting) return;
-  goggleSize = (goggleSize + 1) % GOGGLE_SCALES.length;
-  goggle.material.uniforms.uScale.value = GOGGLE_SCALES[goggleSize];
-  try { localStorage.setItem('dronesim-vr-size', goggleSize); } catch (e) {}
+  vrView = (vrView + 1) % VR_VIEWS.length;
+  msg = say(VR_VIEWS[vrView].immersive ? { de: 'ANSICHT: RUNDUM', fr: 'VUE : IMMERSIVE', en: 'VIEW: IMMERSIVE' } : { de: 'ANSICHT: BILDSCHIRM ', fr: 'VUE : ÉCRAN ', en: 'VIEW: SCREEN ' }) + (VR_VIEWS[vrView].deg ? VR_VIEWS[vrView].deg + '°' : ''); msgT = 2;
+  placeScreen();
+  try { localStorage.setItem(VR_KEY, vrView); } catch (e) {}
+}
+// where a controller points on the screen, in OSD units
+const _ray = new THREE.Raycaster();
+function ptrOnScreen(c){
+  c.updateMatrixWorld(true); goggle.updateMatrixWorld();
+  _ray.ray.origin.setFromMatrixPosition(c.matrixWorld);
+  _ray.ray.direction.set(0, 0, -1).transformDirection(c.matrixWorld);
+  const h = _ray.intersectObject(goggle)[0];
+  return h && h.uv ? [h.uv.x * W, (1 - h.uv.y) * H] : null;
+}
+// immersive: an XR camera on a rig that follows the drone camera; where you look when it starts is the drone's nose
+const immRig = new THREE.Group(), immCam = new THREE.PerspectiveCamera(90, 1, 0.04, 22000);
+immRig.add(immCam); scene.add(immRig);
+// the OSD stays in front of the eyes, a little transparent
+const hud = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.05), new THREE.ShaderMaterial({
+  uniforms: { tA: { value: HUD_TEX[0] }, tB: { value: HUD_TEX[1] || HUD_TEX[0] } }, transparent: true, depthTest: false, depthWrite: false,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * vec4(position.xy * 2.6, -2.5, 1.0); }`,
+  fragmentShader: `uniform sampler2D tA, tB; varying vec2 vUv; void main(){ vec4 a = texture2D(tA, vUv), b = texture2D(tB, vUv); vec4 c = mix(a, b, b.a); gl_FragColor = vec4(c.rgb, max(a.a, b.a) * 0.9); }`
+}));
+hud.frustumCulled = false; hud.renderOrder = 1000; hud.visible = false; scene.add(hud);
+const _ax0 = new THREE.Vector3(), _immP = new THREE.Vector3();
+const imm = { on: false, yaw: new THREE.Quaternion(), pos: new THREE.Vector3() };
+function renderImmersive(){
+  if (!imm.on){ const yaw = headPose(); imm.on = true; imm.yaw.setFromAxisAngle(_ax0.set(0, 1, 0), yaw).invert(); imm.pos.copy(_hp); }
+  immRig.quaternion.copy(camera.quaternion).multiply(imm.yaw);
+  immRig.position.copy(camera.position).sub(_immP.copy(imm.pos).applyQuaternion(immRig.quaternion));
+  hud.visible = true;
+  renderer.render(scene, immCam);
+  hud.visible = false;
+}
+function renderVR(useImm){
+  if (useImm) return renderImmersive();
+  imm.on = false;
+  if (screenPlaced < 3 && ++screenPlaced === 3) placeScreen();
+  renderer.render(vrScene, vrCam);
 }
 if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
   if (!ok) return;
