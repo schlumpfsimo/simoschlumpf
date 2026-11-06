@@ -212,7 +212,7 @@ function paintWho() { document.getElementById('whoname').textContent = Store.use
 const ROUTES = [
   { id: 'start', label: 'Start', short: 'Start', icon: '◎' }, { id: 'liste', label: 'NR / SR', short: 'NR/SR', icon: '👥' }, { id: 'netzwerk', label: 'Netzwerk', short: 'Netz', icon: '⬡' },
   { id: 'kommissionen', label: 'Kommissionen', short: 'Komm.', icon: '🏛' }, { id: 'bilaterale', label: 'Bilaterale III', short: 'Bilat.', icon: '🇪🇺' }, { id: 'dossier', label: 'Dossiers', short: 'Dossiers', icon: '★', href: '#/dossier/staendemehr' },
-  { id: 'positionen', label: 'Positionen', short: 'Matrix', icon: '📊' }, { id: 'info', label: 'Info', short: 'Info', icon: 'ℹ' }];
+  { id: 'positionen', label: 'Positionen', short: 'Matrix', icon: '📊' }, { id: 'email', label: 'E-Mail', short: 'E-Mail', icon: '✉' }, { id: 'info', label: 'Info', short: 'Info', icon: 'ℹ' }];
 function navHtml(active) {
   document.getElementById('tabs').innerHTML = ROUTES.map(r => `<a href="${r.href || '#/' + r.id}" class="${active === r.id ? 'active' : ''}">${r.label}</a>`).join('');
   document.getElementById('bottomnav').innerHTML = ROUTES.map(r => `<a href="${r.href || '#/' + r.id}" class="${active === r.id ? 'active' : ''}"><span class="ic">${r.icon}</span>${r.short}</a>`).join('');
@@ -225,7 +225,7 @@ function route() {
   if (CURRENT && CURRENT.cleanup) CURRENT.cleanup();
   CURRENT = { view, arg };
   window.scrollTo(0, 0);
-  const map = { start: renderStart, liste: renderListe, person: renderPerson, kommissionen: renderKommissionen, kommission: renderKommission, netzwerk: renderNetzwerk, bilaterale: renderBilaterale, dossier: renderDossier, positionen: renderPositionen, info: renderInfo };
+  const map = { start: renderStart, liste: renderListe, person: renderPerson, kommissionen: renderKommissionen, kommission: renderKommission, netzwerk: renderNetzwerk, bilaterale: renderBilaterale, dossier: renderDossier, positionen: renderPositionen, email: renderEmail, info: renderInfo };
   const fn = map[view] || renderStart;
   navHtml(view === 'person' ? 'liste' : view === 'kommission' ? 'kommissionen' : view);
   fn(main, arg);
@@ -285,9 +285,10 @@ function renderStart(main) {
       <div class="card"><h3>Nächste Schritte</h3>${openSteps.length ? `<ul class="list small">${openSteps.slice(0, 15).map(x => `<li><span class="${x.t.naechsterTermin && x.t.naechsterTermin < today() ? 'due' : 'num'}">${fmtDate(x.t.naechsterTermin) || '–'}</span> · <a href="#/person/${x.m.id}">${esc(fullName(x.m))}</a> ${frChip(x.m)}${ratChip(x.m)}<br>${esc(x.t.naechsterSchritt || '')}${x.t.owner ? ` <span class="pill">${esc(x.t.owner)}</span>` : ''}</li>`).join('')}</ul>` : '<p class="muted small">Noch keine nächsten Schritte erfasst. Im Profil einer Person unter «Tracking» eintragen.</p>'}</div>
       <div class="card"><h3>Zuletzt geändert</h3>${recent.length ? `<ul class="list small">${recent.map(([k, e]) => { const mid = k.split(':')[1]; const m = member(mid); return `<li><span class="muted">${fmtTs(e.ts)}</span> · ${esc(e.by || '')} · ${m ? `<a href="#/person/${m.id}">${esc(fullName(m))}</a>` : esc(k)} <span class="muted">${esc(k.split(':')[0])}</span></li>`; }).join('')}</ul>` : '<p class="muted small">Noch keine Änderungen.</p>'}</div>
     </div>
-    <div class="card section"><h3>Prioritäre Personen, noch nicht dabei</h3>
+    <div class="card section"><h3>Prioritäre Personen, noch nicht dabei <button class="btn sm" id="sexp" style="float:right">Export ▾</button></h3>
       <div class="chips">${D.members.filter(m => prioOf(m) === 3 && !isWon(m.id)).sort((a, b) => a.name.localeCompare(b.name)).map(m => `<a class="chip k" href="#/person/${m.id}" style="border-left:4px solid ${statusOf(m.id).color}">${esc(fullName(m))} · ${esc(m.partei)} ${esc(m.kanton)}${m.rat === 'SR' ? ' · SR' : ''}</a>`).join('')}</div>
       <p class="small muted">Priorität aus Kommissionszugehörigkeit (APK, SPK, WBK, FK beider Räte), Fraktion mit offenem Stimmverhalten und offener Haltung zu Ständemehr/Erasmus+; im Ständerat zusätzlich Enthaltung oder Abwesenheit bei den Schlüsselabstimmungen. Im Profil manuell änderbar.</p></div>`;
+  document.getElementById('sexp').addEventListener('click', ev => exportMenu(ev, D.members.filter(m => prioOf(m) === 3 && !isWon(m.id)).sort((a, b) => a.name.localeCompare(b.name)), 'prioritaer-offen'));
   CURRENT.onStore = () => renderStart(main);
 }
 
@@ -317,13 +318,16 @@ function renderListe(main) {
       <select class="f" id="st"><option value="">Alle Positionen</option>${STANCES.map(s => `<option value="${s}" ${S.st === s ? 'selected' : ''}>${STANCE_LABEL[s]}</option>`).join('')}</select>
       <select class="f" id="sort"><option value="prio" ${S.sort === 'prio' ? 'selected' : ''}>Sortierung: Priorität</option><option value="name" ${S.sort === 'name' ? 'selected' : ''}>Name</option><option value="kanton" ${S.sort === 'kanton' ? 'selected' : ''}>Kanton</option><option value="fraktion" ${S.sort === 'fraktion' ? 'selected' : ''}>Fraktion</option><option value="position" ${S.sort === 'position' ? 'selected' : ''}>Position</option><option value="status" ${S.sort === 'status' ? 'selected' : ''}>Status</option></select>
       <button class="btn sm f" id="reset">Zurücksetzen</button>
+      <button class="btn sm" id="lexp" title="Gefilterte Liste exportieren">Export ▾</button>
+      <button class="btn sm" id="lmail" title="Gefilterte Liste im E-Mail-Tool öffnen">✉ E-Mail</button>
       <span class="counter" id="count"></span>
     </div>
     <div id="agg"></div>
     <div class="grid" id="cards"></div>`;
+  let last = [];
   const apply = () => {
     const q = norm(S.q.trim());
-    let list = pool.filter(m => {
+    let list = last = pool.filter(m => {
       if (S.fr && m.fraktion !== S.fr) return false;
       if (S.kt && m.kanton !== S.kt) return false;
       if (S.g && m.geschlecht !== S.g) return false;
@@ -355,6 +359,9 @@ function renderListe(main) {
   for (const id of ['q', 'fr', 'kt', 'ko', 'g', 'fr_id', 'st', 'sort', 'status', 'prio']) document.getElementById(id).addEventListener('input', e => { S[id] = e.target.value; apply(); });
   main.querySelectorAll('#lrat button').forEach(b => b.addEventListener('click', () => { S.rat = b.dataset.v; saveJ('turbo.list', S); renderListe(main); }));
   document.getElementById('ftog').addEventListener('click', () => { const t = document.getElementById('ltb'); t.classList.toggle('open'); document.getElementById('ftog').textContent = t.classList.contains('open') ? 'Filter ▴' : 'Filter ▾'; });
+  const lname = () => [RAT_LABEL[rat], S.q, S.fr, S.kt, S.status, S.prio && 'P' + S.prio].filter(Boolean).join(' ');
+  document.getElementById('lexp').addEventListener('click', ev => exportMenu(ev, last, lname()));
+  document.getElementById('lmail').addEventListener('click', () => { Object.assign(EMAIL_STATE, { only: last.map(m => m.id), onlyName: lname(), excl: [] }); saveJ('turbo.mail', EMAIL_STATE); location.hash = '#/email'; });
   document.getElementById('reset').addEventListener('click', () => { Object.assign(S, { q: '', fr: '', kt: '', ko: '', st: '', sort: 'prio', g: '', status: '', prio: '' }); renderListe(main); });
   apply(); CURRENT.onStore = apply;
 }
@@ -403,7 +410,7 @@ function renderPerson(main, id) {
           <div class="psub" style="font-size:.92rem">${frChip(m)} ${esc(m.parteiName)} · ${esc(m.kantonName)} (${esc(m.kanton)})<br>${esc(m.fraktionName)}${m.fraktionFunktion && m.fraktionFunktion !== 'Mitglied' ? ' · <b>' + esc(m.fraktionFunktion) + '</b>' : ''}<br>
           Im ${ratName(m)} seit ${fmtDate(m.ratSeit)}${m.srFrueher ? ' · früher Ständerat' : ''}${m.nrFrueher ? ' · früher Nationalrat' : ''}${m.geburtsdatum ? ' · geb. ' + fmtDate(m.geburtsdatum) + ' (' + age(m.geburtsdatum) + ')' : ''}</div>
           <div class="chips" style="margin-top:8px">${m.kommissionen.map(k => `<a class="chip k ${KEYKOMM.includes(k.kurz) ? 'lead' : ''}" href="#/kommission/${k.nr}" title="${esc(k.name)}">${esc(k.kurz || k.name)}${k.funktion !== 'Mitglied' ? ' · ' + esc(k.funktion) : ''}</a>`).join('')}</div>
-          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="${esc(m.bio)}" target="_blank" rel="noopener">parlament.ch ↗</a><button class="btn sm" id="vcf">vCard</button><a class="btn sm" href="#/netzwerk?sel=${m.id}">Im Netzwerk</a></div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="${esc(m.bio)}" target="_blank" rel="noopener">parlament.ch ↗</a><button class="btn sm" id="vcf">vCard</button><button class="btn sm" id="pexp">Export ▾</button><a class="btn sm" href="#/netzwerk?sel=${m.id}">Im Netzwerk</a></div>
         </div>
       </div>
     </div>
@@ -499,6 +506,7 @@ function renderPerson(main, id) {
   main.querySelectorAll('[data-delk]').forEach(b => b.addEventListener('click', () => { const o = { ...profil(m.id) }; o.kontakte = (o.kontakte || []).filter(k => k.id !== b.dataset.delk); Store.set('profil:' + m.id, o); renderPerson(main, id); }));
   document.getElementById('r_add').addEventListener('click', () => { const name = document.getElementById('r_mit').value.trim(), ext = document.getElementById('r_ext').value.trim(); const o = name ? D.members.find(x => norm(fullName(x)) === norm(name) || norm(fullName(x) + ' (sr)') === norm(name)) : null; if (!o && !ext) { toast('Person angeben'); return; } Store.set('relation:' + uid(), { a: m.id, b: o ? o.id : null, extern: o ? null : ext, typ: document.getElementById('r_typ').value, text: document.getElementById('r_text').value.trim(), by: Store.user || 'anonym', ts: new Date().toISOString() }); renderPerson(main, id); });
   main.querySelectorAll('[data-delr]').forEach(b => b.addEventListener('click', () => { if (confirm('Beziehung löschen?')) { Store.set(b.dataset.delr, null); renderPerson(main, id); } }));
+  document.getElementById('pexp').addEventListener('click', ev => exportMenu(ev, [m], fullName(m)));
   document.getElementById('vcf').addEventListener('click', () => dl(new Blob([vcard(m)], { type: 'text/vcard;charset=utf-8' }), `${m.vorname}-${m.name}.vcf`));
   main.querySelectorAll('.ovbtn').forEach(b => b.addEventListener('click', ev => openOverride(ev, m, b.dataset.f, () => renderPerson(main, id))));
   CURRENT.onStore = () => { if (document.activeElement && document.activeElement.closest('#trk,.form')) return; renderPerson(main, id); };
@@ -544,10 +552,11 @@ function renderKommission(main, nr) {
   main.innerHTML = `<a class="back" href="#/kommissionen">← Kommissionen</a><h1>${esc(k.kurz)} <span class="muted" style="font-weight:400;font-family:var(--mono);font-size:1rem">${esc(k.name)}</span></h1>
     ${ROLE[k.kurz] ? `<p class="small"><b>Rolle bei 26.023:</b> ${esc(ROLE[k.kurz])}</p>` : ''}
     <div class="stat">${Object.entries(byFr).sort((a, b) => b[1].length - a[1].length).map(([f, l]) => `<div class="card"><div class="n" style="color:${frColor(f)}">${l.length}</div><div class="l">${esc((D.fraktionen[f] || {}).name || f)}</div></div>`).join('')}</div>
-    <div class="card"><h3>Kontaktstand (${ms.length} Mitglieder)</h3>${statusBar(ms)}</div>
+    <div class="card"><h3>Kontaktstand (${ms.length} Mitglieder) <button class="btn sm" id="kexp" style="float:right">Export ▾</button></h3>${statusBar(ms)}</div>
     ${fragen.length ? `<div class="card" style="margin-top:12px"><h3>${k.rat === 'SR' ? 'Haltung der Mitglieder gemäss Abstimmungen im Plenum' : 'Voraussichtliche Mehrheiten'} – ${esc(k.kurz)}</h3>${fragen.map(f => { const c = aggregate(ms, f.id); return `<div style="margin:8px 0"><b>${esc(f.label)}</b> <span class="small muted">(${f.kommission === kz ? 'federführend' : 'Mitbericht'})</span>${barHtml(c)}${sumLine(c)}</div>`; }).join('')}${legendHtml()}</div>` : ''}
     <div class="tablewrap" style="margin-top:12px"><table class="t"><thead><tr><th>Mitglied</th><th>Fr.</th><th>Kt.</th><th>Funktion</th><th>Status</th><th>Wer</th>${fragen.map(f => `<th>${esc(f.label)}</th>`).join('')}</tr></thead>
       <tbody>${ms.sort((a, b) => order.indexOf(a.funktion) - order.indexOf(b.funktion) || a.fraktion.localeCompare(b.fraktion) || a.name.localeCompare(b.name)).map(m => `<tr><td><a href="#/person/${m.id}">${esc(fullName(m))}</a> ${ratChip(m)}${prioChip(m)}</td><td>${frChip(m)}</td><td>${esc(m.kanton)}</td><td>${esc(m.funktion)}</td><td>${statusChip(m.id)}</td><td class="small">${esc(tracking(m.id).owner || '')}</td>${fragen.map(f => { const p = effStance(m, f.id); return `<td><span class="chip st ${p.stance} ${p.override ? 'override' : ''}">${STANCE_LABEL[p.stance]}</span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+  document.getElementById('kexp').addEventListener('click', ev => exportMenu(ev, ms.map(x => member(x.id)), k.kurz || k.name));
   CURRENT.onStore = () => renderKommission(main, nr);
 }
 
@@ -568,6 +577,7 @@ function renderNetzwerk(main) {
       <label class="small muted">Mindeststärke <input type="range" id="n_min" min="1" max="12" value="${S.min}"> <span id="n_minv">${S.min}</span></label>
       <label class="small muted"><input type="checkbox" id="n_prio" ${S.onlyPrio ? 'checked' : ''}> nur P2/P3 und «dabei»</label>
       <button class="btn sm" id="n_fit">Einpassen</button>
+      <button class="btn sm" id="n_exp">Export ▾</button>
     </div>
     <div class="gpanel"><div><canvas id="graph"></canvas><div class="legend" id="n_leg" style="margin-top:6px"></div></div><div class="card" id="n_side"><p class="muted small">Person anklicken: Verbindungen und Brücken. Ziehen zum Verschieben, Rad/Pinch zum Zoomen.</p><div id="n_bridges"></div></div></div>`;
   const canvas = document.getElementById('graph');
@@ -578,6 +588,7 @@ function renderNetzwerk(main) {
     const ids = new Set(ms.map(m => m.id));
     const manual = relations().filter(r => r.b).map(r => ({ a: r.a, b: r.b, w: 6, gem: [{ typ: 'manuell', label: r.typ }] }));
     const edges = [...D.edges.filter(e => e.w >= S.min), ...manual].filter(e => ids.has(e.a) && ids.has(e.b));
+    cur = { ms, edges };
     g.setData(ms.map(m => ({ id: m.id, label: m.name, square: m.rat === 'SR', color: colorOf(m), size: 4 + prioOf(m) * 1.5 + (isWon(m.id) ? 2 : 0), ring: isWon(m.id) ? '#0a7a2f' : (prioOf(m) === 3 ? '#000' : null), always: prioOf(m) === 3 })), edges);
     setTimeout(() => g.fit(), 600);
     document.getElementById('n_leg').innerHTML = (S.mode === 'status' ? statuses().map(s => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('') : S.mode === 'fraktion' ? Object.entries(D.fraktionen).map(([k, v]) => `<span><i style="background:${v.farbe}"></i>${esc(k)}</span>`).join('') : STANCES.map(s => `<span><i style="background:${{ ja: '#0a7a2f', eher_ja: '#8fbf2a', offen: '#bbb', eher_nein: '#f0a040', nein: '#b00020' }[s]}"></i>${STANCE_LABEL[s]}</span>`).join('')) + '<span><i style="border:2px solid #0a7a2f;background:transparent"></i>Ring grün = dabei</span><span><i style="border:2px solid #000;background:transparent"></i>Ring schwarz = P3</span><span><i style="background:#000;border-radius:50%"></i>Kreis = Nationalrat</span><span><i style="background:#000"></i>Quadrat = Ständerat</span>';
@@ -600,6 +611,16 @@ function renderNetzwerk(main) {
   document.getElementById('n_min').addEventListener('input', e => { S.min = +e.target.value; document.getElementById('n_minv').textContent = S.min; saveJ('turbo.net', S); build(); });
   document.getElementById('n_prio').addEventListener('input', e => { S.onlyPrio = e.target.checked; saveJ('turbo.net', S); build(); });
   document.getElementById('n_fit').addEventListener('click', () => g.fit());
+  let cur = { ms: [], edges: [] };
+  document.getElementById('n_exp').addEventListener('click', ev => { ev.stopPropagation(); document.querySelectorAll('.popover').forEach(p => p.remove());
+    const pop = document.createElement('div'); pop.className = 'popover';
+    pop.innerHTML = `<div class="small muted">Netzwerk · ${cur.ms.length} Personen · ${cur.edges.length} Verbindungen</div><button data-x="edges">Verbindungen (CSV)</button><button data-x="nodes">Personen (Export ▸)</button><button data-x="png">Grafik (PNG)</button><button data-x="close">Schliessen</button>`;
+    document.body.appendChild(pop); const r = ev.currentTarget.getBoundingClientRect(); pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 260)) + 'px'; pop.style.top = (r.bottom + 6) + 'px';
+    pop.querySelectorAll('button').forEach(b => b.addEventListener('click', e2 => { const x = b.dataset.x; pop.remove();
+      if (x === 'edges') dlCsv([['Person A', 'Partei A', 'Person B', 'Partei B', 'Stärke', 'Gemeinsam'], ...cur.edges.map(e => { const a = member(e.a), b2 = member(e.b); return [fullName(a), a.partei, fullName(b2), b2.partei, e.w, (e.gem || []).map(x => x.label).join(' | ')]; })], 'netzwerk-verbindungen');
+      else if (x === 'nodes') exportMenu(e2, cur.ms, 'netzwerk-personen');
+      else if (x === 'png') canvas.toBlob(bl => bl && dl(bl, `turbo-netzwerk-${stamp()}.png`)); }));
+    setTimeout(() => document.addEventListener('click', function h(e) { if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener('click', h); } }), 0); });
   build();
   CURRENT.cleanup = () => g.stop(); CURRENT.onStore = build;
 }
@@ -718,12 +739,12 @@ const POS_STATE = loadJ('turbo.pos', { q: '', fr: '', ko: '', rat: 'NR' });
 function renderPositionen(main) {
   const D = DATA, S = POS_STATE, F = D.bilaterale.fragen; const komm = D.kommissionen.filter(k => k.bilaterale);
   main.innerHTML = `<h1>Positionsmatrix</h1><p class="small muted">Klick auf eine Zelle, um die Einschätzung zu setzen (für alle sichtbar). Umrandet = manuell.</p>
-    <div class="toolbar"><input type="search" id="pq" placeholder="Name filtern …" value="${esc(S.q)}"><select id="prat"><option value="NR" ${S.rat === 'NR' || S.rat === undefined ? 'selected' : ''}>Nationalrat</option><option value="SR" ${S.rat === 'SR' ? 'selected' : ''}>Ständerat</option><option value="" ${S.rat === '' ? 'selected' : ''}>Beide Räte</option></select><select id="pfr"><option value="">Alle Fraktionen</option>${Object.entries(D.fraktionen).map(([k, v]) => `<option value="${k}" ${S.fr === k ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select><select id="pko"><option value="">Alle Kommissionen</option>${komm.map(k => `<option value="${k.nr}" ${S.ko == k.nr ? 'selected' : ''}>${esc(k.kurz)}</option>`).join('')}</select><button class="btn sm" id="exp">Export CSV</button><span class="counter" id="pcount"></span></div>
+    <div class="toolbar"><input type="search" id="pq" placeholder="Name filtern …" value="${esc(S.q)}"><select id="prat"><option value="NR" ${S.rat === 'NR' || S.rat === undefined ? 'selected' : ''}>Nationalrat</option><option value="SR" ${S.rat === 'SR' ? 'selected' : ''}>Ständerat</option><option value="" ${S.rat === '' ? 'selected' : ''}>Beide Räte</option></select><select id="pfr"><option value="">Alle Fraktionen</option>${Object.entries(D.fraktionen).map(([k, v]) => `<option value="${k}" ${S.fr === k ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select><select id="pko"><option value="">Alle Kommissionen</option>${komm.map(k => `<option value="${k.nr}" ${S.ko == k.nr ? 'selected' : ''}>${esc(k.kurz)}</option>`).join('')}</select><button class="btn sm" id="exp">Export CSV (alle)</button><button class="btn sm" id="pexp2">Gefilterte ▾</button><span class="counter" id="pcount"></span></div>
     ${legendHtml()}<div class="tablewrap" style="margin-top:10px"><table class="t matrix" id="mx"></table></div>`;
   const draw = () => {
     const q = norm(S.q.trim());
     let list = byRat(S.rat === undefined ? 'NR' : S.rat).filter(m => (!S.fr || m.fraktion === S.fr) && (!S.ko || m.kommissionen.some(k => k.nr == S.ko)) && (!q || norm(fullName(m) + ' ' + m.kanton + ' ' + m.partei).includes(q)));
-    list.sort((a, b) => a.fraktion.localeCompare(b.fraktion) || a.name.localeCompare(b.name, 'de'));
+    list.sort((a, b) => a.fraktion.localeCompare(b.fraktion) || a.name.localeCompare(b.name, 'de')); plist = list;
     document.getElementById('pcount').textContent = `${list.length} Mitglieder`;
     const aggs = F.map(f => aggregate(list, f.id));
     document.getElementById('mx').innerHTML = `<thead><tr><th class="name">Mitglied</th><th>Fr.</th><th>Kt.</th><th>Status</th>${F.map(f => `<th class="rot" title="${esc(f.frage)}">${['staendemehr', 'erasmus'].includes(f.id) ? '★ ' : ''}${esc(f.label)}</th>`).join('')}</tr><tr><th class="name small">Σ Ja · offen · Nein</th><th></th><th></th><th></th>${aggs.map(c => `<th class="small" style="text-align:center;white-space:nowrap"><span style="color:var(--ja)">${c.ja + c.eher_ja}</span> · ${c.offen} · <span style="color:var(--nein)">${c.nein + c.eher_nein}</span></th>`).join('')}</tr></thead>
@@ -731,6 +752,8 @@ function renderPositionen(main) {
     document.querySelectorAll('#mx td.cell').forEach(td => td.addEventListener('click', ev => openOverride(ev, member(td.dataset.m), td.dataset.f, draw)));
     saveJ('turbo.pos', S);
   };
+  let plist = [];
+  document.getElementById('pexp2').addEventListener('click', ev => exportMenu(ev, plist, 'positionen-auswahl'));
   document.getElementById('pq').addEventListener('input', e => { S.q = e.target.value; draw(); });
   document.getElementById('prat').addEventListener('input', e => { S.rat = e.target.value; draw(); });
   document.getElementById('pfr').addEventListener('input', e => { S.fr = e.target.value; draw(); });
@@ -744,6 +767,262 @@ function renderPositionen(main) {
 }
 
 /* ===================================================================== */
+/* Export – CSV, vCard, JSON, Text; Tabellen-Export überall                */
+/* ===================================================================== */
+const stamp = () => new Date().toISOString().slice(0, 10);
+const toCsv = rows => '﻿' + rows.map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(';')).join('\r\n');
+const slug = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'export';
+function dlCsv(rows, name) { dl(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }), `turbo-${slug(name)}-${stamp()}.csv`); toast(`${rows.length - 1} Zeilen exportiert`); }
+function dlJson(obj, name) { dl(new Blob([JSON.stringify(obj, null, 1)], { type: 'application/json' }), `turbo-${slug(name)}-${stamp()}.json`); }
+function dlText(text, name, ext = 'txt', type = 'text/plain') { dl(new Blob([text], { type: type + ';charset=utf-8' }), `turbo-${slug(name)}-${stamp()}.${ext}`); }
+const objRows = list => { const cols = [...new Set(list.flatMap(o => Object.keys(o)))]; return [cols, ...list.map(o => cols.map(c => o[c]))]; };
+async function copyText(text) { try { await navigator.clipboard.writeText(text); } catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } toast('In die Zwischenablage kopiert'); }
+
+/* ---------- E-Mail, Anrede ---------- */
+const isMail = s => /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(String(s || '').trim());
+const MAIL_SRC = { amt: 'parlament.ch', eigen: 'eigene', alle: 'alle' };
+function emailsOf(m, src = 'alle') {
+  const pick = l => (l || []).filter(c => c && (/mail/i.test(c.typ || '') || isMail(c.wert)) && isMail(c.wert)).map(c => String(c.wert).trim());
+  const a = src === 'eigen' ? [] : pick(m.kontakt), b = src === 'amt' ? [] : pick(profil(m.id).kontakte);
+  const seen = new Set(); return [...a, ...b].filter(x => { const k = x.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+}
+const phonesOf = m => [...(m.kontakt || []), ...(profil(m.id).kontakte || [])].filter(c => /Natel|Telefon|Mobile|Tel|Phone/i.test(c.typ || '')).map(c => `${c.wert} (${c.typ})`);
+const sprachCode = m => { const s = norm(m.sprache); return /^(fr|franz)/.test(s) ? 'fr' : /^(it)/.test(s) ? 'it' : /^(rm|rat|rä|roman)/.test(s) ? 'rm' : 'de'; };
+const anrede = m => m.geschlecht === 'f' ? 'Frau' : m.geschlecht === 'm' ? 'Herr' : '';
+const amtDe = m => { const f = m.geschlecht === 'f'; return m.rat === 'SR' ? (f ? 'Ständerätin' : 'Ständerat') : (f ? 'Nationalrätin' : 'Nationalrat'); };
+const briefDe = m => m.geschlecht === 'f' ? `Sehr geehrte Frau ${amtDe(m)} ${m.name}` : m.geschlecht === 'm' ? `Sehr geehrter Herr ${amtDe(m)} ${m.name}` : `Guten Tag ${fullName(m)}`;
+const briefFr = m => { const sr = m.rat === 'SR'; return m.geschlecht === 'f' ? `Madame la Conseillère ${sr ? 'aux États' : 'nationale'}` : m.geschlecht === 'm' ? `Monsieur le Conseiller ${sr ? 'aux États' : 'national'}` : `Bonjour ${fullName(m)}`; };
+const briefIt = m => { const sr = m.rat === 'SR'; return m.geschlecht === 'f' ? `Gentile Consigliera ${sr ? 'agli Stati' : 'nazionale'}` : m.geschlecht === 'm' ? `Egregio Consigliere ${sr ? 'agli Stati' : 'nazionale'}` : `Buongiorno ${fullName(m)}`; };
+const briefSprache = m => ({ fr: briefFr, it: briefIt }[sprachCode(m)] || briefDe)(m);
+
+/* ---------- Mitglied als flacher Datensatz (alle Felder) ---------- */
+function memberRecord(m) {
+  const t = tracking(m.id), p = profil(m.id), ad = (m.adressen || [])[0] || {}, cs = comments(m.id), kontakt = [...(m.kontakt || []), ...(p.kontakte || [])];
+  const r = {
+    'ID': m.id, 'Anrede': anrede(m), 'Titel': m.titel || '', 'Vorname': m.vorname, 'Name': m.name, 'Rat': m.rat === 'SR' ? 'SR' : 'NR', 'Amt': amtDe(m),
+    'Partei': m.partei, 'Partei (Name)': m.parteiName || '', 'Fraktion': m.fraktion, 'Fraktion (Name)': m.fraktionName || '', 'Fraktionsfunktion': m.fraktionFunktion || '',
+    'Kanton': m.kanton, 'Kanton (Name)': m.kantonName || '', 'Muttersprache': m.sprache || '', 'Geschlecht': m.geschlecht || '', 'Geburtsdatum': fmtDate(m.geburtsdatum), 'Alter': age(m.geburtsdatum), 'Im Rat seit': fmtDate(m.ratSeit),
+    'E-Mail': emailsOf(m, 'amt')[0] || '', 'E-Mail (alle)': emailsOf(m, 'alle').join(', '), 'E-Mail (eigene)': emailsOf(m, 'eigen').join(', '),
+    'Telefon': phonesOf(m).join(', '), 'Homepage': (kontakt.find(c => /Homepage|Web/i.test(c.typ || '')) || {}).wert || '',
+    'Weitere Kontakte': kontakt.filter(c => !/mail|Natel|Telefon|Mobile|Tel|Phone|Homepage|Web/i.test(c.typ || '')).map(c => `${c.typ}: ${c.wert}`).join(' | '),
+    'Adresse': (ad.zeilen || []).join(', '), 'PLZ': ad.plz || '', 'Ort': ad.ort || '', 'Adresstyp': ad.typ || '',
+    'Kommissionen (ständig)': (m.kommissionen || []).filter(k => k.typ === 'Ständig').map(k => k.kurz).join(' '),
+    'Kommissionen (alle, Funktion)': (m.kommissionen || []).map(k => (k.kurz || k.name) + (k.funktion && k.funktion !== 'Mitglied' ? ` (${k.funktion})` : '')).join(', '),
+    'Parl. Gruppen': (m.parlGruppen || []).join(', '), 'Beruf': (m.berufe || []).map(b => [b.beruf, b.funktion, b.arbeitgeber].filter(Boolean).join(', ')).join(' | '),
+    'Interessenbindungen': (m.interessen || []).map(i => i.name + (i.funktion ? ` (${i.funktion})` : '')).join(' | '),
+    'Mitarbeitende': (m.mitarbeitende || []).map(x => x.name + (x.funktion ? ` (${x.funktion})` : '')).join(' | '),
+    'Status': statusOf(m.id).label, 'Priorität': 'P' + prioOf(m), 'Priorität (Grund)': (m.prioGrund || []).join(' · '), 'Verantwortlich': t.owner || '', 'Tags': (t.tags || []).join(', '),
+    'Letzter Kontakt': fmtDate(t.letzterKontakt), 'Nächster Termin': fmtDate(t.naechsterTermin), 'Nächster Schritt': t.naechsterSchritt || '', 'Zugang': t.zugang || '',
+    'Private Bindungen': p.privat || '', 'Berufliche Bindungen': p.beruflich || '', 'Kontaktperson / Notizen': p.kontaktperson || '',
+  };
+  for (const f of DATA.bilaterale.fragen) { const s = effStance(m, f.id); r['Position: ' + f.label] = STANCE_LABEL[s.stance] + (s.override ? ' (manuell)' : ''); }
+  Object.assign(r, { 'Kommentare (Anzahl)': cs.length, 'Letzter Kommentar': cs[0] ? `${fmtTs(cs[0].ts)} ${cs[0].by || ''}: ${cs[0].text}` : '',
+    'Briefanrede DE': briefDe(m), 'Briefanrede FR': briefFr(m), 'Briefanrede IT': briefIt(m), 'Briefanrede (Muttersprache)': briefSprache(m), 'parlament.ch': m.bio || '' });
+  return r;
+}
+const mailRecord = (m, src) => ({ 'Anrede': anrede(m), 'Titel': m.titel || '', 'Vorname': m.vorname, 'Name': m.name, 'E-Mail': emailsOf(m, src)[0] || '', 'E-Mail (weitere)': emailsOf(m, src).slice(1).join(', '),
+  'Briefanrede (Muttersprache)': briefSprache(m), 'Briefanrede DE': briefDe(m), 'Briefanrede FR': briefFr(m), 'Muttersprache': m.sprache || '', 'Rat': m.rat === 'SR' ? 'SR' : 'NR', 'Partei': m.partei, 'Fraktion': m.fraktion, 'Kanton': m.kanton,
+  'Kommissionen': (m.kommissionen || []).filter(k => k.typ === 'Ständig').map(k => k.kurz).join(' '), 'Status': statusOf(m.id).label, 'Verantwortlich': tracking(m.id).owner || '' });
+
+/* ---------- Export-Menü für eine Personenauswahl ---------- */
+function exportMenu(ev, members, name) {
+  ev.preventDefault(); ev.stopPropagation();
+  document.querySelectorAll('.popover').forEach(p => p.remove());
+  const pop = document.createElement('div'); pop.className = 'popover';
+  const n = members.length, withMail = members.filter(m => emailsOf(m).length).length;
+  const items = [
+    ['csv', `CSV – alle Felder (${n})`], ['mail', 'CSV – Serienbrief / Mailing'], ['vcf', 'vCard (Adressbuch)'], ['txt', `E-Mail-Adressen als Text (${withMail})`], ['copy', 'E-Mail-Adressen kopieren'], ['json', 'JSON'], ['tool', '→ im E-Mail-Tool öffnen'], ['__close', 'Schliessen']];
+  pop.innerHTML = `<div class="small muted">${esc(name)} · ${n} Personen</div>${items.map(([k, l]) => `<button data-x="${k}">${esc(l)}</button>`).join('')}`;
+  document.body.appendChild(pop);
+  const r = ev.currentTarget.getBoundingClientRect(); pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 260)) + 'px'; pop.style.top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - pop.offsetHeight - 10)) + 'px';
+  const close = () => { pop.remove(); document.removeEventListener('click', h); };
+  const h = e => { if (!pop.contains(e.target)) close(); };
+  pop.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    const x = b.dataset.x; close();
+    if (x === 'csv') dlCsv(objRows(members.map(memberRecord)), name);
+    else if (x === 'mail') dlCsv(objRows(members.map(m => mailRecord(m, 'alle'))), name + '-mailing');
+    else if (x === 'vcf') { dlText(members.map(vcard).join('\r\n'), name, 'vcf', 'text/vcard'); toast(`${n} Kontakte exportiert`); }
+    else if (x === 'txt') dlText(members.flatMap(m => emailsOf(m)).join('\n'), name + '-emails');
+    else if (x === 'copy') copyText(members.flatMap(m => emailsOf(m)).join('; '));
+    else if (x === 'json') dlJson(members.map(m => ({ ...m, tracking: tracking(m.id), profil: profil(m.id), kommentare: comments(m.id), positionenEffektiv: Object.fromEntries(DATA.bilaterale.fragen.map(f => [f.id, effStance(m, f.id)])) })), name);
+    else if (x === 'tool') { Object.assign(EMAIL_STATE, { only: members.map(m => m.id), onlyName: name, excl: [] }); saveJ('turbo.mail', EMAIL_STATE); location.hash = '#/email'; }
+  }));
+  setTimeout(() => document.addEventListener('click', h), 0);
+}
+
+/* ---------- Jede Tabelle exportierbar: CSV-Download + Kopieren (für Excel) ---------- */
+function tableRows(table) {
+  const cell = c => c.textContent.replace(/\s+/g, ' ').trim();
+  return [...table.rows].filter(r => r.cells.length).map(r => [...r.cells].map(cell));
+}
+function tableTitle(wrap) {
+  let el = wrap; while (el && el !== document.body) { let s = el.previousElementSibling; while (s) { const h = s.matches('h1,h2,h3') ? s : s.querySelector && s.querySelector('h3,h2,h1'); if (h) return h.textContent.trim(); s = s.previousElementSibling; } el = el.parentElement; }
+  return (document.querySelector('#main h1') || {}).textContent || 'tabelle';
+}
+function decorateTables(root) {
+  root.querySelectorAll('.tablewrap').forEach(w => {
+    if (w.dataset.xp || !w.querySelector('table')) return; w.dataset.xp = '1';
+    const bar = document.createElement('div'); bar.className = 'xbar';
+    bar.innerHTML = '<button class="btn sm" data-t="csv" title="Tabelle als CSV (Excel) herunterladen">⤓ CSV</button><button class="btn sm" data-t="copy" title="Tabelle kopieren – direkt in Excel einfügbar">⧉ Kopieren</button>';
+    bar.querySelector('[data-t=csv]').addEventListener('click', () => dlCsv(tableRows(w.querySelector('table')), tableTitle(w)));
+    bar.querySelector('[data-t=copy]').addEventListener('click', () => copyText(tableRows(w.querySelector('table')).map(r => r.join('\t')).join('\n')));
+    w.parentNode.insertBefore(bar, w);
+  });
+}
+(() => { const main = document.getElementById('main'); let pend = false;
+  new MutationObserver(() => { if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; decorateTables(main); }); }).observe(main, { childList: true, subtree: true }); })();
+
+/* ---------- Gesamtexporte (Info-Seite) ---------- */
+const EXPORTS = [
+  { id: 'members', label: 'Alle Ratsmitglieder – alle Felder (CSV)', run: () => dlCsv(objRows(DATA.members.map(memberRecord)), 'ratsmitglieder') },
+  { id: 'mailing', label: 'Alle Ratsmitglieder – Mailing/Serienbrief (CSV)', run: () => dlCsv(objRows(DATA.members.map(m => mailRecord(m, 'alle'))), 'mailing') },
+  { id: 'vcf', label: 'Alle Ratsmitglieder – vCard', run: () => dlText(DATA.members.map(vcard).join('\r\n'), 'ratsmitglieder', 'vcf', 'text/vcard') },
+  { id: 'tracking', label: 'Tracking & Positionen (CSV)', run: () => dlCsv(objRows(DATA.members.map(m => { const r = memberRecord(m); return Object.fromEntries(Object.entries(r).filter(([k]) => ['ID', 'Vorname', 'Name', 'Rat', 'Partei', 'Kanton', 'Status', 'Priorität', 'Verantwortlich', 'Tags', 'Letzter Kontakt', 'Nächster Termin', 'Nächster Schritt', 'Zugang', 'Kommentare (Anzahl)'].includes(k) || k.startsWith('Position: '))); })), 'tracking') },
+  { id: 'comments', label: 'Kommentare (CSV)', run: () => dlCsv([['Datum', 'Von', 'Vorname', 'Name', 'Rat', 'Partei', 'Kanton', 'Kommentar'], ...DATA.members.flatMap(m => comments(m.id).map(c => [fmtTs(c.ts), c.by || '', m.vorname, m.name, m.rat === 'SR' ? 'SR' : 'NR', m.partei, m.kanton, c.text]))], 'kommentare') },
+  { id: 'relations', label: 'Manuelle Beziehungen (CSV)', run: () => dlCsv([['Person', 'Art', 'Mit', 'Beschreibung', 'Von', 'Datum'], ...relations().map(r => { const a = member(r.a), b = member(r.b); return [a ? fullName(a) : '', r.typ, b ? fullName(b) : (r.extern || ''), r.text || '', r.by || '', fmtTs(r.ts)]; })], 'beziehungen') },
+  { id: 'edges', label: 'Netzwerk-Verbindungen (CSV)', run: () => dlCsv([['Person A', 'Person B', 'Stärke', 'Gemeinsam'], ...DATA.edges.map(e => { const a = member(e.a), b = member(e.b); return a && b ? [fullName(a), fullName(b), e.w, (e.gem || []).map(g => g.label).join(' | ')] : null; }).filter(Boolean)], 'netzwerk') },
+  { id: 'komm', label: 'Kommissionen mit Mitgliedern (CSV)', run: () => dlCsv([['Kommission', 'Name', 'Rat', 'Funktion', 'Vorname', 'Name', 'Partei', 'Kanton', 'E-Mail', 'Status'], ...DATA.kommissionen.flatMap(k => k.mitglieder.map(x => { const m = member(x.id); return m ? [k.kurz, k.name, k.rat, x.funktion, m.vorname, m.name, m.partei, m.kanton, emailsOf(m)[0] || '', statusOf(m.id).label] : null; }).filter(Boolean))], 'kommissionen') },
+  { id: 'interessen', label: 'Interessenbindungen (CSV)', run: () => dlCsv([['Vorname', 'Name', 'Rat', 'Partei', 'Organisation', 'Art', 'Organisationstyp', 'Funktion', 'Bezahlt'], ...DATA.members.flatMap(m => (m.interessen || []).map(i => [m.vorname, m.name, m.rat === 'SR' ? 'SR' : 'NR', m.partei, i.name, i.art || '', i.orgTyp || '', i.funktion || '', i.bezahlt == null ? '' : i.bezahlt ? 'ja' : 'nein']))], 'interessenbindungen') },
+  { id: 'votesnr', label: 'Abstimmungen Nationalrat pro Mitglied (CSV)', run: () => dlCsv([['Vorname', 'Name', 'Partei', 'Datum', 'Geschäft', 'Gegenstand', 'Stimme'], ...NR().flatMap(m => (m.abstimmungen || []).map(v => [m.vorname, m.name, m.partei, fmtDate(v.datum), v.business || '', v.label || '', v.entscheid || '']))], 'abstimmungen-nr') },
+  { id: 'votessr', label: 'Abstimmungen Ständerat (Matrix, CSV)', run: () => { const vs = DATA.votesSr || []; dlCsv([['Vorname', 'Name', 'Partei', 'Kanton', ...vs.map(v => `${v.ref} ${fmtDate(v.datum)} ${v.label}`)], ...SR().map(m => [m.vorname, m.name, m.partei, m.kanton, ...vs.map(v => SYM[v.votes[m.id]] || v.votes[m.id] || '')])], 'abstimmungen-sr'); } },
+  { id: 'timeline', label: 'Chronologie Bilaterale III (CSV)', run: () => dlCsv([['Datum', 'Wer', 'Text', 'Link'], ...DATA.bilaterale.timeline.slice().sort((a, b) => a.datum.localeCompare(b.datum)).map(t => [fmtDate(t.datum), t.wer, t.text, t.url || ''])], 'chronologie') },
+  { id: 'termine', label: 'Termine (CSV)', run: () => dlCsv([['Von', 'Bis', ...Object.keys((DATA.bilaterale.termine || [])[0] || {}).filter(k => !['von', 'bis'].includes(k))], ...(DATA.bilaterale.termine || []).map(t => [fmtDate(t.von), fmtDate(t.bis), ...Object.entries(t).filter(([k]) => !['von', 'bis'].includes(k)).map(([, v]) => typeof v === 'object' ? JSON.stringify(v) : v)])], 'termine') },
+  { id: 'dossiers', label: 'Dossier-Notizen (Text)', run: () => dlText(Object.entries(DOSSIERS).map(([k, d]) => { const n = Store.get('dossier:' + k, {}); return `# ${d.titel}\n${n.ts ? 'Stand ' + fmtTs(n.ts) + '\n' : ''}\n${n.text || '(keine Notizen)'}\n`; }).join('\n\n'), 'dossier-notizen') },
+  { id: 'raw', label: 'Rohdaten parlament.ch (JSON)', run: () => dlJson(DATA, 'rohdaten') },
+];
+
+/* ===================================================================== */
+/* E-Mail-Tool                                                             */
+/* ===================================================================== */
+const EMAIL_DEFAULT = { q: '', rat: '', fr: [], partei: [], kt: [], ko: [], kofn: '', status: [], prio: [], g: '', sprache: [], owner: [], tags: [], pos: {}, mail: '', src: 'alle', per: '1', sep: '; ', fmt: 'plain', only: null, onlyName: '', excl: [] };
+const EMAIL_STATE = Object.assign({}, EMAIL_DEFAULT, loadJ('turbo.mail', {}));
+function emailSelection(S) {
+  const q = norm((S.q || '').trim()), only = S.only ? new Set(S.only) : null, has = (a, v) => !a.length || a.includes(v);
+  return DATA.members.filter(m => {
+    if (only && !only.has(m.id)) return false;
+    if (S.rat && (m.rat === 'SR' ? 'SR' : 'NR') !== S.rat) return false;
+    if (!has(S.fr, m.fraktion) || !has(S.partei, m.partei) || !has(S.kt, m.kanton) || !has(S.status, statusOf(m.id).id) || !has(S.prio, String(prioOf(m))) || !has(S.sprache, m.sprache || '–')) return false;
+    if (S.g && m.geschlecht !== S.g) return false;
+    if (S.ko.length && !(m.kommissionen || []).some(k => S.ko.includes(String(k.nr)) && (!S.kofn || (S.kofn === 'praes' ? /präsident/i.test(k.funktion || '') : /^präsident/i.test(k.funktion || ''))))) return false;
+    const t = tracking(m.id);
+    if (S.owner.length && !S.owner.includes(t.owner || '–')) return false;
+    if (S.tags.length && !(t.tags || []).some(x => S.tags.includes(x))) return false;
+    for (const [f, v] of Object.entries(S.pos || {})) { if (!v) continue; const s = effStance(m, f).stance; if (!v.split(',').includes(s)) return false; }
+    if (S.mail === 'mit' && !emailsOf(m, S.src).length) return false;
+    if (S.mail === 'ohne' && emailsOf(m, S.src).length) return false;
+    if (q) { const p = profil(m.id); const hay = norm([m.vorname, m.name, m.kanton, m.kantonName, m.partei, m.parteiName, m.fraktionName, (m.kommissionen || []).map(k => k.kurz + ' ' + k.name).join(' '), (m.buergerorte || []).join(' '), (m.berufe || []).map(b => b.beruf + ' ' + (b.arbeitgeber || '')).join(' '), (m.interessen || []).map(i => i.name).join(' '), (m.parlGruppen || []).join(' '), p.privat, p.beruflich, p.kontaktperson, t.owner, t.naechsterSchritt, (t.tags || []).join(' '), emailsOf(m).join(' ')].join(' ')); if (!q.split(/\s+/).every(w => hay.includes(w))) return false; }
+    return true;
+  }).sort((a, b) => a.name.localeCompare(b.name, 'de') || a.vorname.localeCompare(b.vorname, 'de'));
+}
+function renderEmail(main) {
+  const D = DATA, S = EMAIL_STATE;
+  const count = (fn) => { const c = {}; for (const m of D.members) { const k = fn(m); for (const x of [].concat(k)) c[x] = (c[x] || 0) + 1; } return c; };
+  const cFr = count(m => m.fraktion), cPa = count(m => m.partei), cKt = count(m => m.kanton), cSp = count(m => m.sprache || '–'), cSt = count(m => statusOf(m.id).id), cPr = count(m => String(prioOf(m)));
+  const cOw = count(m => tracking(m.id).owner || '–'), cTg = count(m => tracking(m.id).tags || []);
+  const komm = D.kommissionen.filter(k => k.mitglieder && k.mitglieder.length).sort((a, b) => (b.bilaterale ? 1 : 0) - (a.bilaterale ? 1 : 0) || (a.kurz || a.name).localeCompare(b.kurz || b.name));
+  const multi = (key, title, opts) => `<details class="mf" data-key="${key}" ${S[key].length ? 'open' : ''}><summary>${esc(title)} <span class="muted" data-n="${key}">${S[key].length ? '(' + S[key].length + ')' : ''}</span> <button class="btn sm${S[key].length ? '' : ' hidden'}" data-clear="${key}" title="Auswahl aufheben">×</button></summary><div class="chips">${opts.map(o => `<label class="ck"><input type="checkbox" value="${esc(o.v)}" ${S[key].includes(String(o.v)) ? 'checked' : ''}>${esc(o.l)}${o.n != null ? ` <span class="muted">${o.n}</span>` : ''}</label>`).join('')}</div></details>`;
+  const saved = Store.keys('mailing:').map(k => ({ key: k, ...Store.state[k].v })).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  main.innerHTML = `<h1>E-Mail-Verteiler <span class="muted small">Auswahl nach allen Kriterien · Kopieren · Exportieren</span></h1>
+    ${saved.length ? `<div class="card" style="margin-bottom:10px"><h3>Gespeicherte Verteiler</h3><div class="chips">${saved.map(s => `<span class="chip k"><a href="#" data-load="${esc(s.key)}">${esc(s.name)}</a> <span class="muted small">${esc(s.by || '')}</span> <button class="btn sm" data-dels="${esc(s.key)}" title="löschen">×</button></span>`).join('')}</div></div>` : ''}
+    ${S.only ? `<div class="warn" style="margin-bottom:10px">Vorauswahl: <b>${esc(S.onlyName || 'Auswahl')}</b> (${S.only.length} Personen) – weitere Filter wirken zusätzlich. <button class="btn sm" id="e_only">Vorauswahl aufheben</button></div>` : ''}
+    <div class="toolbar">
+      <input type="search" id="e_q" placeholder="Freitext: Name, Ort, Beruf, Interessenbindung, Parl. Gruppe, Notizen, Tag …" value="${esc(S.q)}">
+      <select id="e_rat"><option value="">Beide Räte</option><option value="NR" ${S.rat === 'NR' ? 'selected' : ''}>Nationalrat</option><option value="SR" ${S.rat === 'SR' ? 'selected' : ''}>Ständerat</option></select>
+      <select id="e_g"><option value="">Alle Geschlechter</option><option value="f" ${S.g === 'f' ? 'selected' : ''}>Frauen</option><option value="m" ${S.g === 'm' ? 'selected' : ''}>Männer</option></select>
+      <select id="e_mail"><option value="">mit und ohne E-Mail</option><option value="mit" ${S.mail === 'mit' ? 'selected' : ''}>nur mit E-Mail</option><option value="ohne" ${S.mail === 'ohne' ? 'selected' : ''}>nur ohne E-Mail</option></select>
+      <select id="e_src">${Object.entries(MAIL_SRC).map(([k, l]) => `<option value="${k}" ${S.src === k ? 'selected' : ''}>Adressen: ${l}</option>`).join('')}</select>
+      <button class="btn sm" id="e_reset">Alle Filter zurücksetzen</button>
+    </div>
+    <div class="mfgrid">
+      ${multi('fr', 'Fraktion', Object.entries(D.fraktionen).map(([k, v]) => ({ v: k, l: v.name || k, n: cFr[k] || 0 })))}
+      ${multi('partei', 'Partei', Object.keys(cPa).sort().map(k => ({ v: k, l: k, n: cPa[k] })))}
+      ${multi('kt', 'Kanton', Object.keys(cKt).sort().map(k => ({ v: k, l: k, n: cKt[k] })))}
+      ${multi('sprache', 'Muttersprache', Object.keys(cSp).sort().map(k => ({ v: k, l: k, n: cSp[k] })))}
+      ${multi('status', 'Kontaktstatus', statuses().map(s => ({ v: s.id, l: s.label, n: cSt[s.id] || 0 })))}
+      ${multi('prio', 'Priorität', ['3', '2', '1'].map(p => ({ v: p, l: 'P' + p, n: cPr[p] || 0 })))}
+      ${multi('owner', 'Verantwortlich', Object.keys(cOw).sort().map(k => ({ v: k, l: k === '–' ? '(niemand)' : k, n: cOw[k] })))}
+      ${Object.keys(cTg).length ? multi('tags', 'Tags', Object.keys(cTg).sort().map(k => ({ v: k, l: k, n: cTg[k] }))) : ''}
+      <details class="mf" data-key="ko" ${S.ko.length ? 'open' : ''}><summary>Kommission <span class="muted" data-n="ko">${S.ko.length ? '(' + S.ko.length + ')' : ''}</span> <button class="btn sm${S.ko.length ? '' : ' hidden'}" data-clear="ko" title="Auswahl aufheben">×</button></summary>
+        <div style="margin:6px 0"><select id="e_kofn" class="inp"><option value="">alle Mitglieder</option><option value="praes" ${S.kofn === 'praes' ? 'selected' : ''}>nur Präsidium + Vizepräsidium</option><option value="p" ${S.kofn === 'p' ? 'selected' : ''}>nur Präsident/in</option></select></div>
+        <div class="chips">${komm.map(k => `<label class="ck${k.bilaterale ? ' lead' : ''}" title="${esc(k.name)}"><input type="checkbox" value="${k.nr}" ${S.ko.includes(String(k.nr)) ? 'checked' : ''}>${esc(k.kurz || k.name)} <span class="muted">${k.mitglieder.length}</span></label>`).join('')}</div></details>
+      <details class="mf" ${Object.values(S.pos || {}).some(Boolean) ? 'open' : ''}><summary>Position Bilaterale III <span class="muted">${Object.values(S.pos || {}).filter(Boolean).length ? '(' + Object.values(S.pos).filter(Boolean).length + ')' : ''}</span></summary>
+        <div class="form" style="margin-top:6px">${D.bilaterale.fragen.map(f => `<label>${esc(f.label)}<select class="inp" data-pos="${f.id}">${[['', 'egal'], ['ja,eher_ja', 'Ja + eher Ja'], ['nein,eher_nein', 'Nein + eher Nein'], ['offen,eher_ja,eher_nein', 'unentschieden (offen, eher …)'], ...STANCES.map(s => [s, STANCE_LABEL[s]])].map(([v, l]) => `<option value="${v}" ${(S.pos || {})[f.id] === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`).join('')}</div></details>
+    </div>
+    <div id="e_res"></div>`;
+  const res = document.getElementById('e_res');
+  const draw = () => {
+    const sel = emailSelection(S), excl = new Set(S.excl), act = sel.filter(m => !excl.has(m.id));
+    const addr = [], seen = new Set();
+    for (const m of act) for (const e of emailsOf(m, S.src).slice(0, S.per === 'all' ? 99 : 1)) { const k = e.toLowerCase(); if (seen.has(k)) continue; seen.add(k); addr.push(S.fmt === 'name' ? `"${fullName(m)}" <${e}>` : e); }
+    const noMail = act.filter(m => !emailsOf(m, S.src).length);
+    const sep = S.sep === '\\n' ? '\n' : S.sep;
+    const plain = addr.map(x => x.replace(/^.*<|>$/g, ''));
+    const chunks = []; let cur = [];
+    for (const a of plain) { if (cur.length && encodeURIComponent([...cur, a].join(',')).length > 1800) { chunks.push(cur); cur = []; } cur.push(a); }
+    if (cur.length) chunks.push(cur);
+    const mailto = (list, field) => field === 'to' ? 'mailto:' + list.join(',') : 'mailto:?bcc=' + encodeURIComponent(list.join(','));
+    res.innerHTML = `
+      <div class="stat"><div class="card"><div class="n">${sel.length}</div><div class="l">Personen gefiltert</div></div><div class="card"><div class="n">${act.length}</div><div class="l">ausgewählt</div></div><div class="card"><div class="n">${addr.length}</div><div class="l">E-Mail-Adressen</div></div><div class="card"><div class="n" style="${noMail.length ? 'color:var(--nein)' : ''}">${noMail.length}</div><div class="l">ohne E-Mail</div></div></div>
+      <div class="card">
+        <div class="toolbar" style="margin-top:0">
+          <select id="e_sep"><option value="; " ${S.sep === '; ' ? 'selected' : ''}>Trenner: Semikolon (Outlook)</option><option value=", " ${S.sep === ', ' ? 'selected' : ''}>Trenner: Komma (Gmail, Apple Mail)</option><option value="\\n" ${S.sep === '\\n' ? 'selected' : ''}>Trenner: Zeilenumbruch</option></select>
+          <select id="e_fmt"><option value="plain" ${S.fmt === 'plain' ? 'selected' : ''}>nur Adresse</option><option value="name" ${S.fmt === 'name' ? 'selected' : ''}>«Name» &lt;Adresse&gt;</option></select>
+          <select id="e_per"><option value="1" ${S.per !== 'all' ? 'selected' : ''}>1 Adresse pro Person</option><option value="all" ${S.per === 'all' ? 'selected' : ''}>alle Adressen pro Person</option></select>
+          <button class="btn primary" id="e_copy" ${addr.length ? '' : 'disabled'}>Adressen kopieren</button>
+          ${chunks.length === 1 ? `<a class="btn" href="${esc(mailto(chunks[0], 'bcc'))}">Mail öffnen (BCC)</a><a class="btn" href="${esc(mailto(chunks[0], 'to'))}">Mail öffnen (An)</a>` : chunks.map((c, i) => `<a class="btn sm" href="${esc(mailto(c, 'bcc'))}" title="${c.length} Adressen">BCC Teil ${i + 1}/${chunks.length}</a>`).join('')}
+          <button class="btn" id="e_exp">Exportieren ▾</button>
+          <button class="btn sm" id="e_save">Als Verteiler speichern</button>
+        </div>
+        ${chunks.length > 1 ? `<p class="small muted">Zu viele Adressen für einen Mail-Link: aufgeteilt in ${chunks.length} Teile. Für eine einzige Mail die Adressen kopieren und ins BCC-Feld einfügen.</p>` : ''}
+        <textarea class="note" id="e_out" readonly style="min-height:90px">${esc(addr.join(sep))}</textarea>
+        ${noMail.length ? `<details><summary>Ohne E-Mail-Adresse (${noMail.length})</summary><p class="small">${noMail.map(m => `<a href="#/person/${m.id}">${esc(fullName(m))}</a>`).join(' · ')}</p><p class="small muted">Adressen lassen sich im Profil unter «Kontakt ergänzen» nachtragen (Typ «E-Mail»).</p></details>` : ''}
+      </div>
+      <div class="toolbar" style="margin-top:12px"><b class="small">Empfänger</b><button class="btn sm" id="e_all">alle an</button><button class="btn sm" id="e_none">alle ab</button>${S.excl.length ? `<span class="small muted">${S.excl.length} manuell abgewählt</span>` : ''}</div>
+      <div class="tablewrap" style="max-height:60vh"><table class="t"><thead><tr><th></th><th>Name</th><th>Rat</th><th>Partei</th><th>Kt.</th><th>Sprache</th><th>E-Mail</th><th>Briefanrede</th><th>Status</th><th>Wer</th></tr></thead><tbody>
+        ${sel.map(m => { const em = emailsOf(m, S.src); return `<tr${excl.has(m.id) ? ' style="opacity:.45"' : ''}><td><input type="checkbox" data-m="${m.id}" ${excl.has(m.id) ? '' : 'checked'}></td><td><a href="#/person/${m.id}">${esc(m.name)} ${esc(m.vorname)}</a></td><td>${m.rat === 'SR' ? 'SR' : 'NR'}</td><td>${frChip(m)}</td><td>${esc(m.kanton)}</td><td class="small">${esc(m.sprache || '')}</td><td class="small">${em.length ? em.map(esc).join('<br>') : '<span class="due">–</span>'}</td><td class="small">${esc(briefSprache(m))}</td><td>${statusChip(m.id)}</td><td class="small">${esc(tracking(m.id).owner || '')}</td></tr>`; }).join('') || '<tr><td colspan="10" class="muted">Keine Treffer.</td></tr>'}
+      </tbody></table></div>`;
+    document.getElementById('e_sep').addEventListener('input', e => { S.sep = e.target.value; save(); });
+    document.getElementById('e_per').addEventListener('input', e => { S.per = e.target.value; save(); });
+    document.getElementById('e_fmt').addEventListener('input', e => { S.fmt = e.target.value; save(); });
+    document.getElementById('e_copy').addEventListener('click', () => copyText(addr.join(sep)));
+    document.getElementById('e_exp').addEventListener('click', ev => exportMenuMail(ev, act, addr, sep));
+    document.getElementById('e_save').addEventListener('click', () => { const n = prompt('Name des Verteilers (für das ganze Team sichtbar):'); if (!n || !n.trim()) return; const { only, onlyName, ...f } = S; Store.set('mailing:' + uid(), { name: n.trim(), filter: { ...f, only, onlyName }, by: Store.user || 'anonym', ts: new Date().toISOString() }); toast('Verteiler gespeichert'); renderEmail(main); });
+    document.getElementById('e_all').addEventListener('click', () => { S.excl = []; save(); });
+    document.getElementById('e_none').addEventListener('click', () => { S.excl = sel.map(m => m.id); save(); });
+    res.querySelectorAll('[data-m]').forEach(cb => cb.addEventListener('change', () => { const id = +cb.dataset.m; S.excl = cb.checked ? S.excl.filter(x => x !== id) : [...S.excl, id]; save(); }));
+  };
+  const exportMenuMail = (ev, act, addr, sep) => {
+    document.querySelectorAll('.popover').forEach(p => p.remove());
+    const pop = document.createElement('div'); pop.className = 'popover';
+    const items = [['mail', `CSV – Serienbrief / Mailing (${act.length})`], ['csv', 'CSV – alle Felder'], ['vcf', 'vCard (Adressbuch)'], ['txt', `Adressen als Text (${addr.length})`], ['json', 'JSON'], ['__close', 'Schliessen']];
+    pop.innerHTML = `<div class="small muted">E-Mail-Verteiler · ${act.length} Personen</div>${items.map(([k, l]) => `<button data-x="${k}">${esc(l)}</button>`).join('')}`;
+    document.body.appendChild(pop);
+    const r = ev.currentTarget.getBoundingClientRect(); pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 260)) + 'px'; pop.style.top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - pop.offsetHeight - 10)) + 'px';
+    const close = () => { pop.remove(); document.removeEventListener('click', h); }; const h = e => { if (!pop.contains(e.target)) close(); };
+    pop.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { const x = b.dataset.x; close();
+      if (x === 'mail') dlCsv(objRows(act.map(m => mailRecord(m, S.src))), 'verteiler');
+      else if (x === 'csv') dlCsv(objRows(act.map(memberRecord)), 'verteiler-alle-felder');
+      else if (x === 'vcf') dlText(act.map(vcard).join('\r\n'), 'verteiler', 'vcf', 'text/vcard');
+      else if (x === 'txt') dlText(addr.join(sep), 'verteiler-adressen');
+      else if (x === 'json') dlJson({ filter: S, exportiert: new Date().toISOString(), empfaenger: act.map(m => mailRecord(m, S.src)) }, 'verteiler'); }));
+    setTimeout(() => document.addEventListener('click', h), 0);
+  };
+  const save = () => { saveJ('turbo.mail', S); draw(); };
+  main.querySelectorAll('details.mf[data-key]').forEach(d => { const key = d.dataset.key;
+    d.querySelectorAll('.chips input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => { S[key] = [...d.querySelectorAll('.chips input:checked')].map(x => x.value); d.querySelector(`[data-n="${key}"]`).textContent = S[key].length ? `(${S[key].length})` : ''; d.querySelector('[data-clear]').classList.toggle('hidden', !S[key].length); save(); })); });
+  main.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); S[b.dataset.clear] = []; saveJ('turbo.mail', S); renderEmail(main); }));
+  main.querySelectorAll('[data-pos]').forEach(s => s.addEventListener('input', () => { S.pos = { ...(S.pos || {}), [s.dataset.pos]: s.value }; save(); }));
+  for (const [id, k] of [['e_rat', 'rat'], ['e_g', 'g'], ['e_mail', 'mail'], ['e_src', 'src'], ['e_kofn', 'kofn']]) document.getElementById(id).addEventListener('input', e => { S[k] = e.target.value; save(); });
+  document.getElementById('e_q').addEventListener('input', e => { S.q = e.target.value; save(); });
+  document.getElementById('e_reset').addEventListener('click', () => { Object.assign(S, JSON.parse(JSON.stringify(EMAIL_DEFAULT)), { sep: S.sep, fmt: S.fmt, src: S.src, per: S.per }); saveJ('turbo.mail', S); renderEmail(main); });
+  const onlyBtn = document.getElementById('e_only'); if (onlyBtn) onlyBtn.addEventListener('click', () => { S.only = null; S.onlyName = ''; saveJ('turbo.mail', S); renderEmail(main); });
+  main.querySelectorAll('[data-load]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); const v = Store.get(a.dataset.load, {}); Object.assign(S, JSON.parse(JSON.stringify(EMAIL_DEFAULT)), v.filter || {}); saveJ('turbo.mail', S); renderEmail(main); toast('Verteiler «' + v.name + '» geladen'); }));
+  main.querySelectorAll('[data-dels]').forEach(b => b.addEventListener('click', () => { if (confirm('Gespeicherten Verteiler löschen?')) { Store.set(b.dataset.dels, null); renderEmail(main); } }));
+  draw();
+  CURRENT.onStore = () => { if (document.activeElement && document.activeElement.closest('#main input, #main select, #main textarea') && document.activeElement.id !== 'e_out') return; draw(); };
+}
+
+/* ===================================================================== */
 /* Info / Einstellungen                                                    */
 /* ===================================================================== */
 function renderInfo(main) {
@@ -751,6 +1030,7 @@ function renderInfo(main) {
   main.innerHTML = `<h1>Info &amp; Einstellungen</h1>
     <div class="card"><dl class="kv"><dt>Datenstand parlament.ch</dt><dd>${esc((D.meta.quelleStand || '').replace('T', ' ').slice(0, 16))} UTC</dd><dt>Build</dt><dd>${esc((CFG.build || '').replace('T', ' ').slice(0, 16))} UTC</dd><dt>Gemeinsamer Speicher</dt><dd>${API ? `<code>${esc(API)}</code> · ${Store.online ? 'verbunden' : 'nicht erreichbar'} · Version ${Store.version} · ${n} Einträge${Store.queue.length ? ` · <b>${Store.queue.length} ausstehend</b>` : ''}` : '<b>nicht konfiguriert</b> – Änderungen bleiben lokal'}</dd><dt>Dein Name</dt><dd><input class="inp" id="uname" value="${esc(Store.user)}" placeholder="Kürzel"></dd></dl>
       <div class="chips" style="margin-top:8px"><button class="btn sm" id="sync">Jetzt synchronisieren</button><button class="btn sm" id="expall">Export (alles, JSON)</button><label class="btn sm" style="display:inline-block">Import JSON<input type="file" id="impall" accept="application/json" class="hidden"></label><button class="btn sm" id="log">Änderungsverlauf</button></div><div id="logbox"></div></div>
+    <div class="card section"><h3>Export</h3><p class="small muted">Alles als Datei: CSV (Semikolon, UTF-8 – öffnet direkt in Excel), vCard, JSON. Jede Tabelle in der App hat zudem «⤓ CSV» und «⧉ Kopieren»; Personenlisten haben «Export ▾». E-Mail-Verteiler: <a href="#/email">E-Mail-Tool</a>.</p><div class="chips">${EXPORTS.map(x => `<button class="btn sm" data-xall="${x.id}">${esc(x.label)}</button>`).join('')}</div></div>
     <div class="card section"><h3>Team (für «Verantwortlich»)</h3><input class="inp" id="team" style="width:100%" value="${esc(team().join(', '))}" placeholder="Namen, kommagetrennt"></div>
     <div class="card section"><h3>Status-Stufen</h3><p class="small muted">Eine Zeile pro Status: <code>id | Bezeichnung | Farbe</code>. «dabei» zählt als gewonnen.</p><textarea class="note" id="stat">${esc(statuses().map(s => `${s.id} | ${s.label} | ${s.color}`).join('\n'))}</textarea><button class="btn sm" id="statsave">Speichern</button></div>
     <div class="card section"><h3>Methodik</h3><p class="small">Stammdaten, Kontakte, Adressen, Kommissionen, Interessenbindungen und persönliche Mitarbeitende stammen aus der OData-Schnittstelle des Parlaments (identisch mit parlament.ch). Verbindungen werden aus gemeinsamen Kommissionen, Organisationen (Interessenbindungen), Arbeitgebern, Parlamentarischen Gruppen und Bürgerorten abgeleitet; manuelle Beziehungen kommen dazu. Positionen: manuelle Einschätzung vor belegtem Signal vor Fraktionslinie (bei abweichendem Abstimmungsverhalten um eine Stufe angepasst). Ständerat: Die Haltung der 46 Mitglieder beruht auf den namentlichen Abstimmungen der Herbstsession 2026 zu 26.023 und 26.425 (gewichtet; Gesamtabstimmungen zählen am meisten, Enthaltung = offen); ohne Abstimmung zur Frage gilt die Fraktionslinie. Ziel bei einer Differenzbereinigung im Ständerat: 24 Stimmen. Priorität: Schlüsselkommissionen, Fraktion mit offenem Stimmverhalten, offene Haltung zu Ständemehr/Erasmus+, Führungsfunktionen.</p><p class="small warn">Die Daten sind verschlüsselt abgelegt und werden erst nach Codeeingabe im Browser entschlüsselt. Es gibt keine Benutzerkonten; alle Änderungen werden mit Name und Zeit im gemeinsamen Speicher festgehalten.</p></div>`;
@@ -759,6 +1039,7 @@ function renderInfo(main) {
   document.getElementById('expall').addEventListener('click', () => dl(new Blob([JSON.stringify({ version: Store.version, state: Store.state, exportiert: new Date().toISOString() }, null, 1)], { type: 'application/json' }), 'turbo-export.json'));
   document.getElementById('impall').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()); const st = j.state || j.overrides && Object.fromEntries(Object.entries(j.overrides).flatMap(([mid, fs]) => Object.entries(fs).map(([fq, o]) => [`position:${mid}:${fq}`, { v: { stance: o.stance, note: o.note || '' } }]))) || {}; const pairs = Object.entries(st).map(([k, e]) => [k, e && typeof e === 'object' && 'v' in e ? e.v : e]); if (!pairs.length) throw new Error('leer'); if (confirm(`${pairs.length} Einträge importieren (überschreibt gleiche Schlüssel)?`)) { Store.setMany(pairs); toast('Importiert'); renderInfo(main); } } catch (err) { toast('Import fehlgeschlagen'); } });
   document.getElementById('log').addEventListener('click', async () => { const box = document.getElementById('logbox'); if (!API) { box.innerHTML = '<p class="small muted">Kein Speicherdienst.</p>'; return; } try { const r = await Store.api('/log?limit=100'); box.innerHTML = `<ul class="list small" style="max-height:40vh;overflow:auto;margin-top:8px">${r.items.map(i => { const mid = i.key.split(':')[1]; const m = member(mid); return `<li><span class="muted">${fmtTs(i.ts)}</span> · ${esc(i.by)} · ${m ? `<a href="#/person/${m.id}">${esc(fullName(m))}</a>` : ''} <code>${esc(i.key)}</code> ${i.v === null ? '<span class="muted">gelöscht</span>' : ''}</li>`; }).join('')}</ul>`; } catch (e) { box.innerHTML = '<p class="small muted">Verlauf nicht abrufbar.</p>'; } });
+  main.querySelectorAll('[data-xall]').forEach(btn => btn.addEventListener('click', () => EXPORTS.find(x => x.id === btn.dataset.xall).run()));
   document.getElementById('team').addEventListener('change', e => { Store.set('config:team', e.target.value.split(',').map(x => x.trim()).filter(Boolean)); toast('Gespeichert'); });
   document.getElementById('statsave').addEventListener('click', () => { const list = document.getElementById('stat').value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(p => p[0]).map(p => ({ id: p[0], label: p[1] || p[0], color: p[2] || '#6b7a9e' })); if (!list.length) return; Store.set('config:statuses', list); toast('Gespeichert'); rerender(); });
 }
