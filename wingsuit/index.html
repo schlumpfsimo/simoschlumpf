@@ -639,6 +639,10 @@ function plantVeg(v){
     const r1 = hash(v.x * 256 + px, v.y * 256 + py), r2 = hash(v.y * 256 + py + 7, v.x * 256 + px + 3), r3 = hash(px * 31 + v.x, py * 17 + v.y);
     const lon = west + (px + r1 * step) / 256 * VSPAN, lat = north - (py + r2 * step) / 256 * VSPAN;
     const g = groundAt(lon, lat); if (groundZ < maxZ()) continue;
+    // no trees above the tree line, none on faces steeper than 45°: there the height model shows rock, not wood
+    if (g > 2250) continue;
+    const ga = groundAt(lon + 3 / mLon, lat), gb = groundAt(lon - 3 / mLon, lat), gc = groundAt(lon, lat + 3 / mLat), gd = groundAt(lon, lat - 3 / mLat);
+    if (Math.hypot(ga - gb, gc - gd) / 6 > 1.0) continue;
     const h = hm * (0.8 + 0.4 * r3);
     const conifer = g > 1250 ? r3 < 0.85 : (g > 900 ? r3 < 0.55 : r3 < 0.3);
     const r = conifer ? Math.min(4.5, 1 + 0.17 * h) : Math.min(8, 0.3 * h + 0.5);
