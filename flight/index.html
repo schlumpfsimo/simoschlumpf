@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Flug</title>
-  <meta name="description" content="Flugsimulator über der Schweiz, auf Gelände und Gebäuden von swisstopo. Laptop und VR." />
+  <meta name="description" content="Flugsimulator über der Schweiz, auf Gelände, Luftbild und Gebäuden von swisstopo. Laptop und VR." />
   <style>
     @font-face{ font-family:'IBM Plex Sans'; font-weight:500; font-display:swap; src:url('../karte/plex-500.woff2') format('woff2'); }
     @font-face{ font-family:'IBM Plex Sans'; font-weight:700; font-display:swap; src:url('../karte/plex-700.woff2') format('woff2'); }
@@ -47,7 +47,7 @@
 <div id="overlay">
   <h1>Flug</h1>
   <div class="sterne" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 0.8l2.7 6.3 6.8 0.6-5.2 4.5 1.6 6.7L10 15.3 4.1 18.9l1.6-6.7L0.5 7.7l6.8-0.6z"/></svg><svg viewBox="0 0 20 20"><path d="M10 0.8l2.7 6.3 6.8 0.6-5.2 4.5 1.6 6.7L10 15.3 4.1 18.9l1.6-6.7L0.5 7.7l6.8-0.6z"/></svg><svg viewBox="0 0 20 20"><path d="M10 0.8l2.7 6.3 6.8 0.6-5.2 4.5 1.6 6.7L10 15.3 4.1 18.9l1.6-6.7L0.5 7.7l6.8-0.6z"/></svg></div>
-  <p>Ein Kampfjet über der Schweiz. Gelände und jedes Gebäude kommen von swisstopo und werden nur dort geladen, wo du gerade fliegst. Das Flugzeug siehst du nicht, du sitzt vorne drin.</p>
+  <p>Ein Kampfjet über der Schweiz. Gelände, Luftbild und jedes Gebäude kommen von swisstopo und werden nur dort geladen, wo du gerade fliegst. Das Flugzeug siehst du nicht, du sitzt vorne drin.</p>
   <h2>Tastatur</h2>
   <dl class="raster">
     <dt>↑ ↓</dt><dd>Nase runter, Nase hoch (I kehrt um)</dd>
@@ -73,7 +73,7 @@
   </dl>
   <p id="status">Lade Karte …</p>
   <button id="go" class="knopf" disabled>Losfliegen</button>
-  <p class="quelle">Gelände: swissALTI3D, swissALTIREGIO. Gebäude: swissBUILDINGS3D. Grenze: swissBOUNDARIES3D. Alles © swisstopo, geladen von geo.admin.ch.</p>
+  <p class="quelle">Gelände: swissALTI3D, swissALTIREGIO. Luftbild: SWISSIMAGE. Gebäude: swissBUILDINGS3D. Grenze: swissBOUNDARIES3D. Alles © swisstopo, geladen von geo.admin.ch.</p>
 </div>
 <script type="module">
 import * as THREE from 'three';
@@ -144,7 +144,7 @@ const SUN = (() => { const E = new THREE.Vector3(), N = new THREE.Vector3(), U =
   return e; })();
 
 // ================================================================ companion data (tools/pack.py): 1 km heights, 100 m lake mask, border
-let CE0, CN1, WX, WZ, WSTEP, HX, HZ, HSTEP, HC, BORDER, waterTex;
+let CE0, CN1, WX, WZ, WSTEP, HX, HZ, HSTEP, HC, BORDER;
 async function loadSmall(){
   const res = await fetch('schweiz.bin.gz'); if (!res.ok) throw new Error('schweiz.bin.gz ' + res.status);
   let buf = new Uint8Array(await res.arrayBuffer());
@@ -161,7 +161,6 @@ async function loadSmall(){
   for (let k = 0; k < w.length; k++) w[k] = (bits[k >> 3] >> (7 - (k & 7))) & 1 ? 255 : 0;
   waterTex = new THREE.DataTexture(w, WX, WZ, THREE.RedFormat, THREE.UnsignedByteType);
   waterTex.unpackAlignment = 1; waterTex.minFilter = waterTex.magFilter = THREE.LinearFilter; waterTex.needsUpdate = true;
-  terrainMat.uniforms.uWater.value = waterTex;
 }
 // coarse ground (m) at LV95, until the terrain tiles are there
 function coarseGround(E, N){
@@ -173,26 +172,34 @@ function coarseGround(E, N){
 // ================================================================ materials: vertex colours with baked light, lakes from the mask, haze
 const hazeGLSL = `uniform vec3 uHaze; uniform float uHazeDist; varying float vDist;
   vec3 haze(vec3 c){ return mix(c, uHaze, 1.0 - exp(-vDist / uHazeDist)); }`;
-const terrainMat = new THREE.ShaderMaterial({
-  uniforms: { uHaze: { value: HAZE }, uHazeDist: { value: 75000 }, uWater: { value: null } },
-  vertexShader: `attribute vec3 color; attribute vec2 lv; varying vec3 vCol; varying vec2 vLv; varying float vDist;
-    void main(){ vCol = color; vLv = lv; vec4 mv = modelViewMatrix * vec4(position, 1.0); vDist = length(mv.xyz); gl_Position = projectionMatrix * mv; }`,
-  fragmentShader: `${hazeGLSL} uniform sampler2D uWater; varying vec3 vCol; varying vec2 vLv;
+// each tile has its own material: the aerial photo (SWISSIMAGE) of the tile, or, until it is there, a piece of an
+// ancestor's photo. Without any photo: the banded colours. The relief light is baked into the vertices.
+const hazeU = { uHaze: { value: HAZE }, uHazeDist: { value: 75000 } };
+const terrainVert = `attribute vec3 color; attribute float shade; varying vec3 vCol; varying vec2 vUv; varying float vShade; varying float vDist;
+    void main(){ vCol = color; vUv = uv; vShade = shade; vec4 mv = modelViewMatrix * vec4(position, 1.0); vDist = length(mv.xyz); gl_Position = projectionMatrix * mv; }`;
+const terrainFrag = `${hazeGLSL} uniform sampler2D uTex; uniform float uHasTex; uniform vec2 uOff; uniform float uScale;
+    varying vec3 vCol; varying vec2 vUv; varying float vShade;
     void main(){
-      float w = (vLv.x > 0.0 && vLv.x < 1.0 && vLv.y > 0.0 && vLv.y < 1.0) ? smoothstep(0.35, 0.65, texture2D(uWater, vLv).r) : 0.0;
-      gl_FragColor = vec4(haze(mix(vCol, vec3(0.36, 0.52, 0.70), w)), 1.0);
-    }`,
-  side: THREE.DoubleSide,
-});
+      vec3 photo = texture2D(uTex, uOff + vUv * uScale).rgb * vShade;
+      gl_FragColor = vec4(haze(mix(vCol, photo, uHasTex)), 1.0);
+    }`;
+const blankTex = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); blankTex.needsUpdate = true;
+function newTerrainMat(){
+  return new THREE.ShaderMaterial({
+    uniforms: { ...hazeU, uTex: { value: blankTex }, uHasTex: { value: 0 }, uOff: { value: new THREE.Vector2() }, uScale: { value: 1 } },
+    vertexShader: terrainVert, fragmentShader: terrainFrag, side: THREE.DoubleSide,
+  });
+}
+let waterTex = null;
 const buildMat = new THREE.ShaderMaterial({
-  uniforms: { uHaze: { value: HAZE }, uHazeDist: { value: 75000 } },
+  uniforms: { ...hazeU },
   vertexShader: `attribute vec3 color; varying vec3 vCol; varying float vDist;
     void main(){ vCol = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); vDist = length(mv.xyz); gl_Position = projectionMatrix * mv; }`,
   fragmentShader: `${hazeGLSL} varying vec3 vCol; void main(){ gl_FragColor = vec4(haze(vCol), 1.0); }`,
   side: THREE.DoubleSide,
 });
 const lineMat = new THREE.ShaderMaterial({
-  uniforms: { uHaze: { value: HAZE }, uHazeDist: { value: 75000 } },
+  uniforms: { ...hazeU },
   vertexShader: `varying float vDist; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vDist = length(mv.xyz); gl_Position = projectionMatrix * mv; }`,
   fragmentShader: `${hazeGLSL} void main(){ gl_FragColor = vec4(haze(vec3(0.0, 0.2, 0.6)), 1.0); }`,
 });
@@ -222,7 +229,7 @@ const tiles = new Map();   // key -> tile
 let roots = [];
 function makeTile(z, x, y, parent){
   const span = 180 / 2 ** z, t = { z, x, y, key: z + '/' + x + '/' + y, span, west: x * span - 180, south: y * span - 90, parent,
-    state: 0, mesh: null, kids: null, minH: 0, maxH: 4800, center: new THREE.Vector3(), radius: 0, used: 0 };
+    state: 0, mesh: null, mat: null, kids: null, minH: 0, maxH: 4800, center: new THREE.Vector3(), radius: 0, used: 0, img: 0, tex: null };
   if (z >= 10){ const [E, N] = wgsToLv95(t.west + span / 2, t.south + span / 2), h = coarseGround(E, N); t.minH = h - 600; t.maxH = h + 600; }
   placeTile(t); tiles.set(t.key, t); return t;
 }
@@ -255,10 +262,9 @@ function buildTerrain(t, buf){
   while (o + 5 <= buf.byteLength){ const id = dv.getUint8(o), len = dv.getUint32(o + 1, true); o += 5; if (id === 1) oct = new Uint8Array(buf, o, len); o += len; }
   // skirts hang below every edge vertex, so that neighbours at another level leave no gap
   const nEdge = edges[0].length + edges[1].length + edges[2].length + edges[3].length, nv = n + nEdge;
-  const pos = new Float32Array(nv * 3), col = new Uint8Array(nv * 3), lv = new Float32Array(nv * 2), us = new Float64Array(n), vs = new Float64Array(n);
+  const pos = new Float32Array(nv * 3), col = new Uint8Array(nv * 3), uv = new Float32Array(nv * 2), shade = new Uint8Array(nv), us = new Float64Array(n), vs = new Float64Array(n);
   const cl = Math.hypot(C[0], C[1], C[2]), up = [C[0] / cl, C[1] / cl, C[2] / cl];
   let u = 0, v = 0, hq = 0;
-  const lvW = (WX - 1) * WSTEP, lvH = (WZ - 1) * WSTEP;
   for (let i = 0; i < n; i++){
     u += zz(q[i]); v += zz(q[n + i]); hq += zz(q[2 * n + i]);
     const lon = t.west + u / 32767 * t.span, lat = t.south + v / 32767 * t.span, h = minH + hq / 32767 * (maxH - minH);
@@ -274,8 +280,8 @@ function buildTerrain(t, buf){
     colour(h, nx * up[0] + ny * up[1] + nz * up[2], _col);
     const lit = 0.52 + 0.62 * Math.max(0, nx * SUN[0] + ny * SUN[1] + nz * SUN[2]);
     col[i * 3] = clamp(_col[0] * lit * 255, 0, 255); col[i * 3 + 1] = clamp(_col[1] * lit * 255, 0, 255); col[i * 3 + 2] = clamp(_col[2] * lit * 255, 0, 255);
-    const [E, N] = wgsToLv95(lon, lat);
-    lv[i * 2] = (E - CE0) / lvW; lv[i * 2 + 1] = (CN1 - N) / lvH;
+    shade[i] = clamp((0.72 + 0.5 * Math.max(0, nx * SUN[0] + ny * SUN[1] + nz * SUN[2])) * 200, 0, 255);   // ×1.275 in the shader's normalisation
+    uv[i * 2] = u / 32767; uv[i * 2 + 1] = v / 32767;
   }
   const skirt = Math.max(15, t.span * 111320 / 50), ind = Array.from(idx);
   let k = n;
@@ -285,7 +291,7 @@ function buildTerrain(t, buf){
       const a = s[j];
       pos[k * 3] = pos[a * 3] - up[0] * skirt; pos[k * 3 + 1] = pos[a * 3 + 1] - up[1] * skirt; pos[k * 3 + 2] = pos[a * 3 + 2] - up[2] * skirt;
       col[k * 3] = col[a * 3]; col[k * 3 + 1] = col[a * 3 + 1]; col[k * 3 + 2] = col[a * 3 + 2];
-      lv[k * 2] = lv[a * 2]; lv[k * 2 + 1] = lv[a * 2 + 1];
+      uv[k * 2] = uv[a * 2]; uv[k * 2 + 1] = uv[a * 2 + 1]; shade[k] = shade[a];
       if (j > 0){ const b = s[j - 1]; ind.push(b, a, k - 1, a, k, k - 1); }
       k++;
     }
@@ -293,10 +299,12 @@ function buildTerrain(t, buf){
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
-  g.setAttribute('lv', new THREE.BufferAttribute(lv, 2));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setAttribute('shade', new THREE.BufferAttribute(shade, 1, true));
   g.setIndex(new THREE.BufferAttribute(new Uint32Array(ind), 1));
   g.computeBoundingSphere();
-  const m = new THREE.Mesh(g, terrainMat);
+  t.mat = newTerrainMat();
+  const m = new THREE.Mesh(g, t.mat);
   m.matrixAutoUpdate = false; m.matrix.copy(meshMatrix(C)); m.updateMatrixWorld(true); m.visible = false;
   t.mesh = m; t.minH = minH; t.maxH = maxH; placeTile(t);
   scene.add(m);
@@ -325,6 +333,31 @@ function pump(){
     }
     q.length = 0;
   }
+}
+// SWISSIMAGE (swisstopo) from the WMTS in the same 4326 scheme as the terrain; rows count from the north there
+const PHOTO = 'https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/4326/';
+let photosLoading = 0;
+function loadPhoto(t){
+  t.img = 1; photosLoading++;
+  const im = new Image(); im.crossOrigin = 'anonymous';
+  im.onload = () => {
+    photosLoading--;
+    if (!t.mesh){ t.img = 0; return; }   // evicted meanwhile
+    const tex = new THREE.Texture(im); tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter;
+    tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); tex.needsUpdate = true;
+    t.tex = tex; t.img = 2;
+  };
+  im.onerror = () => { photosLoading--; t.img = 3; };
+  im.src = PHOTO + t.z + '/' + t.x + '/' + ((1 << t.z) - 1 - t.y) + '.jpeg';
+}
+// the tile's own photo, or the matching piece of the nearest ancestor's
+function applyPhoto(t){
+  let a = t, k = 0;
+  while (a && !a.tex){ a = a.parent; k++; }
+  const u = t.mat.uniforms;
+  if (!a){ u.uHasTex.value = 0; return; }
+  const f = 1 << k;
+  u.uTex.value = a.tex; u.uHasTex.value = 1; u.uScale.value = 1 / f; u.uOff.value.set((t.x - a.x * f) / f, (t.y - a.y * f) / f);
 }
 async function loadTerrain(t){
   try {
@@ -368,11 +401,16 @@ function updateTerrain(){
   for (const t of shown) t.mesh.visible = false;
   shown.length = 0;
   for (const r of roots){ const res = select(r); if (res) shown.push(...res); else if (r.state === 2) shown.push(r); }
-  for (const t of shown) t.mesh.visible = true;
+  for (const t of shown){
+    t.mesh.visible = true;
+    if (t.img === 0 && photosLoading < 12) loadPhoto(t);
+    applyPhoto(t);
+  }
   // forget tiles not used for a while
   if (frameNo % 120 === 0) for (const t of tiles.values()){
     if (t.z > ROOTZ && frameNo - t.used > 900){
-      if (t.mesh){ scene.remove(t.mesh); t.mesh.geometry.dispose(); t.mesh = null; }
+      if (t.mesh){ scene.remove(t.mesh); t.mesh.geometry.dispose(); t.mat.dispose(); t.mesh = null; }
+      if (t.tex){ t.tex.dispose(); t.tex = null; }
       if (t.parent && t.parent.kids){ t.parent.kids = null; }
       tiles.delete(t.key);
     }
@@ -676,6 +714,61 @@ function readInput(dt){
   ctl.pitch = clamp(ctl.pitch, -1, 1); ctl.roll = clamp(ctl.roll, -1, 1); ctl.yaw = clamp(ctl.yaw, -1, 1); ctl.thrRate = clamp(ctl.thrRate, -1, 1);
 }
 
+// ================================================================ clouds: a thin broken deck at 3300 m, from value noise in lon/lat, so it stays put while the jet moves
+const CLOUD_H = 3300;
+const clouds = new THREE.Mesh(new THREE.CircleGeometry(90000, 64), new THREE.ShaderMaterial({
+  uniforms: { ...hazeU, uToEcef: { value: new THREE.Matrix4().set(RW[0], RW[3], RW[6], O[0], RW[1], RW[4], RW[7], O[1], RW[2], RW[5], RW[8], O[2], 0, 0, 0, 1) }, uTime: { value: 0 } },
+  vertexShader: `uniform mat4 uToEcef; varying vec2 vLL; varying float vDist;
+    void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vec3 e = (uToEcef * w).xyz; vLL = vec2(atan(e.y, e.x), atan(e.z, length(e.xy)));
+      vec4 mv = viewMatrix * w; vDist = length(mv.xyz); gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `${hazeGLSL} uniform float uTime; varying vec2 vLL;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+    void main(){
+      vec2 p = vec2(vLL.x * 2500.0, vLL.y * 3600.0) + vec2(uTime * 0.002, 0.0);   // about 1 unit per 1.7 km
+      float n = vn(p) * 0.55 + vn(p * 2.1) * 0.3 + vn(p * 4.7) * 0.15;
+      float a = smoothstep(0.55, 0.68, n) * 0.9;
+      gl_FragColor = vec4(haze(vec3(0.97, 0.97, 0.98)), a * exp(-vDist / 45000.0));
+    }`,
+  transparent: true, depthWrite: false, side: THREE.DoubleSide,
+}));
+clouds.frustumCulled = false; clouds.renderOrder = 5; scene.add(clouds);
+function placeClouds(t){
+  clouds.position.copy(P.pos).addScaledVector(UP, CLOUD_H - P.geo.h);
+  clouds.quaternion.setFromUnitVectors(_ax.set(0, 0, 1), UP);
+  clouds.material.uniforms.uTime.value = t / 1000;
+}
+
+// ================================================================ camera look (laptop only): the scene at half resolution, then grain, a little warmth, vignette
+const postRT = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true, samples: 0 });
+postRT.texture.minFilter = THREE.LinearFilter; postRT.texture.magFilter = THREE.LinearFilter;
+const postMat = new THREE.ShaderMaterial({
+  uniforms: { tScene: { value: postRT.texture }, uTime: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `uniform sampler2D tScene; uniform float uTime; uniform vec2 uRes; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    void main(){
+      vec2 px = 1.0 / uRes;
+      vec3 c = texture2D(tScene, vUv).rgb * 0.5 + (texture2D(tScene, vUv + px).rgb + texture2D(tScene, vUv - px).rgb) * 0.25;   // soft, like a lens
+      float l = dot(c, vec3(0.3, 0.59, 0.11));
+      c = mix(vec3(l), c, 0.86) * vec3(1.05, 1.0, 0.93);          // a little less colour, a little warmer
+      c = (c - 0.5) * 1.1 + 0.5;
+      vec2 d = (vUv - 0.5) * vec2(uRes.x / uRes.y, 1.0);
+      c *= 1.0 - 0.4 * pow(length(d) * 1.1, 2.5);                   // vignette
+      c += (h(vUv * uRes + fract(uTime * 7.1) * 13.7) - 0.5) * 0.045;  // grain
+      gl_FragColor = vec4(c, 1.0);
+    }`,
+  depthTest: false, depthWrite: false,
+});
+const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
+function postSize(){
+  const w = Math.max(640, Math.round(innerWidth * 0.55)), hgt = Math.round(w * innerHeight / innerWidth);
+  postRT.setSize(w, hgt); postMat.uniforms.uRes.value.set(w, hgt);
+}
+addEventListener('resize', postSize); postSize();
+
 // ================================================================ markers: the nose (black) and where the jet is actually going (blue)
 const noseGeo = new THREE.BufferGeometry().setFromPoints([[-3, 0], [-1, 0], [-1, 0], [0, -0.8], [0, -0.8], [1, 0], [1, 0], [3, 0]].map(([x, y]) => new THREE.Vector3(x * 0.6, y * 0.6, 0)));
 const nose = new THREE.LineSegments(noseGeo, new THREE.LineBasicMaterial({ color: 0x000000, depthTest: false, transparent: true }));
@@ -813,6 +906,7 @@ if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
     audioInit();
     const cur = renderer.xr.getSession(); if (cur){ cur.end(); return; }
     try {
+      renderer.xr.setFramebufferScaleFactor(0.8);
       const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] });
       await renderer.xr.setSession(session);
       try { renderer.xr.setFoveation(1); } catch (e) {}
@@ -843,10 +937,15 @@ function frame(t){
   updateBuildings(P.geo, P.agl);
   pump();
   if (msgT > 0){ msgT -= dt; if (msgT <= 0){ msgEl.textContent = ''; msgEl.style.display = 'none'; } }
+  placeClouds(t);
   drawHud(t);
   updateAudio();
   if (!started) statusEl.textContent = `Bereit. ${loadedCount} Geländekacheln geladen.`;
-  renderer.render(scene, camera);
+  if (renderer.xr.isPresenting) renderer.render(scene, camera);
+  else {
+    renderer.setRenderTarget(postRT); renderer.render(scene, camera);
+    renderer.setRenderTarget(null); postMat.uniforms.uTime.value = t / 1000; renderer.render(postScene, postCam);
+  }
 }
 renderer.setAnimationLoop(frame);
 window.flight = { blocks, tiles, P, shown, step, ctl, spawn, get active(){ return active; }, get activeB(){ return activeB; } };
