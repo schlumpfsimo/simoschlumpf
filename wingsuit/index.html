@@ -52,7 +52,7 @@
 <div id="overlay">
   <h1>Wingsuit</h1>
   <div class="sterne" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 0.8l2.7 6.3 6.8 0.6-5.2 4.5 1.6 6.7L10 15.3 4.1 18.9l1.6-6.7L0.5 7.7l6.8-0.6z"/></svg><svg viewBox="0 0 20 20"><path d="M10 0.8l2.7 6.3 6.8 0.6-5.2 4.5 1.6 6.7L10 15.3 4.1 18.9l1.6-6.7L0.5 7.7l6.8-0.6z"/></svg><svg viewBox="0 0 20 20"><path d="M10 0.8l2.7 6.3 6.8 0.6-5.2 4.5 1.6 6.7L10 15.3 4.1 18.9l1.6-6.7L0.5 7.7l6.8-0.6z"/></svg></div>
-  <p>Du stehst an einem der klassischen Schweizer BASE-Exits. Absprung, drei Sekunden Fall, dann trägt der Anzug: Gleitzahl bis etwa 3, 150 bis 250 km/h. Schirm ziehen, auf dem Landefeld ankommen. Gelände, Luftbild und Gebäude kommen von swisstopo, die Bäume aus dem Vegetationshöhenmodell des Landesforstinventars. Du stirbst nur, wenn du Fels, Boden, ein Gebäude oder einen Baum wirklich berührst.</p>
+  <p>Du stehst an einem der klassischen Schweizer BASE-Exits. Absprung, drei Sekunden Fall, dann trägt der Anzug: 160 km/h im Gleiten, Gleitzahl 3, im Sturzflug über 250. Nahe an der Wand bleiben, Schirm ziehen, auf dem Landefeld ankommen. Gelände (bis 0.5 m), Luftbild und Gebäude kommen von swisstopo, die Bäume aus dem Vegetationshöhenmodell des Landesforstinventars. Du stirbst nur, wenn du Fels, Boden, ein Gebäude oder einen Baum wirklich berührst. «Fels voraus» zeigt, wie weit es in Flugrichtung noch ist.</p>
   <h2>Exit</h2>
   <select id="exit"></select>
   <h2>Tastatur</h2>
@@ -63,18 +63,18 @@
     <dt>A D</dt><dd>Gieren</dd>
     <dt>Maus</dt><dd>Ziehen zum Herumschauen</dd>
     <dt>N B</dt><dd>Nächster, vorheriger Exit</dd>
-    <dt>R M P</dt><dd>Zurück zum Exit, Karte, Pause</dd>
+    <dt>R P</dt><dd>Zurück zum Exit, Pause</dd>
   </dl>
   <h2>Gamepad</h2>
   <dl class="raster">
     <dt>Sticks</dt><dd>Links fliegen, rechts schauen</dd>
-    <dt>Knöpfe</dt><dd>A Absprung und Schirm, Y nächster Exit, B zurück zum Exit, X Karte</dd>
+    <dt>Knöpfe</dt><dd>A Absprung und Schirm, Y nächster Exit, B zurück zum Exit</dd>
   </dl>
   <h2>Quest</h2>
   <dl class="raster">
     <dt>Kopf</dt><dd>Herumschauen</dd>
     <dt>Rechts</dt><dd>Stick fliegen und am Schirm steuern, Abzug Absprung und Schirm, A nächster Exit, B zurück zum Exit</dd>
-    <dt>Links</dt><dd>Stick ↔ Gieren, ↕ Kopf hoch und runter, X Karte, Y Stick umkehren</dd>
+    <dt>Links</dt><dd>Stick ↔ Gieren, ↕ Kopf hoch und runter, Y Stick umkehren</dd>
   </dl>
   <p id="status">Lade Karte …</p>
   <button id="go" class="knopf" disabled>Zum Exit</button>
@@ -235,7 +235,8 @@ function colour(h, cosSlope, out){
 // ================================================================ terrain: quantized-mesh tiles from 3d.geo.admin.ch, a quadtree refined near the body
 const TERRAIN = 'https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1/20250101/', TV = '?v=1.43646.0';
 const ROOTZ = 7;
-const maxZ = () => renderer.xr.isPresenting ? 15 : 16;   // the exits sit on cliff edges and the trees stand on this surface
+const maxZ = () => renderer.xr.isPresenting ? 17 : 18;   // swisstopo's finest level (18: about 76 m tiles, 0.5 m DEM) close to the body, for the rock face
+const VEGZ = 16;   // trees are planted once this level is drawn under them, and planted again when a finer one arrives
 const tiles = new Map();   // key -> tile
 let roots = [];
 function makeTile(z, x, y, parent){
@@ -459,7 +460,7 @@ function updateTerrain(){
   frameNo++; nowMs = performance.now();
   camera.getWorldPosition(camW);
   _ahead.copy(P.pos).addScaledVector(P.vel, 2.5); e2(_ahead, _ae); aheadGeo = fromEcef(_ae[0], _ae[1], _ae[2]);
-  K = renderer.xr.isPresenting ? 1.4 : 1.7;
+  K = renderer.xr.isPresenting ? 1.5 : 2.0;
   for (const t of shown){ t.mesh.visible = false; t.vis = false; }
   shown.length = 0;
   for (const r of roots){ const res = select(r); if (res) shown.push(...res); else if (r.state === 2) shown.push(r); }
@@ -514,14 +515,14 @@ async function loadBlock(b){
       const dx = rtc[0] - C[0], dy = rtc[1] - C[1], dz = rtc[2] - C[2];
       const g = o.geometry, pa = g.attributes.position, na = g.attributes.normal;
       _nm.getNormalMatrix(o.matrixWorld);
-      const mc = o.material && o.material.color ? o.material.color : new THREE.Color(0.8, 0.8, 0.8);
-      const avg = (mc.r + mc.g + mc.b) / 3, cr = 0.80 + 0.14 * (mc.r - avg), cg = 0.79 + 0.14 * (mc.g - avg), cb = 0.78 + 0.14 * (mc.b - avg);
+      // plain: grey-brown walls, darker roofs (faces that look up), lit from the north-west
       for (let i = 0; i < pa.count; i++){
         _p.fromBufferAttribute(pa, i).applyMatrix4(o.matrixWorld);
         const k = (base + i) * 3;
         P[k] = _p.x + dx; P[k + 1] = -_p.z + dy; P[k + 2] = _p.y + dz;        // glTF y-up to the tiles' z-up
-        let lit = 0.8;
-        if (na){ _n.fromBufferAttribute(na, i).applyMatrix3(_nm).normalize(); lit = 0.62 + 0.45 * Math.max(0, _n.x * SUN[0] - _n.z * SUN[1] + _n.y * SUN[2]); }
+        let lit = 0.8, up = 0;
+        if (na){ _n.fromBufferAttribute(na, i).applyMatrix3(_nm).normalize(); lit = 0.55 + 0.45 * Math.max(0, _n.x * SUN[0] - _n.z * SUN[1] + _n.y * SUN[2]); up = _n.y; }
+        const roof = up > 0.3, cr = roof ? 0.40 : 0.50, cg = roof ? 0.33 : 0.47, cb = roof ? 0.30 : 0.43;
         Cc[k] = clamp(cr * lit * 255, 0, 255); Cc[k + 1] = clamp(cg * lit * 255, 0, 255); Cc[k + 2] = clamp(cb * lit * 255, 0, 255);
       }
       if (g.index) for (let i = 0; i < g.index.count; i++) I[ii++] = base + g.index.getX(i);
@@ -586,8 +587,8 @@ const vegTiles = new Map();
 const vRadius = () => renderer.xr.isPresenting ? 800 : 1200;
 const VMAXAGL = 900;
 const G_TRUNK = (() => { const g = new THREE.CylinderGeometry(0.7, 1, 1, 5); g.translate(0, 0.5, 0); return g; })();   // scaled by (r, h, r)
-const G_CONE = (() => { const g = new THREE.ConeGeometry(1, 1, 7); g.translate(0, 0.5, 0); return g; })();              // from the crown base up
-const G_BALL = new THREE.IcosahedronGeometry(1, 1);
+const G_CONE = (() => { const g = new THREE.ConeGeometry(1, 1, 8); g.translate(0, 0.5, 0); return g; })();              // from the crown base up
+const G_BALL = new THREE.IcosahedronGeometry(1, 2);
 const treeMat = new THREE.MeshLambertMaterial({ vertexColors: false });
 const trunkMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(0.30, 0.23, 0.16) });
 const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
@@ -621,9 +622,8 @@ const _ev = new THREE.Vector3(), _nv = new THREE.Vector3(), _uv = new THREE.Vect
 function plantVeg(v){
   const west = v.x * VSPAN - 180, north = 90 - v.y * VSPAN, south = north - VSPAN;
   // the finest terrain must be drawn under all of the tile, otherwise the trees would stand on a coarser surface than the one drawn later
-  for (const [lon, lat] of [[west + 0.001 * VSPAN, south + 0.001 * VSPAN], [west + 0.999 * VSPAN, south + 0.001 * VSPAN], [west + 0.001 * VSPAN, north - 0.001 * VSPAN], [west + 0.999 * VSPAN, north - 0.001 * VSPAN], [west + 0.5 * VSPAN, south + 0.5 * VSPAN]]){
-    const t = shownTileAt(lon, lat); if (!t || t.z < maxZ()) return false;
-  }
+  const zmin = vegLevel(v); if (zmin < VEGZ) return false;
+  if (v.planted) unplantVeg(v);
   const lonC = west + VSPAN / 2, latC = south + VSPAN / 2;
   const C = toEcef(lonC, latC, 0);
   enu(lonC, latC, _ev, _nv, _uv);
@@ -631,14 +631,14 @@ function plantVeg(v){
   const Minv = M.clone().invert();
   const trees = [];   // [x, y, z, h, r, kind(0 cone, 1 ball), trunk r]
   const cls = v.cls, mLat = 111320, mLon = 111320 * Math.cos(latC * D2R), ex = [0, 0, 0], w = new THREE.Vector3(), l = new THREE.Vector3();
-  const step = 3;
+  const step = renderer.xr.isPresenting ? 3 : 2;
   for (let py = 0; py < 256; py += step) for (let px = 0; px < 256; px += step){
     let hm = 0;
     for (let j = 0; j < step; j++) for (let i = 0; i < step; i++){ const k = (py + j) * 256 + px + i; if (cls[k] > hm) hm = cls[k]; }
     if (hm < 5) continue;
     const r1 = hash(v.x * 256 + px, v.y * 256 + py), r2 = hash(v.y * 256 + py + 7, v.x * 256 + px + 3), r3 = hash(px * 31 + v.x, py * 17 + v.y);
     const lon = west + (px + r1 * step) / 256 * VSPAN, lat = north - (py + r2 * step) / 256 * VSPAN;
-    const g = groundAt(lon, lat); if (groundZ < maxZ()) continue;
+    const g = groundAt(lon, lat); if (groundZ < VEGZ) continue;
     // no trees above the tree line, none on faces steeper than 45°: there the height model shows rock, not wood
     if (g > 2250) continue;
     const ga = groundAt(lon + 3 / mLon, lat), gb = groundAt(lon - 3 / mLon, lat), gc = groundAt(lon, lat + 3 / mLat), gd = groundAt(lon, lat - 3 / mLat);
@@ -670,8 +670,21 @@ function plantVeg(v){
   const cells = new Map(), CS = 25;
   trees.forEach((t, i) => { const k = Math.floor(t[0] / CS) + ',' + Math.floor(t[2] / CS); let a = cells.get(k); if (!a){ a = []; cells.set(k, a); } a.push(i); });
   const my = trees.reduce((a, t) => a + t[1], 0) / Math.max(1, trees.length);
-  v.trees = trees; v.cells = cells; v.M = M; v.Minv = Minv; v.meshes = [cone, ball, trunk]; v.center = new THREE.Vector3(0, my, 0).applyMatrix4(M); v.planted = true;
+  v.trees = trees; v.cells = cells; v.M = M; v.Minv = Minv; v.meshes = [cone, ball, trunk]; v.center = new THREE.Vector3(0, my, 0).applyMatrix4(M); v.planted = true; v.z = zmin;
   return true;
+}
+// the coarsest drawn terrain level under a tree tile (five points)
+function vegLevel(v){
+  const west = v.x * VSPAN - 180, north = 90 - v.y * VSPAN, south = north - VSPAN;
+  let zmin = 99;
+  for (const [lon, lat] of [[west + 0.001 * VSPAN, south + 0.001 * VSPAN], [west + 0.999 * VSPAN, south + 0.001 * VSPAN], [west + 0.001 * VSPAN, north - 0.001 * VSPAN], [west + 0.999 * VSPAN, north - 0.001 * VSPAN], [west + 0.5 * VSPAN, south + 0.5 * VSPAN]]){
+    const t = shownTileAt(lon, lat); zmin = Math.min(zmin, t ? t.z : 0);
+  }
+  return zmin;
+}
+function unplantVeg(v){
+  if (v.meshes) for (const m of v.meshes){ scene.remove(m); m.dispose(); }
+  v.meshes = null; v.trees = null; v.cells = null; v.planted = false;
 }
 function updateVeg(agl){
   const g = P.geo;
@@ -688,12 +701,16 @@ function updateVeg(agl){
       if (!v){ v = { x, y, state: 0, cls: null, planted: false, trees: null, meshes: null, used: nowMs }; vegTiles.set(key, v); }
       v.used = nowMs;
       if (v.state === 0) want('v', v, d);
-      else if (v.state === 2 && !v.planted && !plantedNow && frameNo % 3 === 0 && plantVeg(v)) plantedNow = true;   // one tile per frame, once the finest terrain is drawn under it
+      else if (v.state === 2 && !plantedNow && frameNo % 3 === 0){
+        // one tile per frame: planted once level 16 is drawn under it, planted again when a finer level has arrived
+        if (!v.planted){ if (plantVeg(v)) plantedNow = true; }
+        else if (v.z < maxZ() && d < 700 && frameNo % 15 === 0 && vegLevel(v) > v.z){ if (plantVeg(v)) plantedNow = true; }
+      }
     }
   }
   if (frameNo % 30 === 0) for (const [key, v] of vegTiles){
     if (nowMs - v.used > 10000 || agl > VMAXAGL + 1500){
-      if (v.meshes) for (const m of v.meshes){ scene.remove(m); m.dispose(); }
+      unplantVeg(v);
       if (v.state === 1) v.dead = true;
       vegTiles.delete(key);
     }
@@ -781,7 +798,7 @@ const fmt = v => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '’'
 }
 
 // ================================================================ the body: a wingsuit pilot, later a canopy. SI units. Body axes: x right, y up (the back), -z forward (the head).
-const WS = { m: 92, S: 1.45, clA: 2.6, aStall: 0.40, cd0: 0.10, k: 0.17, alpha0: 0.19, alphaMin: -0.05, alphaMax: 0.46, pitchRate: 1.6, rollRate: 2.4, bankMax: 1.22, gamma0: -0.34, gammaFlat: -0.14, gammaDive: -1.0 };
+const WS = { m: 92, S: 1.2, clA: 2.6, aStall: 0.42, cd0: 0.09, k: 0.15, alpha0: 0.22, alphaMin: -0.06, alphaMax: 0.5, pitchRate: 2.2, rollRate: 3.2, bankMax: 1.4, gamma0: -0.30, gammaFlat: -0.10, gammaDive: -1.15 };
 const CAN = { S: 20, cl: 1.0, cd: 0.5, open: 2.5 };
 const G0 = 9.80665;
 function isa(h){ h = clamp(h, -500, 20000); const T = 288.15 - 0.0065 * h; return 1.225 * Math.pow(T / 288.15, 4.2559); }
@@ -873,7 +890,8 @@ function step(dt){
   if (P.phase === 0){ updateGeo(); settleExit(); return; }
   if (P.phase >= 4){ P.wait -= dt; if (P.wait <= 0) spawn(place); return; }
   P.t += dt;
-  if (P.phase === 2){ P.tOpen += dt; if (P.tOpen >= CAN.open){ P.phase = 3; flash('SCHIRM OFFEN', 1.5); } }
+  if (P.phase === 2){ P.tOpen += dt; const o = clamp(P.tOpen / CAN.open, 0, 1); canopy.scale.set(0.15 + 0.85 * o * o, 0.3 + 0.7 * o, 0.15 + 0.85 * o * o); if (P.tOpen >= CAN.open){ P.phase = 3; canopy.scale.set(1, 1, 1); flash('SCHIRM OFFEN', 1.5); } }
+  if (P.phase === 1 && P.t > 5 && P.agl < 220 && !P.warned){ P.warned = true; flash(renderer.xr.isPresenting ? 'SCHIRM: ABZUG' : 'SCHIRM: LEERTASTE', 2.5); }
   const n = 4, h = dt / n;
   for (let i = 0; i < n; i++){
     _before.copy(P.pos);
@@ -904,6 +922,17 @@ function step(dt){
   }
   if (P.phase === 1 && P.n > 7) crash('ÜBERLASTET');
   const vU = P.vel.dot(UP); P.vs = -vU; P.hs = Math.sqrt(Math.max(0, P.vel.lengthSq() - vU * vU)); P.glide = P.vs > 0.5 ? P.hs / P.vs : 0;
+  if (frameNo % 3 === 0) P.ahead = rockAhead();
+}
+// how far the body can go along its velocity before the drawn ground is in the way (m, 0 if nothing within 800 m)
+function rockAhead(){
+  const V = P.vel.length(); if (V < 5) return 0;
+  _v.copy(P.vel).divideScalar(V);
+  for (let d = 10; d <= 800; d += d < 100 ? 5 : 15){
+    _mid.copy(P.pos).addScaledVector(_v, d); e2(_mid, _me); const g = fromEcef(_me[0], _me[1], _me[2]);
+    if (g.h - groundAt(g.lon, g.lat) < 1) return d;
+  }
+  return 0;
 }
 function touchGround(){
   const V = P.vel.length(), sink = -P.vel.dot(UP);
@@ -967,7 +996,7 @@ function spawn(i){
   const f = new THREE.Vector3().addScaledVector(EAST, Math.sin(hdg * D2R)).addScaledVector(NORTH, Math.cos(hdg * D2R)).normalize();
   const back = f.clone().negate(), right = new THREE.Vector3().crossVectors(UP, back).normalize(), up = new THREE.Vector3().crossVectors(back, right);
   P.q.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, back));
-  P.vel.set(0, 0, 0); P.w.set(0, 0, 0); P.phase = 0; P.t = 0; P.tOpen = 0; P.inflate = 0; P.exitZ = -1; P.ground = h; P.agl = 1.7;
+  P.vel.set(0, 0, 0); P.w.set(0, 0, 0); P.phase = 0; P.t = 0; P.tOpen = 0; P.inflate = 0; P.exitZ = -1; P.ground = h; P.agl = 1.7; P.warned = false; P.ahead = 0;
   updateGeo(); canopy.visible = false;
   lastAlt = P.geo.h; vario = 0;
   placeLanding();
@@ -1005,7 +1034,7 @@ const canopy = new THREE.Group(); canopy.visible = false; rig.add(canopy);
 
 // ================================================================ input
 const keys = {};
-let paused = true, started = false, showMap = true, invert = false;
+let paused = true, started = false, invert = false;
 try { invert = localStorage.getItem('wingsuit-invert') === '1'; } catch (e) {}
 function act(){ if (P.phase === 0) jump(); else if (P.phase === 1) pull(); }
 addEventListener('keydown', e => {
@@ -1015,7 +1044,6 @@ addEventListener('keydown', e => {
   else if (e.code === 'KeyR') spawn(place);
   else if (e.code === 'KeyN') spawn((place + 1) % PLACES.length);
   else if (e.code === 'KeyB') spawn((place + PLACES.length - 1) % PLACES.length);
-  else if (e.code === 'KeyM') showMap = !showMap;
   else if (e.code === 'KeyI') toggleInvert();
   else if (e.code === 'Space' && !e.repeat) act();
   if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
@@ -1058,7 +1086,6 @@ function readInput(dt){
       } else if (src.handedness === 'left'){
         ctl.yaw += sx; ctl.trim += -sy;
         if (pressed('vrLT', !!(gp.buttons[0] && gp.buttons[0].value > 0.5))) act();
-        if (pressed('vrX', btn(4))) showMap = !showMap;
         if (pressed('vrY', btn(5))) toggleInvert();
       }
     }
@@ -1072,7 +1099,6 @@ function readInput(dt){
       if (pressed('pA', b(0) > 0.5)) act();
       if (pressed('pY', b(3) > 0.5)) spawn((place + 1) % PLACES.length);
       if (pressed('pB', b(1) > 0.5)) spawn(place);
-      if (pressed('pX', b(2) > 0.5)) showMap = !showMap;
       if (pressed('pS', b(9) > 0.5)) setPaused(!paused);
     }
   }
@@ -1180,37 +1206,30 @@ function drawHud(t){
   const hdg = (Math.atan2(_f.dot(EAST), _f.dot(NORTH)) / D2R + 360) % 360;
   const lz = LZ[PLACES[place][1]], [E, N] = wgsToLv95(P.geo.lon, P.geo.lat), dE = lz.E - E, dN = lz.N - N, dLZ = Math.hypot(dE, dN), bLZ = (Math.atan2(dE, dN) / D2R + 360) % 360;
   const need = (P.geo.h - lz.h) > 0 ? dLZ / (P.geo.h - lz.h) : 99;
+  const flying = P.phase === 1, pullKey = renderer.xr.isPresenting ? 'Abzug' : 'Leertaste';
   const rows = [
     ['Tempo', `${fmt(P.hs * 3.6)} km/h`], ['Sinken', `${fmt(P.vs)} m/s`],
-    ['Gleitzahl', P.phase === 1 ? P.glide.toFixed(1) : '–'],
-    ['Höhe', `${fmt(P.geo.h)} m`], ['Über Grund', `${fmt(Math.max(0, P.agl))} m`],
-    ['Kurs', `${String(Math.round(hdg) % 360).padStart(3, '0')}° ${COMPASS[Math.round(hdg / 45) % 8]}`],
+    ['Gleitzahl', flying ? P.glide.toFixed(1) : '–'],
+    ['Fels voraus', flying && P.ahead ? `${fmt(P.ahead)} m` : '–'],
+    ['Über Grund', `${fmt(Math.max(0, P.agl))} m`], ['Höhe', `${fmt(P.geo.h)} m`],
     ['Landeplatz', `${dLZ < 1000 ? fmt(dLZ) + ' m' : (dLZ / 1000).toFixed(1) + ' km'} · ${String(Math.round(bLZ) % 360).padStart(3, '0')}°`],
-    ['Nötig', need < 99 ? need.toFixed(1) : '–'],
-    ['Zeit', P.phase >= 1 ? `${P.t.toFixed(1)} s` : '–'],
+    ['Nötig', flying && need < 99 ? need.toFixed(1) : '–'],
+    ['Schirm', P.phase === 0 ? `${pullKey}: Absprung` : flying ? (P.t > 1.5 ? `${pullKey}: ziehen` : 'zu') : P.phase === 2 ? 'öffnet' : P.phase === 3 ? 'offen' : '–'],
   ];
   g.textBaseline = 'alphabetic';
   rows.forEach(([l, v], i) => {
     const y = 52 + i * 56;
     txt(l.toUpperCase(), 28, y, 17, 700, 2.4, false);
-    const warn = (l === 'Über Grund' && P.phase === 1 && P.agl < 150) || (l === 'Nötig' && P.phase === 1 && need > 2.6 && need < 99) || (l === 'Sinken' && P.phase === 1 && P.vs > 40);
-    txt(v, 212, y + 2, 28, 700, 0, warn);
+    const warn = (l === 'Über Grund' && flying && P.agl < 150) || (l === 'Fels voraus' && flying && P.ahead > 0 && P.ahead < 120) || (l === 'Nötig' && flying && need > 2.6 && need < 99) || (l === 'Schirm' && flying && P.t > 5 && P.agl < 220);
+    txt(v, 236, y + 2, 28, 700, 0, warn);
   });
-  if (showMap){
-    const mx = W1 + 20, mw = HW - mx, mh = mw * (HZ - 1) / (HX - 1), my = HH - mh, sc = mw / ((HX - 1) * HSTEP);
-    txt(PLACES[place][0].toUpperCase(), mx + 24, 52, 17, 700, 2.4, false);
-    txt(`${fmt(E)} / ${fmt(N)}`, mx + 24, 86, 20, 500, 0, false);
-    txt(P.phase === 0 ? 'EXIT' : P.phase === 1 ? (P.inflate < 1 ? 'FALL' : 'FLUG') : P.phase === 2 ? 'ÖFFNET' : P.phase === 3 ? 'SCHIRM' : P.phase === 4 ? 'GELANDET' : 'ABSTURZ', mx + 24, 120, 17, 700, 2.4, P.phase === 5);
-    if (active > 0) txt('Lade …', mx + 24, 150, 17, 500, 0, false);
-    g.beginPath();
-    for (let i = 0; i < BORDER.length; i += 3){ const X = mx + BORDER[i] * sc, Y = my + BORDER[i + 1] * sc; i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
-    g.closePath(); g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.stroke(); g.lineWidth = 1.5; g.strokeStyle = '#fff'; g.stroke();
-    const px = mx + (E - CE0) * sc, py = my + (CN1 - N) * sc;
-    g.save(); g.translate(px, py); g.rotate(hdg * D2R);
-    g.beginPath(); g.moveTo(0, -16); g.lineTo(10, 11); g.lineTo(0, 5); g.lineTo(-10, 11); g.closePath();
-    g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.stroke(); g.fillStyle = '#fff'; g.fill(); g.restore();
-    g.strokeStyle = 'rgba(0,0,0,0.7)';
-  }
+  // the exit, the phase, the position; at the right
+  const mx = W1 + 60;
+  txt(PLACES[place][0].toUpperCase(), mx, 52, 17, 700, 2.4, false);
+  txt(`${fmt(E)} / ${fmt(N)}`, mx, 86, 20, 500, 0, false);
+  txt(P.phase === 0 ? 'EXIT' : P.phase === 1 ? (P.inflate < 1 ? 'FALL' : 'FLUG') : P.phase === 2 ? 'ÖFFNET' : P.phase === 3 ? 'SCHIRM' : P.phase === 4 ? 'GELANDET' : 'ABSTURZ', mx, 120, 17, 700, 2.4, P.phase === 5);
+  txt(`${String(Math.round(hdg) % 360).padStart(3, '0')}° ${COMPASS[Math.round(hdg / 45) % 8]} · ${P.phase >= 1 ? P.t.toFixed(0) + ' s' : '–'}`, mx, 154, 17, 500, 0, false);
+  if (active > 0) txt('Lade …', mx, 186, 17, 500, 0, false);
   if (renderer.xr.isPresenting && msgEl.textContent) txt(msgEl.textContent.toUpperCase(), 28, HH - 40, 30, 700, 3, false);
   hudTex.needsUpdate = true;
 }
@@ -1277,6 +1296,7 @@ function frame(t){
       else { const k = Math.min(1, dt * 2.5); look.yaw -= look.yaw * k; look.pitch -= look.pitch * k; }
     }
     camera.rotation.set(look.pitch, look.yaw, 0, 'YXZ');
+    const fov = 72 + 22 * clamp((P.vel.length() - 25) / 55, 0, 1); if (Math.abs(fov - camera.fov) > 0.2){ camera.fov = fov; camera.updateProjectionMatrix(); }
   }
   placeMarkers();
   updateTerrain();
