@@ -647,7 +647,7 @@ function plantVeg(v){
     const conifer = g > 1250 ? r3 < 0.85 : (g > 900 ? r3 < 0.55 : r3 < 0.3);
     const r = conifer ? Math.min(4.5, 1 + 0.17 * h) : Math.min(8, 0.3 * h + 0.5);
     toEcef(lon, lat, g, ex); w2(ex, w); l.copy(w).applyMatrix4(Minv);
-    trees.push([l.x, l.y, l.z, h, r, conifer ? 0 : 1, Math.max(0.12, h / 45)]);
+    trees.push([l.x, l.y, l.z, h, r, conifer ? 0 : 1, Math.max(0.12, h / 45), groundZ, 0, lon, lat]);   // ..., terrain level it stands on, instance index, lon, lat
   }
   const nc = trees.filter(t => t[5] === 0).length, nb = trees.length - nc;
   const cone = new THREE.InstancedMesh(G_CONE, treeMat, Math.max(1, nc)), ball = new THREE.InstancedMesh(G_BALL, treeMat, Math.max(1, nb)), trunk = new THREE.InstancedMesh(G_TRUNK, trunkMat, Math.max(1, trees.length));
@@ -657,10 +657,10 @@ function plantVeg(v){
     _q.setFromAxisAngle(_uv.set(0, 1, 0), sh * 6.283);
     if (kind === 0){
       _mm.compose(_s.set(x, y + 0.25 * h, z), _q, _ev.set(r, 0.75 * h, r)); cone.setMatrixAt(ic, _mm);
-      cone.setColorAt(ic, _cc.setRGB(0.10 + 0.08 * sh, 0.24 + 0.1 * sh, 0.10 + 0.05 * sh)); ic++;
+      cone.setColorAt(ic, _cc.setRGB(0.10 + 0.08 * sh, 0.24 + 0.1 * sh, 0.10 + 0.05 * sh)); t[8] = ic++;
     } else {
       _mm.compose(_s.set(x, y + 0.62 * h, z), _q, _ev.set(r, 0.38 * h, r)); ball.setMatrixAt(ib, _mm);
-      ball.setColorAt(ib, _cc.setRGB(0.22 + 0.12 * sh, 0.40 + 0.1 * sh, 0.12 + 0.06 * sh)); ib++;
+      ball.setColorAt(ib, _cc.setRGB(0.22 + 0.12 * sh, 0.40 + 0.1 * sh, 0.12 + 0.06 * sh)); t[8] = ib++;
     }
     _mm.compose(_s.set(x, y, z), _q, _ev.set(rt, kind === 0 ? 0.4 * h : 0.65 * h, rt)); trunk.setMatrixAt(i, _mm);
   });
@@ -670,8 +670,27 @@ function plantVeg(v){
   const cells = new Map(), CS = 25;
   trees.forEach((t, i) => { const k = Math.floor(t[0] / CS) + ',' + Math.floor(t[2] / CS); let a = cells.get(k); if (!a){ a = []; cells.set(k, a); } a.push(i); });
   const my = trees.reduce((a, t) => a + t[1], 0) / Math.max(1, trees.length);
-  v.trees = trees; v.cells = cells; v.M = M; v.Minv = Minv; v.meshes = [cone, ball, trunk]; v.center = new THREE.Vector3(0, my, 0).applyMatrix4(M); v.planted = true; v.z = zmin;
+  v.trees = trees; v.cells = cells; v.M = M; v.Minv = Minv; v.meshes = [cone, ball, trunk]; v.center = new THREE.Vector3(0, my, 0).applyMatrix4(M); v.planted = true; v.z = zmin; v.cur = 0;
   return true;
+}
+// trees near the body move onto finer terrain as it is drawn: a slice of the tile's trees per frame, exactly on the new surface
+const _tw = new THREE.Vector3(), _te = [0, 0, 0];
+function rebaseVeg(v, n){
+  const trees = v.trees, [cone, ball, trunk] = v.meshes; let changed = false;
+  _lp.copy(P.pos).applyMatrix4(v.Minv);
+  for (let k = 0; k < n && trees.length; k++){
+    const i = v.cur; v.cur = (v.cur + 1) % trees.length;
+    const t = trees[i];
+    if (t[7] >= maxZ() || Math.abs(t[0] - _lp.x) > 350 || Math.abs(t[2] - _lp.z) > 350) continue;
+    const tt = shownTileAt(t[9], t[10]); if (!tt || tt.z <= t[7]) continue;
+    const g = tileHeight(tt, t[9], t[10]); if (g === null) continue;
+    toEcef(t[9], t[10], g, _te); w2(_te, _tw).applyMatrix4(v.Minv);
+    const dy = _tw.y - t[1]; t[1] = _tw.y; t[7] = tt.z;
+    const m = t[5] === 0 ? cone : ball, e = m.instanceMatrix.array, o = t[8] * 16; e[o + 13] += dy;
+    const e2 = trunk.instanceMatrix.array, o2 = i * 16; e2[o2 + 13] += dy;
+    changed = true;
+  }
+  if (changed){ cone.instanceMatrix.needsUpdate = true; ball.instanceMatrix.needsUpdate = true; trunk.instanceMatrix.needsUpdate = true; }
 }
 // the coarsest drawn terrain level under a tree tile (five points)
 function vegLevel(v){
@@ -704,8 +723,8 @@ function updateVeg(agl){
       else if (v.state === 2 && !plantedNow && frameNo % 3 === 0){
         // one tile per frame: planted once level 16 is drawn under it, planted again when a finer level has arrived
         if (!v.planted){ if (plantVeg(v)) plantedNow = true; }
-        else if (v.z < maxZ() && d < 700 && frameNo % 15 === 0 && vegLevel(v) > v.z){ if (plantVeg(v)) plantedNow = true; }
       }
+      if (v.planted && d < 900) rebaseVeg(v, 1500);
     }
   }
   if (frameNo % 30 === 0) for (const [key, v] of vegTiles){
