@@ -241,6 +241,7 @@ let roots = [];
 function makeTile(z, x, y, parent){
   const span = 180 / 2 ** z, t = { z, x, y, key: z + '/' + x + '/' + y, span, west: x * span - 180, south: y * span - 90, parent,
     state: 0, mesh: null, mat: null, kids: null, minH: 0, maxH: 4800, center: new THREE.Vector3(), radius: 0, used: 0, img: 0, tex: null, vis: false, hs: null, grid: null };
+  t.used = nowMs;
   if (z >= 10){ const [E, N] = wgsToLv95(t.west + span / 2, t.south + span / 2), h = coarseGround(E, N); t.minH = h - 600; t.maxH = h + 600; }
   placeTile(t); tiles.set(t.key, t); return t;
 }
@@ -430,7 +431,7 @@ async function loadTerrain(t){
 
 // selection: refine where the tile looks large; keep the parent until all four children are there
 const camW = new THREE.Vector3();
-let frameNo = 0, K = 1.7;
+let frameNo = 0, K = 1.7, nowMs = performance.now();
 const shown = [];
 let aheadGeo = { lon: LON0, lat: LAT0, h: 0 };
 function tileDist(t){
@@ -441,7 +442,7 @@ function tileDist(t){
   return Math.hypot(dx, dy, dz);
 }
 function select(t){
-  t.used = frameNo;
+  t.used = nowMs;
   const d = tileDist(t);
   if (t.z < maxZ() && d < t.span * 111320 * K){
     if (!t.kids){ t.kids = []; for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) t.kids.push(makeTile(t.z + 1, t.x * 2 + dx, t.y * 2 + dy, t)); }
@@ -455,7 +456,7 @@ function select(t){
 }
 const _ahead = new THREE.Vector3(), _ae = [0, 0, 0];
 function updateTerrain(){
-  frameNo++;
+  frameNo++; nowMs = performance.now();
   camera.getWorldPosition(camW);
   _ahead.copy(P.pos).addScaledVector(P.vel, 2.5); e2(_ahead, _ae); aheadGeo = fromEcef(_ae[0], _ae[1], _ae[2]);
   K = renderer.xr.isPresenting ? 1.4 : 1.7;
@@ -467,9 +468,9 @@ function updateTerrain(){
     if (t.img === 0 && photosLoading < 24) loadPhoto(t);
     applyPhoto(t);
   }
-  // forget tiles not used for a while
-  if (frameNo % 120 === 0) for (const t of tiles.values()){
-    if (t.z > ROOTZ && frameNo - t.used > 900){
+  // forget tiles not used for 15 s (by the clock, not by frames: a slow device must not keep everything)
+  if (frameNo % 30 === 0) for (const t of tiles.values()){
+    if (t.z > ROOTZ && nowMs - t.used > 15000){
       if (t.mesh){ scene.remove(t.mesh); t.mesh.geometry.dispose(); t.mat.dispose(); t.mesh = null; t.hs = null; t.grid = null; }
       if (t.tex){ t.tex.dispose(); t.tex = null; }
       if (t.parent && t.parent.kids){ t.parent.kids = null; }
@@ -556,7 +557,7 @@ function updateBuildings(geo, agl){
     if (!b){ b = { bx, by, state: 0, mesh: null }; blocks.set(key, b); }
     want('b', b, d);
   }
-  if (frameNo % 60 === 0) for (const [key, b] of blocks){
+  if (frameNo % 30 === 0) for (const [key, b] of blocks){
     const dx = ((b.bx + 0.5) * BLK * BDL + BW0 - lonR) * WA * cosl, dy = ((b.by + 0.5) * BLK * BDP + BS0 - latR) * WA;
     if (Math.hypot(dx, dy) > BRADIUS + 2500 || agl > BMAXAGL + 2000){
       if (b.mesh){ scene.remove(b.mesh); b.mesh.geometry.dispose(); }
@@ -680,14 +681,14 @@ function updateVeg(agl){
       if (d > R) continue;
       const key = vegKey(x, y);
       let v = vegTiles.get(key);
-      if (!v){ v = { x, y, state: 0, cls: null, planted: false, trees: null, meshes: null, used: frameNo }; vegTiles.set(key, v); }
-      v.used = frameNo;
+      if (!v){ v = { x, y, state: 0, cls: null, planted: false, trees: null, meshes: null, used: nowMs }; vegTiles.set(key, v); }
+      v.used = nowMs;
       if (v.state === 0) want('v', v, d);
       else if (v.state === 2 && !v.planted && !plantedNow && frameNo % 3 === 0 && plantVeg(v)) plantedNow = true;   // one tile per frame, once the finest terrain is drawn under it
     }
   }
-  if (frameNo % 90 === 0) for (const [key, v] of vegTiles){
-    if (frameNo - v.used > 600 || agl > VMAXAGL + 1500){
+  if (frameNo % 30 === 0) for (const [key, v] of vegTiles){
+    if (nowMs - v.used > 10000 || agl > VMAXAGL + 1500){
       if (v.meshes) for (const m of v.meshes){ scene.remove(m); m.dispose(); }
       if (v.state === 1) v.dead = true;
       vegTiles.delete(key);
