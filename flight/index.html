@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flug Schweiz</title>
+  <meta name="description" content="Einfacher Flugsimulator über der ganzen Schweiz, auf dem Höhenmodell von swisstopo. Laptop und VR." />
+  <style>
+    html,body{ margin:0; height:100%; background:#c9d8e6; overflow:hidden; font:14px/1.35 ui-monospace,Menlo,Consolas,monospace; color:#f4f2ec; }
+    canvas#gl{ position:absolute; inset:0; width:100%; height:100%; outline:none; touch-action:none; }
+    #hud{ position:absolute; left:12px; bottom:12px; width:512px; height:256px; max-width:calc(100vw - 24px); pointer-events:none; image-rendering:auto; }
+    #overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,14,20,0.72); z-index:3; }
+    #overlay .box{ max-width:640px; margin:16px; padding:20px 24px; background:rgba(0,0,0,0.55); border:2px solid #f4f2ec; }
+    #overlay h1{ margin:0 0 6px; font-size:22px; letter-spacing:0.04em; }
+    #overlay p{ margin:6px 0; }
+    #overlay table{ border-collapse:collapse; margin:8px 0; }
+    #overlay td{ padding:1px 12px 1px 0; vertical-align:top; }
+    #overlay td:first-child{ color:#ffd76a; white-space:nowrap; }
+    #overlay .small{ font-size:12px; opacity:0.75; }
+    #overlay button, #vrbtn{ padding:8px 14px; font:bold 14px ui-monospace,Menlo,Consolas,monospace; color:#f4f2ec; background:rgba(0,0,0,0.6); border:2px solid #f4f2ec; cursor:pointer; margin:8px 8px 0 0; }
+    #overlay button:disabled{ opacity:0.5; cursor:wait; }
+    #vrbtn{ position:absolute; right:16px; bottom:16px; z-index:4; margin:0; display:none; }
+    #msg{ position:absolute; left:50%; top:28%; transform:translate(-50%,-50%); font-size:28px; font-weight:bold; letter-spacing:0.08em; text-shadow:0 0 6px #000; pointer-events:none; }
+    #help{ position:absolute; right:12px; top:12px; font-size:12px; background:rgba(0,0,0,0.45); padding:6px 10px; pointer-events:none; }
+    @media (max-width:600px){ #hud{ width:calc(100vw - 24px); height:auto; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+<canvas id="gl" tabindex="0"></canvas>
+<canvas id="hud" width="512" height="256"></canvas>
+<div id="msg"></div>
+<div id="help">H: Hilfe</div>
+<button id="vrbtn">VR STARTEN</button>
+<div id="overlay"><div class="box">
+  <h1>FLUG SCHWEIZ</h1>
+  <p>Die ganze Schweiz und ihre Nachbarschaft als Relief, aus dem Höhenmodell von swisstopo. Kein Flugzeug zu sehen: Du sitzt vorne drin.</p>
+  <table>
+    <tr><td>↑ ↓</td><td>Nase runter / hoch (I: umkehren)</td></tr>
+    <tr><td>← →</td><td>rollen (Kurve)</td></tr>
+    <tr><td>A D</td><td>Seitenruder</td></tr>
+    <tr><td>W S</td><td>Gas mehr / weniger · Shift: Nachbrenner</td></tr>
+    <tr><td>Maus ziehen</td><td>herumschauen</td></tr>
+    <tr><td>1 … 0</td><td>Zürich · Bern · Genf · Luzern · Jungfrau · Matterhorn · Lugano · St. Moritz · Basel · Aletsch</td></tr>
+    <tr><td>R M P</td><td>Neustart · Karte · Pause</td></tr>
+    <tr><td>Gamepad</td><td>linker Stick fliegen, rechter Stick schauen, RT Gas+, LT Gas−, LB/RB Seitenruder, A Ort, B Neustart</td></tr>
+    <tr><td>VR (Quest)</td><td>Kopf drehen: schauen · rechter Stick fliegen · linker Stick: Gas ↕, Seitenruder ↔ · rechter Abzug: Nachbrenner · A Ort · B Neustart · X Karte · Y Nase umkehren</td></tr>
+  </table>
+  <p id="status">Lade Höhenmodell …</p>
+  <button id="go" disabled>LOSFLIEGEN</button>
+  <p class="small">Höhen: swissALTIREGIO © swisstopo (100-m-Raster). Grenze: swissBOUNDARIES3D © swisstopo.</p>
+</div></div>
+<script type="module">
+import * as THREE from 'three';
+THREE.ColorManagement.enabled = false;
+
+// ---------------------------------------------------------------- renderer, scene
+const cv = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.outputColorSpace = THREE.LinearSRGBColorSpace;   // the colours below are already display colours
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local');
+const scene = new THREE.Scene();
+const SKY_H = new THREE.Color(0.80, 0.86, 0.92), SKY_Z = new THREE.Color(0.36, 0.56, 0.84);
+scene.background = SKY_H;
+const camera = new THREE.PerspectiveCamera(70, 1, 3, 300000);
+// rig: the invisible aircraft. In VR the headset moves the camera inside it.
+const rig = new THREE.Group();
+rig.add(camera); scene.add(rig);
+function resize(){
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const statusEl = document.getElementById('status'), goBtn = document.getElementById('go');
+const overlay = document.getElementById('overlay'), msgEl = document.getElementById('msg');
+
+// ---------------------------------------------------------------- data: flight/schweiz.bin.gz, packed by tools/pack.py
+// grid: x = E − E0 (east), z = N1 − N (south), STEP metres per cell; heights in whole metres
+let NX, NZ, E0, N1, STEP, H, WATER, BORDER;
+async function load(){
+  const res = await fetch('schweiz.bin.gz');
+  if (!res.ok) throw new Error('schweiz.bin.gz ' + res.status);
+  const total = +res.headers.get('content-length') || 7.7e6;
+  const reader = res.body.getReader(), parts = []; let got = 0;
+  for (;;){
+    const { done, value } = await reader.read(); if (done) break;
+    parts.push(value); got += value.length;
+    statusEl.textContent = `Lade Höhenmodell … ${(got / 1e6).toFixed(1)} MB` + (total > got ? ` / ${(total / 1e6).toFixed(1)} MB` : '');
+  }
+  let buf = new Uint8Array(got); { let o = 0; for (const p of parts){ buf.set(p, o); o += p.length; } }
+  // a server may already have unpacked it (Content-Encoding: gzip)
+  if (buf[0] === 0x1f && buf[1] === 0x8b){
+    statusEl.textContent = 'Entpacke …';
+    buf = new Uint8Array(await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+  }
+  const dv = new DataView(buf.buffer);
+  if (String.fromCharCode(...buf.subarray(0, 4)) !== 'SFL1') throw new Error('Datei unbekannt');
+  NX = dv.getUint32(4, true); NZ = dv.getUint32(8, true);
+  E0 = dv.getFloat32(12, true); N1 = dv.getFloat32(16, true); STEP = dv.getFloat32(20, true);
+  const nEsc = dv.getUint32(28, true), nBorder = dv.getUint32(32, true);
+  let o = 36;
+  const b = buf.subarray(o, o + NX * NZ); o += NX * NZ;
+  const esc = new Uint16Array(buf.slice(o, o + nEsc * 2).buffer); o += nEsc * 2;
+  const wbits = buf.subarray(o, o + Math.ceil(NX * NZ / 8)); o += Math.ceil(NX * NZ / 8);
+  BORDER = new Float32Array(buf.slice(o, o + nBorder * 8).buffer);
+  // heights: predicted from left + up − up-left, zigzag residual
+  H = new Int16Array(NX * NZ); WATER = new Uint8Array(NX * NZ);
+  let e = 0;
+  for (let j = 0, k = 0; j < NZ; j++) for (let i = 0; i < NX; i++, k++){
+    const p = i > 0 && j > 0 ? H[k - 1] + H[k - NX] - H[k - NX - 1] : i > 0 ? H[k - 1] : j > 0 ? H[k - NX] : 0;
+    const v = b[k];
+    H[k] = v === 255 ? esc[e++] : p + ((v >>> 1) ^ -(v & 1));
+    WATER[k] = (wbits[k >> 3] >> (7 - (k & 7))) & 1;
+  }
+}
+
+// terrain height at local metres, bilinear; 0 outside the grid
+function ground(x, z){
+  const fx = x / STEP, fz = z / STEP;
+  if (fx < 0 || fz < 0 || fx >= NX - 1 || fz >= NZ - 1) return 20;   // the plain round the map
+  const i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, k = j * NX + i;
+  return (H[k] * (1 - u) + H[k + 1] * u) * (1 - v) + (H[k + NX] * (1 - u) + H[k + NX + 1] * u) * v;
+}
+const hAt = (i, j) => H[clamp(j, 0, NZ - 1) * NX + clamp(i, 0, NX - 1)];
+
+// ---------------------------------------------------------------- terrain material: vertex colours, earth curvature, haze
+const R_EARTH = 6371000;
+const curveChunk = `
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vec2 dxz = wp.xz - cameraPosition.xz;
+  wp.y -= dot(dxz, dxz) / (2.0 * ${R_EARTH.toFixed(1)});
+  vDist = distance(wp.xyz, cameraPosition);
+  gl_Position = projectionMatrix * viewMatrix * wp;`;
+const hazeFrag = `
+  uniform vec3 uHaze; uniform float uHazeDist;
+  varying float vDist;
+  vec3 haze(vec3 c){ return mix(c, uHaze, 1.0 - exp(-vDist / uHazeDist)); }`;
+const hazeUniforms = () => ({ uHaze: { value: SKY_H }, uHazeDist: { value: 90000 } });
+const terrainMat = new THREE.ShaderMaterial({
+  uniforms: hazeUniforms(),
+  vertexShader: `attribute vec3 color; varying vec3 vCol; varying float vDist;
+    void main(){ vCol = color; ${curveChunk} }`,
+  fragmentShader: `${hazeFrag} varying vec3 vCol;
+    void main(){ gl_FragColor = vec4(haze(vCol), 1.0); }`,
+  side: THREE.DoubleSide,
+});
+const lineMat = new THREE.ShaderMaterial({
+  uniforms: { ...hazeUniforms(), uCol: { value: new THREE.Color(0.85, 0.08, 0.1) } },
+  vertexShader: `varying float vDist; void main(){ ${curveChunk} }`,
+  fragmentShader: `${hazeFrag} uniform vec3 uCol; void main(){ gl_FragColor = vec4(haze(uCol), 1.0); }`,
+});
+
+// sky: a gradient dome that travels with the aircraft
+const sky = new THREE.Mesh(new THREE.SphereGeometry(250000, 32, 16), new THREE.ShaderMaterial({
+  uniforms: { uH: { value: SKY_H }, uZ: { value: SKY_Z } },
+  vertexShader: `varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: `uniform vec3 uH, uZ; varying vec3 vD; void main(){ float t = clamp(vD.y * 2.2, 0.0, 1.0); gl_FragColor = vec4(mix(uH, uZ, sqrt(t)), 1.0); }`,
+  side: THREE.BackSide, depthWrite: false, fog: false,
+}));
+sky.frustumCulled = false; sky.renderOrder = -1; scene.add(sky);
+
+// ---------------------------------------------------------------- terrain colours: height bands, rock where steep, lakes; shaded from the north-west like a swisstopo relief
+const SUN = new THREE.Vector3(-1, 1.25, -1).normalize();
+const BANDS = [ // height, r, g, b
+  [0, .56, .67, .40], [700, .50, .63, .36], [1300, .36, .52, .29], [1900, .56, .61, .41],
+  [2400, .56, .54, .49], [2900, .62, .60, .58], [3200, .93, .95, .98],
+];
+function colour(h, slope, water, out, o){
+  let r, g, b;
+  if (water){ r = .27; g = .45; b = .66; }
+  else {
+    let i = 0; while (i < BANDS.length - 2 && h > BANDS[i + 1][0]) i++;
+    const A = BANDS[i], B = BANDS[i + 1], t = clamp((h - A[0]) / (B[0] - A[0]), 0, 1);
+    r = A[1] + (B[1] - A[1]) * t; g = A[2] + (B[2] - A[2]) * t; b = A[3] + (B[3] - A[3]) * t;
+    // steep: bare rock (snow does not stay on it either)
+    const rock = clamp((slope - 0.75) / 0.5, 0, 1) * (h > 900 ? 1 : 0.5);
+    r += (.52 - r) * rock; g += (.50 - g) * rock; b += (.47 - b) * rock;
+  }
+  out[o] = r; out[o + 1] = g; out[o + 2] = b;
+}
+
+// ---------------------------------------------------------------- terrain chunks with levels of detail and skirts against cracks
+const CH = 128;                         // cells per chunk side (12.8 km)
+const LODS = [1, 2, 4, 8, 16, 32];
+const indexCache = {};
+function indexFor(s){
+  if (indexCache[s]) return indexCache[s];
+  const n = CH / s + 1, idx = [];
+  for (let b = 0; b < n - 1; b++) for (let a = 0; a < n - 1; a++){
+    const k = b * n + a; idx.push(k, k + n, k + 1, k + 1, k + n, k + n + 1);
+  }
+  // skirts: after the n*n grid, 4 edges of n vertices each (top, bottom, left, right), hanging below the edge
+  const base = n * n, edges = [
+    a => a, a => (n - 1) * n + a, a => a * n, a => a * n + n - 1,
+  ];
+  edges.forEach((f, e) => { for (let a = 0; a < n - 1; a++){
+    const t0 = f(a), t1 = f(a + 1), s0 = base + e * n + a, s1 = s0 + 1;
+    idx.push(t0, s0, t1, t1, s0, s1);
+  } });
+  return indexCache[s] = new THREE.BufferAttribute(new Uint16Array(idx), 1);
+}
+const chunks = [];
+const tmpC = new Float32Array(3);
+function buildGeometry(ch, s){
+  const n = CH / s + 1, nv = n * n + 4 * n;
+  const pos = new Float32Array(nv * 3), col = new Uint8Array(nv * 3);
+  const i0 = ch.cx * CH, j0 = ch.cz * CH, d = Math.max(1, s);
+  for (let b = 0; b < n; b++) for (let a = 0; a < n; a++){
+    const gi = Math.min(i0 + a * s, NX - 1), gj = Math.min(j0 + b * s, NZ - 1), k = b * n + a;
+    const h = H[gj * NX + gi];
+    pos[k * 3] = (gi - i0) * STEP; pos[k * 3 + 1] = h; pos[k * 3 + 2] = (gj - j0) * STEP;
+    const gx = (hAt(gi + d, gj) - hAt(gi - d, gj)) / (2 * d * STEP), gz = (hAt(gi, gj + d) - hAt(gi, gj - d)) / (2 * d * STEP);
+    const slope = Math.hypot(gx, gz);
+    colour(h, slope, WATER[gj * NX + gi], tmpC, 0);
+    const nl = 1 / Math.sqrt(gx * gx + 1 + gz * gz);
+    const lit = WATER[gj * NX + gi] ? 1 : 0.5 + 0.62 * Math.max(0, (-gx * SUN.x + SUN.y - gz * SUN.z) * nl);
+    for (let c = 0; c < 3; c++) col[k * 3 + c] = clamp(tmpC[c] * lit * 255, 0, 255);
+  }
+  const depth = 30 + s * 25, base = n * n;
+  const edges = [a => a, a => (n - 1) * n + a, a => a * n, a => a * n + n - 1];
+  edges.forEach((f, e) => { for (let a = 0; a < n; a++){
+    const t = f(a), k = base + e * n + a;
+    pos[k * 3] = pos[t * 3]; pos[k * 3 + 1] = pos[t * 3 + 1] - depth; pos[k * 3 + 2] = pos[t * 3 + 2];
+    col[k * 3] = col[t * 3]; col[k * 3 + 1] = col[t * 3 + 1]; col[k * 3 + 2] = col[t * 3 + 2];
+  } });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
+  g.setIndex(indexFor(s));
+  // generous bounds: the shader bends the far terrain down with the earth's curvature
+  const w = CH * STEP / 2, hh = (ch.max - ch.min) / 2 + depth;
+  g.boundingSphere = new THREE.Sphere(new THREE.Vector3(w, (ch.max + ch.min) / 2, w), Math.hypot(w, w, hh) + 3000);
+  return g;
+}
+function initChunks(){
+  const ncx = Math.ceil((NX - 1) / CH), ncz = Math.ceil((NZ - 1) / CH);
+  for (let cz = 0; cz < ncz; cz++) for (let cx = 0; cx < ncx; cx++){
+    let mn = 1e9, mx = -1e9;
+    for (let j = cz * CH; j <= Math.min((cz + 1) * CH, NZ - 1); j++) for (let i = cx * CH; i <= Math.min((cx + 1) * CH, NX - 1); i++){
+      const h = H[j * NX + i]; if (h < mn) mn = h; if (h > mx) mx = h;
+    }
+    const ch = { cx, cz, min: mn, max: mx, lod: 0, meshes: {}, mesh: null };
+    chunks.push(ch);
+    setLod(ch, 32);
+  }
+}
+function setLod(ch, s){
+  if (!ch.meshes[s]){
+    const m = new THREE.Mesh(buildGeometry(ch, s), terrainMat);
+    m.position.set(ch.cx * CH * STEP, 0, ch.cz * CH * STEP);
+    m.matrixAutoUpdate = false; m.updateMatrix();
+    ch.meshes[s] = m;
+  }
+  if (ch.mesh) scene.remove(ch.mesh);
+  ch.mesh = ch.meshes[s]; ch.lod = s; scene.add(ch.mesh);
+  // keep only neighbouring levels in memory
+  for (const k in ch.meshes) if (Math.abs(Math.log2(+k / s)) > 1){ ch.meshes[k].geometry.dispose(); delete ch.meshes[k]; }
+}
+const camW = new THREE.Vector3();
+function updateLods(){
+  camera.getWorldPosition(camW);
+  const base = renderer.xr.isPresenting ? 3000 : 4000, span = CH * STEP;
+  const want = [];
+  for (const ch of chunks){
+    const x0 = ch.cx * span, z0 = ch.cz * span;
+    const dx = Math.max(x0 - camW.x, 0, camW.x - x0 - span), dz = Math.max(z0 - camW.z, 0, camW.z - z0 - span);
+    const dy = Math.max(ch.min - camW.y, 0, camW.y - ch.max);
+    const d = Math.hypot(dx, dy, dz);
+    let s = 32; for (const l of LODS){ if (d < base * l){ s = l; break; } }
+    ch.mesh.visible = d < 260000;
+    if (s !== ch.lod) want.push([d, ch, s]);
+  }
+  want.sort((a, b) => a[0] - b[0]);
+  let built = 0;
+  for (const [, ch, s] of want){
+    const fresh = !ch.meshes[s];
+    if (fresh && built >= 3) continue;
+    setLod(ch, s); if (fresh) built++;
+  }
+}
+
+// border line and a low plain all round, so the map edge does not hang in the sky
+function initExtras(){
+  const n = BORDER.length / 2, p = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++){
+    const x = BORDER[i * 2], z = BORDER[i * 2 + 1];
+    p[i * 3] = x; p[i * 3 + 1] = ground(x, z) + 25; p[i * 3 + 2] = z;
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  const line = new THREE.LineLoop(g, lineMat); line.frustumCulled = false; scene.add(line);
+  const W = (NX - 1) * STEP, D = (NZ - 1) * STEP;
+  const pg = new THREE.PlaneGeometry(1500000, 1500000, 120, 120); pg.rotateX(-Math.PI / 2);
+  const c = new Uint8Array(pg.attributes.position.count * 3);
+  for (let i = 0; i < c.length; i += 3){ c[i] = 120; c[i + 1] = 140; c[i + 2] = 96; }
+  pg.setAttribute('color', new THREE.BufferAttribute(c, 3, true));
+  const plain = new THREE.Mesh(pg, terrainMat); plain.position.set(W / 2, 20, D / 2); plain.frustumCulled = false;
+  scene.add(plain);
+}
+
+// ---------------------------------------------------------------- nose marker: where the aircraft points, also when you look around
+const nose = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.1, 32), new THREE.MeshBasicMaterial({ color: 0xffe066, depthTest: false, transparent: true, opacity: 0.8 }));
+const noseDot = new THREE.Mesh(new THREE.CircleGeometry(0.15, 12), nose.material);
+nose.add(noseDot); nose.position.set(0, 0, -60); nose.renderOrder = 10; noseDot.renderOrder = 10;
+rig.add(nose);
+
+// ---------------------------------------------------------------- places: [name, E, N, metres above sea, heading]
+const PLACES = [
+  ['Zürich', 2683000, 1249000, 1300, 150], ['Bern', 2600000, 1201000, 1500, 150], ['Genf', 2499000, 1117000, 1200, 50],
+  ['Luzern', 2666000, 1213000, 1500, 160], ['Jungfrau', 2632000, 1172000, 2600, 165], ['Matterhorn', 2625000, 1106000, 3600, 200],
+  ['Lugano', 2717000, 1094000, 1300, 5], ['St. Moritz', 2784000, 1153000, 2700, 225], ['Basel', 2611000, 1268000, 1200, 165],
+  ['Aletsch', 2648000, 1153000, 3600, 200],
+];
+let place = 0;
+
+// ---------------------------------------------------------------- aircraft: a simple, forgiving fixed-wing model
+const G = 9.81, V_STALL = 28, T_MAX = 11, T_BOOST = 30, DRAG = T_MAX / (110 * 110);
+const P = { pos: new THREE.Vector3(), q: new THREE.Quaternion(), v: 70, sink: 0, thr: 0.6, crashed: 0, boost: false };
+const _f = new THREE.Vector3(), _u = new THREE.Vector3(), _r = new THREE.Vector3(), _dq = new THREE.Quaternion(), _ax = new THREE.Vector3();
+function spawn(i){
+  place = i; const [name, e, n, alt, hdg] = PLACES[i];
+  const x = e - E0, z = N1 - n;
+  P.pos.set(x, Math.max(alt, ground(x, z) + 400), z);
+  P.q.setFromAxisAngle(_ax.set(0, 1, 0), -hdg * Math.PI / 180);
+  P.v = 75; P.sink = 0; P.thr = 0.6; P.crashed = 0;
+  lastAlt = P.pos.y; varioS = 0;
+  flash(name.toUpperCase(), 2);
+}
+const ctl = { pitch: 0, roll: 0, yaw: 0, thrRate: 0, boost: false };
+let invert = false;
+try { invert = localStorage.getItem('flight-invert') === '1'; } catch (e) {}
+function step(dt){
+  if (P.crashed > 0){ P.crashed -= dt; if (P.crashed <= 0) spawn(place); return; }
+  P.thr = clamp(P.thr + ctl.thrRate * dt * 0.5, 0, 1);
+  _f.set(0, 0, -1).applyQuaternion(P.q); _u.set(0, 1, 0).applyQuaternion(P.q); _r.set(1, 0, 0).applyQuaternion(P.q);
+  const auth = clamp(P.v / 60, 0.25, 1.3), lift = clamp((P.v - V_STALL) / 15, 0, 1);
+  // control surfaces, around the aircraft's own axes
+  let pitchRate = ctl.pitch * 1.1 * auth;
+  const rollRate = -ctl.roll * 1.5 * Math.min(auth, 1.1), yawRate = -ctl.yaw * 0.45 * auth;
+  // stalled: the nose drops by itself
+  if (lift < 1 && _f.y > -0.6) pitchRate -= (1 - lift) * 0.9;
+  _dq.setFromAxisAngle(_ax.set(1, 0, 0), pitchRate * dt); P.q.multiply(_dq);
+  _dq.setFromAxisAngle(_ax.set(0, 0, 1), rollRate * dt); P.q.multiply(_dq);
+  _dq.setFromAxisAngle(_ax.set(0, 1, 0), yawRate * dt); P.q.multiply(_dq);
+  // banked: the lift pulls the heading round (coordinated turn)
+  const turn = G * -_r.y / Math.max(P.v, 30) * lift;
+  _dq.setFromAxisAngle(_ax.set(0, 1, 0), -turn * dt); P.q.premultiply(_dq);
+  P.q.normalize();
+  // speed: thrust, drag, and the slope of the flight path
+  P.boost = ctl.boost;
+  const thrust = P.thr * T_MAX + (ctl.boost ? T_BOOST : 0);
+  P.v = Math.max(5, P.v + (thrust - DRAG * P.v * P.v * (ctl.boost ? 0.5 : 1) - G * _f.y) * dt);
+  // sink when the wings do not carry the weight: too slow, steeply banked, upside down
+  const carry = lift * clamp(_u.y * 1.3, 0, 1);
+  P.sink += (G * (1 - carry) - P.sink * 0.8) * dt;
+  P.pos.addScaledVector(_f, P.v * dt); P.pos.y -= P.sink * dt;
+  P.pos.y = Math.min(P.pos.y, 15000);
+  const gh = ground(P.pos.x, P.pos.z);
+  if (P.pos.y < gh + 2){
+    P.pos.y = gh + 2; P.crashed = 2.5;
+    flash(WATER[clamp(Math.round(P.pos.z / STEP), 0, NZ - 1) * NX + clamp(Math.round(P.pos.x / STEP), 0, NX - 1)] ? 'IM SEE GELANDET' : 'ABSTURZ', 2.5);
+  }
+}
+
+// ---------------------------------------------------------------- input: keyboard, mouse look, gamepad, Quest controllers
+const keys = {};
+let paused = true, started = false, showMap = true;
+addEventListener('keydown', e => {
+  if (!started) return;
+  keys[e.code] = true;
+  if (e.code === 'KeyP' || e.code === 'Escape'){ setPaused(!paused); }
+  else if (e.code === 'KeyR') spawn(place);
+  else if (e.code === 'KeyM') showMap = !showMap;
+  else if (e.code === 'KeyI') toggleInvert();
+  else if (e.code === 'KeyH') setPaused(true);
+  else if (/^Digit\d$/.test(e.code)) spawn((+e.code[5] + 9) % 10);
+  if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (!renderer.xr.isPresenting && started) setPaused(true); });
+function toggleInvert(){
+  invert = !invert; try { localStorage.setItem('flight-invert', invert ? '1' : '0'); } catch (e) {}
+  flash(invert ? '↑ = NASE HOCH' : '↑ = NASE RUNTER', 1.5);
+}
+// look around with the mouse (or a finger): drag; it springs back when let go
+const look = { yaw: 0, pitch: 0, drag: false, lx: 0, ly: 0, padX: 0, padY: 0 };
+cv.addEventListener('pointerdown', e => { look.drag = true; look.lx = e.clientX; look.ly = e.clientY; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => {
+  if (!look.drag) return;
+  look.yaw = clamp(look.yaw - (e.clientX - look.lx) * 0.005, -Math.PI, Math.PI);
+  look.pitch = clamp(look.pitch - (e.clientY - look.ly) * 0.005, -1.3, 1.3);
+  look.lx = e.clientX; look.ly = e.clientY;
+});
+const endDrag = () => { look.drag = false; };
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+const dz = v => Math.abs(v) < 0.12 ? 0 : (v - Math.sign(v) * 0.12) / 0.88;
+const edge = {};
+function pressed(id, now){ const was = edge[id]; edge[id] = now; return now && !was; }
+function readInput(){
+  const k = c => keys[c] ? 1 : 0;
+  const pitchSign = invert ? -1 : 1;
+  ctl.pitch = (k('ArrowDown') - k('ArrowUp')) * pitchSign;
+  ctl.roll = k('ArrowRight') - k('ArrowLeft');
+  ctl.yaw = k('KeyD') - k('KeyA') + k('KeyE') - k('KeyQ');
+  ctl.thrRate = k('KeyW') - k('KeyS');
+  ctl.boost = !!(keys.ShiftLeft || keys.ShiftRight);
+  look.padX = 0; look.padY = 0;
+  const session = renderer.xr.getSession();
+  if (session){
+    for (const src of session.inputSources){
+      const gp = src.gamepad; if (!gp) continue;
+      const ax = gp.axes, sx = dz(ax[2] || 0), sy = dz(ax[3] || 0), btn = i => !!(gp.buttons[i] && gp.buttons[i].pressed);
+      if (src.handedness === 'right'){
+        ctl.roll += sx; ctl.pitch += sy * pitchSign;   // stick forward (−y): nose down
+        if (gp.buttons[0] && gp.buttons[0].value > 0.3) ctl.boost = true;
+        if (pressed('vrA', btn(4))) spawn((place + 1) % PLACES.length);
+        if (pressed('vrB', btn(5))) spawn(place);
+      } else if (src.handedness === 'left'){
+        ctl.yaw += sx; ctl.thrRate += -sy;
+        if (pressed('vrX', btn(4))) showMap = !showMap;
+        if (pressed('vrY', btn(5))) toggleInvert();
+      }
+    }
+  } else if (navigator.getGamepads){
+    for (const gp of navigator.getGamepads()){
+      if (!gp || gp.mapping !== 'standard') continue;
+      const ax = gp.axes, b = i => gp.buttons[i] ? gp.buttons[i].value : 0;
+      ctl.roll += dz(ax[0]); ctl.pitch += dz(ax[1]) * pitchSign;
+      look.padX = dz(ax[2]); look.padY = dz(ax[3]);
+      ctl.thrRate += b(7) - b(6);
+      ctl.yaw += b(5) - b(4);
+      if (pressed('pA', b(0) > 0.5)) spawn((place + 1) % PLACES.length);
+      if (pressed('pB', b(1) > 0.5)) spawn(place);
+      if (pressed('pY', b(3) > 0.5)) toggleInvert();
+      if (pressed('pX', b(2) > 0.5)) showMap = !showMap;
+      if (pressed('pStart', b(9) > 0.5)) setPaused(!paused);
+    }
+  }
+  ctl.pitch = clamp(ctl.pitch, -1, 1); ctl.roll = clamp(ctl.roll, -1, 1); ctl.yaw = clamp(ctl.yaw, -1, 1); ctl.thrRate = clamp(ctl.thrRate, -1, 1);
+}
+
+// ---------------------------------------------------------------- HUD: one canvas, shown on the laptop and as a panel below the view in VR
+const hud = document.getElementById('hud'), hg = hud.getContext('2d');
+const hudTex = new THREE.CanvasTexture(hud); hudTex.minFilter = THREE.LinearFilter;
+const hudPanel = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.4), new THREE.MeshBasicMaterial({ map: hudTex, transparent: true, depthTest: false }));
+// 4–5 m away: the camera's near plane is 3 m (depth precision over 300 km)
+hudPanel.position.set(0, -2.2, -4.2); hudPanel.rotation.x = -0.45; hudPanel.renderOrder = 11; hudPanel.visible = false;
+rig.add(hudPanel);
+let mapImg = null;
+function initMap(){
+  // the whole grid at 1 km per pixel: relief, lakes, border
+  const s = 10, w = Math.floor(NX / s), h = Math.floor(NZ / s);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'), img = g.createImageData(w, h), col = [0, 0, 0];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    const i = x * s, j = y * s, k = j * NX + i, o = (y * w + x) * 4;
+    const gx = (hAt(i + s, j) - hAt(i - s, j)) / (2 * s * STEP), gz = (hAt(i, j + s) - hAt(i, j - s)) / (2 * s * STEP);
+    colour(H[k], Math.hypot(gx, gz), WATER[k], col, 0);
+    const lit = WATER[k] ? 1 : 0.55 + 0.6 * Math.max(0, (-gx * SUN.x + SUN.y - gz * SUN.z) / Math.sqrt(gx * gx + 1 + gz * gz));
+    img.data[o] = col[0] * lit * 255; img.data[o + 1] = col[1] * lit * 255; img.data[o + 2] = col[2] * lit * 255; img.data[o + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  g.strokeStyle = '#d0141a'; g.lineWidth = 1; g.beginPath();
+  for (let i = 0; i < BORDER.length; i += 2){ const X = BORDER[i] / (s * STEP), Y = BORDER[i + 1] / (s * STEP); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+  g.closePath(); g.stroke();
+  mapImg = c;
+}
+const COMPASS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
+const fmt = v => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '’');
+let lastHud = 0, varioS = 0, lastAlt = 0;
+function drawHud(t){
+  if (t - lastHud < 100) return;
+  const dt = (t - lastHud) / 1000; lastHud = t;
+  varioS += ((P.pos.y - lastAlt) / Math.max(dt, 0.01) - varioS) * 0.5; lastAlt = P.pos.y;
+  const g = hg; g.clearRect(0, 0, 512, 256);
+  g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(0, 0, 230, 256);
+  g.fillStyle = '#f4f2ec'; g.font = 'bold 20px ui-monospace,Menlo,Consolas,monospace';
+  _f.set(0, 0, -1).applyQuaternion(P.q);
+  const hdg = (Math.atan2(_f.x, -_f.z) * 180 / Math.PI + 360) % 360;
+  const agl = P.pos.y - ground(P.pos.x, P.pos.z);
+  const lines = [
+    [`${Math.round(P.v * 3.6)} km/h`, P.v < V_STALL + 4 ? '#ff6b5b' : null],
+    [`${fmt(P.pos.y)} m ü. M.`],
+    [`${fmt(agl)} m über Grund`, agl < 150 ? '#ffd76a' : null],
+    [`${String(Math.round(hdg) % 360).padStart(3, '0')}° ${COMPASS[Math.round(hdg / 45) % 8]}`],
+    [`${varioS >= 0 ? '+' : ''}${varioS.toFixed(1)} m/s`],
+  ];
+  lines.forEach(([s, c], i) => { g.fillStyle = c || '#f4f2ec'; g.fillText(s, 12, 30 + i * 28); });
+  // throttle bar
+  g.fillStyle = '#f4f2ec'; g.font = '13px ui-monospace,Menlo,Consolas,monospace';
+  g.fillText(P.boost ? 'NACHBRENNER' : 'GAS', 12, 182);
+  g.strokeStyle = '#f4f2ec'; g.strokeRect(12, 190, 200, 12);
+  g.fillStyle = P.boost ? '#ff8a3d' : '#ffd76a'; g.fillRect(14, 192, 196 * (P.boost ? 1 : P.thr), 8);
+  const e = E0 + P.pos.x, n = N1 - P.pos.z;
+  g.fillStyle = '#f4f2ec'; g.fillText(`LV95 ${fmt(e)} / ${fmt(n)}`, 12, 226);
+  g.fillText(PLACES[place][0], 12, 246);
+  if (showMap && mapImg){
+    const mw = 270, mh = mw * mapImg.height / mapImg.width, mx = 238, my = 256 - mh;
+    g.globalAlpha = 0.92; g.drawImage(mapImg, mx, my, mw, mh); g.globalAlpha = 1;
+    g.strokeStyle = 'rgba(0,0,0,0.6)'; g.strokeRect(mx + 0.5, my + 0.5, mw - 1, mh - 1);
+    const px = mx + P.pos.x / ((NX - 1) * STEP) * mw, py = my + P.pos.z / ((NZ - 1) * STEP) * mh, a = hdg * Math.PI / 180;
+    g.save(); g.translate(px, py); g.rotate(a);
+    g.fillStyle = '#111'; g.beginPath(); g.moveTo(0, -9); g.lineTo(6, 6); g.lineTo(0, 3); g.lineTo(-6, 6); g.closePath(); g.fill();
+    g.strokeStyle = '#ffe066'; g.lineWidth = 1.5; g.stroke(); g.restore();
+  }
+  if (renderer.xr.isPresenting && msgEl.textContent){
+    g.font = 'bold 22px ui-monospace,Menlo,Consolas,monospace'; g.textAlign = 'center';
+    g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(238, 8, 270, 36);
+    g.fillStyle = '#ffe066'; g.fillText(msgEl.textContent, 373, 34); g.textAlign = 'left';
+  }
+  hudTex.needsUpdate = true;
+}
+let msgT = 0;
+function flash(s, t){ msgEl.textContent = s; msgT = t; }
+
+// ---------------------------------------------------------------- sound: engine hum and wind, from noise and an oscillator
+let audio = null;
+function audioInit(){
+  if (audio) return;
+  try {
+    const ac = new AudioContext(), len = ac.sampleRate * 2, nb = ac.createBuffer(1, len, ac.sampleRate), d = nb.getChannelData(0);
+    let last = 0; for (let i = 0; i < len; i++){ last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+    const noise = ac.createBufferSource(); noise.buffer = nb; noise.loop = true;
+    const wf = ac.createBiquadFilter(); wf.type = 'lowpass'; wf.frequency.value = 600;
+    const wg = ac.createGain(); wg.gain.value = 0;
+    noise.connect(wf).connect(wg).connect(ac.destination); noise.start();
+    const osc = ac.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 60;
+    const of = ac.createBiquadFilter(); of.type = 'lowpass'; of.frequency.value = 300;
+    const og = ac.createGain(); og.gain.value = 0;
+    osc.connect(of).connect(og).connect(ac.destination); osc.start();
+    audio = { ac, wf, wg, osc, og };
+  } catch (e) {}
+}
+function updateAudio(){
+  if (!audio) return;
+  const t = audio.ac.currentTime, on = !paused && P.crashed <= 0 ? 1 : 0;
+  audio.wg.gain.setTargetAtTime(on * clamp(P.v / 250, 0.03, 0.5), t, 0.1);
+  audio.wf.frequency.setTargetAtTime(300 + P.v * 6, t, 0.1);
+  audio.og.gain.setTargetAtTime(on * (0.03 + 0.05 * P.thr + (P.boost ? 0.05 : 0)), t, 0.1);
+  audio.osc.frequency.setTargetAtTime(45 + 50 * P.thr + (P.boost ? 40 : 0), t, 0.1);
+}
+
+// ---------------------------------------------------------------- pause, start, VR
+function setPaused(p){
+  paused = p;
+  overlay.style.display = p ? 'flex' : 'none';
+  if (!p){ cv.focus(); audio && audio.ac.resume(); }
+}
+goBtn.onclick = () => { audioInit(); started = true; setPaused(false); };
+const vrBtn = document.getElementById('vrbtn');
+if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
+  if (!ok) return;
+  vrBtn.style.display = 'block';
+  vrBtn.onclick = async () => {
+    if (!H) return;
+    audioInit();
+    const cur = renderer.xr.getSession();
+    if (cur){ cur.end(); return; }
+    try {
+      const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] });
+      await renderer.xr.setSession(session);
+      try { renderer.xr.setFoveation(1); } catch (e) {}
+      started = true; setPaused(false); vrBtn.textContent = 'VR BEENDEN';
+      hudPanel.visible = true; nose.position.z = -60;
+      session.addEventListener('end', () => { vrBtn.textContent = 'VR STARTEN'; hudPanel.visible = false; });
+    } catch (e) { vrBtn.textContent = 'VR NICHT VERFÜGBAR'; }
+  };
+}).catch(() => {});
+
+// ---------------------------------------------------------------- loop
+let last = performance.now();
+function frame(t){
+  const dt = Math.min(0.05, (t - last) / 1000); last = t;
+  if (!H){ renderer.render(scene, camera); return; }
+  readInput();
+  if (!paused || renderer.xr.isPresenting) step(dt);
+  rig.position.copy(P.pos); rig.quaternion.copy(P.q);
+  sky.position.copy(P.pos);
+  if (!renderer.xr.isPresenting){
+    // look: drag or right stick; springs back when let go
+    if (!look.drag){
+      if (look.padX || look.padY){
+        look.yaw = clamp(look.yaw - look.padX * 2.5 * dt, -Math.PI, Math.PI);
+        look.pitch = clamp(look.pitch - look.padY * 2 * dt, -1.3, 1.3);
+      } else { const k = Math.min(1, dt * 2.5); look.yaw -= look.yaw * k; look.pitch -= look.pitch * k; }
+    }
+    camera.rotation.set(look.pitch, look.yaw, 0, 'YXZ');
+  }
+  updateLods();
+  if (msgT > 0){ msgT -= dt; if (msgT <= 0) msgEl.textContent = ''; }
+  drawHud(t);
+  updateAudio();
+  renderer.render(scene, camera);
+}
+renderer.setAnimationLoop(frame);
+
+load().then(() => {
+  statusEl.textContent = 'Baue Relief …';
+  setTimeout(() => {
+    initChunks(); initExtras(); initMap();
+    spawn(0);
+    statusEl.textContent = 'Bereit. Klick auf LOSFLIEGEN (oder unten rechts VR STARTEN).';
+    goBtn.disabled = false; goBtn.focus();
+  }, 20);
+}).catch(e => { statusEl.textContent = 'Fehler beim Laden: ' + e.message; });
+</script>
+</body>
+</html>
