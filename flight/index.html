@@ -13,8 +13,8 @@
     canvas#gl{ position:absolute; inset:0; width:100%; height:100%; outline:none; touch-action:none; }
     .label{ font-weight:700; text-transform:uppercase; letter-spacing:0.14em; font-size:12px; }
     #hud{ position:absolute; left:var(--m); bottom:var(--m); width:460px; height:288px; max-width:calc(100vw - 2 * var(--m)); pointer-events:none; }
-    #msg{ position:absolute; left:var(--m); top:var(--m); background:#fff; padding:0.6em 1em; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; font-size:22px; line-height:1.15; pointer-events:none; display:none; }
-    #hint{ position:absolute; right:var(--m); top:var(--m); background:#fff; padding:0.5em 0.8em; pointer-events:none; }
+    #msg{ position:absolute; left:var(--m); top:var(--m); color:#fff; text-shadow:0 0 3px #000, 0 0 1px #000; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; font-size:22px; line-height:1.15; pointer-events:none; display:none; }
+    #hint{ position:absolute; right:var(--m); top:var(--m); color:#fff; text-shadow:0 0 3px #000, 0 0 1px #000; pointer-events:none; }
     #overlay{ position:absolute; left:0; top:0; bottom:0; width:min(640px, 100vw); background:#fff; overflow-y:auto; z-index:3; box-sizing:border-box; padding:var(--m); padding-right:calc(var(--m) + 8px); }
     #overlay h1{ margin:0; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; line-height:1.15; font-size:34px; }
     .sterne{ display:flex; gap:10px; margin:14px 0 26px; }
@@ -794,24 +794,6 @@ const hudPanel = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6 * HH / HW), new
 hudPanel.position.set(0, -2.3, -4.2); hudPanel.rotation.x = -0.5; hudPanel.renderOrder = 11; hudPanel.visible = false;   // beyond the 2 m near plane
 rig.add(hudPanel);
 const F = (w, s) => `${w} ${s}px 'IBM Plex Sans', Arial, sans-serif`;
-let mapImg = null;
-function initMap(){
-  // a fine dot raster: dot size follows the height; lakes left out; the border as a black line
-  const s = 2, w = Math.floor(HX / s), h = Math.floor(HZ / s), px = 2.2;
-  const c = document.createElement('canvas'); c.width = Math.round(w * px); c.height = Math.round(h * px);
-  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#a8a8a8';
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
-    const i = x * s, j = y * s, E = CE0 + i * HSTEP, N = CN1 - j * HSTEP;
-    const wi = Math.round(i * HSTEP / WSTEP), wj = Math.round(j * HSTEP / WSTEP);
-    if (waterTex.image.data[wj * WX + wi]) continue;
-    const r = 0.25 + 0.85 * clamp((HC[j * HX + i] - 200) / 3200, 0, 1);
-    g.beginPath(); g.arc((x + 0.5) * px, (y + 0.5) * px, r * px * 0.5, 0, Math.PI * 2); g.fill();
-  }
-  g.strokeStyle = '#000'; g.lineWidth = 1.2; g.beginPath();
-  for (let i = 0; i < BORDER.length; i += 3){ const X = BORDER[i] / (HSTEP * s) * px, Y = BORDER[i + 1] / (HSTEP * s) * px; i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
-  g.closePath(); g.stroke();
-  mapImg = c;
-}
 const COMPASS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
 const fmt = v => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '’');
 let lastHud = 0, vario = 0, lastAlt = 0;
@@ -821,8 +803,15 @@ function drawHud(t){
   if (P.crashed <= 0) vario += ((P.geo.h - lastAlt) / Math.max(dt, 0.01) - vario) * 0.5;
   lastAlt = P.geo.h;
   const g = hg; g.clearRect(0, 0, HW, HH);
-  // data: two columns, labels in capitals, values bold
-  const W1 = 400; g.fillStyle = '#fff'; g.fillRect(0, 0, W1, HH);
+  // readouts straight on the image: white with a dark edge, labels in capitals, values bold; warnings inverse
+  const W1 = 400;
+  g.lineJoin = 'round'; g.strokeStyle = 'rgba(0,0,0,0.7)';
+  const txt = (str, x, y, size, weight, spacing, warn) => {
+    g.font = F(weight, size); if (g.letterSpacing !== undefined) g.letterSpacing = spacing + 'px';
+    if (warn){ const w = g.measureText(str).width; g.fillStyle = '#fff'; g.fillRect(x - 6, y - size * 0.95, w + 12 + spacing, size * 1.25); g.fillStyle = '#000'; g.fillText(str, x, y); }
+    else { g.lineWidth = Math.max(3, size / 7); g.strokeText(str, x, y); g.fillStyle = '#fff'; g.fillText(str, x, y); }
+    if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
+  };
   _f.set(0, 0, -1).applyQuaternion(P.q);
   const hdg = (Math.atan2(_f.dot(EAST), _f.dot(NORTH)) / D2R + 360) % 360;
   const kmh = P.vel.length() * 3.6;
@@ -837,35 +826,27 @@ function drawHud(t){
   g.textBaseline = 'alphabetic';
   rows.forEach(([l, v], i) => {
     const y = 52 + i * 56;
-    g.fillStyle = '#000'; g.font = F(700, 17);
-    if (g.letterSpacing !== undefined) g.letterSpacing = '2.4px';
-    g.fillText(l.toUpperCase(), 28, y);
-    if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
+    txt(l.toUpperCase(), 28, y, 17, 700, 2.4, false);
     const warn = (l === 'Über Grund' && P.agl < 150) || (l === 'Last' && P.n > 8.5) || (l === 'Schub' && P.ab);
-    g.fillStyle = warn ? '#003399' : '#000'; g.font = F(700, 28);
-    g.fillText(v, 212, y + 2);
+    txt(v, 212, y + 2, 28, 700, 0, warn);
   });
-  if (showMap && mapImg){
-    const mx = W1 + 20, mw = HW - mx, mh = mw * mapImg.height / mapImg.width, my = HH - mh;
-    g.fillStyle = '#fff'; g.fillRect(mx, 0, mw, HH);
-    g.drawImage(mapImg, mx, my, mw, mh);
-    // place name, LV95
+  if (showMap){
+    // the outline of the country, with the position; place name and LV95 above it
+    const mx = W1 + 20, mw = HW - mx, mh = mw * (HZ - 1) / (HX - 1), my = HH - mh, sc = mw / ((HX - 1) * HSTEP);
     const [E, N] = wgsToLv95(P.geo.lon, P.geo.lat);
-    g.fillStyle = '#000'; g.font = F(700, 17); if (g.letterSpacing !== undefined) g.letterSpacing = '2.4px';
-    g.fillText(PLACES[place][0].toUpperCase(), mx + 24, 52);
-    if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
-    g.font = F(500, 20); g.fillText(`${fmt(E)} / ${fmt(N)}`, mx + 24, 86);
-    if (active > 0){ g.font = F(500, 17); g.fillText('Lade …', mx + 24, 116); }
-    const px = mx + (E - CE0) / ((HX - 1) * HSTEP) * mw, py = my + (CN1 - N) / ((HZ - 1) * HSTEP) * mh;
+    txt(PLACES[place][0].toUpperCase(), mx + 24, 52, 17, 700, 2.4, false);
+    txt(`${fmt(E)} / ${fmt(N)}`, mx + 24, 86, 20, 500, 0, false);
+    if (active > 0) txt('Lade …', mx + 24, 116, 17, 500, 0, false);
+    g.beginPath();
+    for (let i = 0; i < BORDER.length; i += 3){ const X = mx + BORDER[i] * sc, Y = my + BORDER[i + 1] * sc; i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+    g.closePath(); g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.stroke(); g.lineWidth = 1.5; g.strokeStyle = '#fff'; g.stroke();
+    const px = mx + (E - CE0) * sc, py = my + (CN1 - N) * sc;
     g.save(); g.translate(px, py); g.rotate(hdg * D2R);
-    g.fillStyle = '#003399'; g.beginPath(); g.moveTo(0, -16); g.lineTo(10, 11); g.lineTo(0, 5); g.lineTo(-10, 11); g.closePath(); g.fill(); g.restore();
+    g.beginPath(); g.moveTo(0, -16); g.lineTo(10, 11); g.lineTo(0, 5); g.lineTo(-10, 11); g.closePath();
+    g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.stroke(); g.fillStyle = '#fff'; g.fill(); g.restore();
+    g.strokeStyle = 'rgba(0,0,0,0.7)';
   }
-  if (renderer.xr.isPresenting && msgEl.textContent){
-    g.fillStyle = '#fff'; g.fillRect(0, 0, HW, 70); g.fillStyle = '#000'; g.font = F(700, 34);
-    if (g.letterSpacing !== undefined) g.letterSpacing = '4px';
-    g.fillText(msgEl.textContent.toUpperCase(), 28, 50);
-    if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
-  }
+  if (renderer.xr.isPresenting && msgEl.textContent) txt(msgEl.textContent.toUpperCase(), 28, 50, 34, 700, 4, false);
   hudTex.needsUpdate = true;
 }
 let msgT = 0;
@@ -951,7 +932,7 @@ renderer.setAnimationLoop(frame);
 window.flight = { blocks, tiles, P, shown, step, ctl, spawn, get active(){ return active; }, get activeB(){ return activeB; } };
 
 Promise.all([loadSmall(), document.fonts ? document.fonts.load("700 20px 'IBM Plex Sans'").then(() => document.fonts.load("500 20px 'IBM Plex Sans'")) : 0]).then(() => {
-  initRoots(); initBorder(); initMap();
+  initRoots(); initBorder();
   spawn(0);
   ready = true; goBtn.disabled = false; goBtn.focus();
 }).catch(e => { statusEl.textContent = 'Fehler beim Laden: ' + e.message; });
