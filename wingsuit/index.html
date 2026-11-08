@@ -776,7 +776,7 @@ const fmt = v => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '’'
 }
 
 // ================================================================ the body: a wingsuit pilot, later a canopy. SI units. Body axes: x right, y up (the back), -z forward (the head).
-const WS = { m: 92, S: 1.45, clA: 2.6, aStall: 0.40, cd0: 0.10, k: 0.17, alpha0: 0.19, alphaMin: -0.05, alphaMax: 0.46, pitchRate: 1.6, rollRate: 2.4 };
+const WS = { m: 92, S: 1.45, clA: 2.6, aStall: 0.40, cd0: 0.10, k: 0.17, alpha0: 0.19, alphaMin: -0.05, alphaMax: 0.46, pitchRate: 1.6, rollRate: 2.4, bankMax: 1.22, gamma0: -0.34, gammaFlat: -0.14, gammaDive: -1.0 };
 const CAN = { S: 20, cl: 1.0, cd: 0.5, open: 2.5 };
 const G0 = 9.80665;
 function isa(h){ h = clamp(h, -500, 20000); const T = 288.15 - 0.0065 * h; return 1.225 * Math.pow(T / 288.15, 4.2559); }
@@ -795,6 +795,7 @@ function updateGeo(){
   enu(P.geo.lon, P.geo.lat, EAST, NORTH, UP);
 }
 const BODY_R = 0.45;   // the ball that must not touch anything
+const DBG = { noCrash: false, q: 0 };
 function physics(dt){
   const rho = isa(P.geo.h);
   _f.set(0, 0, -1).applyQuaternion(P.q); _u.set(0, 1, 0).applyQuaternion(P.q); _r.set(1, 0, 0).applyQuaternion(P.q);
@@ -813,15 +814,20 @@ function physics(dt){
     const L = qbar * Sx * cl, D = qbar * Sx * cd, Y = -qbar * Sx * 0.6 * beta * inf;
     _a.addScaledVector(_l, L).addScaledVector(_v, -D).addScaledVector(_s2, Y);
     P.n = L / (WS.m * G0); P.alpha = alpha;
-    // the pilot: the stick asks for an angle of attack; the body follows with the rates a human can manage
-    const aCmd = ctl.pitch >= 0 ? WS.alpha0 + (WS.alphaMax - WS.alpha0) * ctl.pitch : WS.alpha0 + (WS.alpha0 - WS.alphaMin) * ctl.pitch;
-    const aCmd2 = clamp(aCmd + 0.1 * ctl.trim, WS.alphaMin, WS.alphaMax);
+    // the pilot: the stick asks for a glide path (stick back: flat and slow, forward: steep and fast); the angle of attack
+    // follows the path error, so that the suit neither balloons nor dives after the pull-out, and the body follows with
+    // the rates a human can manage
+    const gamma = Math.asin(clamp(_v.dot(UP), -1, 1));
+    const gammaT = ctl.pitch >= 0 ? WS.gamma0 + (WS.gammaFlat - WS.gamma0) * ctl.pitch : WS.gamma0 + (WS.gamma0 - WS.gammaDive) * ctl.pitch;
+    const aCmd2 = clamp(WS.alpha0 + 1.2 * (gammaT - gamma) + 0.08 * ctl.trim, WS.alphaMin, WS.alphaMax);
     const auth = clamp((V - 3) / 15, 0, 1) * inf;   // no air, no authority: the first second after the exit is a fall
-    const pathUp = _a.dot(_l) / V, pathSide = _a.dot(_s2) / V;
+    const pathUp = _a.dot(_l) / (WS.m * V), pathSide = _a.dot(_s2) / (WS.m * V);   // how fast the aero forces turn the velocity, in the pitch and yaw planes
     const qCmd = clamp(pathUp * auth + 3.5 * (aCmd2 - alpha) * auth, -WS.pitchRate, WS.pitchRate);
-    const pCmd = ctl.roll * WS.rollRate * (0.3 + 0.7 * auth);
+    // the stick asks for a bank angle (full stick: 70°), the body rolls there and holds it
+    const bank = Math.atan2(-_r.dot(UP), Math.max(0.05, _u.dot(UP)));
+    const pCmd = clamp(3 * (ctl.roll * WS.bankMax - bank), -WS.rollRate, WS.rollRate) * (0.3 + 0.7 * auth);
     const rCmd = clamp(pathSide * auth + 2.5 * (beta - ctl.yaw * 0.2) * auth, -1.2, 1.2);
-    const kq = Math.min(1, dt * 6);
+    const kq = Math.min(1, dt * 6); DBG.q = qCmd; DBG.auth = auth; DBG.aCmd = aCmd2;
     P.w.x += (qCmd - P.w.x) * kq; P.w.z += (pCmd - P.w.z) * Math.min(1, dt * 8); P.w.y += (rCmd - P.w.y) * kq;
   }
   if (P.phase === 2 || P.phase === 3){
@@ -880,10 +886,10 @@ function step(dt){
         hitGround = true;
       }
     }
-    if (hitGround && P.t > 1.0){ touchGround(); return; }
+    if (hitGround && P.t > 1.0 && !DBG.noCrash){ touchGround(); return; }
     // trees: the drawn cones, balls and trunks
     const tr = treeHit(P.pos, BODY_R);
-    if (tr){ crash('BAUM GETROFFEN'); return; }
+    if (tr && !DBG.noCrash){ crash('BAUM GETROFFEN'); return; }
   }
   // buildings on the way, as surveyed
   const seg = P.pos.distanceTo(_before);
@@ -1285,7 +1291,7 @@ function frame(t){
   }
 }
 renderer.setAnimationLoop(frame);
-window.wingsuit = { blocks, tiles, vegTiles, P, shown, step, ctl, spawn, jump, pull, PLACES, LZ, groundAt, treeHit, shownTileAt, get groundZ(){ return groundZ; }, get active(){ return active; }, get place(){ return place; } };
+window.wingsuit = { DBG, blocks, tiles, vegTiles, P, shown, step, ctl, spawn, jump, pull, PLACES, LZ, groundAt, treeHit, shownTileAt, get groundZ(){ return groundZ; }, get active(){ return active; }, get place(){ return place; } };
 
 Promise.all([loadSmall(), document.fonts ? document.fonts.load("700 20px 'IBM Plex Sans'").then(() => document.fonts.load("500 20px 'IBM Plex Sans'")) : 0]).then(() => {
   initRoots(); initBorder();
