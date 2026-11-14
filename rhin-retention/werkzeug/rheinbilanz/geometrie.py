@@ -82,7 +82,7 @@ GEORHENA_KM = ("https://geoportal.georhena.eu/geoserver/ows?service=WFS&version=
                "&typeNames=transportation:rhin_points_kilometriques&outputFormat=application/json&srsName=EPSG:4326")
 
 
-def rheinkilometer(von: float = 164.0, bis: float = 560.0) -> list:
+def rheinkilometer(von: float = 164.0, bis: float = 570.0) -> list:
     """Punkte der Rheinkilometrierung alle 500 m: [[km, länge, breite], …] (GeoRhena, Quelle WSV). Für die Abschnitte der Karte."""
     import json
 

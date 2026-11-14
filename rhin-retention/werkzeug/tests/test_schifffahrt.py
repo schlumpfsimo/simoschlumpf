@@ -38,6 +38,13 @@ class Fahrbarkeit(unittest.TestCase):
         self.assertEqual((z["tiefe"], z["fehl"]), (180, 10))
         self.assertIsNone(schifffahrt.fahrbarkeit(None, 77, 190))
 
+    def test_amtliche_abschnitte(self):
+        from rheinbilanz import netz
+        a = {i: (von, bis) for i, von, bis in netz.abschnitte()}
+        self.assertEqual(a["23700200"], (334.0, 384.0))      # Maxau
+        self.assertEqual(a["25100300"], (508.0, 540.0))      # Oestrich
+        self.assertEqual(a["25700100"], (540.0, 566.0))      # Kaub
+
     def test_abschnitte_schliessen_aneinander(self):
         from rheinbilanz import netz
         a = netz.abschnitte()

@@ -112,25 +112,48 @@ def laden(bis_jahr: int | None = None, melde=lambda s: print(s, file=sys.stderr)
     return b
 
 
+def _wasserstand(b: Bestand, versuch, heute: dt.date, nummer: str, name: str, dgj: tuple | None) -> dict:
+    """Wasserstand eines Pegels: Jahrbuch (falls vorhanden) und Rohwerte der letzten 31 Tage."""
+    if nummer not in b.wp:
+        jahrbuch = versuch(f"DGJ {name} W", lambda: quellen.dgj_tageswerte(*dgj)) if dgj else None
+        b.wp[nummer] = {t: w for t, (w, _) in jahrbuch["W"].items()} if jahrbuch else {}
+    roh = versuch(f"PEGELONLINE {name} W", lambda: quellen.pegelonline_tagesmittel(nummer, "W"))
+    if roh:
+        for t, (w, _) in roh.items():
+            if t < heute:
+                b.wp[nummer].setdefault(t, w)
+    return b.wp[nummer]
+
+
 def _richtpegel(b: Bestand, versuch, heute: dt.date) -> None:
-    """Wasserstand, Kennwerte und Bezugskurve W = f(Q am Bezugspegel) für jeden Richtpegel der freien Strecke."""
+    """Wasserstand, Kennwerte und Bezugskurve W = f(Q am Bezugspegel) für jeden Bezugspegel der freien Strecke."""
     for p in RICHTPEGEL:
-        if p.id not in b.wp:                                       # Pegel ohne Abflussreihe im Netz: nur Wasserstand aus dem Jahrbuch
-            jahrbuch = versuch(f"DGJ {p.name} W", lambda: quellen.dgj_tageswerte(*p.dgj))
-            b.wp[p.id] = {t: w for t, (w, _) in jahrbuch["W"].items()} if jahrbuch else {}
-        roh = versuch(f"PEGELONLINE {p.name} W", lambda: quellen.pegelonline_tagesmittel(p.id, "W"))
-        if roh:
-            for t, (w, _) in roh.items():
-                if t < heute:
-                    b.wp[p.id].setdefault(t, w)
+        w = _wasserstand(b, versuch, heute, p.id, p.name, p.dgj)
         kenn = versuch(f"PEGELONLINE {p.name} Kennwerte", lambda: quellen.pegelonline_kennwerte(p.id))
         k = (kenn or {}).get("kennwerte", {})
-        w, q = b.wp[p.id], b.q.get(p.bezug, {})
+        eintrag = {"glw": k.get("GlW", {}).get("value"), "glw_ab": k.get("GlW", {}).get("validFrom"),
+                   "tugl": k.get("TuGLW", {}).get("value"), "hsw": k.get("HSW", {}).get("value"), "aktuell": (kenn or {}).get("aktuell")}
+        reihe = dict(w)
+        if p.ersatz:                                   # Ersatzpegel im selben Abschnitt, auf den GlW des Bezugspegels umgerechnet
+            nr, name, dgj = p.ersatz
+            we = _wasserstand(b, versuch, heute, nr, name, dgj)
+            ke = (versuch(f"PEGELONLINE {name} Kennwerte", lambda: quellen.pegelonline_kennwerte(nr)) or {}).get("kennwerte", {})
+            glw_e = ke.get("GlW", {}).get("value")
+            if glw_e is not None and eintrag["glw"] is not None:
+                versatz = eintrag["glw"] - glw_e
+                beide = [w[t] - (we[t] + versatz) for t in w if t in we]
+                eintrag["ersatz"] = {"id": nr, "name": name, "glw": glw_e, "tage_vergleich": len(beide),
+                                     "abweichung": sum(beide) / len(beide) if beide else None,
+                                     "abweichung_betrag": sum(abs(x) for x in beide) / len(beide) if beide else None}
+                if eintrag["hsw"] is None and ke.get("HSW", {}).get("value") is not None:
+                    eintrag["hsw"] = ke["HSW"]["value"] + versatz
+                for t, x in we.items():
+                    reihe.setdefault(t, x + versatz)
+        q = b.q.get(p.bezug, {})
         jahr = max((t.year for t, c in b.status.get(p.bezug, {}).items() if c == 4), default=None)
-        paare = [(q[t], w[t]) for t in w if t in q and jahr and t.year >= jahr and b.status[p.bezug].get(t) != 5]
-        b.richt[p.id] = {"glw": k.get("GlW", {}).get("value"), "glw_ab": k.get("GlW", {}).get("validFrom"),
-                         "tugl": k.get("TuGLW", {}).get("value"), "hsw": k.get("HSW", {}).get("value"),
-                         "aktuell": (kenn or {}).get("aktuell"), "kurve": schifffahrt.abflusskurve(paare), "kurve_ab": jahr}
+        paare = [(q[t], reihe[t]) for t in reihe if t in q and jahr and t.year >= jahr and b.status[p.bezug].get(t) != 5]
+        eintrag.update({"kurve": schifffahrt.abflusskurve(paare), "kurve_ab": jahr})
+        b.richt[p.id] = eintrag
 
 
 KAUB, BASEL = "25700100", "2289"

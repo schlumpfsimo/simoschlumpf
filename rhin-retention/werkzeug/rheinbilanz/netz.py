@@ -113,31 +113,32 @@ class Richtpegel:
     id: str            # Pegelnummer WSV
     name: str
     km: float          # Rheinkilometer (PEGELONLINE)
-    dgj: tuple         # (Ordner, Datei) im Jahrbuch
+    von: float         # amtlicher Streckenabschnitt des Bezugspegels, Rheinkilometer
+    bis: float
+    dgj: tuple | None  # (Ordner, Datei) im Jahrbuch; None, wenn der Pegel dort fehlt
     bezug: str         # Messstelle im Netz, deren Abfluss den Wasserstand bestimmt (für die Bezugskurve und die Simulation)
+    ersatz: tuple | None = None   # (Pegelnummer, Name, (Ordner, Datei)): Pegel im selben Abschnitt für Tage ohne Wert am Bezugspegel
 
 
+# Bezugspegel und Streckenabschnitte nach dem Schifffahrtspolizeilichen Hinweis der GDWS über die Fahrrinnenverhältnisse
+# auf der deutschen Rheinstrecke (GlW 2022, ELWIS, Nachricht 2925/2022). Für km 508–540 ist Oestrich der Bezugspegel;
+# er fehlt im Jahrbuch, darum dient an Tagen ohne Wert der Pegel Bingen (km 528,4, im selben Abschnitt) als Ersatz.
 RICHTPEGEL = [
-    Richtpegel("23700200", "Maxau", 362.3, ("Maxau", "23700200_WQ.pdf"), "23700200"),
-    Richtpegel("23700600", "Speyer", 400.6, ("Speyer", "23700600_WQ.pdf"), "23700200"),
-    Richtpegel("23700700", "Mannheim", 424.7, ("Mannheim", "23700700_W.pdf"), "23700200"),      # Pegel liegt oberhalb der Neckarmündung
-    Richtpegel("23900200", "Worms", 443.4, ("Worms", "23900200_WQ.pdf"), "23900200"),
-    Richtpegel("25100100", "Mainz", 498.3, ("Mainz", "25100100_WQ.pdf"), "25100100"),
-    Richtpegel("25300200", "Bingen", 528.4, ("Bingen", "25300200_W.pdf"), "25100100"),          # Pegel liegt oberhalb der Nahemündung
-    Richtpegel("25700100", "Kaub", 546.2, ("Kaub", "25700100_WQ.pdf"), "25700100"),
+    Richtpegel("23700200", "Maxau", 362.3, 334.0, 384.0, ("Maxau", "23700200_WQ.pdf"), "23700200"),
+    Richtpegel("23700600", "Speyer", 400.6, 384.0, 410.5, ("Speyer", "23700600_WQ.pdf"), "23700200"),
+    Richtpegel("23700700", "Mannheim", 424.7, 410.5, 431.5, ("Mannheim", "23700700_W.pdf"), "23700200"),
+    Richtpegel("23900200", "Worms", 443.4, 431.5, 462.0, ("Worms", "23900200_WQ.pdf"), "23900200"),
+    Richtpegel("25100100", "Mainz", 498.3, 462.0, 508.0, ("Mainz", "25100100_WQ.pdf"), "25100100"),
+    Richtpegel("25100300", "Oestrich", 518.1, 508.0, 540.0, None, "25100100", ersatz=("25300200", "Bingen", ("Bingen", "25300200_W.pdf"))),
+    Richtpegel("25700100", "Kaub", 546.2, 540.0, 566.0, ("Kaub", "25700100_WQ.pdf"), "25700100"),
 ]
-STAU_VON, STAU_BIS = 170.0, 334.0      # staugeregelte Strecke Basel–Iffezheim (Rheinkilometer; 334 = Staustufe Iffezheim, Annahme)
-FREI_BIS = 557.0                       # Ende der betrachteten freien Strecke (Pegel St. Goar)
+STAU_VON, STAU_BIS = 170.0, 334.0      # staugeregelte Strecke Basel–Iffezheim (Schleusen Iffezheim: km 334,00, RheinSchPV § 10.01)
+FREI_BIS = 566.0                       # Ende des Abschnitts Kaub
 
 
 def abschnitte() -> list:
-    """Freie Strecke in Abschnitten je Richtpegel: [(pegel-id, km von, km bis)].
-
-    Annahme: Die Grenze zwischen zwei Abschnitten liegt in der Mitte zwischen den Pegeln. Amtliche Geltungsbereiche
-    der Richtpegel sind nicht hinterlegt.
-    """
-    grenzen = [STAU_BIS] + [round((a.km + b.km) / 2, 1) for a, b in zip(RICHTPEGEL, RICHTPEGEL[1:])] + [FREI_BIS]
-    return [(p.id, grenzen[i], grenzen[i + 1]) for i, p in enumerate(RICHTPEGEL)]
+    """Freie Strecke in den amtlichen Abschnitten je Bezugspegel: [(pegel-id, km von, km bis)]."""
+    return [(p.id, p.von, p.bis) for p in RICHTPEGEL]
 
 
 # Lage nach Wikidata (abgerufen 14.11.2026, nicht amtlich): Name, Breite, Länge, Wikidata-Nummer

@@ -81,10 +81,11 @@ Ansichten: Heute, Extremwerte (die zwölf tiefsten jährlichen NM7Q), Datum (jed
 Die Seite beantwortet zwei Fragen: Was bedingt die Fahrbarkeit, und was brächte eine Retention.
 
 - Basel–Iffezheim (Rheinkilometer 170–334): staugeregelt. Die Seite zeigt die Staustufen (Lage nach Wikidata) und setzt dort keine Abhängigkeit vom Abfluss an.
-- Unterhalb Iffezheim: sieben Abschnitte, je einer pro Richtpegel (Maxau, Speyer, Mannheim, Worms, Mainz, Bingen, Kaub; `netz.RICHTPEGEL`). GlW, Fahrrinnentiefe unter GlW und höchster Schifffahrtswasserstand kommen aus PEGELONLINE, die Wasserstände aus dem Jahrbuch (ab 2008) und den Rohwerten der letzten 31 Tage.
-- Fahrrinnentiefe = W − GlW + Tiefe unter GlW. Zustand je Abschnitt: `schifffahrt.fahrbarkeit` (voll, bis 30 cm, 30 bis 60 cm, mehr als 60 cm unter GlW, gesperrt über HSW). Die Stufen sind eine Darstellungswahl.
-- Abschnittsgrenzen: Mitte zwischen den Richtpegeln (`netz.abschnitte`, Annahme; amtliche Geltungsbereiche sind nicht hinterlegt).
-- Simuliert: W_sim = W + f(Q + ΔQ) − f(Q) mit der Bezugskurve des Pegels; Q ist der Abfluss am Bezugspegel im Netz. Mannheim und Bingen haben keine eigene Abflussreihe und beziehen sich auf Maxau bzw. Mainz.
+- Unterhalb Iffezheim: sieben Abschnitte nach dem schifffahrtspolizeilichen Hinweis der GDWS über die Fahrrinnenverhältnisse auf der deutschen Rheinstrecke (GlW 2022, ELWIS, Nachricht 2925/2022): Maxau km 334–384, Speyer 384–410,5, Mannheim 410,5–431,5, Worms 431,5–462, Mainz 462–508, Oestrich 508–540, Kaub 540–566 (`netz.RICHTPEGEL`). GlW, Fahrrinnentiefe unter GlW und höchster Schifffahrtswasserstand kommen aus PEGELONLINE, die Wasserstände aus dem Jahrbuch (ab 2008) und den Rohwerten der letzten 31 Tage.
+- Oestrich fehlt im Jahrbuch. An Tagen ohne Wert dient der Pegel Bingen (km 528,4, im selben Abschnitt), auf den GlW von Oestrich umgerechnet: W = W_Bingen − GlW_Bingen + GlW_Oestrich. Die Abweichung an den gemeinsamen Tagen steht in `meta.json` (`richtpegel[].ersatz`).
+- Fahrrinnentiefe = W − GlW + Tiefe unter GlW. Das ist dieselbe Rechnung wie die «rechnerisch verfügbaren Fahrrinnentiefen» der WSV auf ELWIS; für Maxau und Kaub am 10. bis 14.11.2026 gegen deren Grafik geprüft, die Werte stimmen überein.
+- Zustand je Abschnitt: `schifffahrt.fahrbarkeit` (voll, bis 30 cm, 30 bis 60 cm, mehr als 60 cm unter GlW, gesperrt über HSW). Die Stufen sind eine Darstellungswahl.
+- Simuliert: W_sim = W + f(Q + ΔQ) − f(Q) mit der Bezugskurve des Pegels; Q ist der Abfluss am Bezugspegel im Netz. Mannheim und Oestrich haben keine eigene Abflussreihe und beziehen sich auf Maxau bzw. Mainz.
 - Karte: Abschnitte entlang der Rheinkilometrierung (GeoRhena nach WSV), Strichart nach Zustand.
 
 ## Vier Grafiken
