@@ -1,0 +1,118 @@
+/* Rhein – Abflussbilanz und Rückhalt. Stil simoschlumpf.ch: Schwarz auf Weiss, Plex 500/700, ein Akzent in Europablau. */
+@font-face{font-family:"Plex";src:url(../karte/plex-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Plex";src:url(../karte/plex-700.woff2) format("woff2");font-weight:700;font-display:swap}
+
+:root{--tinte:#000;--papier:#fff;--blau:#003399;--raster:#a8a8a8;color-scheme:light;--rand:clamp(20px,4.5vw,140px)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--papier);color:var(--tinte)}
+body{font:500 17px/1.5 "Plex",Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+a{color:inherit;text-decoration:none}
+a:hover,a:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;outline:none}
+b,strong{font-weight:700}
+
+.blatt{padding:clamp(28px,2.4vw,60px) var(--rand) 80px;max-width:1800px}
+.sprache{font-size:13px;font-weight:700;letter-spacing:.14em;margin-bottom:clamp(28px,4vw,72px)}
+.name{margin:0;font-size:clamp(26px,3.05vw,64px);font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.15}
+.sterne{display:flex;gap:12px;margin:18px 0 26px}
+.sterne svg{width:18px;height:18px;fill:var(--tinte)}
+.lead{max-width:44em;margin:0 0 28px}
+h2{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px}
+.klein{font-size:14px;max-width:52em}
+
+/* Auswahl: Knöpfe als schwarze Rechtecke, nicht gewählte als Umriss */
+.wahl{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-end;margin-bottom:28px}
+.gruppe{display:flex;flex-direction:column;gap:6px}
+.gruppe>span{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.knoepfe{display:flex;flex-wrap:wrap;gap:0}
+.knoepfe button{font:700 12px/1 "Plex",Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:.95em 1.4em;
+  border:2px solid var(--tinte);background:var(--papier);color:var(--tinte);cursor:pointer;margin-right:-2px;border-radius:0}
+.knoepfe button[aria-pressed="true"]{background:var(--tinte);color:var(--papier)}
+.knoepfe button:focus-visible{outline:2px solid var(--blau);outline-offset:2px;position:relative}
+select,input[type=date],input[type=number]{font:700 15px/1.2 "Plex",Arial,sans-serif;color:var(--tinte);background:var(--papier);
+  border:2px solid var(--tinte);border-radius:0;padding:.55em .7em;min-height:42px}
+input[type=number]{width:6em}
+select:focus-visible,input:focus-visible{outline:2px solid var(--blau);outline-offset:2px}
+
+.spalten{display:grid;grid-template-columns:minmax(0,1fr);gap:36px}
+@media (min-width:980px){.spalten{grid-template-columns:minmax(320px,5fr) minmax(0,7fr);gap:clamp(36px,4vw,90px)}
+  .karte{position:sticky;top:16px;align-self:start}}
+.karte{margin:0}
+.karte svg{display:block;width:100%;height:auto;max-height:calc(100vh - 80px);overflow:hidden}
+.karte figcaption{font-size:13px;margin-top:10px;max-width:40em}
+#karte .grenze{fill:none;stroke:var(--raster);stroke-width:.9;stroke-dasharray:0 2.6;stroke-linecap:round}
+#karte .fluss{fill:none;stroke:var(--raster);stroke-width:.7;stroke-dasharray:0 2;stroke-linecap:round}
+#karte .see{fill:var(--tinte);stroke:none}
+#karte .strom{fill:none;stroke:var(--tinte);stroke-linecap:butt;stroke-linejoin:round}
+#karte .strom.leer{stroke:var(--raster);stroke-dasharray:1.5 1.5}
+#karte .strom.blau{stroke:var(--blau)}
+#karte .punkt rect{fill:var(--papier);stroke:var(--tinte);stroke-width:1.1}
+#karte .punkt.ziel rect{fill:var(--tinte)}
+#karte .punkt.gewaehlt rect{fill:var(--blau);stroke:var(--blau)}
+#karte .punkt{cursor:pointer}
+#karte .punkt circle{fill:transparent}
+#karte .punkt:focus-visible{outline:none}
+#karte .punkt:focus-visible rect{stroke:var(--blau);stroke-width:2}
+#karte text{font:700 5.4px "Plex",Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;fill:var(--tinte);
+  paint-order:stroke;stroke:var(--papier);stroke-width:2.2px;stroke-linejoin:round;pointer-events:none}
+#karte text.wert{font-weight:500;letter-spacing:0;text-transform:none}
+
+.tafel section{margin-bottom:44px}
+.kopfzeile{display:flex;justify-content:space-between;gap:16px;align-items:baseline;flex-wrap:wrap}
+.gross{font-size:clamp(30px,3.2vw,52px);font-weight:700;line-height:1.1;margin:0 0 4px}
+.gross small{font-size:.45em;font-weight:500}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-align:left;padding:0 10px 8px 0;vertical-align:bottom}
+td{padding:7px 10px 7px 0;border-top:1px solid var(--tinte);vertical-align:middle}
+td.z,th.z{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.z{font-weight:700}
+tr.summe td{border-top:2px solid var(--tinte);font-weight:700}
+tbody tr.wahlbar{cursor:pointer}
+tbody tr.wahlbar:hover td:first-child,tbody tr.gewaehlt td:first-child{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+td.balken{width:32%;min-width:80px;padding-right:0}
+.b{display:block;height:12px;background:var(--tinte)}
+.b.rest{background:repeating-linear-gradient(135deg,var(--tinte) 0 1.5px,var(--papier) 1.5px 4.5px);outline:1px solid var(--tinte);outline-offset:-1px}
+.b.minus{background:var(--papier);outline:1px dashed var(--tinte);outline-offset:-1px}
+.zeichen{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;margin:12px 0 0}
+.zeichen span{display:inline-flex;align-items:center;gap:8px}
+.zeichen i{display:inline-block;width:22px;height:12px}
+.raster2{display:grid;grid-template-columns:max-content 1fr;column-gap:28px;row-gap:3px;align-items:baseline;margin:10px 0 0}
+.raster2 .k{font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.raster2 .w{font-weight:700}
+.schliessen{font:700 12px/1 "Plex",Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;background:none;border:0;padding:6px 0;cursor:pointer;color:var(--tinte)}
+.schliessen:hover{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.hinweis{font-size:14px;margin:12px 0 0;max-width:46em}
+.hinweis+.rollen{margin-top:22px}
+.rollen{overflow-x:auto}
+
+.simulator{margin-top:30px;padding-top:44px;border-top:2px solid var(--tinte)}
+.simulator table{margin-bottom:26px}
+.simulator input[type=range]{width:100%;min-width:90px;accent-color:#003399;margin:0;height:28px}
+.werte{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:22px 36px;margin:0 0 30px}
+.werte div span{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.werte div b{display:block;font-size:clamp(22px,2vw,32px);line-height:1.2}
+.werte div em{font-style:normal;font-size:14px}
+.verlauf{margin:0 0 18px}
+.verlauf .rahmen{position:relative}
+.verlauf svg{display:block;width:100%;height:auto}
+#verlauf .gitter{stroke:var(--raster);stroke-width:1;stroke-dasharray:0 5;stroke-linecap:round}
+#verlauf .achse{stroke:var(--tinte);stroke-width:1}
+#verlauf text{font:500 12px "Plex",Arial,sans-serif;fill:var(--tinte)}
+#verlauf text.fett{font-weight:700}
+#verlauf .gemessen{fill:none;stroke:var(--tinte);stroke-width:2;stroke-linejoin:round}
+#verlauf .simuliert{fill:none;stroke:var(--blau);stroke-width:2;stroke-linejoin:round}
+#verlauf .lot{stroke:var(--tinte);stroke-width:1}
+.legende{display:flex;flex-wrap:wrap;gap:6px 24px;font-size:13px;margin-bottom:8px}
+.legende span{display:inline-flex;align-items:center;gap:8px}
+.legende i{display:inline-block;width:24px;height:0;border-top:2px solid var(--tinte)}
+.legende i.blau{border-color:var(--blau)}
+.legende i.fenster{height:8px;border:0;background:var(--tinte)}
+.legende i.fenster.blau{background:var(--blau)}
+.tip{position:absolute;top:0;pointer-events:none;background:var(--papier);border:2px solid var(--tinte);padding:8px 10px;font-size:13px;line-height:1.35;white-space:nowrap}
+.tip b{font-weight:700}
+
+.fuss{margin-top:56px;padding-top:44px;border-top:2px solid var(--tinte)}
+.fuss h2{margin-top:30px}
+.fuss h2:first-child{margin-top:0}
+.fuss ul{margin:0;padding-left:1.1em;max-width:52em}
+.fuss li{margin-bottom:6px}
+@media (max-width:560px){td.balken{display:none}table{font-size:14px}}

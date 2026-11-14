@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Rhein – Abflussbilanz und Rückhalt</title>
+  <meta name="description" content="Woher das Wasser des Rheins in Basel und Kaub kommt: Abflussbilanz von den Alpen bis Kaub, mit Stausimulator für die Seen." />
+  <link rel="canonical" href="https://www.simoschlumpf.ch/rhin-retention/" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="preload" href="../karte/plex-500.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="../karte/plex-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="rhin.css" />
+  <script src="../karte/oberrhein.js" defer></script>
+  <script src="rhin.js" defer></script>
+</head>
+<body>
+  <main class="blatt">
+    <nav class="sprache" id="sprache"></nav>
+    <h1 class="name" data-t="titel"></h1>
+    <div class="sterne" aria-hidden="true"><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg></div>
+    <p class="lead" data-t="lead"></p>
+
+    <div class="wahl" id="wahl"></div>
+
+    <div class="spalten">
+      <figure class="karte">
+        <svg id="karte" role="img"></svg>
+        <figcaption id="kartenlegende"></figcaption>
+      </figure>
+
+      <div class="tafel">
+        <section id="station" hidden></section>
+        <section id="bilanz"></section>
+        <section id="seen"></section>
+      </div>
+    </div>
+
+    <section class="simulator" id="simulator">
+      <h2 data-t="simTitel"></h2>
+      <p class="lead" data-t="simLead"></p>
+      <div class="wahl" id="simwahl"></div>
+      <div id="simseen"></div>
+      <div class="werte" id="simwerte"></div>
+      <figure class="verlauf">
+        <div class="legende" id="simlegende"></div>
+        <div class="rahmen"><svg id="verlauf" role="img"></svg><div class="tip" id="tip" hidden></div></div>
+      </figure>
+      <p class="klein" data-t="simHinweis"></p>
+    </section>
+
+    <footer class="fuss">
+      <h2 data-t="methode"></h2>
+      <div id="methodentext"></div>
+      <h2 data-t="quellen"></h2>
+      <div id="quellen"></div>
+      <p class="klein" id="stand"></p>
+      <p class="klein"><a href="/">simoschlumpf.ch</a></p>
+    </footer>
+  </main>
+  <noscript><p style="padding:24px">Diese Seite braucht JavaScript.</p></noscript>
+</body>
+</html>
