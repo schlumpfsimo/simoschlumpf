@@ -12,7 +12,7 @@ Führt die Abflüsse des Rheins von den Alpen bis Kaub zusammen, bildet die Bila
 | Zusammenführung | `rheinbilanz/daten.py` | ein Bestand: Wert und Freigabestatus je Tag |
 | Rechnung | `rheinbilanz/bilanz.py` | Zwischengebiet, Kontrollbilanz, Anteile, MQ, NM7Q, Seespeicher |
 | Ausgabe | `rheinbilanz/ausgabe.py` | JSON für die Karte, Texttabelle, CSV |
-| Karte | `rheinbilanz/geometrie.py` | Flussläufe zwischen den Messstellen |
+| Karte | `rheinbilanz/geometrie.py` | Flussläufe zwischen den Messstellen aus HydroRIVERS |
 
 ## Aufruf
 
@@ -25,7 +25,7 @@ python -m rheinbilanz aktualisieren            # alle Jahre neu schreiben
 python -m rheinbilanz aktualisieren --ab 2025  # nur die jüngsten Jahresdateien
 python -m rheinbilanz tabelle --ziel 25700100 --von 2018-10-15 --bis 2018-10-28
 python -m rheinbilanz tabelle --ziel 2289 --von 2022-08-01 --bis 2022-08-31 --csv
-python -m rheinbilanz karte                    # Kartengeometrie neu erzeugen
+python -m rheinbilanz karte                    # Kartengeometrie neu erzeugen (braucht pyshp und HydroRIVERS, siehe unten)
 python -m unittest discover -s tests
 ```
 
@@ -35,7 +35,7 @@ Die Seite aktualisiert sich täglich über `.github/workflows/rhin-retention.yml
 
 - BAFU, Hydrologische Beobachtungen, Datenplattform BAFU (`data.bafu.admin.ch/api`). Tagesmittel ab 1970. Lizenz: Freie Nutzung, Quellenangabe ist Pflicht.
 - WSV, bereitgestellt durch die BfG: Deutsches Gewässerkundliches Jahrbuch (`dgj-daten.bafg.de`, PDF je Pegel, Tageswerte der Abflussjahre 2008–2025) und PEGELONLINE (Rohdaten der letzten 31 Tage).
-- Karte: Rheinachse von GeoRhena (Ebene `water:rhin`), übrige Flüsse und Seen von Natural Earth.
+- Karte: Flussläufe aus HydroRIVERS v1.0 (Lehner & Grill 2013, hydrosheds.org). Für `karte` das Paket `pyshp` installieren, `HydroRIVERS_v10_eu_shp.zip` von hydrosheds.org entpacken und `RHEINBILANZ_HYDRORIVERS` auf die `.shp`-Datei setzen. Grundkarte der Seite: swisstopo (Schweiz) und OpenStreetMap.
 - Seen: Flächen sowie Nieder- und Hochwassergrenzen aus den BAFU-Faktenblättern «Seeregulierung» (2020, bafu.admin.ch/de/wichtige-seeregulierungen). Für Neuenburger- und Murtensee nennt das Faktenblatt keine eigenen Grenzen. Bodensee: 536 km² nach IGKB, Aufteilung Obersee 473 / Untersee 63 km² nicht amtlich belegt. Die Werte stehen in `netz.py`.
 
 Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
@@ -62,4 +62,8 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 - Deutsche Pegel: keine Tageswerte vor November 2007 und keine zwischen 1.1.2026 und dem Beginn des 31-Tage-Fensters von PEGELONLINE. Einmal geholte Rohwerte bleiben in der Jahresdatei erhalten.
 - Neckar (Rockenau): Abfluss im Jahrbuch nur 2010–2020.
 - Die Nahe (Mündung bei Bingen) ist nicht als Messstelle geführt; sie steckt im Zwischengebiet Mainz–Kaub.
-- Der Stausimulator verschiebt das Volumen nur mit der Fliesszeit, ohne Abflachung der Welle und ohne Regulierreglemente.
+- Die Simulation verschiebt das Volumen nur mit der Fliesszeit, ohne Abflachung der Welle und ohne Regulierreglemente.
+
+## Die Seite
+
+`index.html`, `rhin.css`, `rhin.js` (Leaflet). Ansichten: Heute (letzter Tag mit vollständigen Werten), Extremwerte (die zwölf tiefsten jährlichen NM7Q), Datum (jeder Tag seit 1970), Mittelwasser, mittleres Niedrigwasser. Der Schalter «Simuliert» legt den Rückhalt der Seen über Karte und Bilanz: Zusatzband je See, Rückhalt von–bis, Abgabe ab Datum und Dauer. Steht die Abgabe auf «Automatisch», endet sie am angezeigten Tag (Heute, Datum) oder deckt die trockenste Woche (Extremwerte). CSV-Export der angezeigten Bilanz über den Knopf «CSV».

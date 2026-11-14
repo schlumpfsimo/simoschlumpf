@@ -11,7 +11,8 @@
   <link rel="preload" href="../karte/plex-500.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="../karte/plex-700.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="rhin.css" />
-  <script src="../karte/oberrhein.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
   <script src="rhin.js" defer></script>
 </head>
 <body>
@@ -25,12 +26,11 @@
 
     <div class="spalten">
       <figure class="karte">
-        <svg id="karte" role="img"></svg>
+        <div id="karte"></div>
         <figcaption id="kartenlegende"></figcaption>
       </figure>
 
       <div class="tafel">
-        <section id="station" hidden></section>
         <section id="bilanz"></section>
         <section id="seen"></section>
       </div>

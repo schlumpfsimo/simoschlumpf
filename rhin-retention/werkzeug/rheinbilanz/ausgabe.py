@@ -82,6 +82,13 @@ def _anteile(netz: Netz, b: Bestand, ziel: str, periode) -> dict:
     return aus
 
 
+def _extreme(reihe: dict, jahre: list[int], anzahl: int = 12) -> list:
+    """Die tiefsten jährlichen NM7Q eines Pegels über alle Jahre mit Daten, tiefstes zuerst."""
+    alle = [(j, bilanz.nm7q(reihe, j)) for j in jahre]
+    alle = sorted(((j, n) for j, n in alle if n), key=lambda x: x[1]["wert"])[:anzahl]
+    return [{"jahr": j, "beginn": n["beginn"].isoformat(), "ende": n["ende"].isoformat(), "wert": _rund(n["wert"])} for j, n in alle]
+
+
 def meta(b: Bestand, jahre: list[int]) -> dict:
     netz = Netz.standard()
     netz.pruefen()
@@ -127,6 +134,7 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
                       "mittel_abweichung_prozent": _rund(100 * sum(k["abweichung"] for k in abw) / sum(k["ziel"] for k in abw), 2) if abw else None},
         "seen": seen,
         "ziele": ZIELE,
+        "extreme": {z: _extreme(b.q.get(z, {}), jahre) for z in ZIELE},
         "anteile": {"2289": _anteile(netz, b, "2289", REFERENZ), "25700100": _anteile(netz, b, "25700100", REFERENZ_DE)},
         "meldungen": b.meldungen,
     }
