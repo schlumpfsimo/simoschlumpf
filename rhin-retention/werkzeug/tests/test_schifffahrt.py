@@ -163,5 +163,20 @@ class Seegrenze(unittest.TestCase):
         self.assertAlmostEqual(o["tief"], 600.0, delta=0.01)
 
 
+class Uebertrag(unittest.TestCase):
+    def test_anfangsinhalt_hilft_am_fensteranfang(self):
+        q = [600.0] * 5 + [900.0] * 60                    # Niedrigwasser gleich am Anfang des Fensters
+        leer = simulation.heben(q, 30e6, 775.0)
+        voll = simulation.heben(q, 30e6, 775.0, start_m3=30e6)
+        self.assertAlmostEqual(leer["tief"], 600.0, delta=0.01)
+        self.assertGreater(voll["tief"], 660.0)
+        self.assertAlmostEqual(voll["rest_m3"], 0.0, delta=1.0)
+
+    def test_rest_bleibt_fuer_das_naechste_fenster(self):
+        q = [900.0] * 40
+        o = simulation.heben(q, 30e6, 775.0, start_m3=12e6)
+        self.assertAlmostEqual(o["rest_m3"], 12e6)         # nichts gebraucht, nichts gestaut: der Inhalt geht weiter
+
+
 if __name__ == "__main__":
     unittest.main()

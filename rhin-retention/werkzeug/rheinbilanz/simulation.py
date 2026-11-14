@@ -1,6 +1,7 @@
 """Optimaler Rückhalt: Wie stark lässt sich der kleinste Tagesabfluss eines Jahres mit einem Speicher V anheben?
 
-Regel mit zwei Schwellen am Zielpegel (Tageswerte, volle Voraussicht über das Jahr, Speicher am 1. Januar leer):
+Regel mit zwei Schwellen am Zielpegel (Tageswerte, volle Voraussicht über das Fenster, Anfangsinhalt `start_m3`).
+Die Seite rechnet in Speicherjahren vom 1. April bis 31. März und übergibt den Rest ins nächste Speicherjahr:
   Abgabe     a(t) = L − Q(t)                      wenn Q(t) < L
   Rückhalt   r(t) = min(Q(t) − H, p · Q(t))       wenn Q(t) > H, der Speicher nicht voll ist und noch ein Tag mit Q < L folgt
   Speicher   S(t+1) = S(t) + 86 400 · (r(t) − a(t)),   0 ≤ S(t) ≤ V
@@ -17,11 +18,11 @@ from __future__ import annotations
 SEK = 86400.0
 
 
-def _lauf(q: list, volumen: float, tief: float, hoch: float, anteil: float, grenze: list | None = None):
+def _lauf(q: list, volumen: float, tief: float, hoch: float, anteil: float, grenze: list | None = None, start: float = 0.0):
     """Simuliert die Regel. Gibt (machbar, abgabe, rueckhalt, speicher) zurück; Lücken (None) bleiben unberührt."""
     n = len(q)
     letzter = max((i for i, x in enumerate(q) if x is not None and x < tief), default=-1)
-    s, abgabe, rueckhalt, speicher = 0.0, [0.0] * n, [0.0] * n, [0.0] * n
+    s, abgabe, rueckhalt, speicher = min(start, volumen), [0.0] * n, [0.0] * n, [0.0] * n
     for i, x in enumerate(q):
         if x is not None:
             if x < tief:
@@ -40,14 +41,15 @@ def _lauf(q: list, volumen: float, tief: float, hoch: float, anteil: float, gren
     return True, abgabe, rueckhalt, speicher
 
 
-def optimieren(q: list, volumen_m3: float, anteil: float = 0.10, grenze: list | None = None) -> dict | None:
+def optimieren(q: list, volumen_m3: float, anteil: float = 0.10, grenze: list | None = None,
+          start_m3: float = 0.0) -> dict | None:
     werte = [x for x in q if x is not None]
     if not werte or volumen_m3 <= 0:
         return None
     unten, oben = min(werte), sum(werte) / len(werte)
     for _ in range(50):                       # L*: grösstes machbares L (H = L)
         mitte = (unten + oben) / 2
-        if _lauf(q, volumen_m3, mitte, mitte, anteil, grenze)[0]:
+        if _lauf(q, volumen_m3, mitte, mitte, anteil, grenze, start_m3)[0]:
             unten = mitte
         else:
             oben = mitte
@@ -55,18 +57,19 @@ def optimieren(q: list, volumen_m3: float, anteil: float = 0.10, grenze: list | 
     a, b = tief, max(werte)
     for _ in range(50):                       # H*: grösstes H, mit dem L* noch hält
         mitte = (a + b) / 2
-        if _lauf(q, volumen_m3, tief, mitte, anteil, grenze)[0]:
+        if _lauf(q, volumen_m3, tief, mitte, anteil, grenze, start_m3)[0]:
             a = mitte
         else:
             b = mitte
     hoch = a
-    _, abgabe, rueckhalt, speicher = _lauf(q, volumen_m3, tief, hoch, anteil, grenze)
+    _, abgabe, rueckhalt, speicher = _lauf(q, volumen_m3, tief, hoch, anteil, grenze, start_m3)
     neu = [None if x is None else x + abgabe[i] - rueckhalt[i] for i, x in enumerate(q)]
-    return {"tief": tief, "hoch": hoch, "abgabe": abgabe, "rueckhalt": rueckhalt, "speicher": speicher, "q": neu,
+    return {"tief": tief, "hoch": hoch, "abgabe": abgabe, "rueckhalt": rueckhalt, "speicher": speicher, "q": neu, "rest_m3": speicher[-1],
             "min_vorher": min(werte), "min_nachher": min(x for x in neu if x is not None)}
 
 
-def heben(q: list, volumen_m3: float, deckel: float, anteil: float = 0.10, grenze: list | None = None) -> dict | None:
+def heben(q: list, volumen_m3: float, deckel: float, anteil: float = 0.10, grenze: list | None = None,
+          start_m3: float = 0.0) -> dict | None:
     """Hebt die Tage unter dem Deckel (für Kaub: der Abfluss beim GlW), die tiefsten zuerst. Jede Anhebung zählt.
 
     Abgabe     a(t) = L − Q(t)                     wenn Q(t) < L,   mit L ≤ Deckel
@@ -79,12 +82,12 @@ def heben(q: list, volumen_m3: float, deckel: float, anteil: float = 0.10, grenz
     if not werte or volumen_m3 <= 0:
         return None
     unten, oben = min(min(werte), deckel), deckel
-    if _lauf(q, volumen_m3, deckel, deckel, anteil, grenze)[0]:
+    if _lauf(q, volumen_m3, deckel, deckel, anteil, grenze, start_m3)[0]:
         unten = deckel
     else:
         for _ in range(50):
             mitte = (unten + oben) / 2
-            if _lauf(q, volumen_m3, mitte, deckel, anteil, grenze)[0]:
+            if _lauf(q, volumen_m3, mitte, deckel, anteil, grenze, start_m3)[0]:
                 unten = mitte
             else:
                 oben = mitte
@@ -92,13 +95,13 @@ def heben(q: list, volumen_m3: float, deckel: float, anteil: float = 0.10, grenz
     a, b = deckel, max(max(werte), deckel)
     for _ in range(50):
         mitte = (a + b) / 2
-        if _lauf(q, volumen_m3, tief, mitte, anteil, grenze)[0]:
+        if _lauf(q, volumen_m3, tief, mitte, anteil, grenze, start_m3)[0]:
             a = mitte
         else:
             b = mitte
-    _, abgabe, rueckhalt, speicher = _lauf(q, volumen_m3, tief, a, anteil, grenze)
+    _, abgabe, rueckhalt, speicher = _lauf(q, volumen_m3, tief, a, anteil, grenze, start_m3)
     neu = [None if x is None else x + abgabe[i] - rueckhalt[i] for i, x in enumerate(q)]
-    return {"tief": tief, "hoch": a, "deckel": deckel, "abgabe": abgabe, "rueckhalt": rueckhalt, "speicher": speicher, "q": neu,
+    return {"tief": tief, "hoch": a, "deckel": deckel, "abgabe": abgabe, "rueckhalt": rueckhalt, "speicher": speicher, "q": neu, "rest_m3": speicher[-1],
             "tage_unter_vorher": sum(x < deckel for x in werte),
             "tage_unter_nachher": sum(x < deckel - 1e-6 for x in neu if x is not None),
             "tage_gehoben": sum(x > 0 for x in abgabe),

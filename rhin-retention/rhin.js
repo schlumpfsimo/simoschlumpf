@@ -32,9 +32,9 @@
     alle: 'Tous les lacs régulés (cm)', band: 'Tranche utilisée 1991–2020', jecm: 'Par cm', zusatz: 'Capacité suppl.', vol: 'Volume', grenzenK: 'Limites m s. m. · mio m³', volumen: 'Capacité totale',
     gBodensee: 'Lac de Constance (non régulé, hypothétique)', gAare: 'Aar', gReussL: 'Reuss', gLimmatL: 'Limmat',
     minTag: 'Plus faible débit journalier', nm7qSim: 'NM7Q', pegelMin: 'Niveau le plus bas à Kaub', unterGlw: 'Jours sous le GlW à Kaub', abgabeTage: 'Restitution', rueckTage: 'Retenue', tageW: 'jours', schwellen: 'Seuils', genutzt: 'Volume utilisé',
-    ausschnitt: 'Extrait', ganz: 'Année', phase: 'Étiage', diff: 'Écart', inhalt: 'Contenu du réservoir, mio m³', keinGewinn: 'Pas de gain : le plus faible débit tombe avant toute crue qui aurait pu remplir le réservoir (réservoir vide au 1er janvier).',
+    ausschnitt: 'Extrait', ganz: 'Année', phase: 'Étiage', diff: 'Écart', inhalt: 'Contenu du réservoir, mio m³', keinGewinn: 'Pas de gain : avant le plus faible débit, aucun débit de l’année de stockage ne permettait de retenir.',
     keinJahr: 'Pas de valeurs journalières pour cette station et cette année.', nurTag: 'Choisissez une capacité supérieure à zéro.', geschHinweis: 'jours estimés dans l’année ; le résultat pour Kaub est d’autant moins sûr.',
-    simHinweis: 'Année civile, réservoir vide au 1er janvier, prévision parfaite : le résultat est une borne supérieure. La retenue est limitée à 10 % du débit à la station du bilan et, par lac, à 20 % du débit en aval ; le débit en aval d’un lac ne passe jamais sous son minimum mesuré de l’année. Au-delà, les règlements de régulation, la protection contre les crues et l’écologie ne sont pas pris en compte.',
+    bisMaerz: 'jusqu’au 31.3.', simHinweis: 'Le calcul se fait par années de stockage du 1er avril au 31 mars, avec prévision parfaite : le résultat est une borne supérieure. Le réservoir continue au-delà du Nouvel An, un reste passe à l’année de stockage suivante ; il commence vide le 1er avril de l’année précédente. L* et H* valent dès le 1er avril ; de janvier à mars valent ceux de l’année de stockage précédente. La retenue est limitée à 10 % du débit à la station du bilan et, par lac, à 20 % du débit en aval ; le débit en aval d’un lac ne passe jamais sous son minimum mesuré de l’année. Au-delà, les règlements de régulation, la protection contre les crues et l’écologie ne sont pas pris en compte.',
     herTitel: 'Dérivation', herLead: 'Chaque nombre de cette page découle des formules ci-dessous, ici avec les valeurs du jour affiché.',
     methode: 'Hypothèses et lacunes', quellen: 'Sources', standT: 'Données du', monate: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
     legende: 'Rhin dès Bâle : navigabilité par tronçon (trait plein = pleine profondeur, plus les tirets sont courts, plus on est sous le GlW). Barres en travers : barrages. En amont de Bâle et sur les affluents : largeur du trait = débit. Noir : débit de la station amont. Gris : apport du bassin intermédiaire (reste calculé). Bleu : tronçon modifié par la simulation. Carré : station. Triangle : lac régulé. Cercle : lac non régulé. Fond : swisstopo et OpenStreetMap, en trame de points.', fehlt: 'Les données n’ont pas pu être chargées.',
@@ -66,9 +66,9 @@
     alle: 'Alle regulierten Seen (cm)', band: 'Genutztes Band 1991–2020', jecm: 'Je cm', zusatz: 'Zusätzliche Kapazität', vol: 'Volumen', grenzenK: 'Reguliergrenzen m ü. M. · Mio. m³', volumen: 'Kapazität gesamt',
     gBodensee: 'Bodensee (nicht reguliert, hypothetisch)', gAare: 'Aare', gReussL: 'Reuss', gLimmatL: 'Limmat',
     minTag: 'Kleinster Tagesabfluss', nm7qSim: 'NM7Q', pegelMin: 'Tiefster Pegel Kaub', unterGlw: 'Tage unter GlW in Kaub', abgabeTage: 'Abgabe', rueckTage: 'Rückhalt', tageW: 'Tage', schwellen: 'Schwellen', genutzt: 'Genutztes Volumen',
-    ausschnitt: 'Ausschnitt', ganz: 'Jahr', phase: 'Niedrigwasser', diff: 'Differenz', inhalt: 'Speicherinhalt, Mio. m³', keinGewinn: 'Kein Gewinn: Der kleinste Abfluss fällt vor jedes Hochwasser, das den Speicher hätte füllen können (Speicher am 1. Januar leer).',
+    ausschnitt: 'Ausschnitt', ganz: 'Jahr', phase: 'Niedrigwasser', diff: 'Differenz', inhalt: 'Speicherinhalt, Mio. m³', keinGewinn: 'Kein Gewinn: Vor dem kleinsten Abfluss gab es im Speicherjahr keinen Abfluss, bei dem gestaut werden durfte.',
     keinJahr: 'Für diese Messstelle liegen in diesem Jahr keine Tageswerte vor.', nurTag: 'Wähle eine Kapazität grösser als null.', geschHinweis: 'Tage des Jahres sind geschätzt; das Ergebnis für Kaub ist entsprechend unsicher.',
-    simHinweis: 'Kalenderjahr, Speicher am 1. Januar leer, volle Voraussicht: Das Ergebnis ist eine Obergrenze. Der Rückhalt ist begrenzt auf 10 % des Abflusses am Ziel und je See auf 20 % des Abflusses unterhalb; der Abfluss unterhalb eines Sees fällt nie unter seinen gemessenen Jahrestiefstwert. Regulierreglemente, Hochwasserschutz und Ökologie sind darüber hinaus nicht berücksichtigt.',
+    bisMaerz: 'bis 31.3.', simHinweis: 'Gerechnet wird in Speicherjahren vom 1. April bis 31. März, mit voller Voraussicht: Das Ergebnis ist eine Obergrenze. Der Speicher läuft über den Jahreswechsel weiter, ein Rest geht ins nächste Speicherjahr; am 1. April des Vorjahres beginnt er leer. L* und H* gelten ab dem 1. April, für Januar bis März gelten die Werte des vorigen Speicherjahrs. Der Rückhalt ist begrenzt auf 10 % des Abflusses am Ziel und je See auf 20 % des Abflusses unterhalb; der Abfluss unterhalb eines Sees fällt nie unter seinen gemessenen Jahrestiefstwert. Regulierreglemente, Hochwasserschutz und Ökologie sind darüber hinaus nicht berücksichtigt.',
     herTitel: 'Herleitung', herLead: 'Jede Zahl dieser Seite folgt aus den Formeln unten, hier mit den Werten des angezeigten Tages.',
     methode: 'Annahmen und Lücken', quellen: 'Quellen', standT: 'Datenstand', monate: ['Jan', 'Feb', 'Mrz', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
     legende: 'Rhein ab Basel: Fahrbarkeit je Abschnitt (durchgezogen = volle Fahrrinnentiefe, je kürzer die Striche, desto weiter unter dem GlW). Balken quer zum Rhein: Staustufen. Oberhalb von Basel und an den Zuflüssen: Strichbreite = Abfluss. Schwarz: Abfluss der Messstelle oberhalb. Grau: Zuwachs aus dem Zwischengebiet (gerechneter Rest). Blau: Strecke, die die Simulation verändert. Quadrat: Messstation. Dreieck: regulierter See. Kreis: nicht regulierter See. Grundkarte: swisstopo und OpenStreetMap, als Punkteraster.', fehlt: 'Die Daten konnten nicht geladen werden.',
@@ -109,8 +109,9 @@
     while (offen.length) { const k = offen.pop(); for (const c of oben(k)) { e[c.von] = e[k] + c.tage; offen.push(c.von); } }
     EINZUG.set(s, e); return e;
   };
-  const jahre = {};
-  const jahr = j => jahre[j] || (jahre[j] = fetch(`daten/jahr/${j}.json`).then(r => r.ok ? r.json() : null).catch(() => null));
+  const jahre = {}, GELADEN = {};
+  const jahr = j => jahre[j] || (jahre[j] = fetch(`daten/jahr/${j}.json`).then(r => r.ok ? r.json() : null).catch(() => null).then(y => { if (y) GELADEN[j] = y; return y; }));
+  const nachbarn = j => Promise.all([j - 1, j + 1].filter(x => meta.jahre.includes(x)).map(jahr));     // für den Speicher über den Jahreswechsel
   const tagNr = iso => Math.round((Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - Date.UTC(+iso.slice(0, 4), 0, 1)) / 864e5);
   const isoTag = (j, i) => new Date(Date.UTC(j, 0, 1 + i)).toISOString().slice(0, 10);
   const kurz = s => s.name.split(',')[0];
@@ -175,11 +176,12 @@
 
   // ------------------------------------------------------------ Optimaler Rückhalt (wie simulation.py)
   const SEK = 86400, P_MAX = 0.10, P_SEE = 0.20;
+  let START = 0;                                // Speicherinhalt am Anfang des Fensters (m³)
   let GRENZE = null;                            // grösster zulässiger Rückhalt je Tag aus den Grenzen der Seen (m³/s am Ziel)
   function lauf(q, V, tief, hoch) {
     const n = q.length, abgabe = new Float64Array(n), rueck = new Float64Array(n), speicher = new Float64Array(n);
     let letzter = -1; for (let i = 0; i < n; i++) if (q[i] != null && q[i] < tief) letzter = i;
-    let s = 0;
+    let s = Math.min(START, V);
     for (let i = 0; i < n; i++) {
       const x = q[i];
       if (x != null) {
@@ -220,25 +222,37 @@
   function simulieren(Y) {
     // Ziel «GlW halten» rechnet immer am Pegel Kaub; ohne Kaub-Werte im Jahr gilt «kleinsten Abfluss heben» an der Bilanz-Messstelle
     const glw = Z.modus === 'glw' && Q_GLW != null && Y.q[KAUB] && Y.q[KAUB].some(x => x != null), zid = glw ? KAUB : Z.ziel;
-    const qz = Y.q[zid]; let V = 0;
+    let V = 0;
     for (const s of meta.seen) V += CM[s.id] * s.flaeche_km2 * 1e4;
-    if (!qz || !V) return { q: Y.q, wirkung: {}, V, O: null, zid };
-    const n = qz.length, wirkung = {}, alt = NETZ; NETZ = VOLL;
+    if (!Y.q[zid] || !V) return { q: Y.q, wirkung: {}, V, O: null, zid };
+    // Der Speicher läuft über den Jahreswechsel: gerechnet wird in Speicherjahren vom 1. April bis 31. März.
+    // Das Kalenderjahr setzt sich aus dem Ende des einen (Januar bis März) und dem Anfang des nächsten zusammen;
+    // der Rest des ersten geht als Anfangsinhalt ins zweite. Dazu braucht es das Vorjahr und das Folgejahr.
+    const Yv = GELADEN[Y.jahr - 1] || null, Yn = GELADEN[Y.jahr + 1] || null, laenge = y => (y.q[BASEL] || Object.values(y.q)[0]).length;
+    const n = laenge(Y), nv = Yv ? laenge(Yv) : 0, nn = Yn ? laenge(Yn) : 0;
+    const reihe = id => { const a = new Array(nv + n + nn).fill(null); for (const [y, o] of [[Yv, 0], [Y, nv], [Yn, nv + n]]) if (y && y.q[id]) y.q[id].forEach((x, i) => { a[o + i] = x; }); return a; };
+    const qz = reihe(zid), wirkung = {}, alt = NETZ; NETZ = VOLL;
     const zumZiel = einzug(zid);
-    // Grenze je See: höchstens P_SEE des Abflusses unterhalb und nie unter dessen gemessenen Jahrestiefstwert.
-    // Die Seen stauen im Verhältnis ihrer Kapazität, darum r(t) ≤ min über die Gruppen von Grenze_g(t) / Anteil_g.
-    GRENZE = new Float64Array(n).fill(Infinity);
-    const begrenzt = {};
+    const a1 = Yv ? tagNr(`${Y.jahr - 1}-04-01`) : 0, b1 = nv + tagNr(`${Y.jahr}-04-01`), b2 = Yn ? nv + n + tagNr(`${Y.jahr + 1}-04-01`) : nv + n;
+    // Grenze je Messstelle unterhalb eines Sees: höchstens P_SEE des Abflusses dort und nie unter dessen gemessenen Tiefstwert im Speicherjahr.
+    // Die Seen stauen im Verhältnis ihrer Kapazität; an der Messstelle kommt der Rückhalt aller Seen oberhalb zusammen.
     const anteil = ids => ids.reduce((s, id) => s + CM[id] * SEE[id].flaeche_km2 * 1e4, 0) / V;
-    for (const [g, ids, knoten] of SEEGRUPPEN) {
-      if (!anteil(ids)) continue;
-      // An der Messstelle kommt der Rückhalt aller Seen oberhalb zusammen (Brügg: Jurarandseen und Thuner-/Brienzersee)
-      const teil = SEEGRUPPEN.reduce((s, [, ids2, k2]) => s + (k2 in einzug(knoten) ? anteil(ids2) : 0), 0);
-      const qk = Y.q[knoten] || [], tief = Math.min(...qk.filter(x => x != null)), lag = zumZiel[knoten] || 0;
-      for (let i = 0; i < n; i++) { const x = qk[i - lag], c = x == null ? 0 : Math.max(0, Math.min(P_SEE * x, x - tief)) / teil; if (c < GRENZE[i]) { GRENZE[i] = c; begrenzt[i] = g; } }
-    }
-    const O = glw ? heben(qz, V, Q_GLW) : optimieren(qz, V);
-    GRENZE = null;
+    const gruppen = SEEGRUPPEN.filter(([, ids]) => anteil(ids)).map(([, , knoten]) => ({ qk: reihe(knoten), lag: zumZiel[knoten] || 0,
+      teil: SEEGRUPPEN.reduce((s, [, ids2, k2]) => s + (k2 in einzug(knoten) ? anteil(ids2) : 0), 0) }));
+    const fenster = (a, b, start) => {
+      GRENZE = new Float64Array(b - a).fill(Infinity);
+      for (const g of gruppen) {
+        let tief = Infinity; for (let i = a; i < b; i++) { const x = g.qk[i - g.lag]; if (x != null && x < tief) tief = x; }
+        for (let i = a; i < b; i++) { const x = g.qk[i - g.lag], c = x == null ? 0 : Math.max(0, Math.min(P_SEE * x, x - tief)) / g.teil; if (c < GRENZE[i - a]) GRENZE[i - a] = c; }
+      }
+      START = start; const o = glw ? heben(qz.slice(a, b), V, Q_GLW) : optimieren(qz.slice(a, b), V); GRENZE = null; START = 0; return o;
+    };
+    const O1 = fenster(a1, b1, 0), O2 = fenster(b1, b2, O1 ? O1.speicher[O1.speicher.length - 1] : 0);
+    if (!O1 && !O2) { NETZ = alt; return { q: Y.q, wirkung: {}, V, O: null, zid }; }
+    const O = { tief: (O2 || O1).tief, hoch: (O2 || O1).hoch, winter: O1 && O2 ? { tief: O1.tief, hoch: O1.hoch } : null, glw: !!glw, deckel: Q_GLW,
+      abgabe: new Float64Array(n), rueck: new Float64Array(n), speicher: new Float64Array(n) };
+    for (let i = 0; i < n; i++) { const g = nv + i, o = g < b1 ? O1 : O2, k = g < b1 ? g - a1 : g - b1; if (o) { O.abgabe[i] = o.abgabe[k]; O.rueck[i] = o.rueck[k]; O.speicher[i] = o.speicher[k]; } }
+    if (glw) O.bedarf = Y.q[zid].reduce((s, x) => s + (x == null ? 0 : Math.max(0, Q_GLW - x)), 0) * SEK;
     for (const s of meta.seen) {
       const teil = CM[s.id] * s.flaeche_km2 * 1e4 / V; if (!teil || !(s.knoten in zumZiel)) continue;
       for (let k = s.knoten, lag = 0; k;) {
@@ -298,11 +312,11 @@
     if (!tagAnsicht()) {
       const art = Z.ansicht === 'mq' ? 'mq' : 'nm7q', p = meta.anteile[Z.ziel], je = {};
       for (const z of meta.ziele) je[z] = meta.anteile[z][art];
-      const Y = await jahr(Z.jahr);
+      const Y = await jahr(Z.jahr); await nachbarn(Z.jahr);
       return { a: p[art], zeige: p[art], je, Y, S: Y ? simulieren(Y) : null, text: `${Z.ansicht === 'mq' ? T.mqText : T.nwText}. ${T.periode} ${p.periode[0]}–${p.periode[1]}.`, datumText: `${p.periode[0]}–${p.periode[1]}` };
     }
     if (Z.ansicht === 'extrem') { const x = meta.extreme[Z.ziel][Z.extrem]; Z.jahr = x.jahr; Z.i0 = tagNr(x.beginn); Z.tag = tagNr(x.ende); }
-    const Y = await jahr(Z.jahr);
+    const Y = await jahr(Z.jahr); await nachbarn(Z.jahr);
     if (!Y) return { a: null, zeige: null, text: '' };
     const n = (Y.q[BASEL] || Object.values(Y.q)[0]).length;
     const netzWahl = i => { NETZ = VOLL; if (!glieder(Y.q, KAUB, i)) { NETZ = KURZ; if (!glieder(Y.q, KAUB, i)) NETZ = VOLL; } };
@@ -536,7 +550,7 @@
       if (!el.innerHTML) el.innerHTML = `<h2>${T.jTitel}</h2><p class="hinweis">${T.jRechnet}</p>`;
       const zeilen = [];
       for (const j of meta.jahre.filter(j => j >= 2008)) {
-        const Y = await jahr(j); if (nr !== jvLauf) return; if (!Y || !Y.q[KAUB]) continue;
+        const Y = await jahr(j); await nachbarn(j); if (nr !== jvLauf) return; if (!Y || !Y.q[KAUB]) continue;
         const alt = NETZ; NETZ = VOLL; const S = simulieren(Y); NETZ = alt;
         const k = kaubJahr(Y, S); if (!k.tage) continue;
         zeilen.push({ j, ...k, bedarf: S.O && S.O.bedarf != null ? S.O.bedarf / 1e6 : null, gesch: (Y.s[KAUB] || []).some(([, c]) => c === 5) });
@@ -733,7 +747,7 @@
       (a && b ? kachel(`${T.nm7qSim} ${kurz(z)}`, `${zahl(a.wert)} → ${zahl(b.wert)} m³/s`, `${vz(b.wert - a.wert, 1)} m³/s`) : '') +
       (w0 != null && w1 != null ? kachel(T.pegelMin, `${zahl(w0)} → ${zahl(w1)} cm`, `${vz(w1 - w0, 0)} cm · ${T.ausKurve}`) : '') +
       (u0 != null && !O.glw ? kachel(T.unterGlw, `${zahl(u0)} → ${zahl(u1)}`, `GlW ${zahl(GLW)} cm = ${zahl(Q_GLW)} m³/s`) : '') +
-      kachel(T.schwellen, `L* ${zahl(O.tief)} · H* ${zahl(O.hoch)}`, 'm³/s') +
+      kachel(T.schwellen, `L* ${zahl(O.tief)} · H* ${zahl(O.hoch)}`, `m³/s${O.winter ? ` · ${T.bisMaerz}: L* ${zahl(O.winter.tief)} · H* ${zahl(O.winter.hoch)}` : ''}`) +
       kachel(`${T.abgabeTage} · ${T.rueckTage}`, `${tA} · ${tR} ${T.tageW}`, `${T.genutzt}: ${zahl(genutzt, 1)} ${T.von_} ${zahl(v, 1)} Mio. m³`) +
       (!O.glw && min1 - min0 < .05 ? `<div><em>${T.keinGewinn}</em></div>` : '') + (O.glw && !u0 ? `<div><em>${T.nieUnter}</em></div>` : '') + (Z.modus === 'glw' && !O.glw ? `<div><em>${T.ohneKaub}</em></div>` : '') + (gesch ? `<div><em>${gesch} ${T.geschHinweis}</em></div>` : '');
     const vs = ST[Z.verlauf && R.Y.q[Z.verlauf] ? Z.verlauf : z.id];
@@ -843,10 +857,10 @@
     const O = R.S && R.S.O, glw = O ? O.glw : Z.modus === 'glw';
     html += `<h3>5 ${t('Rückhalt und Abgabe', 'Retenue et restitution')}</h3>` + (glw
       ? `<p>${t('Bezugswert ist der Abfluss beim GlW in Kaub, Q<sub>GlW</sub>. Jede Anhebung darunter zählt. Unter L wird abgegeben, mit L höchstens Q<sub>GlW</sub>: Alle Tage unter L kommen auf L, die tiefsten gewinnen am meisten. Gestaut wird nur über H, mit H mindestens Q<sub>GlW</sub>, also nie an einem Tag unter dem GlW; höchstens 10 % des Abflusses und nur, solange noch ein Tag unter L folgt.', 'La référence est le débit au GlW à Kaub, Q<sub>GlW</sub>. Chaque relèvement en dessous compte. Sous L on restitue, avec L au plus égal à Q<sub>GlW</sub> : tous les jours sous L montent à L, les plus bas gagnent le plus. On ne retient qu’au-dessus de H, avec H au moins égal à Q<sub>GlW</sub>, donc jamais un jour sous le GlW ; au plus 10 % du débit et seulement tant qu’un jour sous L suit encore.')}</p>` +
-        f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L, &nbsp; L ≤ Q<sub>GlW</sub><br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H, &nbsp; H ≥ Q<sub>GlW</sub><br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.1.) = 0<br>${t('Bedarf für alle Tage', 'Besoin pour tous les jours')} = 86 400 · Σ max(0, Q<sub>GlW</sub> − Q(t))`) +
+        f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L, &nbsp; L ≤ Q<sub>GlW</sub><br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H, &nbsp; H ≥ Q<sub>GlW</sub><br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.4.) = ${t('Rest des Vorjahrs', 'reste de l’année précédente')}<br>${t('Bedarf für alle Tage', 'Besoin pour tous les jours')} = 86 400 · Σ max(0, Q<sub>GlW</sub> − Q(t))`) +
         `<p>${t('L* ist das grösste L bis Q<sub>GlW</sub>, bei dem der Speicher nie leer läuft. H* ist das grösste H, mit dem L* noch hält. Beide werden durch Halbieren des Intervalls gesucht.', 'L* est le plus grand L jusqu’à Q<sub>GlW</sub> pour lequel le réservoir ne se vide jamais. H* est le plus grand H qui tient encore L*. Tous deux sont cherchés par dichotomie.')}</p>`
       : `<p>${t('Zwei Schwellen am Ziel steuern den Speicher. Unter L wird abgegeben, über H wird gestaut, höchstens 10 % des Abflusses und nur, solange noch ein Tag unter L folgt.', 'Deux seuils à la station du bilan commandent le réservoir. Sous L on restitue, au-dessus de H on retient, au plus 10 % du débit et seulement tant qu’un jour sous L suit encore.')}</p>` +
-        f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L<br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H<br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.1.) = 0`) +
+        f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L<br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H<br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.4.) = ${t('Rest des Vorjahrs', 'reste de l’année précédente')}`) +
         `<p>${t('L* ist das grösste L, bei dem der Speicher nie leer läuft. H* ist das grösste H, mit dem L* noch hält. Beide werden durch Halbieren des Intervalls gesucht.', 'L* est le plus grand L pour lequel le réservoir ne se vide jamais. H* est le plus grand H qui tient encore L*. Tous deux sont cherchés par dichotomie.')}</p>`);
     if (O && R.sz) html += r(`${h(kurz(ST[R.S.zid]))} ${Z.jahr}: ${glw ? `Q<sub>GlW</sub> = ${zahl(O.deckel)} m³/s, ` : ''}L* = <b>${zahl(O.tief, 1)} m³/s</b>, H* = <b>${zahl(O.hoch, 1)} m³/s</b>. ${t('Abgabe an', 'Restitution sur')} ${R.sz.tA} ${T.tageW}, ${t('Rückhalt an', 'retenue sur')} ${R.sz.tR} ${T.tageW}. ${t('Kleinster Tagesabfluss', 'Plus faible débit journalier')}: ${zahl(R.sz.min0, 1)} → <b>${zahl(R.sz.min1, 1)} m³/s</b>.` +
       (glw ? ` ${t('Bedarf für alle Tage', 'Besoin pour tous les jours')}: <b>${zahl(O.bedarf / 1e6)} Mio. m³</b>, ${t('vorhanden', 'disponible')}: ${zahl(V, 1)} Mio. m³.` : ''));
