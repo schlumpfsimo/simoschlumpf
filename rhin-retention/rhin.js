@@ -19,7 +19,7 @@
     seen: 'Lacs pendant la période', see: 'Lac', stand: 'Niveau', aenderung: 'Variation', speicher: 'Variation du stock', fuellt: 'Positif : le lac se remplit et retient de l’eau. Calculé avec une surface constante.',
     station: 'Station', quelle: 'Source', reihe: 'Série', mqK: 'MQ', nm7q: 'NM7Q moyen', nm7qMin: 'NM7Q le plus bas', dgj: 'Annuaire (DGJ)', oben: 'Somme amont', restK: 'Reste', zu: 'Fermer',
     simTitel: 'Simulateur de retenue', simLead: 'Que se passerait-il si les lacs retenaient un peu plus d’eau au printemps pour la restituer à l’étiage ? Choisissez une tranche supplémentaire par lac, la période de retenue et la restitution.',
-    rueck: 'Retenue', abgabe: 'Restitution dès le', dauer: 'Durée (jours)', auto: 'Phase la plus sèche', ausschnitt: 'Extrait', ganz: 'Année', phase: 'Restitution', band: 'Tranche utilisée 1991–2020', flaeche: 'Surface', jecm: 'Par cm', zusatz: 'Tranche suppl.', vol: 'Volume',
+    rueck: 'Retenue', abgabe: 'Restitution dès le', dauer: 'Durée (jours)', auto: 'Phase la plus sèche', ausschnitt: 'Extrait', ganz: 'Année', phase: 'Restitution', band: 'Tranche utilisée 1991–2020', flaeche: 'Surface', jecm: 'Par cm', zusatz: 'Tranche suppl.', grenzen: 'Limites de régulation m s. m. · mio m³', vol: 'Volume',
     reguliert: 'régulé', unreguliert: 'non régulé', volumen: 'Volume retenu', plus: 'Débit supplémentaire', minus: 'Débit retenu', nm7qSim: 'NM7Q', pegel: 'Échelle de Kaub (7 jours les plus bas)',
     maxAnteil: 'Retenue maximale', vomAbfluss: 'du débit à', simuliert: 'simulé', fRueck: 'Retenue', fAbgabe: 'Restitution', diff: 'Écart',
     keinJahr: 'Pas de valeurs journalières pour cette station et cette année.', warn: 'La restitution commence avant la fin de la retenue.',
@@ -31,7 +31,7 @@
       'MQ et NM7Q calculés à partir des valeurs journalières : stations OFEV 1991–2020, stations allemandes 2010–2020 (seules années où toutes les séries de l’annuaire existent ; Neckar 2010–2020). NM7Q = plus faible moyenne sur 7 jours de l’année civile.',
       'Étiage : parts pendant les fenêtres NM7Q de la station du bilan. Leur somme fait 100 %.',
       'Stations allemandes : valeurs journalières contrôlées de l’annuaire hydrologique (2008–2025) ; ensuite seulement les données brutes des 31 derniers jours (PEGELONLINE). Entre deux, il n’y a pas de valeurs.',
-      'Lacs : variation du stock = surface × variation du niveau moyen journalier. Surfaces d’après Wikidata (non officielles).',
+      'Lacs : variation du stock = surface × variation du niveau moyen journalier. Surfaces et limites de basses et hautes eaux d’après les fiches OFEV « Seeregulierung » (2020) ; lac des Quatre-Cantons : niveau minimal à respecter et seuil de dommages à Stansstad. Pour les lacs de Neuchâtel et de Morat, la fiche ne donne pas de limites propres. Lac de Constance : 536 km² selon l’IGKB, répartition lac supérieur/inférieur non officielle.',
       'Rien n’est interpolé. Si une valeur manque, le résultat manque.'],
   } : {
     titel: 'Rhein · Abflussbilanz', lead: 'Woher das Wasser des Rheins in Basel und in Kaub kommt. Jede Messstelle liefert einen Abfluss; die Differenz zu den Messstellen oberhalb ist das Zwischengebiet. Das ist ein gerechneter Rest, kein Messwert.',
@@ -44,7 +44,7 @@
     seen: 'Seen im Zeitraum', see: 'See', stand: 'Stand', aenderung: 'Änderung', speicher: 'Speicheränderung', fuellt: 'Positiv: Der See füllt sich und hält Wasser zurück. Gerechnet mit konstanter Seefläche.',
     station: 'Messstelle', quelle: 'Quelle', reihe: 'Reihe', mqK: 'MQ', nm7q: 'Mittleres NM7Q', nm7qMin: 'Kleinstes NM7Q', dgj: 'Jahrbuch (DGJ)', oben: 'Summe oberhalb', restK: 'Rest', zu: 'Schliessen',
     simTitel: 'Stausimulator', simLead: 'Was wäre, wenn die Seen im Frühling etwas mehr Wasser zurückhielten und es bei Niedrigwasser abgäben? Wähle je See ein zusätzliches Band, die Zeit des Rückhalts und die Abgabe.',
-    rueck: 'Rückhalt', abgabe: 'Abgabe ab', dauer: 'Dauer (Tage)', auto: 'Trockenste Phase', ausschnitt: 'Ausschnitt', ganz: 'Jahr', phase: 'Abgabe', band: 'Genutztes Band 1991–2020', flaeche: 'Fläche', jecm: 'Je cm', zusatz: 'Zusatzband', vol: 'Volumen',
+    rueck: 'Rückhalt', abgabe: 'Abgabe ab', dauer: 'Dauer (Tage)', auto: 'Trockenste Phase', ausschnitt: 'Ausschnitt', ganz: 'Jahr', phase: 'Abgabe', band: 'Genutztes Band 1991–2020', flaeche: 'Fläche', jecm: 'Je cm', zusatz: 'Zusatzband', grenzen: 'Reguliergrenzen m ü. M. · Mio. m³', vol: 'Volumen',
     reguliert: 'reguliert', unreguliert: 'nicht reguliert', volumen: 'Rückhaltevolumen', plus: 'Zusatzabfluss', minus: 'Minderabfluss', nm7qSim: 'NM7Q', pegel: 'Pegel Kaub (tiefste 7 Tage)',
     maxAnteil: 'Rückhalt höchstens', vomAbfluss: 'des Abflusses in', simuliert: 'simuliert', fRueck: 'Rückhalt', fAbgabe: 'Abgabe', diff: 'Differenz',
     keinJahr: 'Für diese Messstelle liegen in diesem Jahr keine Tageswerte vor.', warn: 'Die Abgabe beginnt vor dem Ende des Rückhalts.',
@@ -56,7 +56,7 @@
       'MQ und NM7Q sind aus den Tageswerten gerechnet: BAFU-Stationen 1991–2020, deutsche Pegel 2010–2020 (nur in diesen Jahren liegen alle Reihen des Jahrbuchs vor; Neckar 2010–2020). NM7Q = kleinstes Mittel über 7 Tage im Kalenderjahr.',
       'Niedrigwasser: Anteile in den NM7Q-Fenstern der Bilanz-Messstelle. Sie summieren sich auf 100 %.',
       'Deutsche Pegel: geprüfte Tageswerte aus dem Deutschen Gewässerkundlichen Jahrbuch (2008–2025); danach nur Rohdaten der letzten 31 Tage (PEGELONLINE). Dazwischen gibt es keine Werte.',
-      'Seen: Speicheränderung = Fläche × Änderung des Tagesmittels. Seeflächen nach Wikidata (nicht amtlich).',
+      'Seen: Speicheränderung = Fläche × Änderung des Tagesmittels. Seeflächen sowie Nieder- und Hochwassergrenzen aus den BAFU-Faktenblättern «Seeregulierung» (2020); Vierwaldstättersee: minimal einzuhaltender Wasserstand und Schadengrenze Stansstad. Für Neuenburger- und Murtensee nennt das Faktenblatt keine eigenen Grenzen. Bodensee: 536 km² nach IGKB, Aufteilung Obersee/Untersee nicht amtlich.',
       'Es wird nichts interpoliert. Fehlt ein Wert, fehlt das Ergebnis.'],
   };
   const $ = id => document.getElementById(id);
@@ -283,12 +283,13 @@
     w.append(j, d('f0', `${T.rueck} ${T.von}`), d('f1', T.bis), d('r0', T.abgabe), tage, auto, zoom);
   }
   function simSeen() {
-    $('simseen').innerHTML = `<div class="rollen"><table><thead><tr><th>${T.see}</th><th class="z">${T.flaeche} km²</th><th class="z">${T.jecm} Mio. m³</th><th class="z">${T.band}</th><th style="width:24%">${T.zusatz}</th><th class="z">cm</th><th class="z">${T.vol} Mio. m³</th></tr></thead><tbody>` +
+    $('simseen').innerHTML = `<div class="rollen"><table><thead><tr><th>${T.see}</th><th class="z">${T.flaeche} km²</th><th class="z">${T.jecm} Mio. m³</th><th class="z">${T.band}</th><th class="z">${T.grenzen}</th><th style="width:24%">${T.zusatz}</th><th class="z">cm</th><th class="z">${T.vol} Mio. m³</th></tr></thead><tbody>` +
       meta.seen.map(s => `<tr><td>${h(s.name)}<br><span style="font-size:13px">${s.reguliert ? T.reguliert : T.unreguliert}</span></td><td class="z">${zahl(s.flaeche_km2, 1)}</td><td class="z">${zahl(s.flaeche_km2 / 100, 2)}</td>` +
         `<td class="z">${s.band ? `${zahl(s.band.band_m, 2)} m · ${zahl(s.band.volumen_mio_m3)}` : '–'}</td>` +
+        `<td class="z" title="${s.grenzen ? h(s.grenzen.art) : ''}">${s.grenzen ? `${zahl(s.grenzen.tief, 2)}–${zahl(s.grenzen.hoch, 2)} · ${zahl(s.grenzen.volumen_mio_m3)}` : '–'}</td>` +
         `<td><input type="range" min="0" max="50" step="1" value="${SIM.cm[s.id]}" data-see="${s.id}" aria-label="${h(s.name)}: ${T.zusatz} cm"></td>` +
         `<td class="z" id="cm-${s.id}"></td><td class="z" id="vol-${s.id}"></td></tr>`).join('') +
-      `<tr class="summe"><td colspan="6">${T.volumen}</td><td class="z" id="vol-summe"></td></tr></tbody></table></div>`;
+      `<tr class="summe"><td colspan="7">${T.volumen}</td><td class="z" id="vol-summe"></td></tr></tbody></table></div>`;
     $('simseen').querySelectorAll('input').forEach(i => i.addEventListener('input', () => { SIM.cm[i.dataset.see] = +i.value; sim(true); }));
   }
   async function sim(nurWerte) {
@@ -371,7 +372,7 @@
   $('methodentext').innerHTML = '<ul>' + T.meth.map(m => `<li>${h(m)}</li>`).join('') + '</ul>';
   $('quellen').innerHTML = '<ul>' + meta.quellen.map(q => `<li>${h(q.text)} – <a href="${q.url}">${h(q.url.replace('https://', ''))}</a></li>`).join('') +
     `<li>${FR ? 'Fond de carte' : 'Karte'}: GeoRhena – <a href="https://www.georhena.eu">www.georhena.eu</a>; Natural Earth</li>` +
-    `<li>${FR ? 'Surfaces des lacs : Wikidata (non officiel)' : 'Seeflächen: Wikidata (nicht amtlich)'}</li></ul>`;
+    `<li>${FR ? 'Lacs : OFEV, fiches « Seeregulierung » (2020)' : 'Seen: BAFU, Faktenblätter «Seeregulierung» (2020)'} – <a href="https://www.bafu.admin.ch/de/wichtige-seeregulierungen">bafu.admin.ch/de/wichtige-seeregulierungen</a>; IGKB</li></ul>`;
   $('stand').textContent = `${T.standT}: ${datum(meta.stand.slice(0, 10))}` + (meta.meldungen.length ? ` · ${meta.meldungen.join(' · ')}` : '');
 
   // ------------------------------------------------------------ Ablauf

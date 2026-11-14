@@ -1,0 +1,40 @@
+name: Rhin – Abflüsse
+
+# Holt täglich die Abflüsse für /rhin-retention, siehe rhin-retention/werkzeug/README.md
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rhin-retention
+  cancel-in-progress: false
+
+jobs:
+  holen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Daten holen
+        working-directory: rhin-retention/werkzeug
+        run: |
+          python -m unittest discover -s tests
+          python -m rheinbilanz aktualisieren --ab $(( $(date +%Y) - 2 ))
+      - name: Commit
+        run: |
+          git add rhin-retention/daten
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898333+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Rhin: Abflüsse'
+          # Andere Läufe schreiben auch auf main: bei Bedarf nachziehen und nochmals versuchen
+          for i in 1 2 3; do git push && exit 0; git pull --rebase; sleep 5; done
+          exit 1

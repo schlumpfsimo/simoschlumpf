@@ -29,14 +29,14 @@ python -m rheinbilanz karte                    # Kartengeometrie neu erzeugen
 python -m unittest discover -s tests
 ```
 
-Die Seite aktualisiert sich nicht von selbst. Für neue Werte `aktualisieren` ausführen und `daten/` einchecken.
+Die Seite aktualisiert sich täglich über `.github/workflows/rhin-retention.yml` (Jahresdateien der letzten zwei Jahre und `meta.json`).
 
 ## Quellen
 
 - BAFU, Hydrologische Beobachtungen, Datenplattform BAFU (`data.bafu.admin.ch/api`). Tagesmittel ab 1970. Lizenz: Freie Nutzung, Quellenangabe ist Pflicht.
 - WSV, bereitgestellt durch die BfG: Deutsches Gewässerkundliches Jahrbuch (`dgj-daten.bafg.de`, PDF je Pegel, Tageswerte der Abflussjahre 2008–2025) und PEGELONLINE (Rohdaten der letzten 31 Tage).
 - Karte: Rheinachse von GeoRhena (Ebene `water:rhin`), übrige Flüsse und Seen von Natural Earth.
-- Seeflächen: Wikidata, nicht amtlich. Thunersee ungeprüft (Wikidata 43,8 km², andere Angaben rund 48 km²). Die Werte stehen in `netz.py`.
+- Seen: Flächen sowie Nieder- und Hochwassergrenzen aus den BAFU-Faktenblättern «Seeregulierung» (2020, bafu.admin.ch/de/wichtige-seeregulierungen). Für Neuenburger- und Murtensee nennt das Faktenblatt keine eigenen Grenzen. Bodensee: 536 km² nach IGKB, Aufteilung Obersee 473 / Untersee 63 km² nicht amtlich belegt. Die Werte stehen in `netz.py`.
 
 Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 

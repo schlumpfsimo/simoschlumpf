@@ -111,6 +111,8 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
             "knoten": see.knoten, "reguliert": see.reguliert, "bemerkung": see.bemerkung,
             "lat": ort[0] if ort else None, "lon": ort[1] if ort else None, "zeitraum": _zeitraum(stand),
             "band": {k: _rund(v, 3) for k, v in band.items()} if band else None,
+            "grenzen": {"tief": see.grenzen[0], "hoch": see.grenzen[1], "art": see.grenzen_art,
+                        "volumen_mio_m3": _rund(see.flaeche_km2 * (see.grenzen[1] - see.grenzen[0]), 1)} if see.grenzen else None,
         })
     kontrolle_tage = [t for j in range(REFERENZ[0], REFERENZ[1] + 1) for t in bilanz.jahrestage(j)]
     abw = [k for k in (bilanz.kontrollbilanz(b.q, KONTROLLE["ziel"], KONTROLLE["glieder"], t) for t in kontrolle_tage) if k]
