@@ -23,7 +23,7 @@
     kaubQ: 'Débit à Kaub', kaubW: 'Échelle de Kaub', glw: 'Écart au GlW (77 cm)', tiefe: 'Profondeur du chenal', baselQ: 'Débit à Bâle', vorhersage: 'Prévision à 4 jours', jetzt: 'Valeur actuelle', ausKurve: 'd’après la courbe de tarage',
     herkunft: 'Origine de l’eau', gAlpen: 'Rhin alpin et lac de Constance', gHoch: 'Thur et Haut-Rhin', gAareOben: 'Aar jusqu’à Brügg (Oberland, lacs du pied du Jura)', gAareMitte: 'Aar de Brügg à Stilli (Emme, Plateau)', gReuss: 'Reuss (lac des Quatre-Cantons)', gLimmat: 'Limmat (lac de Zurich)', gUnten: 'En aval de Bâle (Rhin supérieur, Neckar, Main)',
     aareGesamt: 'Aar à Stilli, total', rheinOben: 'Rhin avant l’Aar (Rekingen)',
-    simTitel: 'Retenue optimale', simLead: 'Seule la capacité supplémentaire des lacs se règle. Le calcul retient l’eau lors des débits les plus forts possibles et la restitue de façon à relever le plus possible le plus faible débit journalier de l’année à la station du bilan. L’eau va donc aux jours les plus secs.',
+    simTitel: 'Retenue pour la navigation', simLead: 'Seule la capacité supplémentaire des lacs se règle. La référence de la restitution est l’étiage équivalent (GlW) à l’échelle de Kaub : le calcul maintient Kaub au GlW le plus grand nombre de jours possible et ne retient que lorsque Kaub est au-dessus.', zielAbgabe: 'But de la restitution', zGlw: 'Tenir le GlW à Kaub', zMin: 'Relever le débit minimal', gehalten: 'jours tenus', bedarf: 'Besoin pour tous les jours', bedarfText: 'Somme des déficits ; sur tous les lacs régulés, cela ferait', nieUnter: 'Kaub ne passe jamais sous le GlW cette année.', ohneKaub: 'Pas de valeurs pour Kaub cette année ; le calcul relève le débit minimal à la station du bilan.',
     alle: 'Tous les lacs régulés (cm)', band: 'Tranche utilisée 1991–2020', jecm: 'Par cm', zusatz: 'Capacité suppl.', vol: 'Volume', grenzenK: 'Limites m s. m. · mio m³', volumen: 'Capacité totale',
     gBodensee: 'Lac de Constance (non régulé, hypothétique)', gAare: 'Aar', gReussL: 'Reuss', gLimmatL: 'Limmat',
     minTag: 'Plus faible débit journalier', nm7qSim: 'NM7Q', pegelMin: 'Niveau le plus bas à Kaub', unterGlw: 'Jours sous le GlW à Kaub', abgabeTage: 'Restitution', rueckTage: 'Retenue', tageW: 'jours', schwellen: 'Seuils', genutzt: 'Volume utilisé',
@@ -52,7 +52,7 @@
     kaubQ: 'Abfluss Kaub', kaubW: 'Pegel Kaub', glw: 'Abstand zum GlW (77 cm)', tiefe: 'Fahrrinnentiefe', baselQ: 'Abfluss Basel', vorhersage: 'Vorhersage 4 Tage', jetzt: 'Aktueller Wert', ausKurve: 'aus der Abflusskurve',
     herkunft: 'Herkunft des Wassers', gAlpen: 'Alpenrhein und Bodensee', gHoch: 'Thur und Hochrhein', gAareOben: 'Aare bis Brügg (Oberland, Jurarandseen)', gAareMitte: 'Aare Brügg bis Stilli (Emme, Mittelland)', gReuss: 'Reuss (Vierwaldstättersee)', gLimmat: 'Limmat (Zürichsee)', gUnten: 'Unterhalb Basel (Oberrhein, Neckar, Main)',
     aareGesamt: 'Aare in Stilli, gesamt', rheinOben: 'Rhein vor der Aare (Rekingen)',
-    simTitel: 'Optimaler Rückhalt', simLead: 'Einstellen lässt sich nur die zusätzliche Staukapazität der Seen. Die Rechnung staut bei möglichst hohen Abflüssen und gibt so ab, dass der kleinste Tagesabfluss des Jahres an der Bilanz-Messstelle möglichst hoch wird. Das Wasser geht darum an die trockensten Tage.',
+    simTitel: 'Rückhalt für die Schifffahrt', simLead: 'Einstellen lässt sich nur die zusätzliche Staukapazität der Seen. Bezugswert der Abgabe ist der gleichwertige Wasserstand (GlW) am Pegel Kaub: Die Rechnung hält Kaub an möglichst vielen Tagen auf dem GlW und staut nur, wenn Kaub darüber liegt.', zielAbgabe: 'Ziel der Abgabe', zGlw: 'GlW Kaub halten', zMin: 'Kleinsten Abfluss heben', gehalten: 'Tage gehalten', bedarf: 'Bedarf für alle Tage', bedarfText: 'Summe der Fehlbeträge; auf allen regulierten Seen wären das', nieUnter: 'Kaub liegt in diesem Jahr nie unter dem GlW.', ohneKaub: 'Für dieses Jahr gibt es keine Werte für Kaub; gerechnet ist «Kleinsten Abfluss heben» an der Bilanz-Messstelle.',
     alle: 'Alle regulierten Seen (cm)', band: 'Genutztes Band 1991–2020', jecm: 'Je cm', zusatz: 'Zusätzliche Kapazität', vol: 'Volumen', grenzenK: 'Reguliergrenzen m ü. M. · Mio. m³', volumen: 'Kapazität gesamt',
     gBodensee: 'Bodensee (nicht reguliert, hypothetisch)', gAare: 'Aare', gReussL: 'Reuss', gLimmatL: 'Limmat',
     minTag: 'Kleinster Tagesabfluss', nm7qSim: 'NM7Q', pegelMin: 'Tiefster Pegel Kaub', unterGlw: 'Tage unter GlW in Kaub', abgabeTage: 'Abgabe', rueckTage: 'Rückhalt', tageW: 'Tage', schwellen: 'Schwellen', genutzt: 'Genutztes Volumen',
@@ -165,21 +165,22 @@
 
   // ------------------------------------------------------------ Optimaler Rückhalt (wie simulation.py)
   const SEK = 86400, P_MAX = 0.10;
-  function lauf(q, V, tief, hoch) {
+  function lauf(q, V, tief, hoch, satz) {      // satz: Tage, die auf `tief` gehoben werden (ohne satz: alle Tage darunter)
     const n = q.length, abgabe = new Float64Array(n), rueck = new Float64Array(n), speicher = new Float64Array(n);
-    let letzter = -1; for (let i = 0; i < n; i++) if (q[i] != null && q[i] < tief) letzter = i;
+    const bedient = i => q[i] != null && q[i] < tief && (!satz || satz[i]);
+    let letzter = -1; for (let i = 0; i < n; i++) if (bedient(i)) letzter = i;
     let s = 0;
     for (let i = 0; i < n; i++) {
       const x = q[i];
       if (x != null) {
-        if (x < tief) { const bedarf = (tief - x) * SEK; if (bedarf > s + 1e-6) return null; s -= bedarf; abgabe[i] = tief - x; }
+        if (bedient(i)) { const bedarf = (tief - x) * SEK; if (bedarf > s + 1e-6) return null; s -= bedarf; abgabe[i] = tief - x; }
         else if (x > hoch && i < letzter && s < V) { const r = Math.min(x - hoch, P_MAX * x, (V - s) / SEK); s += r * SEK; rueck[i] = r; }
       }
       speicher[i] = s;
     }
     return { abgabe, rueck, speicher };
   }
-  function optimieren(q, V) {
+  function optimieren(q, V) {                  // Ziel «kleinsten Abfluss heben»
     const w = q.filter(x => x != null); if (!w.length || V <= 0) return null;
     let a = Math.min(...w), b = w.reduce((s, x) => s + x, 0) / w.length;
     for (let i = 0; i < 50; i++) { const m = (a + b) / 2; if (lauf(q, V, m, m)) a = m; else b = m; }
@@ -187,19 +188,31 @@
     for (let i = 0; i < 50; i++) { const m = (c + d) / 2; if (lauf(q, V, tief, m)) c = m; else d = m; }
     return { tief, hoch: c, ...lauf(q, V, tief, c) };
   }
+  function halten(q, V, schwelle) {            // Ziel «GlW halten»: möglichst viele Tage ganz auf die Schwelle heben, günstigste zuerst
+    const w = q.filter(x => x != null); if (!w.length || V <= 0) return null;
+    const fehl = []; q.forEach((x, i) => { if (x != null && x < schwelle) fehl.push([schwelle - x, i]); });
+    fehl.sort((a, b) => a[0] - b[0]);
+    const satz = new Uint8Array(q.length); let gehalten = 0;
+    for (const [, i] of fehl) { satz[i] = 1; if (lauf(q, V, schwelle, schwelle, satz)) gehalten++; else satz[i] = 0; }
+    let c = schwelle, d = Math.max(schwelle, ...w);
+    for (let i = 0; i < 50; i++) { const m = (c + d) / 2; if (lauf(q, V, schwelle, m, satz)) c = m; else d = m; }
+    return { tief: schwelle, hoch: c, ...lauf(q, V, schwelle, c, satz), glw: true, unter0: fehl.length, gehalten, bedarf: fehl.reduce((s, f) => s + f[0], 0) * SEK };
+  }
 
   // ------------------------------------------------------------ Zustand
-  const Z = { ziel: KAUB, ansicht: 'heute', jahr: LETZTES, tag: null, extrem: 0, sim: false, zoom: false };
+  const Z = { ziel: KAUB, ansicht: 'heute', jahr: LETZTES, tag: null, extrem: 0, sim: false, zoom: false, modus: 'glw' };
   const CM = Object.fromEntries(meta.seen.map(s => [s.id, s.reguliert ? 10 : 0]));
   const tagAnsicht = () => ['heute', 'extrem', 'tag'].includes(Z.ansicht);
 
   // Die Seen teilen sich Rückhalt und Abgabe im Verhältnis ihrer Kapazität; die Wirkung wandert mit der Fliesszeit talwärts.
   function simulieren(Y) {
-    const qz = Y.q[Z.ziel]; let V = 0;
+    // Ziel «GlW halten» rechnet immer am Pegel Kaub; ohne Kaub-Werte im Jahr gilt «kleinsten Abfluss heben» an der Bilanz-Messstelle
+    const glw = Z.modus === 'glw' && Q_GLW != null && Y.q[KAUB] && Y.q[KAUB].some(x => x != null), zid = glw ? KAUB : Z.ziel;
+    const qz = Y.q[zid]; let V = 0;
     for (const s of meta.seen) V += CM[s.id] * s.flaeche_km2 * 1e4;
-    if (!qz || !V) return { q: Y.q, wirkung: {}, V, O: null };
-    const O = optimieren(qz, V), n = qz.length, wirkung = {}, alt = NETZ; NETZ = VOLL;
-    const zumZiel = einzug(Z.ziel);
+    if (!qz || !V) return { q: Y.q, wirkung: {}, V, O: null, zid };
+    const O = glw ? halten(qz, V, Q_GLW) : optimieren(qz, V), n = qz.length, wirkung = {}, alt = NETZ; NETZ = VOLL;
+    const zumZiel = einzug(zid);
     for (const s of meta.seen) {
       const teil = CM[s.id] * s.flaeche_km2 * 1e4 / V; if (!teil || !(s.knoten in zumZiel)) continue;
       for (let k = s.knoten, lag = 0; k;) {
@@ -211,7 +224,7 @@
     NETZ = alt;
     const q = {};
     for (const id in Y.q) q[id] = wirkung[id] ? Y.q[id].map((x, i) => x == null ? null : x + wirkung[id][i]) : Y.q[id];
-    return { q, wirkung, V, O };
+    return { q, wirkung, V, O, zid };
   }
 
   // ------------------------------------------------------------ Bedienung
@@ -439,7 +452,7 @@
     const w = $('simwahl'); w.textContent = '';
     const alle = feld(T.alle, `<input type="number" min="0" max="100" value="">`);
     alle.querySelector('input').addEventListener('change', e => { const v = Math.max(0, Math.min(100, +e.target.value || 0)); meta.seen.forEach(s => { if (s.reguliert) CM[s.id] = v; }); simSeen(); alles(); });
-    w.append(alle, knoepfe(T.ausschnitt, [['0', T.ganz], ['1', T.phase]], Z.zoom ? '1' : '0', v => { Z.zoom = v === '1'; alles(); }));
+    w.append(knoepfe(T.zielAbgabe, [['glw', T.zGlw], ['min', T.zMin]], Z.modus, v => { Z.modus = v; alles(); }), alle, knoepfe(T.ausschnitt, [['0', T.ganz], ['1', T.phase]], Z.zoom ? '1' : '0', v => { Z.zoom = v === '1'; alles(); }));
   }
   function simSeen() {
     const S = Object.fromEntries(meta.seen.map(s => [s.id, s]));
@@ -457,22 +470,26 @@
     let v = 0;
     for (const s of meta.seen) { const m = CM[s.id] * s.flaeche_km2 / 100; v += m; $('cm-' + s.id).textContent = CM[s.id]; $('vol-' + s.id).textContent = zahl(m, 1); }
     $('vol-summe').textContent = zahl(v, 1);
-    const z = ST[Z.ziel], q = R.Y && R.Y.q[Z.ziel], S = R.S;
+    const S = R.S, z = ST[S && S.zid || Z.ziel], q = R.Y && R.Y.q[z.id];
     if (!q || !S || !S.O) { $('simwerte').innerHTML = `<p>${q ? T.nurTag : T.keinJahr}</p>`; $('verlauf').innerHTML = ''; $('speicher').innerHTML = ''; $('simlegende').innerHTML = ''; R.sz = null; return; }
-    const O = S.O, qs = S.q[Z.ziel], a = nm7q(q), b = nm7q(qs), min0 = Math.min(...q.filter(x => x != null)), min1 = Math.min(...qs.filter(x => x != null));
+    const O = S.O, qs = S.q[z.id], a = nm7q(q), b = nm7q(qs), min0 = Math.min(...q.filter(x => x != null)), min1 = Math.min(...qs.filter(x => x != null));
     const qK = R.Y.q[KAUB], qKs = S.q[KAUB], tA = O.abgabe.reduce((n, x) => n + (x > 0), 0), tR = O.rueck.reduce((n, x) => n + (x > 0), 0), genutzt = Math.max(...O.speicher) / 1e6;
-    const gesch = (R.Y.s[Z.ziel] || []).some(([, c]) => c === 5) ? q.reduce((n, x, i) => n + (x != null && statusAm(R.Y, Z.ziel, i) === 5), 0) : 0;
+    const gesch = (R.Y.s[z.id] || []).some(([, c]) => c === 5) ? q.reduce((n, x, i) => n + (x != null && statusAm(R.Y, z.id, i) === 5), 0) : 0;
     const kachel = (titel, gross, zusatz = '') => `<div><span>${titel}</span><b>${gross}</b><em>${zusatz}</em></div>`;
     const kMin0 = qK ? Math.min(...qK.filter(x => x != null)) : null, kMin1 = qKs ? Math.min(...qKs.filter(x => x != null)) : null, w0 = wAusQ(kMin0), w1 = wAusQ(kMin1);
     const u0 = tageUnter(qK, Q_GLW), u1 = tageUnter(qKs, Q_GLW);
     R.sz = { min0, min1, tA, tR, genutzt, u0, u1, w0, w1, kMin0, kMin1 };
-    $('simwerte').innerHTML = kachel(`${T.minTag} ${kurz(z)} ${Z.jahr}`, `${zahl(min0)} → ${zahl(min1)} m³/s`, `${vz(min1 - min0, 1)} m³/s · ${vz(100 * (min1 - min0) / min0, 1)} %`) +
-      (a && b ? kachel(`${T.nm7qSim} ${kurz(z)}`, `${zahl(a.wert)} → ${zahl(b.wert)} m³/s`, `${vz(b.wert - a.wert, 1)} m³/s`) : '') +
-      (w0 != null && w1 != null ? kachel(T.pegelMin, `${zahl(w0)} → ${zahl(w1)} cm`, `${vz(w1 - w0, 0)} cm · ${T.ausKurve}`) : '') +
-      (u0 != null ? kachel(T.unterGlw, `${zahl(u0)} → ${zahl(u1)}`, `GlW ${zahl(GLW)} cm = ${zahl(Q_GLW)} m³/s`) : '') +
-      kachel(T.schwellen, `L* ${zahl(O.tief)} · H* ${zahl(O.hoch)}`, 'm³/s') +
+    const flaeche = meta.seen.filter(s => s.reguliert).reduce((s, x) => s + x.flaeche_km2, 0);
+    const kopf = O.glw ? kachel(`${T.unterGlw} ${Z.jahr}`, `${zahl(O.unter0)} → ${zahl(O.unter0 - O.gehalten)}`, `${zahl(O.gehalten)} ${T.gehalten} · GlW ${zahl(GLW)} cm = ${zahl(Q_GLW)} m³/s`) +
+      kachel(T.bedarf, `${zahl(O.bedarf / 1e6)} Mio. m³`, `${T.bedarfText} ${zahl(O.bedarf / 1e4 / flaeche)} cm`) : '';
+    const fest = O.glw && min1 - min0 < .05;      // «GlW halten» hebt die tiefsten Tage nicht: diese Kacheln entfallen dann
+    $('simwerte').innerHTML = kopf + (fest ? '' : kachel(`${T.minTag} ${kurz(z)} ${Z.jahr}`, `${zahl(min0)} → ${zahl(min1)} m³/s`, `${vz(min1 - min0, 1)} m³/s · ${vz(100 * (min1 - min0) / min0, 1)} %`)) +
+      (a && b && !fest ? kachel(`${T.nm7qSim} ${kurz(z)}`, `${zahl(a.wert)} → ${zahl(b.wert)} m³/s`, `${vz(b.wert - a.wert, 1)} m³/s`) : '') +
+      (w0 != null && w1 != null && !fest ? kachel(T.pegelMin, `${zahl(w0)} → ${zahl(w1)} cm`, `${vz(w1 - w0, 0)} cm · ${T.ausKurve}`) : '') +
+      (u0 != null && !O.glw ? kachel(T.unterGlw, `${zahl(u0)} → ${zahl(u1)}`, `GlW ${zahl(GLW)} cm = ${zahl(Q_GLW)} m³/s`) : '') +
+      kachel(T.schwellen, `${O.glw ? 'GlW' : 'L*'} ${zahl(O.tief)} · H* ${zahl(O.hoch)}`, 'm³/s') +
       kachel(`${T.abgabeTage} · ${T.rueckTage}`, `${tA} · ${tR} ${T.tageW}`, `${T.genutzt}: ${zahl(genutzt, 1)} ${T.von_} ${zahl(v, 1)} Mio. m³`) +
-      (min1 - min0 < .05 ? `<div><em>${T.keinGewinn}</em></div>` : '') + (gesch ? `<div><em>${gesch} ${T.geschHinweis}</em></div>` : '');
+      (!O.glw && min1 - min0 < .05 ? `<div><em>${T.keinGewinn}</em></div>` : '') + (O.glw && !O.unter0 ? `<div><em>${T.nieUnter}</em></div>` : '') + (Z.modus === 'glw' && !O.glw ? `<div><em>${T.ohneKaub}</em></div>` : '') + (gesch ? `<div><em>${gesch} ${T.geschHinweis}</em></div>` : '');
     verlauf(R, q, qs, O, z);
   }
   function verlauf(R, q, qs, O, z) {
@@ -485,18 +502,18 @@
     const u = Math.floor(min / schritt) * schritt, o = Math.max(u + schritt, Math.ceil(max / schritt) * schritt);
     const x = i => L + (B - L - RR) * (i - i0) / Math.max(1, i1 - i0), y = v => OO + (H - OO - U) * (1 - (v - u) / (o - u));
     const linie = (a, nur) => { let d = '', an = false; a.forEach((v, i) => { if (v == null || i < i0 || i > i1 || (nur && !nur(i))) { an = false; return; } d += (an ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); an = true; }); return d; };
-    const gesch = i => statusAm(R.Y, Z.ziel, i) === 5, hatGesch = q.some((v, i) => v != null && gesch(i));
+    const gesch = i => statusAm(R.Y, z.id, i) === 5, hatGesch = q.some((v, i) => v != null && gesch(i));
     let s = '';
     for (let v = u; v <= o; v += schritt) s += (v > u ? `<line class="gitter" x1="${L}" x2="${B - RR}" y1="${y(v)}" y2="${y(v)}"/>` : '') + `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${zahl(v)}</text>`;
     s += `<text x="${L}" y="${OO - 9}" class="fett">m³/s</text><line class="achse" x1="${L}" x2="${B - RR}" y1="${y(u)}" y2="${y(u)}"/>`;
     for (let m = 0; m < 12; m++) { const i = tagNr(`${Z.jahr}-${String(m + 1).padStart(2, '0')}-01`); if (i < i0 || i > i1) continue; s += `<line class="achse" x1="${x(i)}" x2="${x(i)}" y1="${y(u)}" y2="${y(u) + 5}"/><text x="${x(i) + 4}" y="${y(u) + 18}">${T.monate[m]}</text>`; }
-    for (const [name, v] of [['L*', O.tief], ['H*', O.hoch]]) if (v >= u && v <= o) s += `<line class="schwelle" x1="${L}" x2="${B - RR}" y1="${y(v)}" y2="${y(v)}"/><text class="fett" x="${B - RR - 4}" y="${y(v) - 5}" text-anchor="end">${name} ${zahl(v)}</text>`;
+    for (const [name, v] of [[O.glw ? 'GlW' : 'L*', O.tief], ['H*', O.hoch]]) if (v >= u && v <= o) s += `<line class="schwelle" x1="${L}" x2="${B - RR}" y1="${y(v)}" y2="${y(v)}"/><text class="fett" x="${B - RR - 4}" y="${name === 'H*' ? y(v) - 5 : y(v) + 15}" text-anchor="end">${name} ${zahl(v)}</text>`;
     if (R.i1 != null && tagAnsicht() && R.i1 >= i0 && R.i1 <= i1) s += `<line class="tag" x1="${x(R.i1)}" x2="${x(R.i1)}" y1="${OO}" y2="${y(u)}"/>`;
     s += `<path class="gemessen" d="${linie(q, i => !gesch(i))}"/>` + (hatGesch ? `<path class="geschaetzt" d="${linie(q, gesch)}"/>` : '') + `<path class="simuliert" d="${linie(qs)}"/>` +
       `<line class="lot" id="lot" y1="${OO}" y2="${y(u)}" visibility="hidden"/><rect id="flaeche" x="${L}" y="${OO}" width="${B - L - RR}" height="${H - OO - U}" fill="transparent"/>`;
     svg.setAttribute('viewBox', `0 0 ${B} ${H}`); svg.innerHTML = s; svg.setAttribute('aria-label', `${z.gewaesser}–${z.name} ${Z.jahr}`);
     $('simlegende').innerHTML = `<span><i></i>${h(z.gewaesser)}–${h(kurz(z))} ${Z.jahr}, ${T.gemessen}</span>` + (hatGesch ? `<span><i class="punkte"></i>${T.geschaetzt}</span>` : '') +
-      `<span><i class="blau"></i>${T.simu.toLowerCase()}</span><span><i class="strich"></i>L*, H*</span>`;
+      `<span><i class="blau"></i>${T.simu.toLowerCase()}</span><span><i class="strich"></i>${O.glw ? 'GlW' : 'L*'}, H*</span>`;
     // Speicherinhalt: eigene kleine Grafik mit eigener Achse, schraffierte Fläche
     const sp = $('speicher'), SH = 150, vmax = Math.max(1, ...O.speicher) / 1e6, ys = v => 20 + (SH - 46) * (1 - v / vmax);
     let d = `M${x(i0)},${ys(0)}`; for (let i = i0; i <= i1; i++) d += `L${x(i).toFixed(1)},${ys(O.speicher[i] / 1e6).toFixed(1)}`; d += `L${x(i1)},${ys(0)}Z`;
@@ -541,11 +558,18 @@
     const seen = meta.seen.filter(s => CM[s.id] > 0), V = seen.reduce((s, x) => s + CM[x.id] * x.flaeche_km2 / 100, 0);
     html += `<h3>4 ${t('Staukapazität', 'Capacité de retenue')}</h3><p>${t('Fläche mal zusätzliche Stauhöhe. 1 km² mal 1 cm sind 0,01 Mio. m³.', 'Surface fois hauteur supplémentaire. 1 km² fois 1 cm font 0,01 mio m³.')}</p>` + f('V = Σ<sub>s</sub> A<sub>s</sub> · Δh<sub>s</sub>') +
       (seen.length ? r(`V = ${seen.map(s => `${zahl(s.flaeche_km2, 1)} km² · ${CM[s.id]} cm`).join(' + ')} = <b>${zahl(V, 1)} Mio. m³</b>`) : '');
-    // 5 Optimierung
-    html += `<h3>5 ${t('Optimaler Rückhalt', 'Retenue optimale')}</h3><p>${t('Zwei Schwellen am Ziel steuern den Speicher. Unter L wird abgegeben, über H wird gestaut, höchstens 10 % des Abflusses und nur, solange noch ein Tag unter L folgt.', 'Deux seuils à la station du bilan commandent le réservoir. Sous L on restitue, au-dessus de H on retient, au plus 10 % du débit et seulement tant qu’un jour sous L suit encore.')}</p>` +
-      f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L<br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H<br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.1.) = 0`) +
-      `<p>${t('L* ist das grösste L, bei dem der Speicher nie leer läuft. H* ist das grösste H, mit dem L* noch hält: So wird bei möglichst hohen Abflüssen gestaut. Muss der Speicher zwischen zwei Trockenphasen nachgefüllt werden, liegt H* nahe bei L*. Beide werden durch Halbieren des Intervalls gesucht.', 'L* est le plus grand L pour lequel le réservoir ne se vide jamais. H* est le plus grand H qui tient encore L* : on retient ainsi lors des débits les plus forts possibles. Si le réservoir doit être rempli entre deux phases sèches, H* est proche de L*. Tous deux sont cherchés par dichotomie.')}</p>`;
-    if (R.S && R.S.O && R.sz) html += r(`${h(kurz(z))} ${Z.jahr}: L* = <b>${zahl(R.S.O.tief, 1)} m³/s</b>, H* = <b>${zahl(R.S.O.hoch, 1)} m³/s</b>. ${t('Abgabe an', 'Restitution sur')} ${R.sz.tA} ${T.tageW}, ${t('Rückhalt an', 'retenue sur')} ${R.sz.tR} ${T.tageW}. ${t('Kleinster Tagesabfluss', 'Plus faible débit journalier')}: ${zahl(R.sz.min0, 1)} → <b>${zahl(R.sz.min1, 1)} m³/s</b>.`);
+    // 5 Rückhalt
+    const O = R.S && R.S.O, glw = O ? O.glw : Z.modus === 'glw';
+    html += `<h3>5 ${t('Rückhalt und Abgabe', 'Retenue et restitution')}</h3>` + (glw
+      ? `<p>${t('Bezugswert ist der Abfluss beim GlW in Kaub, Q<sub>GlW</sub>. Ein Tag darunter wird ganz auf Q<sub>GlW</sub> gehoben oder gar nicht. Gewählt werden die Tage mit dem kleinsten Fehlbetrag zuerst; ein Tag kommt dazu, wenn der Speicher dafür reicht (Näherung). Gestaut wird nur über H, also nie auf Kosten eines Tages am GlW, höchstens 10 % des Abflusses und nur, solange noch ein gehaltener Tag folgt.', 'La référence est le débit au GlW à Kaub, Q<sub>GlW</sub>. Un jour en dessous est relevé entièrement à Q<sub>GlW</sub> ou pas du tout. Les jours au plus petit déficit sont choisis d’abord ; un jour s’ajoute si le réservoir y suffit (approximation). On ne retient qu’au-dessus de H, donc jamais aux dépens d’un jour au GlW, au plus 10 % du débit et seulement tant qu’un jour tenu suit encore.')}</p>` +
+        f(`${t('Abgabe', 'Restitution')} a(t) = Q<sub>GlW</sub> − Q(t), ${t('für die gehaltenen Tage', 'pour les jours tenus')}<br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H ≥ Q<sub>GlW</sub><br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.1.) = 0<br>${t('Bedarf für alle Tage', 'Besoin pour tous les jours')} = 86 400 · Σ (Q<sub>GlW</sub> − Q(t))`) +
+        `<p>${t('H* ist das grösste H, mit dem die gewählten Tage noch gehalten werden: So wird bei möglichst hohen Abflüssen gestaut.', 'H* est le plus grand H avec lequel les jours choisis sont encore tenus : on retient ainsi lors des débits les plus forts possibles.')}</p>`
+      : `<p>${t('Zwei Schwellen am Ziel steuern den Speicher. Unter L wird abgegeben, über H wird gestaut, höchstens 10 % des Abflusses und nur, solange noch ein Tag unter L folgt.', 'Deux seuils à la station du bilan commandent le réservoir. Sous L on restitue, au-dessus de H on retient, au plus 10 % du débit et seulement tant qu’un jour sous L suit encore.')}</p>` +
+        f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L<br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H<br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.1.) = 0`) +
+        `<p>${t('L* ist das grösste L, bei dem der Speicher nie leer läuft. H* ist das grösste H, mit dem L* noch hält. Beide werden durch Halbieren des Intervalls gesucht.', 'L* est le plus grand L pour lequel le réservoir ne se vide jamais. H* est le plus grand H qui tient encore L*. Tous deux sont cherchés par dichotomie.')}</p>`);
+    if (O && R.sz) html += r(glw
+      ? `Kaub ${Z.jahr}: Q<sub>GlW</sub> = <b>${zahl(O.tief)} m³/s</b>, H* = <b>${zahl(O.hoch, 1)} m³/s</b>. ${t('Tage unter GlW', 'Jours sous le GlW')}: ${zahl(O.unter0)} → <b>${zahl(O.unter0 - O.gehalten)}</b>. ${t('Bedarf für alle Tage', 'Besoin pour tous les jours')}: <b>${zahl(O.bedarf / 1e6)} Mio. m³</b>, ${t('vorhanden', 'disponible')}: ${zahl(V, 1)} Mio. m³.`
+      : `${h(kurz(ST[R.S.zid]))} ${Z.jahr}: L* = <b>${zahl(O.tief, 1)} m³/s</b>, H* = <b>${zahl(O.hoch, 1)} m³/s</b>. ${t('Abgabe an', 'Restitution sur')} ${R.sz.tA} ${T.tageW}, ${t('Rückhalt an', 'retenue sur')} ${R.sz.tR} ${T.tageW}. ${t('Kleinster Tagesabfluss', 'Plus faible débit journalier')}: ${zahl(R.sz.min0, 1)} → <b>${zahl(R.sz.min1, 1)} m³/s</b>.`);
     // 6 Pegel Kaub
     if (KURVE.length) {
       html += `<h3>6 ${t('Pegel Kaub und Fahrrinnentiefe', 'Échelle de Kaub et profondeur du chenal')}</h3><p>${t('Der Wasserstand folgt aus dem Abfluss über die Abflusskurve: linear zwischen den zwei benachbarten Stützpunkten. Ausserhalb der Stützpunkte gibt es keinen Wert.', 'Le niveau découle du débit par la courbe de tarage : interpolation linéaire entre les deux points voisins. Hors de ces points, pas de valeur.')} ${h(K.abflusskurve_quelle || '')}. ${KURVE.length} ${t('Stützpunkte von', 'points de')} ${zahl(KURVE[0][0])} ${t('bis', 'à')} ${zahl(KURVE[KURVE.length - 1][0])} m³/s.</p>` +

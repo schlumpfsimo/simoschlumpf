@@ -87,5 +87,29 @@ class Optimierung(unittest.TestCase):
         self.assertTrue(all(x is None for x in o["q"][30:35]))
 
 
+class Halten(unittest.TestCase):
+    def test_haelt_die_guenstigsten_tage(self):
+        q = [900.0] * 50 + [700.0, 760.0, 770.0, 600.0] + [900.0] * 50      # Schwelle 775: Fehlbeträge 75, 15, 5, 175
+        v = 86400 * 25.0                                                        # reicht für 5 + 15, nicht für 75
+        o = simulation.halten(q, v, 775.0)
+        self.assertEqual((o["tage_unter_vorher"], o["tage_gehalten"], o["tage_unter_nachher"]), (4, 2, 2))
+        self.assertAlmostEqual(o["q"][51], 775.0)
+        self.assertAlmostEqual(o["q"][52], 775.0)
+        self.assertEqual(o["q"][50], 700.0)                                     # nicht gehaltene Tage bleiben unverändert
+        self.assertAlmostEqual(o["bedarf_alle_m3"], 86400 * 270.0)
+
+    def test_staut_nie_unter_die_schwelle(self):
+        q = [800.0] * 30 + [3000.0] * 3 + [800.0] * 30 + [700.0] * 5 + [800.0] * 30
+        o = simulation.halten(q, 40e6, 775.0)
+        self.assertTrue(all(x >= 775.0 - 1e-9 for i, x in enumerate(o["q"]) if o["rueckhalt"][i] > 0))
+        self.assertEqual(o["tage_unter_nachher"], 0)
+        self.assertGreater(o["hoch"], 800.0)                                    # gestaut wird nur im Hochwasser
+
+    def test_ohne_tage_unter_der_schwelle_passiert_nichts(self):
+        o = simulation.halten([900.0] * 40, 10e6, 775.0)
+        self.assertEqual(o["tage_gehalten"], 0)
+        self.assertEqual(sum(o["rueckhalt"]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
