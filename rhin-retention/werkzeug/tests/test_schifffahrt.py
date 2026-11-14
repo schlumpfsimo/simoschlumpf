@@ -185,5 +185,45 @@ class Uebertrag(unittest.TestCase):
         self.assertAlmostEqual(o["rest_m3"], 12e6)         # nichts gebraucht, nichts gestaut: der Inhalt geht weiter
 
 
+class Hochwassergrenze(unittest.TestCase):
+    def test_speichergrenze(self):
+        # 100 km², Anteil 0,5: 10 cm Platz ergeben 0,1 m · 100e6 m² / 0,5 = 20 Mio. m³ Gesamtinhalt
+        g = simulation.speichergrenze([(0.5, 100.0, 430.0, [429.9, 430.2, None])])
+        self.assertAlmostEqual(g[0], 20e6, delta=1.0)
+        self.assertEqual(g[1], 0.0)                         # See über der Grenze: kein Zusatzstau
+        self.assertEqual(g[2], float("inf"))                # ohne Seestand keine Grenze
+
+    def test_kein_stau_ohne_platz(self):
+        q = [900.0] * 40 + [600.0] * 5
+        o = simulation.heben(q, 50e6, 775.0, kapazitaet=[0.0] * len(q))
+        self.assertEqual(sum(o["rueckhalt"]), 0)
+        self.assertAlmostEqual(o["tief"], 600.0, delta=0.01)
+
+    def test_entlastung_wenn_der_see_steigt(self):
+        q = [900.0] * 20 + [900.0] * 20
+        kap = [50e6] * 20 + [10e6] * 20                     # ab Tag 20 lässt der Seestand nur noch 10 Mio. m³ zu
+        o = simulation.regel(q, 50e6, 775.0, 800.0, kapazitaet=kap, start_m3=30e6)
+        self.assertAlmostEqual(o["entlastung"][20], (o["speicher"][19] - 10e6) / 86400)
+        self.assertTrue(all(s <= k + 1e-6 for s, k in zip(o["speicher"], kap)))
+
+
+class Betriebsregel(unittest.TestCase):
+    def test_abgabe_ist_begrenzt_und_ohne_voraussicht(self):
+        q = [900.0] * 30 + [700.0] * 40 + [500.0] * 5
+        v = 30 * 86400 * 50.0                               # voller Speicher: 30 Tage zu 50 m³/s
+        o = simulation.regel(q, v, 775.0, 800.0, reichweite_tage=30, start_m3=v)
+        self.assertTrue(all(a <= 50.0 + 1e-9 for a in o["abgabe"]))
+        self.assertAlmostEqual(o["q"][30], 750.0)            # 700 + 50, nicht bis 775
+        self.assertEqual(o["abgabe"][-1], 0.0)               # nach 30 Tagen leer: die trockensten Tage gehen leer aus
+        mit = simulation.heben(q, v, 775.0, start_m3=v)
+        self.assertGreater(min(x for x in mit["q"][70:]), min(x for x in o["q"][70:]))   # Voraussicht hilft den trockensten Tagen
+
+    def test_stauen_erst_ab_der_schwelle(self):
+        q = [790.0] * 10 + [1200.0] * 10
+        o = simulation.regel(q, 20e6, 775.0, 1000.0)
+        self.assertEqual(sum(o["rueckhalt"][:10]), 0)
+        self.assertGreater(sum(o["rueckhalt"][10:]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
