@@ -10,7 +10,10 @@
 
   // ------------------------------------------------------------ Texte
   const T = FR ? {
-    titel: 'Rhin · Débit et retenue', lead: 'Combien d’eau le Rhin apporte à Bâle et à Kaub, d’où elle vient, et de combien les lacs pourraient relever les basses eaux s’ils retenaient davantage.',
+    titel: 'Rhin · Navigabilité et retenue', lead: 'Deux questions : de quoi dépend la navigabilité du Rhin entre Bâle et Kaub ? Et qu’apporterait une retenue dans les lacs, restituée à l’étiage ? La page montre ce qui est mesuré et calcule ce qui serait. Elle sert de base à une discussion.',
+    frage1: '1 De quoi dépend la navigabilité ?', frage2: '2 Qu’apporterait une retenue ?', fTitel: 'Navigabilité par tronçon', fAbschnitt: 'Tronçon', fPegel: 'Échelle de référence', fW: 'Niveau cm', fGlw: 'GlW cm', fT: 'Profondeur du chenal cm', fSoll: 'au GlW', fZustand: 'État', fStau: 'Bâle–Iffezheim', fStauText: 'régulé par barrages : les biefs maintiennent le chenal, il ne dépend pas ici du débit', fStufen: 'barrages',
+    kVoll: 'pleine profondeur du chenal', kE1: 'jusqu’à 30 cm sous le GlW', kE2: '30 à 60 cm sous le GlW', kE3: 'plus de 60 cm sous le GlW', kGesperrt: 'au-dessus des plus hautes eaux navigables', kKein: 'pas de valeur', fHinweis: 'Profondeur du chenal = niveau − GlW + profondeur sous le GlW. Limites des tronçons : milieu entre les échelles (hypothèse). Sous le GlW, les bateaux chargent moins.',
+    nTitel: 'Bénéfice par tronçon sur l’année', nUnter: 'Jours sous le GlW', nHub: 'Relèvement moyen cm', nTief: 'Profondeur minimale du chenal cm', nTage: 'Jours avec valeur',
     ziel: 'Bilan pour', ansicht: 'Vue', heute: 'Aujourd’hui', extrem: 'Extrêmes', tag: 'Date', mq: 'Moyenne', nw: 'Étiage moyen', jahr: 'Année', datum: 'Date', lage: 'Étiage',
     werte: 'Valeurs', gem: 'Mesuré', simu: 'Simulé', glied: 'Composante', anteil: 'Part', gemessen: 'mesuré', geschaetzt: 'estimé', rest: 'reste (bassin intermédiaire)', negativ: 'reste négatif',
     zwischen: 'Bassin intermédiaire', kontrolle: 'Contrôle Aar : Stilli − (Brugg + Reuss + Limmat)', inkl: 'y compris', ohneReihe: 'sans série', ohneReihen: 'y compris Neckar et Main, sans séries',
@@ -32,14 +35,17 @@
     simHinweis: 'Année civile, réservoir vide au 1er janvier, prévision parfaite : le résultat est une borne supérieure. Les règlements de régulation, la protection contre les crues et l’écologie ne sont pas pris en compte.',
     herTitel: 'Dérivation', herLead: 'Chaque nombre de cette page découle des formules ci-dessous, ici avec les valeurs du jour affiché.',
     methode: 'Hypothèses et lacunes', quellen: 'Sources', standT: 'Données du', monate: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
-    legende: 'Largeur du trait = débit. Noir : débit de la station amont. Gris : apport du bassin intermédiaire (reste calculé). Bleu : tronçon modifié par la simulation. Carré : station. Triangle : lac régulé. Cercle : lac non régulé. Fond : swisstopo et OpenStreetMap, en trame de points.', fehlt: 'Les données n’ont pas pu être chargées.',
+    legende: 'Rhin dès Bâle : navigabilité par tronçon (trait plein = pleine profondeur, plus les tirets sont courts, plus on est sous le GlW). Barres en travers : barrages. En amont de Bâle et sur les affluents : largeur du trait = débit. Noir : débit de la station amont. Gris : apport du bassin intermédiaire (reste calculé). Bleu : tronçon modifié par la simulation. Carré : station. Triangle : lac régulé. Cercle : lac non régulé. Fond : swisstopo et OpenStreetMap, en trame de points.', fehlt: 'Les données n’ont pas pu être chargées.',
     meth: ['Temps de parcours : hypothèses en jours entiers (Bâle–Maxau 1, Maxau–Worms 1, Neckar–Worms 1, sinon 0 ; Bâle–Kaub 2), non mesurés.',
       'Stations allemandes : valeurs journalières contrôlées de l’annuaire (2008–2025), puis données brutes des 31 derniers jours. Neckar : 2010–2020. Pour Kaub, les jours sans mesure depuis le 1.1.2026 sont estimés et désignés comme tels.',
       'Si les stations entre Bâle et Kaub manquent, le bilan regroupe tout l’aval de Bâle en un seul reste.',
       'Lacs : surface constante. Surfaces et limites d’après les fiches OFEV « Seeregulierung » (2020). Lac de Constance : 536 km² selon l’IGKB, répartition non officielle.',
       'Rien n’est interpolé. Si une valeur manque, le résultat manque.'],
   } : {
-    titel: 'Rhein · Abfluss und Rückhalt', lead: 'Wie viel Wasser der Rhein in Basel und in Kaub führt, woher es kommt, und um wie viel die Seen das Niedrigwasser anheben könnten, wenn sie mehr zurückhielten.',
+    titel: 'Rhein · Fahrbarkeit und Rückhalt', lead: 'Zwei Fragen: Was bedingt die Fahrbarkeit des Rheins zwischen Basel und Kaub? Und was brächte es, wenn die Seen Wasser zurückhielten und bei Niedrigwasser abgäben? Die Seite zeigt, was gemessen ist, und rechnet nach, was wäre. Sie ist als Grundlage für eine Diskussion gedacht.',
+    frage1: '1 Was bedingt die Fahrbarkeit?', frage2: '2 Was brächte eine Retention?', fTitel: 'Fahrbarkeit nach Abschnitten', fAbschnitt: 'Abschnitt', fPegel: 'Richtpegel', fW: 'Pegel cm', fGlw: 'GlW cm', fT: 'Fahrrinnentiefe cm', fSoll: 'bei GlW', fZustand: 'Zustand', fStau: 'Basel–Iffezheim', fStauText: 'staugeregelt: Die Staustufen halten die Fahrrinne, sie hängt hier nicht vom Abfluss ab', fStufen: 'Staustufen',
+    kVoll: 'volle Fahrrinnentiefe', kE1: 'bis 30 cm unter GlW', kE2: '30 bis 60 cm unter GlW', kE3: 'mehr als 60 cm unter GlW', kGesperrt: 'über dem höchsten Schifffahrtswasserstand', kKein: 'kein Wert', fHinweis: 'Fahrrinnentiefe = Pegel − GlW + Tiefe unter GlW. Abschnittsgrenzen: Mitte zwischen den Richtpegeln (Annahme). Unterhalb des GlW können die Schiffe weniger laden.',
+    nTitel: 'Nutzen je Abschnitt im Jahr', nUnter: 'Tage unter GlW', nHub: 'Mittlere Anhebung cm', nTief: 'Kleinste Fahrrinnentiefe cm', nTage: 'Tage mit Wert',
     ziel: 'Bilanz für', ansicht: 'Ansicht', heute: 'Heute', extrem: 'Extremwerte', tag: 'Datum', mq: 'Mittelwasser', nw: 'Mittleres Niedrigwasser', jahr: 'Jahr', datum: 'Datum', lage: 'Niedrigwasserlage',
     werte: 'Werte', gem: 'Gemessen', simu: 'Simuliert', glied: 'Bilanzglied', anteil: 'Anteil', gemessen: 'gemessen', geschaetzt: 'geschätzt', rest: 'Rest (Zwischengebiet)', negativ: 'negativer Rest',
     zwischen: 'Zwischengebiet', kontrolle: 'Kontrollbilanz Aare: Stilli − (Brugg + Reuss + Limmat)', inkl: 'inkl.', ohneReihe: 'ohne Messreihe', ohneReihen: 'inkl. Neckar und Main, ohne Messreihen',
@@ -61,7 +67,7 @@
     simHinweis: 'Kalenderjahr, Speicher am 1. Januar leer, volle Voraussicht: Das Ergebnis ist eine Obergrenze. Regulierreglemente, Hochwasserschutz und Ökologie sind nicht berücksichtigt.',
     herTitel: 'Herleitung', herLead: 'Jede Zahl dieser Seite folgt aus den Formeln unten, hier mit den Werten des angezeigten Tages.',
     methode: 'Annahmen und Lücken', quellen: 'Quellen', standT: 'Datenstand', monate: ['Jan', 'Feb', 'Mrz', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
-    legende: 'Strichbreite = Abfluss. Schwarz: Abfluss der Messstelle oberhalb. Grau: Zuwachs aus dem Zwischengebiet (gerechneter Rest). Blau: Strecke, die die Simulation verändert. Quadrat: Messstation. Dreieck: regulierter See. Kreis: nicht regulierter See. Grundkarte: swisstopo und OpenStreetMap, als Punkteraster.', fehlt: 'Die Daten konnten nicht geladen werden.',
+    legende: 'Rhein ab Basel: Fahrbarkeit je Abschnitt (durchgezogen = volle Fahrrinnentiefe, je kürzer die Striche, desto weiter unter dem GlW). Balken quer zum Rhein: Staustufen. Oberhalb von Basel und an den Zuflüssen: Strichbreite = Abfluss. Schwarz: Abfluss der Messstelle oberhalb. Grau: Zuwachs aus dem Zwischengebiet (gerechneter Rest). Blau: Strecke, die die Simulation verändert. Quadrat: Messstation. Dreieck: regulierter See. Kreis: nicht regulierter See. Grundkarte: swisstopo und OpenStreetMap, als Punkteraster.', fehlt: 'Die Daten konnten nicht geladen werden.',
     meth: ['Fliesszeiten: Annahmen in ganzen Tagen (Basel–Maxau 1, Maxau–Worms 1, Neckar–Worms 1, sonst 0; Basel–Kaub 2), nicht gemessen.',
       'Deutsche Pegel: geprüfte Tageswerte aus dem Jahrbuch (2008–2025), danach Rohdaten der letzten 31 Tage. Neckar: 2010–2020. Für Kaub sind die Tage ohne Messwert seit dem 1.1.2026 geschätzt und so bezeichnet.',
       'Fehlen die Pegel zwischen Basel und Kaub, fasst die Bilanz alles unterhalb von Basel zu einem Rest zusammen.',
@@ -322,6 +328,83 @@
     el.innerHTML = html;
   }
 
+  // ------------------------------------------------------------ Fahrbarkeit: Abschnitte je Richtpegel (wie schifffahrt.fahrbarkeit)
+  const RP = meta.richtpegel || [], KM = karte.rheinkm || [];
+  const kurve = (k, x, von, nach) => {
+    if (x == null || !k || k.length < 2 || x < k[0][von] || x > k[k.length - 1][von]) return null;
+    let i = 1; while (k[i][von] < x) i++;
+    const a = k[i - 1], b = k[i];
+    return b[von] === a[von] ? a[nach] : a[nach] + (b[nach] - a[nach]) * (x - a[von]) / (b[von] - a[von]);
+  };
+  // Wasserstand am Richtpegel: gemessen, sonst aus der Bezugskurve (Abfluss am Bezugspegel); simuliert = gemessen + Kurvendifferenz
+  function pegelstand(Y, S, p, i, sim) {
+    const q0 = wert(Y.q, p.bezug, i), mess = Y.wp && Y.wp[p.id] ? Y.wp[p.id][i] : null;
+    const basis = mess != null ? mess : kurve(p.kurve, q0, 0, 1);
+    if (basis == null) return null;
+    if (!sim || !S || !S.wirkung[p.bezug] || !S.wirkung[p.bezug][i]) return { w: basis, ausKurve: mess == null };
+    const f0 = kurve(p.kurve, q0, 0, 1), f1 = kurve(p.kurve, q0 + S.wirkung[p.bezug][i], 0, 1);
+    return f0 == null || f1 == null ? { w: basis, ausKurve: mess == null } : { w: basis + f1 - f0, ausKurve: mess == null };
+  }
+  function zustand(w, p) {
+    if (w == null || p.glw == null) return null;
+    const fehl = Math.max(0, p.glw - w);
+    return { tiefe: w - p.glw + p.tugl, fehl, klasse: p.hsw != null && w >= p.hsw ? 'gesperrt' : !fehl ? 'voll' : fehl <= 30 ? 'e1' : fehl <= 60 ? 'e2' : 'e3' };
+  }
+  const STRICH = { voll: '', e1: '13 5', e2: '6 6', e3: '1.5 6', gesperrt: '', kein: '3 7' };
+  const KLASSE = { voll: 'kVoll', e1: 'kE1', e2: 'kE2', e3: 'kE3', gesperrt: 'kGesperrt', kein: 'kKein' };
+  const muster = (kl, farbe = '#000') => `<svg width="44" height="10" aria-hidden="true"><line x1="0" x2="44" y1="5" y2="5" stroke="${kl === 'gesperrt' || kl === 'kein' ? '#a8a8a8' : farbe}" stroke-width="${kl === 'kein' ? 2 : 6}" stroke-dasharray="${STRICH[kl]}"/></svg>`;
+  function abschnitte(R) {                     // Zustand je Abschnitt am angezeigten Tag, gemessen und simuliert
+    if (!tagAnsicht() || !R.Y) return [];
+    return RP.map(p => {
+      const m = pegelstand(R.Y, R.S, p, R.i1, false), s = R.S && R.S.O ? pegelstand(R.Y, R.S, p, R.i1, true) : null;
+      return { p, m, s, zm: m && zustand(m.w, p), zs: s && zustand(s.w, p) };
+    });
+  }
+  function fahrbarZeichnen(R) {
+    const el = $('fahrbar'), A = abschnitte(R);
+    if (!A.length) { el.innerHTML = ''; return; }
+    const sim = Z.sim && R.S && R.S.O;
+    el.innerHTML = `<h2>${T.fTitel}, ${datum(isoTag(Z.jahr, R.i1))}</h2><div class="rollen"><table><thead><tr><th>${T.fAbschnitt}</th><th>${T.fPegel}</th><th class="z">${T.fW}</th><th class="z">${T.fGlw}</th><th class="z">${T.fT} (${T.gemessen})</th>${sim ? `<th class="z">${T.simu}</th>` : ''}<th class="z">${T.fSoll}</th><th>${T.fZustand}${sim ? ` (${T.simu.toLowerCase()})` : ''}</th></tr></thead><tbody>` +
+      `<tr><td>${T.fStau}, km ${zahl(meta.stau.von)}–${zahl(meta.stau.bis)}</td><td>${meta.staustufen.length - 1} ${T.fStufen}</td><td colspan="${sim ? 6 : 5}">${T.fStauText}</td></tr>` +
+      A.map(({ p, m, s, zm, zs }) => { const z = sim && zs ? zs : zm, kl = z ? z.klasse : 'kein';
+        return `<tr><td>km ${zahl(p.von, 1)}–${zahl(p.bis, 1)}</td><td>${h(p.name)}</td><td class="z">${m ? zahl(m.w) + (m.ausKurve ? '*' : '') : '–'}</td><td class="z">${zahl(p.glw)}</td><td class="z">${zm ? zahl(zm.tiefe) : '–'}</td>` +
+          (sim ? `<td class="z">${zs ? `${zahl(zs.tiefe)} (${vz(zs.tiefe - zm.tiefe, 0)})` : '–'}</td>` : '') + `<td class="z">${zahl(p.tugl)}</td><td>${muster(kl, sim && zs && Math.abs(zs.tiefe - zm.tiefe) >= .5 ? '#003399' : '#000')}${T[KLASSE[kl]]}</td></tr>`; }).join('') +
+      `</tbody></table></div><p class="hinweis">${T.fHinweis}${A.some(x => x.m && x.m.ausKurve) ? ` * ${T.ausKurve}.` : ''}</p>`;
+  }
+  const kmLinie = (von, bis) => KM.filter(x => x[0] >= von && x[0] <= bis).map(x => [x[2], x[1]]);
+  function fahrbarkeitKarte(R) {
+    const stau = kmLinie(meta.stau.von, meta.stau.bis);
+    if (stau.length) L.polyline(stau, { color: '#000', weight: 6, lineCap: 'butt' }).addTo(ebene).bindTooltip(`${T.fStau}: ${T.fStauText}`, { sticky: true });
+    const A = abschnitte(R), sim = Z.sim && R.S && R.S.O;
+    for (const p of RP) {
+      const a = A.find(x => x.p === p), z = a && (sim && a.zs ? a.zs : a.zm), kl = z ? z.klasse : 'kein', linie = kmLinie(p.von, p.bis); if (linie.length < 2) continue;
+      const blau = sim && a && a.zs && a.zm && Math.abs(a.zs.tiefe - a.zm.tiefe) >= .5;
+      L.polyline(linie, { color: '#fff', weight: 9, lineCap: 'butt', interactive: false }).addTo(ebene);
+      L.polyline(linie, { color: kl === 'gesperrt' || kl === 'kein' ? '#a8a8a8' : blau ? '#003399' : '#000', weight: kl === 'kein' ? 2 : 7, dashArray: STRICH[kl] || null, lineCap: 'butt' }).addTo(ebene)
+        .bindTooltip(`${p.name}, km ${zahl(p.von, 1)}–${zahl(p.bis, 1)}: ${z ? `${T.fT} ${zahl(z.tiefe)} (${T.fSoll} ${zahl(p.tugl)}) · ${T[KLASSE[kl]]}` : T.kKein}`, { sticky: true });
+      if (!ST[p.id]) { const o = KM.reduce((b, x) => Math.abs(x[0] - p.km) < Math.abs(b[0] - p.km) ? x : b, KM[0]);   // Richtpegel ohne Abflussmessstelle
+        L.marker([o[2], o[1]], { icon: L.divIcon({ className: '', html: '<div class="pkt"></div>', iconSize: [11, 11], iconAnchor: [5.5, 5.5] }), title: p.name, alt: p.name, zIndexOffset: 400 }).addTo(ebene)
+          .bindPopup(`<h3>Rhein–${h(p.name)}</h3><div class="raster2">${zeile(T.nr, p.id)}${zeile('km', zahl(p.km, 1))}${zeile(T.fW, a && a.m ? zahl(a.m.w) : '–')}${zeile(T.fGlw, zahl(p.glw))}${zeile(T.fT, z ? zahl(z.tiefe) : '–')}${zeile(T.quelle, 'WSV / BfG')}</div>`); }
+    }
+    for (const s of meta.staustufen) L.marker([s.lat, s.lon], { icon: L.divIcon({ className: '', html: '<div class="stau"></div>', iconSize: [5, 15], iconAnchor: [2.5, 7.5] }), title: s.name, alt: s.name, zIndexOffset: 300 }).addTo(ebene)
+      .bindTooltip(`${FR ? 'Barrage' : 'Staustufe'} ${s.name}`);
+  }
+  // Nutzen je Abschnitt über das Jahr: Tage unter GlW und kleinste Fahrrinnentiefe, gemessen und simuliert
+  function nutzenTafel(R) {
+    const Y = R.Y, S = R.S, n = (Y.q[BASEL] || []).length;
+    const zeilen = RP.map(p => {
+      let tage = 0, u0 = 0, u1 = 0, hub = 0, gehoben = 0, t0 = null, t1 = null;
+      for (let i = 0; i < n; i++) {
+        const m = pegelstand(Y, S, p, i, false); if (!m) continue; const s = pegelstand(Y, S, p, i, true), zm = zustand(m.w, p), zs = zustand(s.w, p);
+        tage++; if (zm.fehl > 0) u0++; if (zs.fehl > 0) u1++;
+        if (zm.fehl > 0 && s.w - m.w > .05) { hub += s.w - m.w; gehoben++; }
+        t0 = t0 == null ? zm.tiefe : Math.min(t0, zm.tiefe); t1 = t1 == null ? zs.tiefe : Math.min(t1, zs.tiefe);
+      }
+      return `<tr><td>${h(p.name)}, km ${zahl(p.von, 1)}–${zahl(p.bis, 1)}</td><td class="z">${tage}</td><td class="z">${tage ? `${u0} → ${u1}` : '–'}</td><td class="z">${gehoben ? `${vz(hub / gehoben, 0)} (${gehoben} ${T.tageW})` : '–'}</td><td class="z">${tage ? `${zahl(t0)} → ${zahl(t1)}` : '–'}</td><td class="z">${zahl(p.tugl)}</td></tr>`;
+    }).join('');
+    $('nutzen').innerHTML = `<h2>${T.nTitel} ${Z.jahr}</h2><div class="rollen"><table><thead><tr><th>${T.fAbschnitt}</th><th class="z">${T.nTage}</th><th class="z">${T.nUnter}</th><th class="z">${T.nHub}</th><th class="z">${T.nTief}</th><th class="z">${T.fSoll}</th></tr></thead><tbody>${zeilen}</tbody></table></div>`;
+  }
+
   // ------------------------------------------------------------ Karte
   const map = L.map('karte', { zoomSnap: .25, scrollWheelZoom: false });
   map.createPane('osm').style.zIndex = 190; map.getPane('osm').classList.add('grundkarte');
@@ -343,7 +426,8 @@
     const geaendert = id => Z.sim && R.wirk && R.wirk[id] && Math.abs(R.wirk[id]) > .05;
     // Im Kurznetz stehen die Strecken Basel–Maxau–Worms–Mainz–Kaub für die eine Kante Basel–Kaub
     const strecke = k => NETZ === KURZ && k.von === BASEL ? ['2289>23700200', '23700200>23900200', '23900200>25100100', '25100100>25700100'].flatMap(s => karte.strecken[s].p) : (karte.strecken[`${k.von}>${k.nach}`] || {}).p;
-    const kanten = NETZ.slice().sort((x, y) => (fluss(y.von) || 0) - (fluss(x.von) || 0));
+    const kanten = NETZ.filter(k => !(ST[k.nach].quelle === 'WSV' && ST[k.von].gewaesser === 'Rhein')).sort((x, y) => (fluss(y.von) || 0) - (fluss(x.von) || 0));
+    fahrbarkeitKarte(R);
     for (const k of kanten) {                    // grauer Rand: Zuwachs aus dem Zwischengebiet bis zur nächsten Messstelle
       const p = strecke(k), q = fluss(k.von), r = a && a.mittel['R:' + k.nach];
       if (p && q > 0 && r > 0 && !k.zufluss) L.polyline(p.map(ll), { color: '#a8a8a8', weight: Math.max(2, (q + r) * px), lineCap: 'butt', interactive: false }).addTo(ebene);
@@ -478,7 +562,7 @@
     for (const s of meta.seen) { const m = CM[s.id] * s.flaeche_km2 / 100; v += m; $('cm-' + s.id).textContent = CM[s.id]; $('vol-' + s.id).textContent = zahl(m, 1); }
     $('vol-summe').textContent = zahl(v, 1);
     const S = R.S, z = ST[S && S.zid || Z.ziel], q = R.Y && R.Y.q[z.id];
-    if (!q || !S || !S.O) { $('simwerte').innerHTML = `<p>${q ? T.nurTag : T.keinJahr}</p>`; $('verlauf').innerHTML = ''; $('speicher').innerHTML = ''; $('abgabe').innerHTML = ''; $('abgabelegende').innerHTML = ''; $('seetafel').innerHTML = ''; $('simlegende').innerHTML = ''; R.sz = null; return; }
+    if (!q || !S || !S.O) { $('simwerte').innerHTML = `<p>${q ? T.nurTag : T.keinJahr}</p>`; $('verlauf').innerHTML = ''; $('speicher').innerHTML = ''; $('abgabe').innerHTML = ''; $('abgabelegende').innerHTML = ''; $('nutzen').innerHTML = ''; $('seetafel').innerHTML = ''; $('simlegende').innerHTML = ''; R.sz = null; return; }
     const O = S.O, qs = S.q[z.id], a = nm7q(q), b = nm7q(qs), min0 = Math.min(...q.filter(x => x != null)), min1 = Math.min(...qs.filter(x => x != null));
     const qK = R.Y.q[KAUB], qKs = S.q[KAUB], tA = O.abgabe.reduce((n, x) => n + (x > 0), 0), tR = O.rueck.reduce((n, x) => n + (x > 0), 0), genutzt = Math.max(...O.speicher) / 1e6;
     const gesch = (R.Y.s[z.id] || []).some(([, c]) => c === 5) ? q.reduce((n, x, i) => n + (x != null && statusAm(R.Y, z.id, i) === 5), 0) : 0;
@@ -500,7 +584,7 @@
       (!O.glw && min1 - min0 < .05 ? `<div><em>${T.keinGewinn}</em></div>` : '') + (O.glw && !u0 ? `<div><em>${T.nieUnter}</em></div>` : '') + (Z.modus === 'glw' && !O.glw ? `<div><em>${T.ohneKaub}</em></div>` : '') + (gesch ? `<div><em>${gesch} ${T.geschHinweis}</em></div>` : '');
     const vs = ST[Z.verlauf && R.Y.q[Z.verlauf] ? Z.verlauf : z.id];
     const [i0, i1] = verlauf(R, R.Y.q[vs.id], S.q[vs.id], O, vs, vs.id === z.id);
-    abgabeGrafik(R, i0, i1); seeTafel(R);
+    abgabeGrafik(R, i0, i1); nutzenTafel(R); seeTafel(R);
   }
   function verlauf(R, q, qs, O, z, linien) {
     const B = 1000, H = 400, L = 62, RR = 14, OO = 22, U = 40, n = q.length, svg = $('verlauf');
@@ -630,6 +714,11 @@
         f(`Q<sub>Kaub</sub>(t) ≈ a + b · B(t − 2) + c · T<sub>30</sub>(t − 2) + d · T<sub>120</sub>(t − 2)`) +
         r(`B ≤ ${zahl(m.grenze)} m³/s: Q ≈ ${kz(m.niedrig.k)} &nbsp; (${zahl(m.niedrig.tage)} ${T.tageW}, ${t('Streuung', 'écart type')} ${zahl(m.niedrig.rmse)} m³/s)<br>B &gt; ${zahl(m.grenze)} m³/s: Q ≈ ${kz(m.sonst.k)} &nbsp; (${zahl(m.sonst.tage)} ${T.tageW}, ${t('Streuung', 'écart type')} ${zahl(m.sonst.rmse)} m³/s)`) +
         `<p>${t('Angepasst mit kleinsten Quadraten an die geprüften Tageswerte', 'Ajusté par moindres carrés aux valeurs journalières contrôlées')} ${m.jahre[0]}–${m.jahre[1]}.` + (p ? ` ${t('Geprüft an den Rohwerten vom', 'Vérifié sur les données brutes du')} ${datum(p.von)} ${t('bis', 'au')} ${datum(p.bis)} (${p.tage} ${T.tageW}): ${t('Die Schätzung lag im Mittel', 'l’estimation était en moyenne de')} <b>${vz(p.mittel, 0)} m³/s</b> ${t('daneben, Streuung', 'à côté, écart type')} <b>${zahl(p.rmse)} m³/s</b>. ${t('Das entspricht in Kaub rund', 'Cela correspond à Kaub à environ')} ${zahl(p.rmse * (wAusQ(Q_GLW + 50) - wAusQ(Q_GLW - 50)) / 100)} cm. ${t('Geschätzte Werte ersetzen keine Messung.', 'Les valeurs estimées ne remplacent pas une mesure.')}` : '') + '</p>'; }
+    // 8 Fahrbarkeit je Abschnitt
+    if (RP.length) html += `<h3>8 ${t('Fahrbarkeit je Abschnitt', 'Navigabilité par tronçon')}</h3><p>${t('Von Basel bis Iffezheim ist der Rhein staugeregelt; dort setzt die Seite keine Abhängigkeit vom Abfluss an. Unterhalb gilt je Abschnitt der Richtpegel mit seinem GlW und seiner Fahrrinnentiefe unter GlW (PEGELONLINE). Der simulierte Wasserstand ist der gemessene plus die Differenz auf der Bezugskurve des Pegels; Q ist der Abfluss am Bezugspegel, ΔQ die Wirkung der Simulation dort.', 'De Bâle à Iffezheim, le Rhin est régulé par barrages ; la page n’y suppose aucune dépendance au débit. En aval, chaque tronçon suit son échelle de référence, avec son GlW et sa profondeur sous le GlW (PEGELONLINE). Le niveau simulé est le niveau mesuré plus l’écart sur la courbe de l’échelle ; Q est le débit à la station de référence, ΔQ l’effet de la simulation à cet endroit.')}</p>` +
+      f(`T = W − GlW + T<sub>GlW</sub> &nbsp;&nbsp; W<sub>sim</sub> = W + f(Q + ΔQ) − f(Q)`) +
+      r(RP.map(p => `${h(p.name)}: GlW ${zahl(p.glw)} cm, T<sub>GlW</sub> ${zahl(p.tugl)} cm, ${t('Bezug', 'référence')} ${h(kurz(ST[p.bezug]))}, ${p.kurve.length} ${t('Stützpunkte', 'points')}`).join('<br>')) +
+      `<p>${t('Bezugskurven aus Tageswertpaaren des jüngsten Jahrbuchjahres und den Rohwerten danach. Mannheim und Bingen haben keine eigene Abflussreihe; ihre Kurve bezieht sich auf Maxau bzw. Mainz und streut stärker. Die Abschnittsgrenzen liegen in der Mitte zwischen den Pegeln (Annahme). Die Stufen 30 und 60 cm unter GlW sind eine Darstellungswahl. Lage der Staustufen nach Wikidata.', 'Courbes tirées des couples journaliers de la dernière année de l’annuaire et des données brutes ensuite. Mannheim et Bingen n’ont pas de série de débit propre ; leur courbe se rapporte à Maxau et à Mayence et disperse davantage. Les limites des tronçons sont au milieu entre les échelles (hypothèse). Les paliers de 30 et 60 cm sous le GlW sont un choix de représentation. Position des barrages selon Wikidata.')}</p>`;
     el.innerHTML = html;
   }
 
@@ -647,7 +736,7 @@
     if (nr !== lauf_) return;
     if (!nurWerte) { wahlZeichnen(R.Y); simWahl(R); }
     else { const d = $('wahl').querySelector('input[type=date]'); if (d && Z.tag != null) d.value = isoTag(Z.jahr, Z.tag); }
-    lageZeichnen(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R);
+    lageZeichnen(R); fahrbarZeichnen(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R);
   }
   simSeen(); alles();
 })();

@@ -58,6 +58,27 @@ def fahrrinnentiefe(w: float, glw: float, tiefe_unter_glw: float) -> float:
     return w - glw + tiefe_unter_glw
 
 
+
+def fahrbarkeit(w: float | None, glw: float, tiefe_unter_glw: float, hsw: float | None = None) -> dict | None:
+    """Zustand eines Abschnitts aus dem Wasserstand am Richtpegel.
+
+    tiefe = W − GlW + T_GlW (verfügbare Fahrrinnentiefe), fehl = max(0, GlW − W).
+    Klassen: 'gesperrt' ab dem höchsten Schifffahrtswasserstand (HSW), 'voll' ab GlW,
+    darunter 'e1' (bis 30 cm unter GlW), 'e2' (bis 60 cm), 'e3' (mehr als 60 cm). Die Stufen 30/60 cm sind eine
+    Darstellungswahl, keine amtliche Einteilung.
+    """
+    if w is None:
+        return None
+    fehl = max(0.0, glw - w)
+    if hsw is not None and w >= hsw:
+        klasse = "gesperrt"
+    elif fehl == 0:
+        klasse = "voll"
+    else:
+        klasse = "e1" if fehl <= 30 else "e2" if fehl <= 60 else "e3"
+    return {"tiefe": fahrrinnentiefe(w, glw, tiefe_unter_glw), "fehl": fehl, "klasse": klasse}
+
+
 # ---------------------------------------------------------------- Schätzung Kaub aus Basel und Thur
 #
 #   Q_Kaub(t) ≈ a + b · Q_Basel(t − 2) + c · T30(t − 2) + d · T120(t − 2)

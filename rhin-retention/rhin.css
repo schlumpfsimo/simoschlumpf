@@ -175,3 +175,8 @@ sub{font-size:.72em;line-height:0}
 #abgabelegende{margin-top:22px}
 .legende i.muster{height:12px;width:24px;border:0;outline:1px solid var(--tinte);outline-offset:-1px}
 #seetafel{margin:26px 0}
+h2.frage{font-size:clamp(20px,2vw,30px);letter-spacing:.12em;line-height:1.2;margin:0 0 22px}
+#fahrbar{margin:0 0 40px}
+#fahrbar svg,#nutzen svg{vertical-align:-3px;margin-right:10px}
+.stau{width:5px;height:15px;background:var(--tinte);outline:2px solid var(--papier)}
+#nutzen{margin:30px 0 0}

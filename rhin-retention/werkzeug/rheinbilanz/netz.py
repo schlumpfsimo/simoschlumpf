@@ -106,6 +106,49 @@ SEEN = [
 ]
 
 
+# ---------------------------------------------------------------- Schifffahrt: Richtpegel, Abschnitte, Staustufen
+
+@dataclass(frozen=True)
+class Richtpegel:
+    id: str            # Pegelnummer WSV
+    name: str
+    km: float          # Rheinkilometer (PEGELONLINE)
+    dgj: tuple         # (Ordner, Datei) im Jahrbuch
+    bezug: str         # Messstelle im Netz, deren Abfluss den Wasserstand bestimmt (für die Bezugskurve und die Simulation)
+
+
+RICHTPEGEL = [
+    Richtpegel("23700200", "Maxau", 362.3, ("Maxau", "23700200_WQ.pdf"), "23700200"),
+    Richtpegel("23700600", "Speyer", 400.6, ("Speyer", "23700600_WQ.pdf"), "23700200"),
+    Richtpegel("23700700", "Mannheim", 424.7, ("Mannheim", "23700700_W.pdf"), "23700200"),      # Pegel liegt oberhalb der Neckarmündung
+    Richtpegel("23900200", "Worms", 443.4, ("Worms", "23900200_WQ.pdf"), "23900200"),
+    Richtpegel("25100100", "Mainz", 498.3, ("Mainz", "25100100_WQ.pdf"), "25100100"),
+    Richtpegel("25300200", "Bingen", 528.4, ("Bingen", "25300200_W.pdf"), "25100100"),          # Pegel liegt oberhalb der Nahemündung
+    Richtpegel("25700100", "Kaub", 546.2, ("Kaub", "25700100_WQ.pdf"), "25700100"),
+]
+STAU_VON, STAU_BIS = 170.0, 334.0      # staugeregelte Strecke Basel–Iffezheim (Rheinkilometer; 334 = Staustufe Iffezheim, Annahme)
+FREI_BIS = 557.0                       # Ende der betrachteten freien Strecke (Pegel St. Goar)
+
+
+def abschnitte() -> list:
+    """Freie Strecke in Abschnitten je Richtpegel: [(pegel-id, km von, km bis)].
+
+    Annahme: Die Grenze zwischen zwei Abschnitten liegt in der Mitte zwischen den Pegeln. Amtliche Geltungsbereiche
+    der Richtpegel sind nicht hinterlegt.
+    """
+    grenzen = [STAU_BIS] + [round((a.km + b.km) / 2, 1) for a, b in zip(RICHTPEGEL, RICHTPEGEL[1:])] + [FREI_BIS]
+    return [(p.id, grenzen[i], grenzen[i + 1]) for i, p in enumerate(RICHTPEGEL)]
+
+
+# Lage nach Wikidata (abgerufen 14.11.2026, nicht amtlich): Name, Breite, Länge, Wikidata-Nummer
+STAUSTUFEN = [
+    ("Birsfelden", 47.5606, 7.6258, "Q1786069"), ("Kembs", 47.6553, 7.5195, "Q1786132"), ("Ottmarsheim", 47.7740, 7.5224, "Q1786175"),
+    ("Fessenheim", 47.9147, 7.5707, "Q1786095"), ("Vogelgrun", 48.0203, 7.5739, "Q1656732"), ("Marckolsheim", 48.1537, 7.5897, "Q1561255"),
+    ("Rhinau", 48.2840, 7.6774, "Q1786190"), ("Gerstheim", 48.4038, 7.7279, "Q1261916"), ("Strasbourg", 48.5256, 7.7966, "Q1786206"),
+    ("Gambsheim", 48.6847, 7.9150, "Q15130268"), ("Iffezheim", 48.8321, 8.1131, "Q872835"),
+]
+
+
 @dataclass
 class Netz:
     stationen: dict = field(default_factory=dict)

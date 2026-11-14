@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import bilanz, quellen
 from .daten import ERSTES_JAHR, Bestand
-from .netz import KONTROLLE, REFERENZ, REFERENZ_DE, SEEN, ZIELE, Netz
+from .netz import KONTROLLE, REFERENZ, REFERENZ_DE, RICHTPEGEL, SEEN, STAU_BIS, STAU_VON, STAUSTUFEN, ZIELE, Netz, abschnitte
 
 QUELLEN = [
     {"kurz": "BAFU", "text": "Bundesamt für Umwelt BAFU, Hydrologische Beobachtungen, Datenplattform BAFU (Freie Nutzung. Quellenangabe ist Pflicht.)", "url": "https://data.bafu.admin.ch"},
@@ -50,7 +50,14 @@ def jahresdatei(b: Bestand, jahr: int, alt: dict | None = None) -> dict:
     wk = [_rund(b.w_kaub.get(t), 0) for t in tage]
     if alt and alt.get("wk"):
         wk = [neu if neu is not None else a for neu, a in zip(wk, alt["wk"] + [None] * len(tage))]
-    datei = {"jahr": jahr, "q": q, "s": s, "w": w}
+    wp = {}
+    for pid, reihe in b.wp.items():                       # Wasserstand der Richtpegel in cm; früher gespeicherte Rohwerte bleiben erhalten
+        werte = [_rund(reihe.get(t), 0) for t in tage]
+        if alt and pid in alt.get("wp", {}):
+            werte = [neu if neu is not None else a for neu, a in zip(werte, alt["wp"][pid] + [None] * len(tage))]
+        if any(x is not None for x in werte):
+            wp[pid] = werte
+    datei = {"jahr": jahr, "q": q, "s": s, "w": w, "wp": wp}
     if any(x is not None for x in wk):
         datei["wk"] = wk
     return datei
@@ -137,6 +144,11 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
         "extreme": {z: _extreme(b.q.get(z, {}), jahre) for z in ZIELE},
         "anteile": {"2289": _anteile(netz, b, "2289", REFERENZ), "25700100": _anteile(netz, b, "25700100", REFERENZ_DE)},
         "kaub": b.kaub,
+        "richtpegel": [{"id": p.id, "name": p.name, "km": p.km, "bezug": p.bezug, "von": von, "bis": bis,
+                        "zeitraum": _zeitraum(b.wp.get(p.id, {})), **b.richt.get(p.id, {})}
+                       for p, (_, von, bis) in zip(RICHTPEGEL, abschnitte())],
+        "stau": {"von": STAU_VON, "bis": STAU_BIS},
+        "staustufen": [{"name": n, "lat": la, "lon": lo, "wikidata": q} for n, la, lo, q in STAUSTUFEN],
         "meldungen": b.meldungen,
     }
 

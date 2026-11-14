@@ -28,6 +28,25 @@ class Kurve(unittest.TestCase):
         self.assertEqual(schifffahrt.fahrrinnentiefe(67, 77, 190), 180)
 
 
+class Fahrbarkeit(unittest.TestCase):
+    def test_klassen(self):
+        f = lambda w: schifffahrt.fahrbarkeit(w, 77, 190, 640)["klasse"]
+        self.assertEqual([f(700), f(77), f(60), f(30), f(10)], ["gesperrt", "voll", "e1", "e2", "e3"])
+
+    def test_tiefe_und_fehlbetrag(self):
+        z = schifffahrt.fahrbarkeit(67, 77, 190, 640)
+        self.assertEqual((z["tiefe"], z["fehl"]), (180, 10))
+        self.assertIsNone(schifffahrt.fahrbarkeit(None, 77, 190))
+
+    def test_abschnitte_schliessen_aneinander(self):
+        from rheinbilanz import netz
+        a = netz.abschnitte()
+        self.assertEqual(a[0][1], netz.STAU_BIS)
+        self.assertEqual(a[-1][2], netz.FREI_BIS)
+        self.assertTrue(all(x[2] == y[1] for x, y in zip(a, a[1:])))
+        self.assertTrue(all(von < p.km < bis for p, (_, von, bis) in zip(netz.RICHTPEGEL, a)))
+
+
 class Schaetzung(unittest.TestCase):
     def daten(self):
         tage = [T0 + dt.timedelta(days=i) for i in range(900)]

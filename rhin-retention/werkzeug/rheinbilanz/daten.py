@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 from . import cache, quellen, schifffahrt
-from .netz import SEEN, STATIONEN
+from .netz import RICHTPEGEL, SEEN, STATIONEN
 
 ERSTES_JAHR = 1970      # die BAFU-Datenplattform führt Tageswerte ab 1970
 
@@ -21,6 +21,8 @@ class Bestand:
         self.orte: dict = {}       # {id: (breite, länge)}
         self.dgj_hauptwerte: dict = {}
         self.kaub: dict = {}       # Kennwerte, Abflusskurve, Vorhersage, Schätzmodell
+        self.wp: dict = {}         # {pegel-id: {datum: cm}} Wasserstand der Richtpegel
+        self.richt: dict = {}      # {pegel-id: {glw, tugl, hsw, kurve}}
         self.meldungen: list[str] = []
 
     def setze(self, sid: str, reihe: dict, ueberschreiben: bool = True) -> None:
@@ -87,6 +89,7 @@ def laden(bis_jahr: int | None = None, melde=lambda s: print(s, file=sys.stderr)
         jahrbuch = versuch(f"DGJ {s.name}", lambda: quellen.dgj_tageswerte(*s.dgj))
         if jahrbuch:
             b.setze(s.id, jahrbuch["Q"])
+            b.wp.setdefault(s.id, {}).update({t: w for t, (w, _) in jahrbuch["W"].items()})
             if s.name == "Kaub":
                 b.w_kaub.update({t: w for t, (w, _) in jahrbuch["W"].items()})
             werte = versuch(f"DGJ {s.name} Hauptwerte", lambda: _dgj_hauptwerte(s.dgj[1]))
@@ -105,7 +108,29 @@ def laden(bis_jahr: int | None = None, melde=lambda s: print(s, file=sys.stderr)
         if ort:
             b.orte[s.id] = (ort["latitude"], ort["longitude"])
     _kaub(b, versuch, heute)
+    _richtpegel(b, versuch, heute)
     return b
+
+
+def _richtpegel(b: Bestand, versuch, heute: dt.date) -> None:
+    """Wasserstand, Kennwerte und Bezugskurve W = f(Q am Bezugspegel) für jeden Richtpegel der freien Strecke."""
+    for p in RICHTPEGEL:
+        if p.id not in b.wp:                                       # Pegel ohne Abflussreihe im Netz: nur Wasserstand aus dem Jahrbuch
+            jahrbuch = versuch(f"DGJ {p.name} W", lambda: quellen.dgj_tageswerte(*p.dgj))
+            b.wp[p.id] = {t: w for t, (w, _) in jahrbuch["W"].items()} if jahrbuch else {}
+        roh = versuch(f"PEGELONLINE {p.name} W", lambda: quellen.pegelonline_tagesmittel(p.id, "W"))
+        if roh:
+            for t, (w, _) in roh.items():
+                if t < heute:
+                    b.wp[p.id].setdefault(t, w)
+        kenn = versuch(f"PEGELONLINE {p.name} Kennwerte", lambda: quellen.pegelonline_kennwerte(p.id))
+        k = (kenn or {}).get("kennwerte", {})
+        w, q = b.wp[p.id], b.q.get(p.bezug, {})
+        jahr = max((t.year for t, c in b.status.get(p.bezug, {}).items() if c == 4), default=None)
+        paare = [(q[t], w[t]) for t in w if t in q and jahr and t.year >= jahr and b.status[p.bezug].get(t) != 5]
+        b.richt[p.id] = {"glw": k.get("GlW", {}).get("value"), "glw_ab": k.get("GlW", {}).get("validFrom"),
+                         "tugl": k.get("TuGLW", {}).get("value"), "hsw": k.get("HSW", {}).get("value"),
+                         "aktuell": (kenn or {}).get("aktuell"), "kurve": schifffahrt.abflusskurve(paare), "kurve_ab": jahr}
 
 
 KAUB, BASEL = "25700100", "2289"

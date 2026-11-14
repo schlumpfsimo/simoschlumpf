@@ -76,6 +76,17 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 Ansichten: Heute, Extremwerte (die zwölf tiefsten jährlichen NM7Q), Datum (jeder Tag seit 1970), Mittelwasser, mittleres Niedrigwasser.
 
+## Fahrbarkeit
+
+Die Seite beantwortet zwei Fragen: Was bedingt die Fahrbarkeit, und was brächte eine Retention.
+
+- Basel–Iffezheim (Rheinkilometer 170–334): staugeregelt. Die Seite zeigt die Staustufen (Lage nach Wikidata) und setzt dort keine Abhängigkeit vom Abfluss an.
+- Unterhalb Iffezheim: sieben Abschnitte, je einer pro Richtpegel (Maxau, Speyer, Mannheim, Worms, Mainz, Bingen, Kaub; `netz.RICHTPEGEL`). GlW, Fahrrinnentiefe unter GlW und höchster Schifffahrtswasserstand kommen aus PEGELONLINE, die Wasserstände aus dem Jahrbuch (ab 2008) und den Rohwerten der letzten 31 Tage.
+- Fahrrinnentiefe = W − GlW + Tiefe unter GlW. Zustand je Abschnitt: `schifffahrt.fahrbarkeit` (voll, bis 30 cm, 30 bis 60 cm, mehr als 60 cm unter GlW, gesperrt über HSW). Die Stufen sind eine Darstellungswahl.
+- Abschnittsgrenzen: Mitte zwischen den Richtpegeln (`netz.abschnitte`, Annahme; amtliche Geltungsbereiche sind nicht hinterlegt).
+- Simuliert: W_sim = W + f(Q + ΔQ) − f(Q) mit der Bezugskurve des Pegels; Q ist der Abfluss am Bezugspegel im Netz. Mannheim und Bingen haben keine eigene Abflussreihe und beziehen sich auf Maxau bzw. Mainz.
+- Karte: Abschnitte entlang der Rheinkilometrierung (GeoRhena nach WSV), Strichart nach Zustand.
+
 ## Schifffahrt und Schätzung
 
 - `rheinbilanz/schifffahrt.py`: Abflusskurve Kaub (Stützpunkte aus Tageswertpaaren W/Q des jüngsten Jahrbuchjahres und den Rohwerten danach), Fahrrinnentiefe = W − GlW + Tiefe unter GlW, Kennwerte und 4-Tage-Vorhersage aus PEGELONLINE.
