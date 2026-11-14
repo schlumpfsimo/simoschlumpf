@@ -87,6 +87,10 @@ Die Seite beantwortet zwei Fragen: Was bedingt die Fahrbarkeit, und was brächte
 - Simuliert: W_sim = W + f(Q + ΔQ) − f(Q) mit der Bezugskurve des Pegels; Q ist der Abfluss am Bezugspegel im Netz. Mannheim und Bingen haben keine eigene Abflussreihe und beziehen sich auf Maxau bzw. Mainz.
 - Karte: Abschnitte entlang der Rheinkilometrierung (GeoRhena nach WSV), Strichart nach Zustand.
 
+## Datensatz auf der Seite
+
+Der Abschnitt «Datensatz» zeigt jede Reihe mit Quelle, Zeitraum, Anzahl Tage und Status (`meta.json`, Feld `reihen`), die Tageswerte des gewählten Jahres als Tabelle und einen CSV-Export für ein Jahr oder alle Jahre. Die CSV-Datei entsteht im Browser aus den Jahresdateien; Abflussspalten tragen je eine Statusspalte.
+
 ## Schifffahrt und Schätzung
 
 - `rheinbilanz/schifffahrt.py`: Abflusskurve Kaub (Stützpunkte aus Tageswertpaaren W/Q des jüngsten Jahrbuchjahres und den Rohwerten danach), Fahrrinnentiefe = W − GlW + Tiefe unter GlW, Kennwerte und 4-Tage-Vorhersage aus PEGELONLINE.

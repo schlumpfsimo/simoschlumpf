@@ -11,6 +11,7 @@
   // ------------------------------------------------------------ Texte
   const T = FR ? {
     titel: 'Rhin · Navigabilité et retenue', lead: 'Deux questions : de quoi dépend la navigabilité du Rhin entre Bâle et Kaub ? Et qu’apporterait une retenue dans les lacs, restituée à l’étiage ? La page montre ce qui est mesuré et calcule ce qui serait. Elle sert de base à une discussion.',
+    datTitel: 'Jeu de données', datLead: 'Toutes les séries sur lesquelles repose cette page : moyennes journalières par station, avec source, période et état. Les valeurs journalières se consultent par année et se téléchargent en CSV.', dReihe: 'Série', dGroesse: 'Grandeur', dZeit: 'Période', dTage: 'Jours', dStatus: 'État (jours)', dQ: 'Débit', dW: 'Niveau à l’échelle', dSee: 'Niveau du lac', dZeigen: 'Afficher les valeurs journalières :', dCsvJahr: 'CSV de cette année', dCsvAlle: 'CSV de toutes les années', dLaedt: 'chargement', dLegende: '° brut · * estimé · vide : pas de valeur. Débit en m³/s, échelle en cm, lac en m s. m.', dDatum: 'Date',
     frage1: '1 De quoi dépend la navigabilité ?', frage2: '2 Qu’apporterait une retenue ?', fTitel: 'Navigabilité par tronçon', fAbschnitt: 'Tronçon', fPegel: 'Échelle de référence', fW: 'Niveau cm', fGlw: 'GlW cm', fT: 'Profondeur du chenal cm', fSoll: 'au GlW', fZustand: 'État', fStau: 'Bâle–Iffezheim', fStauText: 'régulé par barrages : les biefs maintiennent le chenal, il ne dépend pas ici du débit', fStufen: 'barrages',
     kVoll: 'pleine profondeur du chenal', kE1: 'jusqu’à 30 cm sous le GlW', kE2: '30 à 60 cm sous le GlW', kE3: 'plus de 60 cm sous le GlW', kGesperrt: 'au-dessus des plus hautes eaux navigables', kKein: 'pas de valeur', fHinweis: 'Profondeur du chenal = niveau − GlW + profondeur sous le GlW. Limites des tronçons : milieu entre les échelles (hypothèse). Sous le GlW, les bateaux chargent moins.',
     nTitel: 'Bénéfice par tronçon sur l’année', nUnter: 'Jours sous le GlW', nHub: 'Relèvement moyen cm', nTief: 'Profondeur minimale du chenal cm', nTage: 'Jours avec valeur',
@@ -43,6 +44,7 @@
       'Rien n’est interpolé. Si une valeur manque, le résultat manque.'],
   } : {
     titel: 'Rhein · Fahrbarkeit und Rückhalt', lead: 'Zwei Fragen: Was bedingt die Fahrbarkeit des Rheins zwischen Basel und Kaub? Und was brächte es, wenn die Seen Wasser zurückhielten und bei Niedrigwasser abgäben? Die Seite zeigt, was gemessen ist, und rechnet nach, was wäre. Sie ist als Grundlage für eine Diskussion gedacht.',
+    datTitel: 'Datensatz', datLead: 'Alle Reihen, auf denen diese Seite beruht: Tagesmittel je Messstelle, mit Quelle, Zeitraum und Status. Die Tageswerte lassen sich je Jahr ansehen und als CSV beziehen.', dReihe: 'Reihe', dGroesse: 'Grösse', dZeit: 'Zeitraum', dTage: 'Tage', dStatus: 'Status (Tage)', dQ: 'Abfluss', dW: 'Wasserstand am Pegel', dSee: 'Seestand', dZeigen: 'Tageswerte anzeigen:', dCsvJahr: 'CSV dieses Jahres', dCsvAlle: 'CSV aller Jahre', dLaedt: 'lädt', dLegende: '° roh · * geschätzt · leer: kein Wert. Abfluss in m³/s, Pegel in cm, Seestand in m ü. M.', dDatum: 'Datum',
     frage1: '1 Was bedingt die Fahrbarkeit?', frage2: '2 Was brächte eine Retention?', fTitel: 'Fahrbarkeit nach Abschnitten', fAbschnitt: 'Abschnitt', fPegel: 'Richtpegel', fW: 'Pegel cm', fGlw: 'GlW cm', fT: 'Fahrrinnentiefe cm', fSoll: 'bei GlW', fZustand: 'Zustand', fStau: 'Basel–Iffezheim', fStauText: 'staugeregelt: Die Staustufen halten die Fahrrinne, sie hängt hier nicht vom Abfluss ab', fStufen: 'Staustufen',
     kVoll: 'volle Fahrrinnentiefe', kE1: 'bis 30 cm unter GlW', kE2: '30 bis 60 cm unter GlW', kE3: 'mehr als 60 cm unter GlW', kGesperrt: 'über dem höchsten Schifffahrtswasserstand', kKein: 'kein Wert', fHinweis: 'Fahrrinnentiefe = Pegel − GlW + Tiefe unter GlW. Abschnittsgrenzen: Mitte zwischen den Richtpegeln (Annahme). Unterhalb des GlW können die Schiffe weniger laden.',
     nTitel: 'Nutzen je Abschnitt im Jahr', nUnter: 'Tage unter GlW', nHub: 'Mittlere Anhebung cm', nTief: 'Kleinste Fahrrinnentiefe cm', nTage: 'Tage mit Wert',
@@ -739,6 +741,46 @@
     el.innerHTML = html;
   }
 
+  // ------------------------------------------------------------ Datensatz: Übersicht, Tageswerte des Jahres, CSV
+  const REIHEN = meta.reihen || [];
+  const spalten = () => REIHEN.map(r => ({ r, lese: (Y, i) => r.art === 'Q' ? (Y.q[r.id] ? Y.q[r.id][i] : null) : r.art === 'W' ? (Y.wp && Y.wp[r.id] ? Y.wp[r.id][i] : null) : (Y.w[r.id] ? Y.w[r.id][i] : null) }));
+  function csvZeilen(Y, kopf) {
+    const sp = spalten(), n = (Y.q[BASEL] || Object.values(Y.q)[0]).length, zeilen = [];
+    if (kopf) zeilen.push(['datum', ...sp.flatMap(({ r }) => r.art === 'Q' ? [`Q_${r.id}`, `status_${r.id}`] : [`${r.art === 'W' ? 'W' : 'See'}_${r.id}`])].join(';'));
+    for (let i = 0; i < n; i++) { if (!sp.some(({ lese }) => lese(Y, i) != null)) continue;      // Tage ohne jeden Wert (Zukunft) entfallen
+      zeilen.push([isoTag(Y.jahr, i), ...sp.flatMap(({ r, lese }) => { const v = lese(Y, i); return r.art === 'Q' ? [v == null ? '' : v, v == null ? '' : statusAm(Y, r.id, i)] : [v == null ? '' : v]; })].join(';')); }
+    return zeilen;
+  }
+  function speichern(name, zeilen) {
+    const kopf = ['# Rhein: Tagesmittel. Q in m3/s, W in cm am Pegel, See in m ue. M. Status: ' + Object.entries(meta.status).map(([k, v]) => `${k} = ${v}`).join(', '),
+      '# Quellen: BAFU, Hydrologische Beobachtungen (data.bafu.admin.ch); WSV, bereitgestellt durch die BfG (DGJ, PEGELONLINE)',
+      '# Reihen: ' + REIHEN.map(r => `${r.id} = ${r.name}`).join(', ')];
+    const l = document.createElement('a'); l.href = URL.createObjectURL(new Blob(['\ufeff' + kopf.concat(zeilen).join('\n')], { type: 'text/csv' })); l.download = name; l.click(); URL.revokeObjectURL(l.href);
+  }
+  function tabelleJahr(Y) {
+    const sp = spalten(), n = (Y.q[BASEL] || Object.values(Y.q)[0]).length;
+    let html = `<table><thead><tr><th>${T.dDatum}</th>${sp.map(({ r }) => `<th title="${h(r.name)}">${h(r.name.replace('Rhein–', '').split(',')[0])}<br>${r.art === 'Q' ? 'm³/s' : r.art === 'W' ? 'cm' : 'm'}</th>`).join('')}</tr></thead><tbody>`;
+    for (let i = 0; i < n; i++) if (sp.some(({ lese }) => lese(Y, i) != null)) html += `<tr><td>${datum(isoTag(Y.jahr, i))}</td>${sp.map(({ r, lese }) => { const v = lese(Y, i); if (v == null) return '<td></td>'; const c = r.art === 'Q' ? statusAm(Y, r.id, i) : null; return `<td>${r.art === 'See' ? v.toFixed(2) : r.art === 'W' ? v : v.toFixed(v < 100 ? 1 : 0)}${c === 0 ? '°' : c === 5 ? '*' : ''}</td>`; }).join('')}</tr>`;
+    return html + '</tbody></table>';
+  }
+  $('datuebersicht').innerHTML = `<div class="rollen"><table><thead><tr><th>${T.dReihe}</th><th>${T.nr}</th><th>${T.dGroesse}</th><th>${T.quelle}</th><th>${T.dZeit}</th><th class="z">${T.dTage}</th><th>${T.dStatus}</th></tr></thead><tbody>` +
+    REIHEN.map(r => `<tr><td>${h(r.name)}</td><td>${h(r.art === 'See' ? '' : r.id)}</td><td>${r.art === 'Q' ? T.dQ : r.art === 'W' ? T.dW : T.dSee}, ${r.einheit}</td><td>${r.quelle === 'WSV' ? 'WSV / BfG' : r.quelle}</td><td>${datum(r.zeitraum[0])} – ${datum(r.zeitraum[1])}</td><td class="z">${zahl(r.tage)}</td>` +
+      `<td>${r.status ? Object.entries(r.status).map(([k, v]) => `${meta.status[k]} ${zahl(v)}`).join(' · ') : (r.quelle === 'WSV' ? 'DGJ, PEGELONLINE' : 'BAFU')}</td></tr>`).join('') + '</tbody></table></div>';
+  let datJahr = null;
+  function datenZeichnen(R) {
+    if (!R.Y || datJahr === R.Y.jahr) return;
+    datJahr = R.Y.jahr; const Y = R.Y, w = $('datwahl'); w.textContent = '';
+    w.append(knoepfe('\u00a0', [['j', `${T.dCsvJahr} (${Y.jahr})`], ['a', T.dCsvAlle]], '', async v => {
+      if (v === 'j') return speichern(`rhein-tageswerte-${Y.jahr}.csv`, csvZeilen(Y, true));
+      const knopf = w.querySelector('button[data-w="a"]'), alt = knopf.textContent; let zeilen = [];
+      for (const j of meta.jahre) { knopf.textContent = `${T.dLaedt} ${j}`; const y = await jahr(j); if (y) zeilen = zeilen.concat(csvZeilen(y, !zeilen.length)); }
+      knopf.textContent = alt; speichern(`rhein-tageswerte-${meta.jahre[0]}-${meta.jahre[meta.jahre.length - 1]}.csv`, zeilen);
+    }));
+    const d = $('dattage'); d.querySelector('summary').textContent = `${T.dZeigen} ${Y.jahr}`;
+    const fuellen = () => { if (d.open) $('dattabelle').innerHTML = tabelleJahr(Y) + `<p class="hinweis" style="padding:0 10px 10px">${T.dLegende}</p>`; else $('dattabelle').innerHTML = ''; };
+    d.ontoggle = fuellen; fuellen();
+  }
+
   // ------------------------------------------------------------ Fuss
   $('methodentext').innerHTML = '<ul>' + T.meth.map(m => `<li>${h(m)}</li>`).join('') + '</ul>';
   $('quellen').innerHTML = '<ul>' + meta.quellen.map(q => `<li>${h(q.text)} – <a href="${q.url}">${h(q.url.replace('https://', ''))}</a></li>`).join('') +
@@ -753,7 +795,7 @@
     if (nr !== lauf_) return;
     if (!nurWerte) { wahlZeichnen(R.Y); simWahl(R); }
     else { const d = $('wahl').querySelector('input[type=date]'); if (d && Z.tag != null) d.value = isoTag(Z.jahr, Z.tag); }
-    lageZeichnen(R); fahrbarZeichnen(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R);
+    datenZeichnen(R); lageZeichnen(R); fahrbarZeichnen(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R);
   }
   simSeen(); alles();
 })();

@@ -96,6 +96,28 @@ def _extreme(reihe: dict, jahre: list[int], anzahl: int = 12) -> list:
     return [{"jahr": j, "beginn": n["beginn"].isoformat(), "ende": n["ende"].isoformat(), "wert": _rund(n["wert"])} for j, n in alle]
 
 
+def _reihen(b: Bestand, netz: Netz) -> list:
+    """Übersicht des ganzen Datensatzes: jede Reihe mit Quelle, Zeitraum, Anzahl Tage und Status."""
+    aus = []
+    for s in netz.stationen.values():
+        r = b.q.get(s.id, {})
+        if r:
+            zaehler: dict = {}
+            for c in b.status[s.id].values():
+                zaehler[c] = zaehler.get(c, 0) + 1
+            aus.append({"id": s.id, "name": f"{s.gewaesser}–{s.name}", "art": "Q", "einheit": "m³/s", "quelle": s.quelle,
+                        "zeitraum": _zeitraum(r), "tage": len(r), "status": {str(k): v for k, v in sorted(zaehler.items())}})
+    for p in RICHTPEGEL:
+        r = b.wp.get(p.id, {})
+        if r:
+            aus.append({"id": p.id, "name": f"Rhein–{p.name}", "art": "W", "einheit": "cm", "quelle": "WSV", "zeitraum": _zeitraum(r), "tage": len(r)})
+    for see in SEEN:
+        r = b.w.get(see.id, {})
+        if r:
+            aus.append({"id": see.id, "name": f"{see.name} ({see.pegel})", "art": "See", "einheit": "m ü. M.", "quelle": "BAFU", "zeitraum": _zeitraum(r), "tage": len(r)})
+    return aus
+
+
 def meta(b: Bestand, jahre: list[int]) -> dict:
     netz = Netz.standard()
     netz.pruefen()
@@ -143,6 +165,7 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
         "ziele": ZIELE,
         "extreme": {z: _extreme(b.q.get(z, {}), jahre) for z in ZIELE},
         "anteile": {"2289": _anteile(netz, b, "2289", REFERENZ), "25700100": _anteile(netz, b, "25700100", REFERENZ_DE)},
+        "reihen": _reihen(b, netz),
         "kaub": b.kaub,
         "richtpegel": [{"id": p.id, "name": p.name, "km": p.km, "bezug": p.bezug, "von": von, "bis": bis,
                         "zeitraum": _zeitraum(b.wp.get(p.id, {})), **b.richt.get(p.id, {})}

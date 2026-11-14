@@ -180,3 +180,10 @@ h2.frage{font-size:clamp(20px,2vw,30px);letter-spacing:.12em;line-height:1.2;mar
 #fahrbar svg,#nutzen svg{vertical-align:-3px;margin-right:10px}
 .stau{width:5px;height:15px;background:var(--tinte);outline:2px solid var(--papier)}
 #nutzen{margin:30px 0 0}
+#dattage summary{font-weight:700;cursor:pointer;padding:10px 0;font-size:15px}
+.datrahmen{max-height:560px;overflow:auto;border:2px solid var(--tinte)}
+.datrahmen table{font-size:12.5px;width:auto;min-width:100%}
+.datrahmen th{position:sticky;top:0;background:var(--papier);padding:8px 8px 6px;font-size:10px;letter-spacing:.06em;text-align:right;border-bottom:2px solid var(--tinte);white-space:nowrap;z-index:1}
+.datrahmen td{padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;border-top:1px solid var(--raster)}
+.datrahmen th:first-child,.datrahmen td:first-child{position:sticky;left:0;background:var(--papier);text-align:left;font-weight:700}
+.datrahmen th:first-child{z-index:2}
