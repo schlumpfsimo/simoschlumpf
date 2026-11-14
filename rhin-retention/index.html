@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Rhein – Abflussbilanz und Rückhalt</title>
-  <meta name="description" content="Woher das Wasser des Rheins in Basel und Kaub kommt: Abflussbilanz von den Alpen bis Kaub, mit Stausimulator für die Seen." />
+  <meta name="description" content="Woher das Wasser des Rheins in Basel und Kaub kommt: Abfluss, Pegel Kaub und Herkunft des Wassers von den Alpen bis Kaub, mit Simulation des Rückhalts in den Seen." />
   <link rel="canonical" href="https://www.simoschlumpf.ch/rhin-retention/" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#ffffff" />
@@ -24,6 +24,8 @@
 
     <div class="wahl" id="wahl"></div>
 
+    <section class="lage" id="lage"></section>
+
     <div class="spalten">
       <figure class="karte">
         <div id="karte"></div>
@@ -31,6 +33,7 @@
       </figure>
 
       <div class="tafel">
+        <section id="herkunft"></section>
         <section id="bilanz"></section>
         <section id="seen"></section>
       </div>
@@ -45,8 +48,15 @@
       <figure class="verlauf">
         <div class="legende" id="simlegende"></div>
         <div class="rahmen"><svg id="verlauf" role="img"></svg><div class="tip" id="tip" hidden></div></div>
+        <svg id="speicher" role="img"></svg>
       </figure>
       <p class="klein" data-t="simHinweis"></p>
+    </section>
+
+    <section class="simulator" id="herleitung">
+      <h2 data-t="herTitel"></h2>
+      <p class="lead" data-t="herLead"></p>
+      <div id="hertext"></div>
     </section>
 
     <footer class="fuss">

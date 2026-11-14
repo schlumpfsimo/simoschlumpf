@@ -6,6 +6,7 @@ Status (Freigabe) je Wert:
   2 validiert  BAFU releaseState 2
   3 definitiv  BAFU releaseState 3
   4 geprüft    Deutsches Gewässerkundliches Jahrbuch (BfG/WSV)
+  5 geschätzt  kein Messwert: Regression aus dem Abfluss in Basel (nur Kaub, nur für Tage ohne Messwert)
 """
 from __future__ import annotations
 
@@ -23,7 +24,7 @@ BAFU_API = "https://data.bafu.admin.ch/api"
 PEGELONLINE = "https://www.pegelonline.wsv.de/webservices/rest-api/v2"
 DGJ = "https://dgj-daten.bafg.de/Rhein"
 
-STATUS = {0: "roh", 1: "provisorisch", 2: "validiert", 3: "definitiv", 4: "geprüft (DGJ)"}
+STATUS = {0: "roh", 1: "provisorisch", 2: "validiert", 3: "definitiv", 4: "geprüft (DGJ)", 5: "geschätzt (aus Basel)"}
 
 Reihe = dict  # {datetime.date: (float, int)}
 
@@ -101,6 +102,22 @@ def pegelonline_tagesmittel(nummer: str, parameter: str = "Q") -> Reihe:
         tag = dt.date.fromisoformat(m["timestamp"][:10])
         tage.setdefault(tag, []).append(float(m["value"]))
     return {tag: (sum(w) / len(w), 0) for tag, w in tage.items() if len(w) >= 90}
+
+
+def pegelonline_kennwerte(nummer: str) -> dict:
+    """Kennwerte des Wasserstands (GlW, Fahrrinnentiefe unter GlW, …) und der aktuelle Rohwert."""
+    roh = cache.holen("pegelonline", f"{nummer}_W_kennwerte_{dt.date.today()}.json",
+                      lambda: _http(f"{PEGELONLINE}/stations/{nummer}/W.json?includeCharacteristicValues=true&includeCurrentMeasurement=true"))
+    d = json.loads(roh)
+    return {"aktuell": d.get("currentMeasurement"), "pegelnullpunkt": d.get("gaugeZero"),
+            "kennwerte": {k["shortname"]: {x: k[x] for x in ("longname", "value", "unit", "validFrom", "timespanStart", "timespanEnd", "occurrences") if x in k}
+                          for k in d.get("characteristicValues", [])}}
+
+
+def pegelonline_vorhersage(nummer: str) -> list:
+    """Wasserstandsvorhersage der WSV/BfG (rund 4 Tage, 2-Stunden-Werte): [[zeit, cm, art], …]."""
+    roh = cache.holen("pegelonline", f"{nummer}_WV_{dt.date.today()}.json", lambda: _http(f"{PEGELONLINE}/stations/{nummer}/WV/measurements.json"))
+    return [[m["timestamp"], m["value"], m.get("type")] for m in json.loads(roh)]
 
 
 def pegelonline_station(nummer: str) -> dict:

@@ -41,7 +41,8 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--blau);outline-o
 .karte figcaption{font-size:13px;margin-top:10px;max-width:44em}
 .leaflet-container{font:500 14px/1.45 "Plex",Arial,sans-serif;color:var(--tinte)}
 .leaflet-container a{color:var(--tinte)}
-.grundkarte{filter:grayscale(1) contrast(.9);opacity:.5}
+/* Grundkarte als Punkteraster: Graustufen, jede Kachel durch eine Lochmaske gedruckt (256 px = 64 Punkte) */
+.grundkarte img{filter:grayscale(1) contrast(1.5) brightness(.72);-webkit-mask-image:radial-gradient(circle,#000 1.05px,transparent 1.35px);mask-image:radial-gradient(circle,#000 1.05px,transparent 1.35px);-webkit-mask-size:4px 4px;mask-size:4px 4px}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{border-radius:0;box-shadow:none;border:2px solid var(--tinte);color:var(--tinte)}
 .leaflet-popup-content{margin:12px 14px;min-width:230px}
 .leaflet-popup-content h3{font-size:15px;font-weight:700;margin:0 0 6px;line-height:1.3}
@@ -64,7 +65,8 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--blau);outline-o
 .vergleich div b{display:block;font-size:clamp(26px,2.6vw,44px);line-height:1.15}
 .vergleich div b.sim{color:var(--blau)}
 .vergleich div em{font-style:normal;font-size:14px}
-.regler{display:flex;align-items:center;flex:1 1 100%;min-width:240px}
+.gruppe.regler{flex:1 1 100%;min-width:240px}
+.regler input[type=range]{width:100%}
 .regler input[type=range]{flex:1;accent-color:#003399;height:28px;margin:0}
 .textknopf{font:700 12px/1 "Plex",Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;background:none;border:0;padding:6px 0;cursor:pointer;color:var(--tinte)}
 .textknopf:hover,.textknopf:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;outline:none}
@@ -129,3 +131,40 @@ td.balken{width:32%;min-width:80px;padding-right:0}
 .fuss ul{margin:0;padding-left:1.1em;max-width:52em}
 .fuss li{margin-bottom:6px}
 @media (max-width:560px){td.balken{display:none}table{font-size:14px}}
+
+/* Schraffuren: Muster statt Farben */
+.m0{background:var(--tinte)}
+.m1{background:repeating-linear-gradient(135deg,var(--tinte) 0 1.5px,var(--papier) 1.5px 4.5px)}
+.m2{background:repeating-linear-gradient(45deg,var(--tinte) 0 2.5px,var(--papier) 2.5px 5px)}
+.m3{background:repeating-linear-gradient(0deg,var(--tinte) 0 1.5px,var(--papier) 1.5px 4px)}
+.m4{background:repeating-linear-gradient(90deg,var(--tinte) 0 1.5px,var(--papier) 1.5px 4px)}
+.m5{background:radial-gradient(circle,var(--tinte) 1.1px,var(--papier) 1.4px) 0 0/4px 4px}
+.m6{background:repeating-linear-gradient(45deg,transparent 0 3px,var(--tinte) 3px 4px),repeating-linear-gradient(135deg,var(--papier) 0 3px,var(--tinte) 3px 4px)}
+.m7{background:var(--papier)}
+.band{display:flex;gap:2px;height:34px;margin:6px 0 16px}
+.band i{display:block;min-width:2px;outline:1px solid var(--tinte);outline-offset:-1px}
+.herk{display:grid;grid-template-columns:26px minmax(0,1fr) auto auto;gap:6px 14px;align-items:center;font-size:15px}
+.herk i{display:block;height:14px;outline:1px solid var(--tinte);outline-offset:-1px}
+.herk b{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lage{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:22px 36px;margin:0 0 36px;padding:26px 0;border-top:2px solid var(--tinte);border-bottom:2px solid var(--tinte)}
+.lage div span{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.lage div b{display:block;font-size:clamp(26px,2.6vw,44px);line-height:1.15}
+.lage div b small{font-size:.45em;font-weight:500}
+.lage div em{font-style:normal;font-size:14px;display:block}
+.lage div b.sim{color:var(--blau)}
+#verlauf .geschaetzt{fill:none;stroke:var(--tinte);stroke-width:2;stroke-dasharray:2 4}
+#verlauf .schwelle{stroke:var(--tinte);stroke-width:1;stroke-dasharray:6 4}
+#speicher{display:block;width:100%;height:auto;margin-top:8px}
+#speicher text{font:500 12px "Plex",Arial,sans-serif;fill:var(--tinte)}
+#speicher text.fett{font-weight:700}
+#speicher .achse{stroke:var(--tinte);stroke-width:1}
+#speicher .inhalt{stroke:var(--tinte);stroke-width:1.5}
+.legende i.punkte{border-top:2px dotted var(--tinte)}
+.legende i.strich{border-top:1px dashed var(--tinte)}
+#hertext{max-width:60em}
+#hertext h3{font-size:15px;font-weight:700;margin:26px 0 6px}
+#hertext p{margin:0 0 8px}
+#hertext .formel{font-weight:700;padding:10px 14px;border-left:2px solid var(--tinte);margin:8px 0 10px;overflow-x:auto}
+#hertext .rechnung{padding:0 14px;border-left:2px solid var(--raster);margin:0 0 10px;font-variant-numeric:tabular-nums;overflow-x:auto}
+sub{font-size:.72em;line-height:0}
+.gruppenkopf td{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;border-top:2px solid var(--tinte);padding-top:12px}

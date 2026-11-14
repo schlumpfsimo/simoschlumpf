@@ -1,8 +1,8 @@
-// Rhein – Abflussbilanz und Rückhalt.
+// Rhein – Abfluss, Pegel Kaub, Herkunft und Rückhalt.
 // Daten: daten/meta.json, daten/karte.json, daten/jahr/<Jahr>.json, erzeugt vom Python-Werkzeug (werkzeug/, siehe README).
-// Diese Datei zeichnet die Karte (Leaflet), rechnet die Bilanz eines Tages nach derselben Logik wie
-// werkzeug/rheinbilanz/bilanz.py und legt die Simulation des Rückhalts darüber.
-// Fehlende Werte bleiben leer, nichts wird interpoliert.
+// Die Rechnung hier folgt denselben Formeln wie werkzeug/rheinbilanz (bilanz.py, simulation.py, schifffahrt.py);
+// der Abschnitt «Herleitung» der Seite zeigt sie mit den Zahlen des angezeigten Tages.
+// Fehlende Werte bleiben leer. Geschätzte Werte (Kaub, Tage ohne Messwert) sind als solche bezeichnet.
 (async () => {
   'use strict';
   const FR = new URLSearchParams(location.search).get('l') === 'fr';
@@ -10,58 +10,62 @@
 
   // ------------------------------------------------------------ Texte
   const T = FR ? {
-    titel: 'Rhin · Bilan des débits', lead: 'D’où vient l’eau du Rhin à Bâle et à Kaub, aujourd’hui, lors des étiages extrêmes et n’importe quel jour. Et ce qui changerait si les lacs avaient retenu de l’eau au printemps.',
+    titel: 'Rhin · Débit et retenue', lead: 'Combien d’eau le Rhin apporte à Bâle et à Kaub, d’où elle vient, et de combien les lacs pourraient relever les basses eaux s’ils retenaient davantage.',
     ziel: 'Bilan pour', ansicht: 'Vue', heute: 'Aujourd’hui', extrem: 'Extrêmes', tag: 'Date', mq: 'Moyenne', nw: 'Étiage moyen', jahr: 'Année', datum: 'Date', lage: 'Étiage',
-    werte: 'Valeurs', gem: 'Mesuré', simu: 'Simulé', glied: 'Composante', anteil: 'Part', gemessen: 'mesuré', rest: 'reste (bassin intermédiaire)', negativ: 'reste négatif',
-    zwischen: 'Bassin intermédiaire', kontrolle: 'Contrôle Aar : Stilli − (Brugg + Reuss + Limmat)', inkl: 'y compris', ohneReihe: 'sans série',
-    tage: 'jours avec valeurs complètes', von_: 'sur', periode: 'Période', bis: 'au',
+    werte: 'Valeurs', gem: 'Mesuré', simu: 'Simulé', glied: 'Composante', anteil: 'Part', gemessen: 'mesuré', geschaetzt: 'estimé', rest: 'reste (bassin intermédiaire)', negativ: 'reste négatif',
+    zwischen: 'Bassin intermédiaire', kontrolle: 'Contrôle Aar : Stilli − (Brugg + Reuss + Limmat)', inkl: 'y compris', ohneReihe: 'sans série', ohneReihen: 'y compris Neckar et Main, sans séries',
+    tage: 'jours avec valeurs complètes', von_: 'sur', periode: 'Période',
     mqText: 'Moyenne de tous les jours', nwText: 'Moyenne des 7 jours les plus secs de chaque année (NM7Q) à cette station',
-    keine: 'Pas de bilan : des valeurs manquent pour ce jour.', status: 'État de validation', letzter: 'Dernier jour avec valeurs complètes', nm7qVon: 'Plus faible moyenne sur 7 jours de',
-    seen: 'Lacs', see: 'Lac', stand: 'Niveau', aenderung: 'Variation', speicher: 'Variation du stock', fuellt: 'Positif : le lac se remplit et retient de l’eau. Calculé avec une surface constante.',
-    station: 'Station de mesure', nr: 'Numéro', abfluss: 'Débit', anteilAn: 'Part à', quelle: 'Source', restK: 'Bassin intermédiaire (reste)', mqK: 'MQ', nm7q: 'NM7Q moyen', nm7qMin: 'NM7Q le plus bas',
+    keine: 'Pas de bilan : des valeurs manquent pour ce jour.', status: 'État des valeurs', letzter: 'Dernier jour avec valeurs complètes', nm7qVon: 'Plus faible moyenne sur 7 jours de',
+    seen: 'Lacs', see: 'Lac', stand: 'Niveau', aenderung: 'Variation', speicher: 'Variation du stock', fuellt: 'Positif : le lac se remplit et retient de l’eau.',
+    nr: 'Numéro', abfluss: 'Débit', anteilAn: 'Part à', quelle: 'Source', restK: 'Bassin intermédiaire (reste)', mqK: 'MQ', nm7qMin: 'NM7Q le plus bas',
     regulierung: 'Régulation', grenzen: 'Limites', flaeche: 'Surface', reguliert: 'régulé', unreguliert: 'non régulé', keinWehr: 'Lac non régulé, pas de barrage.',
-    simTitel: 'Simulation de la retenue', simLead: 'Et si les lacs avaient retenu un peu plus d’eau au printemps pour la restituer à l’étiage ? Choisissez la tranche supplémentaire par lac (tous ou quelques-uns), la période de retenue et la restitution. La carte et le bilan montrent alors l’état simulé.',
-    alle: 'Tous les lacs régulés', rueck: 'Retenue du', abgabe: 'Restitution dès le', dauer: 'Durée (jours)', auto: 'Automatique', band: 'Tranche utilisée 1991–2020', jecm: 'Par cm', zusatz: 'Tranche suppl.', vol: 'Volume',
-    grenzenK: 'Limites de régulation m s. m. · mio m³', volumen: 'Volume retenu', plus: 'Débit supplémentaire', minus: 'Débit retenu', nm7qSim: 'NM7Q', pegel: 'Échelle de Kaub', pegelTief: 'Échelle de Kaub (7 jours les plus bas)',
-    maxAnteil: 'Retenue maximale', vomAbfluss: 'du débit à', fRueck: 'Retenue', fAbgabe: 'Restitution', diff: 'Écart', ausschnitt: 'Extrait', ganz: 'Année', phase: 'Restitution',
-    keinJahr: 'Pas de valeurs journalières pour cette station et cette année.', warn: 'La restitution commence avant la fin de la retenue.', nurTag: 'La simulation s’applique aux vues « Aujourd’hui », « Extrêmes » et « Date ».',
-    autoHeute: 'Automatique : la restitution se termine le jour affiché.', autoTief: 'Automatique : la restitution couvre les 7 jours les plus secs de l’année.',
-    simHinweis: 'Modèle simple : le volume est retenu et restitué de façon uniforme et se déplace vers l’aval avec le temps de parcours, sans atténuation. Les règlements de régulation, la protection contre les crues et l’écologie ne sont pas pris en compte. Le lac de Constance n’est pas régulé ; une tranche y est hypothétique. Niveau à Kaub d’après les couples niveau/débit journaliers de la même année.',
-    methode: 'Méthode', quellen: 'Sources', standT: 'Données du', monate: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
-    legende: 'Largeur du trait = débit. Noir : débit de la station amont. Gris : apport du bassin intermédiaire (reste calculé). Bleu : tronçon modifié par la simulation. Carré : station de mesure. Triangle : lac régulé. Cercle : lac non régulé.', fehlt: 'Les données n’ont pas pu être chargées.',
-    meth: ['Réseau : graphe orienté, nœuds = stations, arêtes = tronçons. Reste = débit mesuré moins la somme des stations amont.',
-      'Temps de parcours : hypothèses en jours entiers (Bâle–Maxau 1 jour, Maxau–Worms 1 jour, Neckar–Worms 1 jour, sinon 0 ; Bâle–Kaub 2 jours), non mesurés.',
-      'MQ et NM7Q calculés à partir des valeurs journalières : stations OFEV 1991–2020, stations allemandes 2010–2020. NM7Q = plus faible moyenne sur 7 jours de l’année civile.',
-      'Extrêmes : les douze NM7Q annuels les plus bas depuis le début des séries (Bâle dès 1970, Kaub dès 2008).',
-      'Stations allemandes : valeurs journalières contrôlées de l’annuaire hydrologique (2008–2025) ; ensuite seulement les données brutes des 31 derniers jours (PEGELONLINE). Entre deux, il n’y a pas de valeurs. Neckar : 2010–2020.',
-      'Lacs : variation du stock = surface × variation du niveau moyen journalier. Surfaces et limites d’après les fiches OFEV « Seeregulierung » (2020). Lac de Constance : 536 km² selon l’IGKB, répartition non officielle.',
+    kaubQ: 'Débit à Kaub', kaubW: 'Échelle de Kaub', glw: 'Écart au GlW (77 cm)', tiefe: 'Profondeur du chenal', baselQ: 'Débit à Bâle', vorhersage: 'Prévision à 4 jours', jetzt: 'Valeur actuelle', ausKurve: 'd’après la courbe de tarage',
+    herkunft: 'Origine de l’eau', gAlpen: 'Rhin alpin et lac de Constance', gHoch: 'Thur et Haut-Rhin', gAareOben: 'Aar jusqu’à Brügg (Oberland, lacs du pied du Jura)', gAareMitte: 'Aar de Brügg à Stilli (Emme, Plateau)', gReuss: 'Reuss (lac des Quatre-Cantons)', gLimmat: 'Limmat (lac de Zurich)', gUnten: 'En aval de Bâle (Rhin supérieur, Neckar, Main)',
+    aareGesamt: 'Aar à Stilli, total', rheinOben: 'Rhin avant l’Aar (Rekingen)',
+    simTitel: 'Retenue optimale', simLead: 'Seule la capacité supplémentaire des lacs se règle. Le calcul retient l’eau lors des débits les plus forts possibles et la restitue de façon à relever le plus possible le plus faible débit journalier de l’année à la station du bilan. L’eau va donc aux jours les plus secs.',
+    alle: 'Tous les lacs régulés (cm)', band: 'Tranche utilisée 1991–2020', jecm: 'Par cm', zusatz: 'Capacité suppl.', vol: 'Volume', grenzenK: 'Limites m s. m. · mio m³', volumen: 'Capacité totale',
+    gBodensee: 'Lac de Constance (non régulé, hypothétique)', gAare: 'Aar', gReussL: 'Reuss', gLimmatL: 'Limmat',
+    minTag: 'Plus faible débit journalier', nm7qSim: 'NM7Q', pegelMin: 'Niveau le plus bas à Kaub', unterGlw: 'Jours sous le GlW à Kaub', abgabeTage: 'Restitution', rueckTage: 'Retenue', tageW: 'jours', schwellen: 'Seuils', genutzt: 'Volume utilisé',
+    ausschnitt: 'Extrait', ganz: 'Année', phase: 'Étiage', diff: 'Écart', inhalt: 'Contenu du réservoir, mio m³', keinGewinn: 'Pas de gain : le plus faible débit tombe avant toute crue qui aurait pu remplir le réservoir (réservoir vide au 1er janvier).',
+    keinJahr: 'Pas de valeurs journalières pour cette station et cette année.', nurTag: 'Choisissez une capacité supérieure à zéro.', geschHinweis: 'jours estimés dans l’année ; le résultat pour Kaub est d’autant moins sûr.',
+    simHinweis: 'Année civile, réservoir vide au 1er janvier, prévision parfaite : le résultat est une borne supérieure. Les règlements de régulation, la protection contre les crues et l’écologie ne sont pas pris en compte.',
+    herTitel: 'Dérivation', herLead: 'Chaque nombre de cette page découle des formules ci-dessous, ici avec les valeurs du jour affiché.',
+    methode: 'Hypothèses et lacunes', quellen: 'Sources', standT: 'Données du', monate: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
+    legende: 'Largeur du trait = débit. Noir : débit de la station amont. Gris : apport du bassin intermédiaire (reste calculé). Bleu : tronçon modifié par la simulation. Carré : station. Triangle : lac régulé. Cercle : lac non régulé. Fond : swisstopo et OpenStreetMap, en trame de points.', fehlt: 'Les données n’ont pas pu être chargées.',
+    meth: ['Temps de parcours : hypothèses en jours entiers (Bâle–Maxau 1, Maxau–Worms 1, Neckar–Worms 1, sinon 0 ; Bâle–Kaub 2), non mesurés.',
+      'Stations allemandes : valeurs journalières contrôlées de l’annuaire (2008–2025), puis données brutes des 31 derniers jours. Neckar : 2010–2020. Pour Kaub, les jours sans mesure depuis le 1.1.2026 sont estimés et désignés comme tels.',
+      'Si les stations entre Bâle et Kaub manquent, le bilan regroupe tout l’aval de Bâle en un seul reste.',
+      'Lacs : surface constante. Surfaces et limites d’après les fiches OFEV « Seeregulierung » (2020). Lac de Constance : 536 km² selon l’IGKB, répartition non officielle.',
       'Rien n’est interpolé. Si une valeur manque, le résultat manque.'],
   } : {
-    titel: 'Rhein · Abflussbilanz', lead: 'Woher das Wasser des Rheins in Basel und in Kaub kommt: heute, in den extremen Niedrigwasserlagen und an jedem beliebigen Tag. Und was anders wäre, wenn die Seen im Frühling Wasser zurückgehalten hätten.',
+    titel: 'Rhein · Abfluss und Rückhalt', lead: 'Wie viel Wasser der Rhein in Basel und in Kaub führt, woher es kommt, und um wie viel die Seen das Niedrigwasser anheben könnten, wenn sie mehr zurückhielten.',
     ziel: 'Bilanz für', ansicht: 'Ansicht', heute: 'Heute', extrem: 'Extremwerte', tag: 'Datum', mq: 'Mittelwasser', nw: 'Mittleres Niedrigwasser', jahr: 'Jahr', datum: 'Datum', lage: 'Niedrigwasserlage',
-    werte: 'Werte', gem: 'Gemessen', simu: 'Simuliert', glied: 'Bilanzglied', anteil: 'Anteil', gemessen: 'gemessen', rest: 'Rest (Zwischengebiet)', negativ: 'negativer Rest',
-    zwischen: 'Zwischengebiet', kontrolle: 'Kontrollbilanz Aare: Stilli − (Brugg + Reuss + Limmat)', inkl: 'inkl.', ohneReihe: 'ohne Messreihe',
-    tage: 'Tage mit vollständigen Werten', von_: 'von', periode: 'Periode', bis: 'bis',
+    werte: 'Werte', gem: 'Gemessen', simu: 'Simuliert', glied: 'Bilanzglied', anteil: 'Anteil', gemessen: 'gemessen', geschaetzt: 'geschätzt', rest: 'Rest (Zwischengebiet)', negativ: 'negativer Rest',
+    zwischen: 'Zwischengebiet', kontrolle: 'Kontrollbilanz Aare: Stilli − (Brugg + Reuss + Limmat)', inkl: 'inkl.', ohneReihe: 'ohne Messreihe', ohneReihen: 'inkl. Neckar und Main, ohne Messreihen',
+    tage: 'Tage mit vollständigen Werten', von_: 'von', periode: 'Periode',
     mqText: 'Mittel aller Tage', nwText: 'Mittel der sieben trockensten Tage jedes Jahres (NM7Q) an dieser Messstelle',
-    keine: 'Keine Bilanz: Für diesen Tag fehlen Werte.', status: 'Freigabestatus', letzter: 'Letzter Tag mit vollständigen Werten', nm7qVon: 'Kleinstes 7-Tage-Mittel von',
-    seen: 'Seen', see: 'See', stand: 'Stand', aenderung: 'Änderung', speicher: 'Speicheränderung', fuellt: 'Positiv: Der See füllt sich und hält Wasser zurück. Gerechnet mit konstanter Seefläche.',
-    station: 'Messstation', nr: 'Nummer', abfluss: 'Abfluss', anteilAn: 'Anteil an', quelle: 'Quelle', restK: 'Zwischengebiet (Rest)', mqK: 'MQ', nm7q: 'Mittleres NM7Q', nm7qMin: 'Kleinstes NM7Q',
+    keine: 'Keine Bilanz: Für diesen Tag fehlen Werte.', status: 'Status der Werte', letzter: 'Letzter Tag mit vollständigen Werten', nm7qVon: 'Kleinstes 7-Tage-Mittel von',
+    seen: 'Seen', see: 'See', stand: 'Stand', aenderung: 'Änderung', speicher: 'Speicheränderung', fuellt: 'Positiv: Der See füllt sich und hält Wasser zurück.',
+    nr: 'Nummer', abfluss: 'Abfluss', anteilAn: 'Anteil an', quelle: 'Quelle', restK: 'Zwischengebiet (Rest)', mqK: 'MQ', nm7qMin: 'Kleinstes NM7Q',
     regulierung: 'Regulierung', grenzen: 'Grenzen', flaeche: 'Fläche', reguliert: 'reguliert', unreguliert: 'nicht reguliert', keinWehr: 'Nicht regulierter See, kein Wehr.',
-    simTitel: 'Simulation Rückhalt', simLead: 'Was wäre, wenn die Seen im Frühling etwas mehr Wasser zurückgehalten und es bei Niedrigwasser abgegeben hätten? Wähle das Zusatzband je See (alle oder nur einzelne), die Zeit des Rückhalts und die Abgabe. Karte und Bilanz zeigen dann den simulierten Zustand.',
-    alle: 'Alle regulierten Seen', rueck: 'Rückhalt von', abgabe: 'Abgabe ab', dauer: 'Dauer (Tage)', auto: 'Automatisch', band: 'Genutztes Band 1991–2020', jecm: 'Je cm', zusatz: 'Zusatzband', vol: 'Volumen',
-    grenzenK: 'Reguliergrenzen m ü. M. · Mio. m³', volumen: 'Rückhaltevolumen', plus: 'Zusatzabfluss', minus: 'Minderabfluss', nm7qSim: 'NM7Q', pegel: 'Pegel Kaub', pegelTief: 'Pegel Kaub (tiefste 7 Tage)',
-    maxAnteil: 'Rückhalt höchstens', vomAbfluss: 'des Abflusses in', fRueck: 'Rückhalt', fAbgabe: 'Abgabe', diff: 'Differenz', ausschnitt: 'Ausschnitt', ganz: 'Jahr', phase: 'Abgabe',
-    keinJahr: 'Für diese Messstelle liegen in diesem Jahr keine Tageswerte vor.', warn: 'Die Abgabe beginnt vor dem Ende des Rückhalts.', nurTag: 'Die Simulation wirkt in den Ansichten «Heute», «Extremwerte» und «Datum».',
-    autoHeute: 'Automatisch: Die Abgabe endet am angezeigten Tag.', autoTief: 'Automatisch: Die Abgabe deckt die sieben trockensten Tage des Jahres.',
-    simHinweis: 'Einfaches Modell: Das Volumen wird gleichmässig zurückgehalten und abgegeben und wandert mit der Fliesszeit talwärts, ohne Abflachung. Regulierreglemente, Hochwasserschutz und Ökologie sind nicht berücksichtigt. Der Bodensee ist nicht reguliert; ein Band dort ist hypothetisch. Pegel Kaub aus den Tageswertpaaren Wasserstand/Abfluss desselben Jahres.',
-    methode: 'Methode', quellen: 'Quellen', standT: 'Datenstand', monate: ['Jan', 'Feb', 'Mrz', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
-    legende: 'Strichbreite = Abfluss. Schwarz: Abfluss der Messstelle oberhalb. Grau: Zuwachs aus dem Zwischengebiet (gerechneter Rest). Blau: Strecke, die die Simulation verändert. Quadrat: Messstation. Dreieck: regulierter See. Kreis: nicht regulierter See.', fehlt: 'Die Daten konnten nicht geladen werden.',
-    meth: ['Netz: gerichteter Graph, Knoten = Messstellen, Kanten = Fliessstrecken. Rest = gemessener Abfluss minus Summe der Messstellen oberhalb.',
-      'Fliesszeiten: Annahmen in ganzen Tagen (Basel–Maxau 1 Tag, Maxau–Worms 1 Tag, Neckar–Worms 1 Tag, sonst 0; Basel–Kaub 2 Tage), nicht gemessen.',
-      'MQ und NM7Q sind aus den Tageswerten gerechnet: BAFU-Stationen 1991–2020, deutsche Pegel 2010–2020. NM7Q = kleinstes Mittel über 7 Tage im Kalenderjahr.',
-      'Extremwerte: die zwölf tiefsten jährlichen NM7Q seit Beginn der Reihen (Basel ab 1970, Kaub ab 2008).',
-      'Deutsche Pegel: geprüfte Tageswerte aus dem Deutschen Gewässerkundlichen Jahrbuch (2008–2025); danach nur Rohdaten der letzten 31 Tage (PEGELONLINE). Dazwischen gibt es keine Werte. Neckar: 2010–2020.',
-      'Seen: Speicheränderung = Fläche × Änderung des Tagesmittels. Flächen und Grenzen aus den BAFU-Faktenblättern «Seeregulierung» (2020). Bodensee: 536 km² nach IGKB, Aufteilung nicht amtlich.',
+    kaubQ: 'Abfluss Kaub', kaubW: 'Pegel Kaub', glw: 'Abstand zum GlW (77 cm)', tiefe: 'Fahrrinnentiefe', baselQ: 'Abfluss Basel', vorhersage: 'Vorhersage 4 Tage', jetzt: 'Aktueller Wert', ausKurve: 'aus der Abflusskurve',
+    herkunft: 'Herkunft des Wassers', gAlpen: 'Alpenrhein und Bodensee', gHoch: 'Thur und Hochrhein', gAareOben: 'Aare bis Brügg (Oberland, Jurarandseen)', gAareMitte: 'Aare Brügg bis Stilli (Emme, Mittelland)', gReuss: 'Reuss (Vierwaldstättersee)', gLimmat: 'Limmat (Zürichsee)', gUnten: 'Unterhalb Basel (Oberrhein, Neckar, Main)',
+    aareGesamt: 'Aare in Stilli, gesamt', rheinOben: 'Rhein vor der Aare (Rekingen)',
+    simTitel: 'Optimaler Rückhalt', simLead: 'Einstellen lässt sich nur die zusätzliche Staukapazität der Seen. Die Rechnung staut bei möglichst hohen Abflüssen und gibt so ab, dass der kleinste Tagesabfluss des Jahres an der Bilanz-Messstelle möglichst hoch wird. Das Wasser geht darum an die trockensten Tage.',
+    alle: 'Alle regulierten Seen (cm)', band: 'Genutztes Band 1991–2020', jecm: 'Je cm', zusatz: 'Zusätzliche Kapazität', vol: 'Volumen', grenzenK: 'Reguliergrenzen m ü. M. · Mio. m³', volumen: 'Kapazität gesamt',
+    gBodensee: 'Bodensee (nicht reguliert, hypothetisch)', gAare: 'Aare', gReussL: 'Reuss', gLimmatL: 'Limmat',
+    minTag: 'Kleinster Tagesabfluss', nm7qSim: 'NM7Q', pegelMin: 'Tiefster Pegel Kaub', unterGlw: 'Tage unter GlW in Kaub', abgabeTage: 'Abgabe', rueckTage: 'Rückhalt', tageW: 'Tage', schwellen: 'Schwellen', genutzt: 'Genutztes Volumen',
+    ausschnitt: 'Ausschnitt', ganz: 'Jahr', phase: 'Niedrigwasser', diff: 'Differenz', inhalt: 'Speicherinhalt, Mio. m³', keinGewinn: 'Kein Gewinn: Der kleinste Abfluss fällt vor jedes Hochwasser, das den Speicher hätte füllen können (Speicher am 1. Januar leer).',
+    keinJahr: 'Für diese Messstelle liegen in diesem Jahr keine Tageswerte vor.', nurTag: 'Wähle eine Kapazität grösser als null.', geschHinweis: 'Tage des Jahres sind geschätzt; das Ergebnis für Kaub ist entsprechend unsicher.',
+    simHinweis: 'Kalenderjahr, Speicher am 1. Januar leer, volle Voraussicht: Das Ergebnis ist eine Obergrenze. Regulierreglemente, Hochwasserschutz und Ökologie sind nicht berücksichtigt.',
+    herTitel: 'Herleitung', herLead: 'Jede Zahl dieser Seite folgt aus den Formeln unten, hier mit den Werten des angezeigten Tages.',
+    methode: 'Annahmen und Lücken', quellen: 'Quellen', standT: 'Datenstand', monate: ['Jan', 'Feb', 'Mrz', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
+    legende: 'Strichbreite = Abfluss. Schwarz: Abfluss der Messstelle oberhalb. Grau: Zuwachs aus dem Zwischengebiet (gerechneter Rest). Blau: Strecke, die die Simulation verändert. Quadrat: Messstation. Dreieck: regulierter See. Kreis: nicht regulierter See. Grundkarte: swisstopo und OpenStreetMap, als Punkteraster.', fehlt: 'Die Daten konnten nicht geladen werden.',
+    meth: ['Fliesszeiten: Annahmen in ganzen Tagen (Basel–Maxau 1, Maxau–Worms 1, Neckar–Worms 1, sonst 0; Basel–Kaub 2), nicht gemessen.',
+      'Deutsche Pegel: geprüfte Tageswerte aus dem Jahrbuch (2008–2025), danach Rohdaten der letzten 31 Tage. Neckar: 2010–2020. Für Kaub sind die Tage ohne Messwert seit dem 1.1.2026 geschätzt und so bezeichnet.',
+      'Fehlen die Pegel zwischen Basel und Kaub, fasst die Bilanz alles unterhalb von Basel zu einem Rest zusammen.',
+      'Seen: konstante Fläche. Flächen und Grenzen aus den BAFU-Faktenblättern «Seeregulierung» (2020). Bodensee: 536 km² nach IGKB, Aufteilung nicht amtlich.',
       'Es wird nichts interpoliert. Fehlt ein Wert, fehlt das Ergebnis.'],
   };
   const $ = id => document.getElementById(id);
@@ -73,23 +77,27 @@
   const zahl = (x, n = 0) => x == null || !isFinite(x) ? '–'
     : (x < 0 ? '−' : '') + Math.abs(x).toFixed(n).replace(/\B(?=(\d{3})+(?!\d))/g, FR ? ' ' : '’').replace('.', FR ? ',' : '.');
   const qz = x => zahl(x, x != null && Math.abs(x) < 100 ? 1 : 0);
-  const vz = (x, n) => (x > 0 ? '+' : '') + zahl(x, n);
+  const vz = (x, n) => x == null ? '–' : (x > 0 ? '+' : '') + zahl(x, n);
   const datum = iso => { const [j, m, t] = iso.split('-'); return `${+t}.${+m}.${j}`; };
 
-  // ------------------------------------------------------------ Daten
+  // ------------------------------------------------------------ Daten und Netz
   let meta, karte;
   try {
     [meta, karte] = await Promise.all(['daten/meta.json', 'daten/karte.json'].map(u => fetch(u).then(r => { if (!r.ok) throw new Error(u); return r.json(); })));
   } catch (e) { $('bilanz').textContent = T.fehlt; return; }
   const ST = Object.fromEntries(meta.stationen.map(s => [s.id, s]));
-  const oben = id => meta.kanten.filter(k => k.nach === id);
-  const unten = id => meta.kanten.find(k => k.von === id);
-  const EINZUG = {};
+  const KAUB = '25700100', BASEL = '2289', K = meta.kaub || {};
+  const GLW = K.kennwerte && K.kennwerte.GlW ? K.kennwerte.GlW.value : null, TUG = K.kennwerte && K.kennwerte.TuGLW ? K.kennwerte.TuGLW.value : null;
+  // Volles Netz und Kurznetz (alles unterhalb von Basel als ein Rest), falls die Pegel zwischen Basel und Kaub fehlen
+  const VOLL = meta.kanten, KURZ = meta.kanten.filter(k => ST[k.nach].quelle === 'BAFU').concat([{ von: BASEL, nach: KAUB, tage: 2, zufluss: false }]);
+  let NETZ = VOLL; const EINZUG = new Map();
+  const oben = id => NETZ.filter(k => k.nach === id);
+  const unten = id => NETZ.find(k => k.von === id);
   const einzug = ziel => {                       // {knoten: Fliesszeit in Tagen bis zum Ziel}
-    if (EINZUG[ziel]) return EINZUG[ziel];
+    const s = (NETZ === VOLL ? 'v' : 'k') + ziel; if (EINZUG.has(s)) return EINZUG.get(s);
     const e = { [ziel]: 0 }, offen = [ziel];
     while (offen.length) { const k = offen.pop(); for (const c of oben(k)) { e[c.von] = e[k] + c.tage; offen.push(c.von); } }
-    return (EINZUG[ziel] = e);
+    EINZUG.set(s, e); return e;
   };
   const jahre = {};
   const jahr = j => jahre[j] || (jahre[j] = fetch(`daten/jahr/${j}.json`).then(r => r.ok ? r.json() : null).catch(() => null));
@@ -97,6 +105,7 @@
   const isoTag = (j, i) => new Date(Date.UTC(j, 0, 1 + i)).toISOString().slice(0, 10);
   const kurz = s => s.name.split(',')[0];
   const LETZTES = meta.jahre[meta.jahre.length - 1];
+  const statusAm = (Y, id, i) => { let c = null; for (const [start, code] of (Y.s[id] || [])) { if (start <= i) c = code; else break; } return c; };
 
   // ------------------------------------------------------------ Bilanz (wie bilanz.py)
   const wert = (q, id, i) => (i < 0 || !q[id] || q[id][i] == null) ? null : q[id][i];
@@ -143,38 +152,66 @@
     return n ? s : null;
   };
 
+  // ------------------------------------------------------------ Pegel Kaub (wie schifffahrt.py)
+  const KURVE = K.abflusskurve || [];           // Stützpunkte [Q, W]
+  const linear = (x, von, nach) => {
+    if (x == null || KURVE.length < 2 || x < KURVE[0][von] || x > KURVE[KURVE.length - 1][von]) return null;
+    let i = 1; while (KURVE[i][von] < x) i++;
+    const a = KURVE[i - 1], b = KURVE[i];
+    return b[von] === a[von] ? a[nach] : a[nach] + (b[nach] - a[nach]) * (x - a[von]) / (b[von] - a[von]);
+  };
+  const wAusQ = q => linear(q, 0, 1), qAusW = w => linear(w, 1, 0);
+  const Q_GLW = GLW != null ? qAusW(GLW) : null;
+
+  // ------------------------------------------------------------ Optimaler Rückhalt (wie simulation.py)
+  const SEK = 86400, P_MAX = 0.10;
+  function lauf(q, V, tief, hoch) {
+    const n = q.length, abgabe = new Float64Array(n), rueck = new Float64Array(n), speicher = new Float64Array(n);
+    let letzter = -1; for (let i = 0; i < n; i++) if (q[i] != null && q[i] < tief) letzter = i;
+    let s = 0;
+    for (let i = 0; i < n; i++) {
+      const x = q[i];
+      if (x != null) {
+        if (x < tief) { const bedarf = (tief - x) * SEK; if (bedarf > s + 1e-6) return null; s -= bedarf; abgabe[i] = tief - x; }
+        else if (x > hoch && i < letzter && s < V) { const r = Math.min(x - hoch, P_MAX * x, (V - s) / SEK); s += r * SEK; rueck[i] = r; }
+      }
+      speicher[i] = s;
+    }
+    return { abgabe, rueck, speicher };
+  }
+  function optimieren(q, V) {
+    const w = q.filter(x => x != null); if (!w.length || V <= 0) return null;
+    let a = Math.min(...w), b = w.reduce((s, x) => s + x, 0) / w.length;
+    for (let i = 0; i < 50; i++) { const m = (a + b) / 2; if (lauf(q, V, m, m)) a = m; else b = m; }
+    const tief = a; let c = tief, d = Math.max(...w);
+    for (let i = 0; i < 50; i++) { const m = (c + d) / 2; if (lauf(q, V, tief, m)) c = m; else d = m; }
+    return { tief, hoch: c, ...lauf(q, V, tief, c) };
+  }
+
   // ------------------------------------------------------------ Zustand
-  const Z = { ziel: '25700100', ansicht: 'heute', jahr: LETZTES, tag: null, extrem: 0, sim: false, zoom: false };
-  const SIM = { cm: Object.fromEntries(meta.seen.map(s => [s.id, s.reguliert ? 10 : 0])), f0: '04-01', f1: '06-30', r0: null, rd: 30, auto: true };
+  const Z = { ziel: KAUB, ansicht: 'heute', jahr: LETZTES, tag: null, extrem: 0, sim: false, zoom: false };
+  const CM = Object.fromEntries(meta.seen.map(s => [s.id, s.reguliert ? 10 : 0]));
   const tagAnsicht = () => ['heute', 'extrem', 'tag'].includes(Z.ansicht);
 
-  // Simulation: Rückhalt und Abgabe je See wirken an der ersten Messstelle unterhalb und wandern mit der Fliesszeit talwärts.
-  function simulieren(Y, f0, f1, r0) {
-    const q = {}, wirkung = {}, n = (Y.q['2289'] || Object.values(Y.q)[0]).length, nf = f1 - f0 + 1, jeKnoten = {};
-    let volumen = 0;
+  // Die Seen teilen sich Rückhalt und Abgabe im Verhältnis ihrer Kapazität; die Wirkung wandert mit der Fliesszeit talwärts.
+  function simulieren(Y) {
+    const qz = Y.q[Z.ziel]; let V = 0;
+    for (const s of meta.seen) V += CM[s.id] * s.flaeche_km2 * 1e4;
+    if (!qz || !V) return { q: Y.q, wirkung: {}, V, O: null };
+    const O = optimieren(qz, V), n = qz.length, wirkung = {}, alt = NETZ; NETZ = VOLL;
+    const zumZiel = einzug(Z.ziel);
     for (const s of meta.seen) {
-      const m3 = SIM.cm[s.id] * s.flaeche_km2 * 1e4; if (!m3) continue;
-      volumen += m3; jeKnoten[s.knoten] = (jeKnoten[s.knoten] || 0) + m3 / (nf * 86400);
+      const teil = CM[s.id] * s.flaeche_km2 * 1e4 / V; if (!teil || !(s.knoten in zumZiel)) continue;
       for (let k = s.knoten, lag = 0; k;) {
         const w = wirkung[k] || (wirkung[k] = new Float64Array(n));
-        for (let i = f0; i <= f1; i++) if (i + lag < n) w[i + lag] -= m3 / (nf * 86400);
-        for (let i = r0; i < r0 + SIM.rd; i++) if (i + lag >= 0 && i + lag < n) w[i + lag] += m3 / (SIM.rd * 86400);
+        for (let i = 0; i < n; i++) { const j = i - zumZiel[s.knoten] + lag; if (j >= 0 && j < n) w[j] += teil * (O.abgabe[i] - O.rueck[i]); }
         const u = unten(k); if (!u) break; lag += u.tage; k = u.nach;
       }
     }
+    NETZ = alt;
+    const q = {};
     for (const id in Y.q) q[id] = wirkung[id] ? Y.q[id].map((x, i) => x == null ? null : x + wirkung[id][i]) : Y.q[id];
-    return { q, wirkung, volumen, nf, jeKnoten };
-  }
-  function fenster(Y) {                          // Tagesnummern von Rückhalt und Abgabe; r0 automatisch, solange SIM.auto
-    const j = Z.jahr, f0 = tagNr(`${j}-${SIM.f0}`), f1 = Math.max(f0, tagNr(`${j}-${SIM.f1}`)), q = Y.q[Z.ziel] || [];
-    const lag = Math.max(0, ...meta.seen.map(s => einzug(Z.ziel)[s.knoten] || 0));
-    if (SIM.auto || SIM.r0 == null) {
-      let r;
-      if ((Z.ansicht === 'heute' || Z.ansicht === 'tag') && Z.tag != null) r = Z.tag - SIM.rd + 1 - lag;
-      else { const tief = Z.ansicht === 'extrem' && Z.i0 != null ? { beginn: Z.i0 } : nm7q(q); r = (tief ? tief.beginn : 273) - Math.floor((SIM.rd - 7) / 2) - lag; }
-      SIM.r0 = isoTag(j, Math.max(0, Math.min(Math.max(0, q.length - SIM.rd), r))).slice(5);
-    }
-    return { f0, f1, r0: tagNr(`${j}-${SIM.r0}`), lag };
+    return { q, wirkung, V, O };
   }
 
   // ------------------------------------------------------------ Bedienung
@@ -200,16 +237,71 @@
       w.append(f);
     }
     if (Z.ansicht === 'tag' && Y) {
-      const n = (Y.q['2289'] || []).length, iso = isoTag(Z.jahr, Z.tag);
+      const n = (Y.q[BASEL] || []).length;
       const j = feld(T.jahr, `<select>${meta.jahre.slice().reverse().map(x => `<option${x === Z.jahr ? ' selected' : ''}>${x}</option>`).join('')}</select>`);
       j.querySelector('select').addEventListener('change', e => { Z.jahr = +e.target.value; alles(); });
-      const d = feld(T.datum, `<input type="date" value="${iso}" min="${Z.jahr}-01-01" max="${Z.jahr}-12-31">`);
+      const d = feld(T.datum, `<input type="date" value="${isoTag(Z.jahr, Z.tag)}" min="${Z.jahr}-01-01" max="${Z.jahr}-12-31">`);
       d.querySelector('input').addEventListener('change', e => { if (e.target.value) { Z.tag = tagNr(e.target.value); alles(); } });
       const r = document.createElement('div'); r.className = 'gruppe regler';
       r.innerHTML = `<input type="range" min="0" max="${n - 1}" value="${Z.tag}" aria-label="${T.datum}">`;
       r.querySelector('input').addEventListener('input', e => { Z.tag = +e.target.value; alles(true); });
       w.append(j, d, r);
     }
+  }
+
+  // ------------------------------------------------------------ Rechnen
+  async function rechnen() {
+    NETZ = VOLL;
+    if (!tagAnsicht()) {
+      const art = Z.ansicht === 'mq' ? 'mq' : 'nm7q', p = meta.anteile[Z.ziel], je = {};
+      for (const z of meta.ziele) je[z] = meta.anteile[z][art];
+      const Y = await jahr(Z.jahr);
+      return { a: p[art], zeige: p[art], je, Y, S: Y ? simulieren(Y) : null, text: `${Z.ansicht === 'mq' ? T.mqText : T.nwText}. ${T.periode} ${p.periode[0]}–${p.periode[1]}.`, datumText: `${p.periode[0]}–${p.periode[1]}` };
+    }
+    if (Z.ansicht === 'extrem') { const x = meta.extreme[Z.ziel][Z.extrem]; Z.jahr = x.jahr; Z.i0 = tagNr(x.beginn); Z.tag = tagNr(x.ende); }
+    const Y = await jahr(Z.jahr);
+    if (!Y) return { a: null, zeige: null, text: '' };
+    const n = (Y.q[BASEL] || Object.values(Y.q)[0]).length;
+    const netzWahl = i => { NETZ = VOLL; if (!glieder(Y.q, KAUB, i)) { NETZ = KURZ; if (!glieder(Y.q, KAUB, i)) NETZ = VOLL; } };
+    if (Z.ansicht === 'heute' && Z.tag == null) { for (Z.tag = n - 1; Z.tag > 0; Z.tag--) { netzWahl(Z.tag); if (glieder(Y.q, Z.ziel, Z.tag)) break; } }
+    if (Z.tag == null || Z.tag >= n) Z.tag = n - 1;
+    const i1 = Z.tag, i0 = Z.ansicht === 'extrem' ? Z.i0 : i1;
+    netzWahl(i1);
+    const S = simulieren(Y), a = anteile(Y.q, Z.ziel, i0, i1), s = S.O ? anteile(S.q, Z.ziel, i0, i1) : null, q = Z.sim && s ? S.q : Y.q, je = {}, wirk = {};
+    for (const z of meta.ziele) je[z] = anteile(q, z, i0, i1);
+    for (const id in S.wirkung) { let x = 0; for (let i = i0; i <= i1; i++) x += S.wirkung[id][i - (einzug(Z.ziel)[id] || 0)] || 0; wirk[id] = x / (i1 - i0 + 1); }
+    const codes = new Set(); for (const id in einzug(Z.ziel)) for (let i = i0; i <= i1; i++) { const c = statusAm(Y, id, i - einzug(Z.ziel)[id]); if (c != null) codes.add(c); }
+    const dt = i0 === i1 ? datum(isoTag(Z.jahr, i1)) : `${datum(isoTag(Z.jahr, i0)).slice(0, -4)}–${datum(isoTag(Z.jahr, i1))}`;
+    const text = Z.ansicht === 'heute' ? `${T.letzter}: ${dt}.` : Z.ansicht === 'extrem' ? `${T.nm7qVon} ${Z.jahr}: ${dt}.` : `${dt}.`;
+    return { a, sim: s, zeige: Z.sim && s ? s : a, je, Y, S, i0, i1, wirk, text, datumText: dt, status: [...codes].sort().map(c => meta.status[c]).join(', ') };
+  }
+
+  // ------------------------------------------------------------ Lage: Kaub und Basel am angezeigten Tag
+  function lageZeichnen(R) {
+    const el = $('lage');
+    if (!tagAnsicht() || !R.Y) { el.hidden = true; return; }
+    el.hidden = false;
+    const mittel = (q, id) => { let s = 0, n = 0; for (let i = R.i0; i <= R.i1; i++) { const x = wert(q, id, i); if (x != null) { s += x; n++; } } return n ? s / n : null; };
+    const sim = Z.sim && R.S && R.S.O, qK = mittel(R.Y.q, KAUB), qKs = sim ? mittel(R.S.q, KAUB) : null, qB = mittel(R.Y.q, BASEL), qBs = sim ? mittel(R.S.q, BASEL) : null;
+    const gesch = statusAm(R.Y, KAUB, R.i1) === 5;
+    let wM = null; if (R.Y.wk && R.i0 === R.i1) wM = R.Y.wk[R.i1];
+    const w = wM != null ? wM : wAusQ(qK), ws = sim ? (wM != null && wAusQ(qK) != null && wAusQ(qKs) != null ? wM + wAusQ(qKs) - wAusQ(qK) : wAusQ(qKs)) : null;
+    const k = (titel, gross, zusatz = '', kl = '') => `<div><span>${titel}</span><b class="${kl}">${gross}</b><em>${zusatz}</em></div>`;
+    const beide = (x, y, einheit, n = 0) => y != null && x != null ? `${zahl(y, n)} <small>${einheit}</small>` : `${zahl(x, n)} <small>${einheit}</small>`;
+    const anders = (x, y) => y != null && x != null && Math.abs(y - x) >= .05;
+    const dazu = (x, y, einheit, n, wort = T.gemessen) => anders(x, y) ? `${wort} ${zahl(x, n)} ${einheit} · ${vz(y - x, 1)}` : '';
+    const kl = anders(qK, qKs) ? 'sim' : '', klB = anders(qB, qBs) ? 'sim' : '';
+    let html = k(`${T.kaubQ}${gesch ? ` (${T.geschaetzt})` : ''}`, beide(qK, qKs, 'm³/s'), dazu(qK, qKs, 'm³/s', 0, gesch ? T.geschaetzt : T.gemessen) || (gesch && K.schaetzung.pruefung_roh ? `± ${zahl(K.schaetzung.pruefung_roh.rmse)} m³/s` : ''), kl) +
+      k(T.kaubW, beide(w, ws, 'cm'), [dazu(w, ws, 'cm', 0, wM == null ? T.ausKurve : T.gemessen), wM == null && w != null && !anders(w, ws) ? T.ausKurve : ''].filter(Boolean).join(''), kl);
+    const wz = ws != null ? ws : w;
+    if (GLW != null && wz != null) html += k(T.glw, `${vz(wz - GLW, 0)} <small>cm</small>`, '', kl) + k(T.tiefe, `${zahl(wz - GLW + TUG)} <small>cm</small>`, `= ${zahl(wz)} − ${zahl(GLW)} + ${zahl(TUG)}`, kl);
+    html += k(T.baselQ, beide(qB, qBs, 'm³/s'), dazu(qB, qBs, 'm³/s', 0), klB);
+    if (Z.ansicht === 'heute' && K.vorhersage && K.vorhersage.length) {
+      const v = K.vorhersage, l = v[v.length - 1], werte = v.map(x => x[1]);
+      html += k(T.vorhersage, `${zahl(l[1])} <small>cm</small>`, `${datum(l[0].slice(0, 10))} · ${zahl(Math.min(...werte))}–${zahl(Math.max(...werte))} cm · WSV/BfG`);
+      if (K.aktuell) html += k(T.jetzt, `${zahl(K.aktuell.value)} <small>cm</small>`, `${datum(K.aktuell.timestamp.slice(0, 10))}, ${K.aktuell.timestamp.slice(11, 16).replace(':', '.')} Uhr · ${meta.status[0]}`);
+    }
+    el.innerHTML = html;
   }
 
   // ------------------------------------------------------------ Karte
@@ -222,26 +314,27 @@
     bounds: [[45.75, 5.9], [47.85, 10.55]], attribution: '© <a href="https://www.swisstopo.admin.ch">swisstopo</a> · BAFU · WSV/BfG · HydroRIVERS' }).addTo(map);
   map.on('click', () => map.scrollWheelZoom.enable());
   const ebene = L.layerGroup().addTo(map);
-  const RAHMEN = { '2289': [[46.6, 7.0], [47.8, 9.8]], '25700100': [[46.6, 6.9], [50.2, 9.9]] };
+  const RAHMEN = { [BASEL]: [[46.6, 7.0], [47.8, 9.8]], [KAUB]: [[46.6, 6.9], [50.2, 9.9]] };
   let rahmenFuer = null;
   const MIT_NAME = { '2473': 'r', '2288': 'r', '2135': 'r', '2289': 'l', '23700200': 'l', '23800690': 'r', '23900200': 'l', '24700404': 'r', '25100100': 'l', '25700100': 'l', '2044': 'r', '2029': 'l' };
-
   function karteZeichnen(R) {
     if (rahmenFuer !== Z.ziel) { map.fitBounds(RAHMEN[Z.ziel]); rahmenFuer = Z.ziel; }
     ebene.clearLayers();
     const a = R.zeige, e = einzug(Z.ziel), px = a ? 14 / a.ziel_mittel : 0, ll = p => [p[1], p[0]];
-    const fluss = id => a && id in e && id !== Z.ziel ? abfluss(a, id) : null;   // unterhalb des Ziels wird nichts gezeichnet
-    const geaendert = id => Z.sim && R.sim && R.wirk && R.wirk[id] && Math.abs(R.wirk[id]) > .05;
-    const kanten = meta.kanten.slice().sort((x, y) => (fluss(y.von) || 0) - (fluss(x.von) || 0));
+    const fluss = id => a && id in e && id !== Z.ziel ? abfluss(a, id) : null;
+    const geaendert = id => Z.sim && R.wirk && R.wirk[id] && Math.abs(R.wirk[id]) > .05;
+    // Im Kurznetz stehen die Strecken Basel–Maxau–Worms–Mainz–Kaub für die eine Kante Basel–Kaub
+    const strecke = k => NETZ === KURZ && k.von === BASEL ? ['2289>23700200', '23700200>23900200', '23900200>25100100', '25100100>25700100'].flatMap(s => karte.strecken[s].p) : (karte.strecken[`${k.von}>${k.nach}`] || {}).p;
+    const kanten = NETZ.slice().sort((x, y) => (fluss(y.von) || 0) - (fluss(x.von) || 0));
     for (const k of kanten) {                    // grauer Rand: Zuwachs aus dem Zwischengebiet bis zur nächsten Messstelle
-      const s = karte.strecken[`${k.von}>${k.nach}`], q = fluss(k.von), r = a && a.mittel['R:' + k.nach];
-      if (s && q > 0 && r > 0 && !k.zufluss) L.polyline(s.p.map(ll), { color: '#a8a8a8', weight: Math.max(2, (q + r) * px), lineCap: 'butt', interactive: false }).addTo(ebene);
+      const p = strecke(k), q = fluss(k.von), r = a && a.mittel['R:' + k.nach];
+      if (p && q > 0 && r > 0 && !k.zufluss) L.polyline(p.map(ll), { color: '#a8a8a8', weight: Math.max(2, (q + r) * px), lineCap: 'butt', interactive: false }).addTo(ebene);
     }
     for (const k of kanten) {
-      const s = karte.strecken[`${k.von}>${k.nach}`]; if (!s) continue;
+      const p = strecke(k); if (!p) continue;
       const q = fluss(k.von), o = ST[k.von];
-      if (q == null || q <= 0) L.polyline(s.p.map(ll), { color: '#a8a8a8', weight: 1.5, dashArray: '4 5', interactive: false }).addTo(ebene);
-      else L.polyline(s.p.map(ll), { color: geaendert(k.von) ? '#003399' : '#000', weight: Math.max(1.5, q * px), lineCap: 'butt', lineJoin: 'round' }).addTo(ebene)
+      if (q == null || q <= 0) L.polyline(p.map(ll), { color: '#a8a8a8', weight: 1.5, dashArray: '4 5', interactive: false }).addTo(ebene);
+      else L.polyline(p.map(ll), { color: geaendert(k.von) ? '#003399' : '#000', weight: Math.max(1.5, q * px), lineCap: 'butt', lineJoin: 'round' }).addTo(ebene)
         .bindTooltip(`${o.gewaesser} ${FR ? 'dès' : 'ab'} ${kurz(o)}: ${qz(q)} m³/s`, { sticky: true });
     }
     for (const s of meta.seen) {
@@ -254,13 +347,13 @@
       L.marker([s.lat, s.lon], { icon: L.divIcon({ className: '', html: `<div class="pkt${s.id === Z.ziel ? ' ziel' : ''}"></div>`, iconSize: [11, 11], iconAnchor: [5.5, 5.5] }), title: `${s.gewaesser}–${s.name}`, alt: `${s.gewaesser}–${s.name}`, zIndexOffset: 500 })
         .addTo(ebene).bindPopup(() => stationPopup(s, R));
       const seite = MIT_NAME[s.id];
-      if (seite) L.marker([s.lat, s.lon], { interactive: false, icon: L.divIcon({ className: 'ort', html: seite === 'l' ? `<span style="position:absolute;right:10px;top:-5px">${h(kurz(s))}</span>` : `<span style="position:absolute;left:10px;top:-5px">${h(kurz(s))}</span>`, iconSize: [0, 0] }) }).addTo(ebene);
+      if (seite) L.marker([s.lat, s.lon], { interactive: false, icon: L.divIcon({ className: 'ort', html: `<span style="position:absolute;${seite === 'l' ? 'right' : 'left'}:10px;top:-5px">${h(kurz(s))}</span>`, iconSize: [0, 0] }) }).addTo(ebene);
     }
     $('kartenlegende').textContent = T.legende;
   }
   const zeile = (k, w) => `<span class="k">${k}</span><span class="w">${w}</span>`;
   function stationPopup(s, R) {
-    const a = R.zeige, q = a ? abfluss(a, s.id) : null, m = R.a && Z.sim && R.sim ? abfluss(R.a, s.id) : null, r = a && a.mittel['R:' + s.id];
+    const a = R.zeige, q = a && s.id in einzug(Z.ziel) ? abfluss(a, s.id) : null, m = R.a && Z.sim && R.sim ? abfluss(R.a, s.id) : null, r = a && a.mittel['R:' + s.id];
     let html = `<h3>${h(s.gewaesser)}–${h(s.name)}</h3><div class="raster2">` + zeile(T.nr, s.id) +
       zeile(T.abfluss, q == null ? '–' : `${qz(q)} m³/s` + (m != null && Math.abs(q - m) > .05 ? ` (${T.gemessen} ${qz(m)})` : ''));
     for (const z of meta.ziele) {
@@ -269,9 +362,8 @@
     }
     if (r != null && oben(s.id).length) html += zeile(T.restK, `${qz(r)} m³/s`);
     if (R.Y && R.i1 != null) { const c = statusAm(R.Y, s.id, R.i1); if (c != null) html += zeile(T.status, h(meta.status[c])); }
-    html += zeile(T.quelle, s.quelle === 'BAFU' ? 'BAFU' : 'WSV / BfG') + zeile(T.datum, h(R.datumText)) +
+    return html + zeile(T.quelle, s.quelle === 'BAFU' ? 'BAFU' : 'WSV / BfG') + zeile(T.datum, h(R.datumText)) +
       zeile(`${T.mqK} ${s.periode.join('–')}`, `${zahl(s.mq)} m³/s`) + zeile(T.nm7qMin, s.nm7q_min == null ? '–' : `${qz(s.nm7q_min)} m³/s (${datum(s.nm7q_min_beginn)})`) + '</div>';
-    return html;
   }
   function seePopup(s, R) {
     let html = `<h3>${h(s.name)}</h3><div class="raster2">` + zeile(T.flaeche, `${zahl(s.flaeche_km2, 1)} km²`) + zeile(T.regulierung, s.reguliert ? T.reguliert : T.unreguliert);
@@ -283,41 +375,25 @@
     }
     return html + '</div>' + `<p>${s.reguliert ? h(FR ? s.bemerkung.replace('Regulierbehörde', 'Autorité de régulation').replace(/seit/g, 'depuis') : s.bemerkung) : T.keinWehr}</p>`;
   }
-  const statusAm = (Y, id, i) => { let c = null; for (const [start, code] of (Y.s[id] || [])) { if (start <= i) c = code; else break; } return c; };
 
-  // ------------------------------------------------------------ Bilanz rechnen und zeigen
-  async function rechnen() {
-    if (!tagAnsicht()) {
-      const p = meta.anteile[Z.ziel], a = p[Z.ansicht === 'mq' ? 'mq' : 'nm7q'], je = {};
-      for (const z of meta.ziele) je[z] = meta.anteile[z][Z.ansicht === 'mq' ? 'mq' : 'nm7q'];
-      const text = `${Z.ansicht === 'mq' ? T.mqText : T.nwText}. ${T.periode} ${p.periode[0]}–${p.periode[1]}.`;
-      return { a, zeige: a, je, text, datumText: `${p.periode[0]}–${p.periode[1]}`, Y: await jahr(Z.jahr) };
-    }
-    if (Z.ansicht === 'extrem') { const x = meta.extreme[Z.ziel][Z.extrem]; Z.jahr = x.jahr; Z.i0 = tagNr(x.beginn); Z.tag = tagNr(x.ende); }
-    const Y = await jahr(Z.jahr);
-    if (!Y) return { a: null, zeige: null, text: '' };
-    const n = (Y.q['2289'] || Object.values(Y.q)[0]).length;
-    if (Z.ansicht === 'heute' && Z.tag == null) { Z.tag = n - 1; while (Z.tag > 0 && !glieder(Y.q, Z.ziel, Z.tag)) Z.tag--; }
-    if (Z.tag == null || Z.tag >= n) Z.tag = Math.min(n - 1, Z.tag == null ? n - 1 : Z.tag);
-    const i1 = Z.tag, i0 = Z.ansicht === 'extrem' ? Z.i0 : i1;
-    const F = fenster(Y), S = simulieren(Y, F.f0, F.f1, F.r0);
-    const a = anteile(Y.q, Z.ziel, i0, i1), s = anteile(S.q, Z.ziel, i0, i1), q = Z.sim ? S.q : Y.q, je = {}, wirk = {};
-    for (const z of meta.ziele) je[z] = anteile(q, z, i0, i1);
-    for (const id in S.wirkung) { let x = 0; for (let i = i0; i <= i1; i++) x += S.wirkung[id][i - (einzug(Z.ziel)[id] || 0)] || 0; wirk[id] = x / (i1 - i0 + 1); }
-    const codes = new Set(); for (const id in einzug(Z.ziel)) for (let i = i0; i <= i1; i++) { const c = statusAm(Y, id, i); if (c != null) codes.add(c); }
-    const dt = i0 === i1 ? datum(isoTag(Z.jahr, i1)) : `${datum(isoTag(Z.jahr, i0)).slice(0, -4)}–${datum(isoTag(Z.jahr, i1))}`;
-    const text = Z.ansicht === 'heute' ? `${T.letzter}: ${dt}.` : Z.ansicht === 'extrem' ? `${T.nm7qVon} ${Z.jahr}: ${dt}.` : `${dt}.`;
-    return { a, sim: s, zeige: Z.sim ? s : a, je, Y, S, F, i0, i1, wirk, text, datumText: dt, status: [...codes].sort().map(c => meta.status[c]).join(', ') };
-  }
-  function pegelKurve(Y) {                       // Wasserstand Kaub aus den Tageswertpaaren W/Q desselben Jahres
-    const q = Y.q['25700100']; if (!q || !Y.wk) return () => null;
-    const paare = q.map((x, i) => [x, Y.wk[i]]).filter(p => p[0] != null && p[1] != null).sort((x, y) => x[0] - y[0]);
-    return x => { if (x == null || paare.length < 20 || x < paare[0][0] || x > paare[paare.length - 1][0]) return null; let i = 1; while (paare[i][0] < x) i++; const [x0, y0] = paare[i - 1], [x1, y1] = paare[i]; return x1 === x0 ? y0 : y0 + (y1 - y0) * (x - x0) / (x1 - x0); };
+  // ------------------------------------------------------------ Herkunft (Gruppen mit Schraffur) und Bilanz
+  const GRUPPEN = [['gAlpen', 'm0', ['Q:2473', 'R:2288']], ['gHoch', 'm5', ['Q:2044', 'R:2143', 'R:2091', 'R:2289']], ['gAareOben', 'm1', ['Q:2135', 'R:2029']],
+    ['gAareMitte', 'm3', ['R:2016', 'R:2205']], ['gReuss', 'm2', ['Q:2018']], ['gLimmat', 'm4', ['Q:2243']],
+    ['gUnten', 'm6', ['R:23700200', 'Q:23800690', 'R:23900200', 'Q:24700404', 'R:25100100', 'R:25700100']]];
+  function herkunftZeichnen(R) {
+    const a = R.zeige, el = $('herkunft'); if (!a) { el.innerHTML = ''; return; }
+    const g = GRUPPEN.map(([n, m, ks]) => ({ n: T[n], m, v: ks.reduce((s, k) => s + (a.mittel[k] || 0), 0), da: ks.some(k => k in a.mittel) })).filter(x => x.da);
+    const aare = abfluss(a, '2205'), rhein = abfluss(a, '2143');
+    el.innerHTML = `<h2>${T.herkunft}: ${h(kurz(ST[Z.ziel]))}, ${h(R.datumText)}</h2>` +
+      `<div class="band" role="img" aria-label="${T.herkunft}">${g.map(x => `<i class="${x.m}" style="flex:${Math.max(0, x.v).toFixed(1)} 0 0" title="${h(x.n)}: ${zahl(100 * x.v / a.ziel_mittel, 1)} %"></i>`).join('')}</div>` +
+      `<div class="herk">${g.map(x => `<i class="${x.m}"></i><span>${h(x.n)}</span><b>${qz(x.v)} m³/s</b><b>${zahl(100 * x.v / a.ziel_mittel, 1)} %</b>`).join('')}</div>` +
+      (aare != null && rhein != null ? `<p class="hinweis">${T.aareGesamt}: <b>${qz(aare)} m³/s (${zahl(100 * aare / a.ziel_mittel, 1)} %)</b>. ${T.rheinOben}: <b>${qz(rhein)} m³/s (${zahl(100 * rhein / a.ziel_mittel, 1)} %)</b>.</p>` : '');
   }
   function gliedName(k, a) {
     const id = k.slice(2), s = ST[id];
     if (k[0] === 'Q') return `${s.gewaesser}–${kurz(s)}`;
     if (id === meta.kontrolle.ziel) return T.kontrolle;
+    if (NETZ === KURZ && id === KAUB) return `${T.zwischen} Basel → Kaub (${T.ohneReihen})`;
     const fehlt = oben(id).filter(c => c.zufluss && !oben(c.von).length && !('Q:' + c.von in a.mittel)).map(c => ST[c.von].gewaesser);
     return `${T.zwischen} ${oben(id).filter(c => !fehlt.includes(ST[c.von].gewaesser)).map(c => kurz(ST[c.von])).join(' + ')} → ${kurz(s)}` +
       (fehlt.length ? ` (${T.inkl} ${fehlt.join(', ')}, ${T.ohneReihe})` : '');
@@ -326,25 +402,19 @@
     const z = ST[Z.ziel], a = R.zeige, el = $('bilanz');
     if (!a) { el.innerHTML = `<h2>${h(z.gewaesser)}–${h(z.name)}</h2><p>${T.keine}</p><p class="hinweis">${h(R.text)}</p>`; return; }
     const reihen = meta.stationen.flatMap(s => ['Q:' + s.id, 'R:' + s.id]).filter(k => k in a.mittel);
-    const max = Math.max(...reihen.map(k => Math.abs(a.mittel[k])));
-    let kopf = `<p class="gross">${zahl(a.ziel_mittel)} <small>m³/s</small></p>`;
-    if (tagAnsicht() && R.a && R.sim) {
-      const w = Z.ziel === '25700100' ? pegelKurve(R.Y) : null, w0 = w && w(R.a.ziel_mittel), w1 = w && w(R.sim.ziel_mittel), d = R.sim.ziel_mittel - R.a.ziel_mittel;
-      kopf = `<div class="vergleich"><div><span>${T.gem}</span><b>${zahl(R.a.ziel_mittel)} <small>m³/s</small></b><em>${w0 != null ? `${T.pegel} ${zahl(w0)} cm` : ''}</em></div>` +
-        `<div><span>${T.simu}</span><b class="${Z.sim ? 'sim' : ''}">${zahl(R.sim.ziel_mittel)} <small>m³/s</small></b><em>${vz(d, 1)} m³/s${w1 != null && w0 != null ? ` · ${vz(w1 - w0, 0)} cm` : ''}</em></div></div>`;
-    }
-    el.innerHTML = `<div class="kopfzeile"><h2>${h(z.gewaesser)}–${h(z.name)}</h2><button class="textknopf" type="button" id="csv">CSV</button></div>${kopf}` +
-      `<p class="hinweis">${h(R.text)}${tagAnsicht() && R.i0 === R.i1 ? '' : ` ${zahl(a.tage_gueltig)} ${T.von_} ${zahl(a.tage)} ${T.tage}.`}${R.status ? ` ${T.status}: ${h(R.status)}.` : ''}</p>` +
+    const max = Math.max(...reihen.map(k => Math.abs(a.mittel[k]))), simuliert = Z.sim && tagAnsicht() && R.sim;
+    el.innerHTML = `<div class="kopfzeile"><h2>${T.glied}: ${h(z.gewaesser)}–${h(z.name)}</h2><button class="textknopf" type="button" id="csv">CSV</button></div>` +
+      `<p class="hinweis" style="margin-top:0">${h(R.text)}${tagAnsicht() && R.i0 === R.i1 ? '' : ` ${zahl(a.tage_gueltig)} ${T.von_} ${zahl(a.tage)} ${T.tage}.`}${R.status ? ` ${T.status}: ${h(R.status)}.` : ''}</p>` +
       `<div class="rollen"><table><thead><tr><th>${T.glied}</th><th class="z">m³/s</th><th class="z">${T.anteil}</th><th></th></tr></thead><tbody>` +
       reihen.map(k => {
         const v = a.mittel[k], kl = v < 0 ? 'b minus' : k[0] === 'R' ? 'b rest' : 'b';
         return `<tr><td>${h(gliedName(k, a))}</td><td class="z">${qz(v)}</td><td class="z">${zahl(a.prozent[k], 1)} %</td>` +
           `<td class="balken"><span class="${kl}" style="width:${(100 * Math.abs(v) / max).toFixed(1)}%"></span></td></tr>`;
       }).join('') +
-      `<tr class="summe"><td>${h(z.gewaesser)}–${h(kurz(z))} (${Z.sim && tagAnsicht() ? T.simu.toLowerCase() : T.gemessen})</td><td class="z">${zahl(a.ziel_mittel)}</td><td class="z">${zahl(100, 1)} %</td><td></td></tr></tbody></table></div>` +
+      `<tr class="summe"><td>${h(z.gewaesser)}–${h(kurz(z))} (${simuliert ? T.simu.toLowerCase() : statusAm(R.Y || { s: {} }, Z.ziel, R.i1) === 5 ? T.geschaetzt : T.gemessen})</td><td class="z">${zahl(a.ziel_mittel)}</td><td class="z">${zahl(100, 1)} %</td><td></td></tr></tbody></table></div>` +
       `<p class="zeichen"><span><i class="b"></i>${T.gemessen}</span><span><i class="b rest"></i>${T.rest}</span><span><i class="b minus"></i>${T.negativ}</span></p>`;
     $('csv').addEventListener('click', () => {
-      const zeilen = [[`# ${z.gewaesser}–${z.name}; ${R.datumText}; ${Z.sim && tagAnsicht() ? T.simu : T.gem}`], ['# Quellen: BAFU, Hydrologische Beobachtungen (data.bafu.admin.ch); WSV, bereitgestellt durch die BfG (DGJ, PEGELONLINE)'],
+      const zeilen = [[`# ${z.gewaesser}–${z.name}; ${R.datumText}; ${simuliert ? T.simu : T.gem}`], ['# Quellen: BAFU, Hydrologische Beobachtungen (data.bafu.admin.ch); WSV, bereitgestellt durch die BfG (DGJ, PEGELONLINE)'],
         [T.glied, 'm3/s', '%'], ...reihen.map(k => [gliedName(k, a), a.mittel[k].toFixed(1), a.prozent[k].toFixed(2)]), [`${z.gewaesser}–${z.name}`, a.ziel_mittel.toFixed(1), '100.00']];
       const l = document.createElement('a');
       l.href = URL.createObjectURL(new Blob(['﻿' + zeilen.map(r => r.map(c => /[;"\n]/.test(c) ? `"${String(c).replace(/"/g, '""')}"` : c).join(';')).join('\n')], { type: 'text/csv' }));
@@ -363,87 +433,136 @@
     el.innerHTML = `<h2>${T.seen}, ${h(R.datumText)}</h2><div class="rollen"><table><thead><tr><th>${T.see}</th><th class="z">${T.stand} m</th><th class="z">${T.aenderung}</th><th class="z">${T.speicher} m³/s</th></tr></thead><tbody>${zeilen}</tbody></table></div><p class="hinweis">${T.fuellt}</p>`;
   }
 
-  // ------------------------------------------------------------ Simulation: Bedienung, Kennwerte, Verlauf
+  // ------------------------------------------------------------ Optimaler Rückhalt: Kapazitäten, Kennwerte, Verlauf
+  const SEEGRUPPEN = [['gBodensee', ['obersee', 'untersee']], ['gAare', ['brienz', 'thun', 'murten', 'neuenburg', 'biel']], ['gReussL', ['vws']], ['gLimmatL', ['zuerich']]];
   function simWahl() {
     const w = $('simwahl'); w.textContent = '';
-    const d = (k, titel) => {
-      const f = feld(titel, `<input type="date" value="${Z.jahr}-${SIM[k]}" min="${Z.jahr}-01-01" max="${Z.jahr}-12-31">`);
-      f.querySelector('input').addEventListener('change', e => { if (e.target.value) { SIM[k] = e.target.value.slice(5); if (k === 'r0') SIM.auto = false; alles(); } });
-      return f;
-    };
-    const alle = feld(`${T.alle} (cm)`, `<input type="number" min="0" max="50" value="">`);
-    alle.querySelector('input').addEventListener('change', e => { const v = Math.max(0, Math.min(50, +e.target.value || 0)); meta.seen.forEach(s => { if (s.reguliert) SIM.cm[s.id] = v; }); simSeen(); alles(); });
-    const tage = feld(T.dauer, `<input type="number" min="1" max="180" value="${SIM.rd}">`);
-    tage.querySelector('input').addEventListener('change', e => { SIM.rd = Math.max(1, Math.min(180, +e.target.value || 30)); alles(); });
-    w.append(alle, d('f0', T.rueck), d('f1', T.bis), d('r0', T.abgabe), tage,
-      knoepfe(' ', [['a', T.auto]], SIM.auto ? 'a' : '', () => { SIM.auto = true; alles(); }),
-      knoepfe(T.ausschnitt, [['0', T.ganz], ['1', T.phase]], Z.zoom ? '1' : '0', v => { Z.zoom = v === '1'; alles(); }));
+    const alle = feld(T.alle, `<input type="number" min="0" max="100" value="">`);
+    alle.querySelector('input').addEventListener('change', e => { const v = Math.max(0, Math.min(100, +e.target.value || 0)); meta.seen.forEach(s => { if (s.reguliert) CM[s.id] = v; }); simSeen(); alles(); });
+    w.append(alle, knoepfe(T.ausschnitt, [['0', T.ganz], ['1', T.phase]], Z.zoom ? '1' : '0', v => { Z.zoom = v === '1'; alles(); }));
   }
   function simSeen() {
+    const S = Object.fromEntries(meta.seen.map(s => [s.id, s]));
     $('simseen').innerHTML = `<div class="rollen"><table><thead><tr><th>${T.see}</th><th class="z">${T.flaeche} km²</th><th class="z">${T.jecm} Mio. m³</th><th class="z">${T.band}</th><th class="z">${T.grenzenK}</th><th style="width:22%">${T.zusatz}</th><th class="z">cm</th><th class="z">${T.vol} Mio. m³</th></tr></thead><tbody>` +
-      meta.seen.map(s => `<tr><td>${h(s.name)}<br><span style="font-size:13px">${s.reguliert ? T.reguliert : T.unreguliert}</span></td><td class="z">${zahl(s.flaeche_km2, 1)}</td><td class="z">${zahl(s.flaeche_km2 / 100, 2)}</td>` +
+      SEEGRUPPEN.map(([g, ids]) => `<tr class="gruppenkopf"><td colspan="8">${T[g]}</td></tr>` + ids.map(id => { const s = S[id]; return `<tr><td>${h(s.name)}</td><td class="z">${zahl(s.flaeche_km2, 1)}</td><td class="z">${zahl(s.flaeche_km2 / 100, 2)}</td>` +
         `<td class="z">${s.band ? `${zahl(s.band.band_m, 2)} m · ${zahl(s.band.volumen_mio_m3)}` : '–'}</td>` +
         `<td class="z" title="${s.grenzen ? h(s.grenzen.art) : ''}">${s.grenzen ? `${zahl(s.grenzen.tief, 2)}–${zahl(s.grenzen.hoch, 2)} · ${zahl(s.grenzen.volumen_mio_m3)}` : '–'}</td>` +
-        `<td><input type="range" min="0" max="50" step="1" value="${SIM.cm[s.id]}" data-see="${s.id}" aria-label="${h(s.name)}: ${T.zusatz} cm"></td>` +
-        `<td class="z" id="cm-${s.id}"></td><td class="z" id="vol-${s.id}"></td></tr>`).join('') +
+        `<td><input type="range" min="0" max="100" step="1" value="${CM[id]}" data-see="${id}" aria-label="${h(s.name)}: ${T.zusatz} cm"></td>` +
+        `<td class="z" id="cm-${id}"></td><td class="z" id="vol-${id}"></td></tr>`; }).join('')).join('') +
       `<tr class="summe"><td colspan="7">${T.volumen}</td><td class="z" id="vol-summe"></td></tr></tbody></table></div>`;
-    $('simseen').querySelectorAll('input').forEach(i => i.addEventListener('input', () => { SIM.cm[i.dataset.see] = +i.value; alles(true); }));
+    $('simseen').querySelectorAll('input').forEach(i => i.addEventListener('input', () => { CM[i.dataset.see] = +i.value; alles(true); }));
   }
+  const tageUnter = (q, grenze) => grenze == null || !q ? null : q.reduce((n, x) => n + (x != null && x < grenze ? 1 : 0), 0);
   function simZeichnen(R) {
     let v = 0;
-    for (const s of meta.seen) { const m = SIM.cm[s.id] * s.flaeche_km2 / 100; v += m; $('cm-' + s.id).textContent = SIM.cm[s.id]; $('vol-' + s.id).textContent = zahl(m, 1); }
+    for (const s of meta.seen) { const m = CM[s.id] * s.flaeche_km2 / 100; v += m; $('cm-' + s.id).textContent = CM[s.id]; $('vol-' + s.id).textContent = zahl(m, 1); }
     $('vol-summe').textContent = zahl(v, 1);
-    const z = ST[Z.ziel], q = R.Y && R.Y.q[Z.ziel];
-    if (!q || !R.S) { $('simwerte').innerHTML = `<p>${R.S ? T.keinJahr : T.nurTag}</p>`; $('verlauf').innerHTML = ''; $('simlegende').innerHTML = ''; return; }
-    const qs = R.S.q[Z.ziel], F = R.F, nf = R.S.nf, a = nm7q(q), b = nm7q(qs);
-    let anteilMax = null;                        // grösster Anteil des Rückhalts am Abfluss unterhalb der Seen
-    for (const k in R.S.jeKnoten) for (let i = F.f0; i <= F.f1; i++) { const x = R.Y.q[k] && R.Y.q[k][i]; if (x) { const t = R.S.jeKnoten[k] / x; if (!anteilMax || t > anteilMax.a) anteilMax = { a: t, k }; } }
+    const z = ST[Z.ziel], q = R.Y && R.Y.q[Z.ziel], S = R.S;
+    if (!q || !S || !S.O) { $('simwerte').innerHTML = `<p>${q ? T.nurTag : T.keinJahr}</p>`; $('verlauf').innerHTML = ''; $('speicher').innerHTML = ''; $('simlegende').innerHTML = ''; R.sz = null; return; }
+    const O = S.O, qs = S.q[Z.ziel], a = nm7q(q), b = nm7q(qs), min0 = Math.min(...q.filter(x => x != null)), min1 = Math.min(...qs.filter(x => x != null));
+    const qK = R.Y.q[KAUB], qKs = S.q[KAUB], tA = O.abgabe.reduce((n, x) => n + (x > 0), 0), tR = O.rueck.reduce((n, x) => n + (x > 0), 0), genutzt = Math.max(...O.speicher) / 1e6;
+    const gesch = (R.Y.s[Z.ziel] || []).some(([, c]) => c === 5) ? q.reduce((n, x, i) => n + (x != null && statusAm(R.Y, Z.ziel, i) === 5), 0) : 0;
     const kachel = (titel, gross, zusatz = '') => `<div><span>${titel}</span><b>${gross}</b><em>${zusatz}</em></div>`;
-    let pegel = '';
-    if (Z.ziel === '25700100' && a && b) { const w = pegelKurve(R.Y), w0 = w(a.wert), w1 = w(b.wert); if (w0 != null && w1 != null) pegel = kachel(T.pegelTief, `${zahl(w0)} → ${zahl(w1)} cm`, `${vz(w1 - w0, 0)} cm`); }
-    $('simwerte').innerHTML = kachel(T.volumen, `${zahl(v, 1)} Mio. m³`) +
-      kachel(`${T.plus} (${SIM.rd} ${FR ? 'jours' : 'Tage'})`, `+${zahl(v * 1e6 / (SIM.rd * 86400), 1)} m³/s`, SIM.auto ? ((Z.ansicht === 'heute' || Z.ansicht === 'tag') ? T.autoHeute : T.autoTief) : '') +
-      kachel(`${T.minus} (${nf} ${FR ? 'jours' : 'Tage'})`, `−${zahl(v * 1e6 / (nf * 86400), 1)} m³/s`, anteilMax ? `${T.maxAnteil} ${zahl(100 * anteilMax.a, 0)} % ${T.vomAbfluss} ${kurz(ST[anteilMax.k])}` : '') +
-      (a && b ? kachel(`${T.nm7qSim} ${kurz(z)} ${Z.jahr}` + (q.filter(x => x != null).length < .95 * q.length ? ` (${q.filter(x => x != null).length} ${FR ? 'jours avec valeurs' : 'Tage mit Werten'})` : ''), `${zahl(a.wert)} → ${zahl(b.wert)} m³/s`, `${vz(100 * (b.wert - a.wert) / a.wert, 1)} %`) : '') + pegel +
-      (F.r0 <= F.f1 && v ? `<div><em>${T.warn}</em></div>` : '');
-    verlauf(q, v ? qs : null, { f0: F.f0 + F.lag, f1: F.f1 + F.lag, r0: F.r0 + F.lag, r1: F.r0 + SIM.rd - 1 + F.lag }, z, R.i1);
+    const kMin0 = qK ? Math.min(...qK.filter(x => x != null)) : null, kMin1 = qKs ? Math.min(...qKs.filter(x => x != null)) : null, w0 = wAusQ(kMin0), w1 = wAusQ(kMin1);
+    const u0 = tageUnter(qK, Q_GLW), u1 = tageUnter(qKs, Q_GLW);
+    R.sz = { min0, min1, tA, tR, genutzt, u0, u1, w0, w1, kMin0, kMin1 };
+    $('simwerte').innerHTML = kachel(`${T.minTag} ${kurz(z)} ${Z.jahr}`, `${zahl(min0)} → ${zahl(min1)} m³/s`, `${vz(min1 - min0, 1)} m³/s · ${vz(100 * (min1 - min0) / min0, 1)} %`) +
+      (a && b ? kachel(`${T.nm7qSim} ${kurz(z)}`, `${zahl(a.wert)} → ${zahl(b.wert)} m³/s`, `${vz(b.wert - a.wert, 1)} m³/s`) : '') +
+      (w0 != null && w1 != null ? kachel(T.pegelMin, `${zahl(w0)} → ${zahl(w1)} cm`, `${vz(w1 - w0, 0)} cm · ${T.ausKurve}`) : '') +
+      (u0 != null ? kachel(T.unterGlw, `${zahl(u0)} → ${zahl(u1)}`, `GlW ${zahl(GLW)} cm = ${zahl(Q_GLW)} m³/s`) : '') +
+      kachel(T.schwellen, `L* ${zahl(O.tief)} · H* ${zahl(O.hoch)}`, 'm³/s') +
+      kachel(`${T.abgabeTage} · ${T.rueckTage}`, `${tA} · ${tR} ${T.tageW}`, `${T.genutzt}: ${zahl(genutzt, 1)} ${T.von_} ${zahl(v, 1)} Mio. m³`) +
+      (min1 - min0 < .05 ? `<div><em>${T.keinGewinn}</em></div>` : '') + (gesch ? `<div><em>${gesch} ${T.geschHinweis}</em></div>` : '');
+    verlauf(R, q, qs, O, z);
   }
-  function verlauf(q, qs, f, z, heute) {
-    const B = 1000, H = 400, L = 62, R = 14, O = 22, U = 62, n = q.length, svg = $('verlauf');
-    // Ausschnitt: ganzes Jahr ab null, oder die Abgabe mit 20 Tagen davor und danach (Achse dann nicht ab null)
-    const zoom = Z.zoom && qs, i0 = zoom ? Math.max(0, f.r0 - 20) : 0, i1 = zoom ? Math.min(n - 1, f.r1 + 20) : n - 1;
-    const sicht = [...q.slice(i0, i1 + 1), ...(qs || []).slice(i0, i1 + 1)].filter(v => v != null);
-    if (!sicht.length) { svg.innerHTML = ''; $('simlegende').textContent = T.keinJahr; return; }
-    const max = Math.max(...sicht), min = zoom ? Math.min(...sicht) : 0;
+  function verlauf(R, q, qs, O, z) {
+    const B = 1000, H = 400, L = 62, RR = 14, OO = 22, U = 40, n = q.length, svg = $('verlauf');
+    let i0 = 0, i1 = n - 1;
+    if (Z.zoom) { let a = n, b = -1; O.abgabe.forEach((x, i) => { if (x > 0) { a = Math.min(a, i); b = Math.max(b, i); } }); if (b >= 0) { i0 = Math.max(0, a - 20); i1 = Math.min(n - 1, b + 20); } }
+    const sicht = [...q.slice(i0, i1 + 1), ...qs.slice(i0, i1 + 1)].filter(v => v != null);
+    const max = Math.max(...sicht), min = Z.zoom ? Math.min(...sicht) : 0;
     const schritt = [10, 20, 50, 100, 200, 250, 500, 1000, 2000].find(s => (max - min) / s <= 6) || 5000;
-    const unten_ = Math.floor(min / schritt) * schritt, oben_ = Math.max(unten_ + schritt, Math.ceil(max / schritt) * schritt);
-    const x = i => L + (B - L - R) * (i - i0) / Math.max(1, i1 - i0), y = v => O + (H - O - U) * (1 - (v - unten_) / (oben_ - unten_));
-    const linie = a => { let d = '', an = false; a.forEach((v, i) => { if (v == null || i < i0 || i > i1) { an = false; return; } d += (an ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); an = true; }); return d; };
+    const u = Math.floor(min / schritt) * schritt, o = Math.max(u + schritt, Math.ceil(max / schritt) * schritt);
+    const x = i => L + (B - L - RR) * (i - i0) / Math.max(1, i1 - i0), y = v => OO + (H - OO - U) * (1 - (v - u) / (o - u));
+    const linie = (a, nur) => { let d = '', an = false; a.forEach((v, i) => { if (v == null || i < i0 || i > i1 || (nur && !nur(i))) { an = false; return; } d += (an ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); an = true; }); return d; };
+    const gesch = i => statusAm(R.Y, Z.ziel, i) === 5, hatGesch = q.some((v, i) => v != null && gesch(i));
     let s = '';
-    for (let v = unten_; v <= oben_; v += schritt) s += (v > unten_ ? `<line class="gitter" x1="${L}" x2="${B - R}" y1="${y(v)}" y2="${y(v)}"/>` : '') + `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${zahl(v)}</text>`;
-    s += `<text x="${L}" y="${O - 9}" class="fett">m³/s</text><line class="achse" x1="${L}" x2="${B - R}" y1="${y(unten_)}" y2="${y(unten_)}"/>`;
-    for (let m = 0; m < 12; m++) { const i = tagNr(`${Z.jahr}-${String(m + 1).padStart(2, '0')}-01`); if (i < i0 || i > i1) continue; s += `<line class="achse" x1="${x(i)}" x2="${x(i)}" y1="${y(unten_)}" y2="${y(unten_) + 5}"/><text x="${x(i) + 4}" y="${y(unten_) + 18}">${T.monate[m]}</text>`; }
-    const balken = (a, b, farbe, yy) => b < i0 || a > i1 ? '' : `<rect x="${x(Math.max(i0, a))}" y="${yy}" width="${Math.max(2, x(Math.min(i1, b)) - x(Math.max(i0, a)))}" height="8" fill="${farbe}"/>`;
-    if (qs) s += balken(f.f0, f.f1, '#000', H - 26) + balken(f.r0, f.r1, '#003399', H - 14);
-    if (heute != null && heute >= i0 && heute <= i1) s += `<line class="tag" x1="${x(heute)}" x2="${x(heute)}" y1="${O}" y2="${y(unten_)}"/>`;
-    s += `<path class="gemessen" d="${linie(q)}"/>` + (qs ? `<path class="simuliert" d="${linie(qs)}"/>` : '') +
-      `<line class="lot" id="lot" y1="${O}" y2="${y(unten_)}" visibility="hidden"/><rect id="flaeche" x="${L}" y="${O}" width="${B - L - R}" height="${H - O - U}" fill="transparent"/>`;
-    svg.setAttribute('viewBox', `0 0 ${B} ${H}`); svg.innerHTML = s;
-    svg.setAttribute('aria-label', `${z.gewaesser}–${z.name} ${Z.jahr}`);
-    $('simlegende').innerHTML = `<span><i></i>${h(z.gewaesser)}–${h(kurz(z))} ${Z.jahr}, ${T.gemessen}</span>` +
-      (qs ? `<span><i class="blau"></i>${T.simu.toLowerCase()}</span><span><i class="fenster"></i>${T.fRueck}</span><span><i class="fenster blau"></i>${T.fAbgabe}</span>` : '');
+    for (let v = u; v <= o; v += schritt) s += (v > u ? `<line class="gitter" x1="${L}" x2="${B - RR}" y1="${y(v)}" y2="${y(v)}"/>` : '') + `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${zahl(v)}</text>`;
+    s += `<text x="${L}" y="${OO - 9}" class="fett">m³/s</text><line class="achse" x1="${L}" x2="${B - RR}" y1="${y(u)}" y2="${y(u)}"/>`;
+    for (let m = 0; m < 12; m++) { const i = tagNr(`${Z.jahr}-${String(m + 1).padStart(2, '0')}-01`); if (i < i0 || i > i1) continue; s += `<line class="achse" x1="${x(i)}" x2="${x(i)}" y1="${y(u)}" y2="${y(u) + 5}"/><text x="${x(i) + 4}" y="${y(u) + 18}">${T.monate[m]}</text>`; }
+    for (const [name, v] of [['L*', O.tief], ['H*', O.hoch]]) if (v >= u && v <= o) s += `<line class="schwelle" x1="${L}" x2="${B - RR}" y1="${y(v)}" y2="${y(v)}"/><text class="fett" x="${B - RR - 4}" y="${y(v) - 5}" text-anchor="end">${name} ${zahl(v)}</text>`;
+    if (R.i1 != null && tagAnsicht() && R.i1 >= i0 && R.i1 <= i1) s += `<line class="tag" x1="${x(R.i1)}" x2="${x(R.i1)}" y1="${OO}" y2="${y(u)}"/>`;
+    s += `<path class="gemessen" d="${linie(q, i => !gesch(i))}"/>` + (hatGesch ? `<path class="geschaetzt" d="${linie(q, gesch)}"/>` : '') + `<path class="simuliert" d="${linie(qs)}"/>` +
+      `<line class="lot" id="lot" y1="${OO}" y2="${y(u)}" visibility="hidden"/><rect id="flaeche" x="${L}" y="${OO}" width="${B - L - RR}" height="${H - OO - U}" fill="transparent"/>`;
+    svg.setAttribute('viewBox', `0 0 ${B} ${H}`); svg.innerHTML = s; svg.setAttribute('aria-label', `${z.gewaesser}–${z.name} ${Z.jahr}`);
+    $('simlegende').innerHTML = `<span><i></i>${h(z.gewaesser)}–${h(kurz(z))} ${Z.jahr}, ${T.gemessen}</span>` + (hatGesch ? `<span><i class="punkte"></i>${T.geschaetzt}</span>` : '') +
+      `<span><i class="blau"></i>${T.simu.toLowerCase()}</span><span><i class="strich"></i>L*, H*</span>`;
+    // Speicherinhalt: eigene kleine Grafik mit eigener Achse, schraffierte Fläche
+    const sp = $('speicher'), SH = 150, vmax = Math.max(1, ...O.speicher) / 1e6, ys = v => 20 + (SH - 46) * (1 - v / vmax);
+    let d = `M${x(i0)},${ys(0)}`; for (let i = i0; i <= i1; i++) d += `L${x(i).toFixed(1)},${ys(O.speicher[i] / 1e6).toFixed(1)}`; d += `L${x(i1)},${ys(0)}Z`;
+    sp.setAttribute('viewBox', `0 0 ${B} ${SH}`);
+    sp.innerHTML = `<defs><pattern id="schraff" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#000" stroke-width="1.5"/></pattern></defs>` +
+      `<text x="${L}" y="12" class="fett">${T.inhalt}</text><text x="${L - 8}" y="${ys(vmax) + 4}" text-anchor="end">${zahl(vmax, 0)}</text><text x="${L - 8}" y="${ys(0) + 4}" text-anchor="end">0</text>` +
+      `<path class="inhalt" d="${d}" fill="url(#schraff)"/><line class="achse" x1="${L}" x2="${B - RR}" y1="${ys(0)}" y2="${ys(0)}"/>`;
     const tip = $('tip'), lot = $('lot');
     const zeige = ev => {
-      const r = svg.getBoundingClientRect(), i = Math.max(i0, Math.min(i1, i0 + Math.round(((ev.clientX - r.left) / r.width * B - L) / (B - L - R) * (i1 - i0))));
+      const r = svg.getBoundingClientRect(), i = Math.max(i0, Math.min(i1, i0 + Math.round(((ev.clientX - r.left) / r.width * B - L) / (B - L - RR) * (i1 - i0))));
       lot.setAttribute('x1', x(i)); lot.setAttribute('x2', x(i)); lot.setAttribute('visibility', 'visible');
       tip.hidden = false;
-      tip.innerHTML = `<b>${datum(isoTag(Z.jahr, i))}</b><br>${T.gemessen}: <b>${zahl(q[i])} m³/s</b>` +
-        (qs && q[i] != null ? `<br>${T.simu.toLowerCase()}: <b>${zahl(qs[i])} m³/s</b><br>${T.diff}: <b>${vz(qs[i] - q[i], 1)} m³/s</b>` : '');
+      tip.innerHTML = `<b>${datum(isoTag(Z.jahr, i))}</b><br>${gesch(i) ? T.geschaetzt : T.gemessen}: <b>${zahl(q[i])} m³/s</b>` +
+        (q[i] != null ? `<br>${T.simu.toLowerCase()}: <b>${zahl(qs[i])} m³/s</b><br>${T.diff}: <b>${vz(qs[i] - q[i], 1)} m³/s</b><br>${T.inhalt.split(',')[0]}: <b>${zahl(O.speicher[i] / 1e6, 1)} Mio. m³</b>` : '');
       const lx = x(i) / B * r.width;
       tip.style.left = Math.max(0, Math.min(r.width - tip.offsetWidth, lx > r.width / 2 ? lx - tip.offsetWidth - 10 : lx + 10)) + 'px';
     };
     $('flaeche').addEventListener('pointermove', zeige); $('flaeche').addEventListener('pointerdown', zeige);
     $('flaeche').addEventListener('pointerleave', () => { tip.hidden = true; lot.setAttribute('visibility', 'hidden'); });
+  }
+
+  // ------------------------------------------------------------ Herleitung: Formeln mit den Zahlen des angezeigten Tages
+  function herleitung(R) {
+    const el = $('hertext'), f = s => `<p class="formel">${s}</p>`, r = s => `<p class="rechnung">${s}</p>`, t = (de, fr) => FR ? fr : de;
+    let html = '';
+    const a = R.a || R.zeige, z = ST[Z.ziel];
+    // 1 Zwischengebiet
+    html += `<h3>1 ${t('Zwischengebiet', 'Bassin intermédiaire')}</h3><p>${t('Der Rest eines Knotens k ist sein gemessener Abfluss minus die Summe der Messstellen direkt oberhalb, je um die Fliesszeit τ versetzt.', 'Le reste d’un nœud k est son débit mesuré moins la somme des stations situées juste en amont, décalées du temps de parcours τ.')}</p>` +
+      f('R<sub>k</sub>(t) = Q<sub>k</sub>(t) − Σ<sub>j</sub> Q<sub>j</sub>(t − τ<sub>jk</sub>)');
+    if (a && tagAnsicht() && R.Y && R.i0 === R.i1) {
+      const ob = oben(Z.ziel), q = R.Y.q, teile = ob.map(k => ({ k, v: wert(q, k.von, R.i1 - k.tage) })).filter(x => x.v != null), zq = wert(q, Z.ziel, R.i1);
+      if (teile.length && zq != null) html += r(`${h(kurz(z))}, ${datum(isoTag(Z.jahr, R.i1))}: R = ${qz(zq)} − (${teile.map(x => `${qz(x.v)} ${h(kurz(ST[x.k.von]))}${x.k.tage ? ` [t − ${x.k.tage}]` : ''}`).join(' + ')}) = <b>${qz(zq - teile.reduce((s, x) => s + x.v, 0))} m³/s</b>`);
+    }
+    // 2 Anteile
+    html += `<h3>2 ${t('Anteile', 'Parts')}</h3><p>${t('Der Abfluss am Ziel ist die Summe aller Quellknoten (gemessen) und aller Reste oberhalb. Der Anteil eines Glieds i ist sein Wert durch den Abfluss am Ziel.', 'Le débit à la station du bilan est la somme de tous les nœuds sources (mesurés) et de tous les restes en amont. La part d’une composante i est sa valeur divisée par ce débit.')}</p>` +
+      f(`Q<sub>${t('Ziel', 'bilan')}</sub>(t) = Σ<sub>i</sub> G<sub>i</sub>(t − τ<sub>i</sub>) &nbsp;&nbsp; a<sub>i</sub> = G<sub>i</sub>(t − τ<sub>i</sub>) / Q<sub>${t('Ziel', 'bilan')}</sub>(t)`);
+    if (a) { const aare = abfluss(a, '2205'), alp = a.mittel['Q:2473']; if (aare != null) html += r(`${t('Aare in Stilli', 'Aar à Stilli')}: ${qz(aare)} / ${qz(a.ziel_mittel)} = <b>${zahl(100 * aare / a.ziel_mittel, 1)} %</b>` + (alp != null ? ` &nbsp;·&nbsp; ${t('Alpenrhein in Diepoldsau', 'Rhin alpin à Diepoldsau')}: ${qz(alp)} / ${qz(a.ziel_mittel)} = <b>${zahl(100 * alp / a.ziel_mittel, 1)} %</b>` : '')); }
+    // 3 Kontrollbilanz
+    if (a) { const kk = a.mittel['R:2205'], g = ['2016', '2018', '2243'].map(id => abfluss(a, id)), st = abfluss(a, '2205');
+      if (kk != null && g.every(x => x != null)) html += `<h3>3 ${t('Kontrollbilanz Aare', 'Contrôle Aar')}</h3>` + f('Δ = Q<sub>Stilli</sub> − (Q<sub>Brugg</sub> + Q<sub>Mellingen</sub> + Q<sub>Baden</sub>)') + r(`Δ = ${qz(st)} − (${g.map(qz).join(' + ')}) = <b>${qz(kk)} m³/s</b> (${zahl(100 * kk / st, 1)} %)`); }
+    // 4 Speicher
+    const seen = meta.seen.filter(s => CM[s.id] > 0), V = seen.reduce((s, x) => s + CM[x.id] * x.flaeche_km2 / 100, 0);
+    html += `<h3>4 ${t('Staukapazität', 'Capacité de retenue')}</h3><p>${t('Fläche mal zusätzliche Stauhöhe. 1 km² mal 1 cm sind 0,01 Mio. m³.', 'Surface fois hauteur supplémentaire. 1 km² fois 1 cm font 0,01 mio m³.')}</p>` + f('V = Σ<sub>s</sub> A<sub>s</sub> · Δh<sub>s</sub>') +
+      (seen.length ? r(`V = ${seen.map(s => `${zahl(s.flaeche_km2, 1)} km² · ${CM[s.id]} cm`).join(' + ')} = <b>${zahl(V, 1)} Mio. m³</b>`) : '');
+    // 5 Optimierung
+    html += `<h3>5 ${t('Optimaler Rückhalt', 'Retenue optimale')}</h3><p>${t('Zwei Schwellen am Ziel steuern den Speicher. Unter L wird abgegeben, über H wird gestaut, höchstens 10 % des Abflusses und nur, solange noch ein Tag unter L folgt.', 'Deux seuils à la station du bilan commandent le réservoir. Sous L on restitue, au-dessus de H on retient, au plus 10 % du débit et seulement tant qu’un jour sous L suit encore.')}</p>` +
+      f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L<br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H<br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.1.) = 0`) +
+      `<p>${t('L* ist das grösste L, bei dem der Speicher nie leer läuft. H* ist das grösste H, mit dem L* noch hält: So wird bei möglichst hohen Abflüssen gestaut. Muss der Speicher zwischen zwei Trockenphasen nachgefüllt werden, liegt H* nahe bei L*. Beide werden durch Halbieren des Intervalls gesucht.', 'L* est le plus grand L pour lequel le réservoir ne se vide jamais. H* est le plus grand H qui tient encore L* : on retient ainsi lors des débits les plus forts possibles. Si le réservoir doit être rempli entre deux phases sèches, H* est proche de L*. Tous deux sont cherchés par dichotomie.')}</p>`;
+    if (R.S && R.S.O && R.sz) html += r(`${h(kurz(z))} ${Z.jahr}: L* = <b>${zahl(R.S.O.tief, 1)} m³/s</b>, H* = <b>${zahl(R.S.O.hoch, 1)} m³/s</b>. ${t('Abgabe an', 'Restitution sur')} ${R.sz.tA} ${T.tageW}, ${t('Rückhalt an', 'retenue sur')} ${R.sz.tR} ${T.tageW}. ${t('Kleinster Tagesabfluss', 'Plus faible débit journalier')}: ${zahl(R.sz.min0, 1)} → <b>${zahl(R.sz.min1, 1)} m³/s</b>.`);
+    // 6 Pegel Kaub
+    if (KURVE.length) {
+      html += `<h3>6 ${t('Pegel Kaub und Fahrrinnentiefe', 'Échelle de Kaub et profondeur du chenal')}</h3><p>${t('Der Wasserstand folgt aus dem Abfluss über die Abflusskurve: linear zwischen den zwei benachbarten Stützpunkten. Ausserhalb der Stützpunkte gibt es keinen Wert.', 'Le niveau découle du débit par la courbe de tarage : interpolation linéaire entre les deux points voisins. Hors de ces points, pas de valeur.')} ${h(K.abflusskurve_quelle || '')}. ${KURVE.length} ${t('Stützpunkte von', 'points de')} ${zahl(KURVE[0][0])} ${t('bis', 'à')} ${zahl(KURVE[KURVE.length - 1][0])} m³/s.</p>` +
+        f(`W(Q) = W<sub>1</sub> + (W<sub>2</sub> − W<sub>1</sub>) · (Q − Q<sub>1</sub>) / (Q<sub>2</sub> − Q<sub>1</sub>) &nbsp;&nbsp; T = W − GlW + T<sub>GlW</sub>`);
+      const qk = R.Y && tagAnsicht() ? wert(R.Y.q, KAUB, R.i1) : null;
+      if (qk != null && wAusQ(qk) != null) { let i = 1; while (KURVE[i][0] < qk) i++; const p = KURVE[i - 1], p2 = KURVE[i], w = wAusQ(qk);
+        html += r(`Q = ${qz(qk)} m³/s: W = ${zahl(p[1], 1)} + (${zahl(p2[1], 1)} − ${zahl(p[1], 1)}) · (${qz(qk)} − ${qz(p[0])}) / (${qz(p2[0])} − ${qz(p[0])}) = <b>${zahl(w, 0)} cm</b> &nbsp;·&nbsp; T = ${zahl(w)} − ${zahl(GLW)} + ${zahl(TUG)} = <b>${zahl(w - GLW + TUG)} cm</b>`); }
+      html += r(`GlW = ${zahl(GLW)} cm ${t('entspricht', 'correspond à')} <b>${zahl(Q_GLW)} m³/s</b>. ${t('In diesem Bereich ändert 1 m³/s den Pegel um', 'Dans cette plage, 1 m³/s modifie le niveau de')} ${zahl((wAusQ(Q_GLW + 50) - wAusQ(Q_GLW - 50)) / 100, 2)} cm.`);
+    }
+    // 7 Schätzung
+    const m = K.schaetzung;
+    if (m) { const kz = k => k.map((x, i) => (i ? (x < 0 ? ' − ' : ' + ') : '') + zahl(Math.abs(x), i ? 3 : 1) + ['', ' · B', ' · T<sub>30</sub>', ' · T<sub>120</sub>'][i]).join(''), p = m.pruefung_roh;
+      html += `<h3>7 ${t('Schätzung für Kaub an Tagen ohne Messwert', 'Estimation pour Kaub les jours sans mesure')}</h3><p>${t('Seit dem 1.1.2026 gibt es für Kaub nur Rohwerte der letzten 31 Tage. Die übrigen Tage sind aus Basel und der Thur geschätzt. B ist der Abfluss in Basel zwei Tage zuvor, T das Mittel der Thur in Andelfingen über 30 und 120 Tage. Die Thur ist nicht reguliert und steht für die regengespeisten Zuflüsse unterhalb von Basel.', 'Depuis le 1.1.2026, Kaub ne dispose que des données brutes des 31 derniers jours. Les autres jours sont estimés à partir de Bâle et de la Thur. B est le débit à Bâle deux jours plus tôt, T la moyenne de la Thur à Andelfingen sur 30 et 120 jours. La Thur n’est pas régulée et représente les affluents pluviaux en aval de Bâle.')}</p>` +
+        f(`Q<sub>Kaub</sub>(t) ≈ a + b · B(t − 2) + c · T<sub>30</sub>(t − 2) + d · T<sub>120</sub>(t − 2)`) +
+        r(`B ≤ ${zahl(m.grenze)} m³/s: Q ≈ ${kz(m.niedrig.k)} &nbsp; (${zahl(m.niedrig.tage)} ${T.tageW}, ${t('Streuung', 'écart type')} ${zahl(m.niedrig.rmse)} m³/s)<br>B &gt; ${zahl(m.grenze)} m³/s: Q ≈ ${kz(m.sonst.k)} &nbsp; (${zahl(m.sonst.tage)} ${T.tageW}, ${t('Streuung', 'écart type')} ${zahl(m.sonst.rmse)} m³/s)`) +
+        `<p>${t('Angepasst mit kleinsten Quadraten an die geprüften Tageswerte', 'Ajusté par moindres carrés aux valeurs journalières contrôlées')} ${m.jahre[0]}–${m.jahre[1]}.` + (p ? ` ${t('Geprüft an den Rohwerten vom', 'Vérifié sur les données brutes du')} ${datum(p.von)} ${t('bis', 'au')} ${datum(p.bis)} (${p.tage} ${T.tageW}): ${t('Die Schätzung lag im Mittel', 'l’estimation était en moyenne de')} <b>${vz(p.mittel, 0)} m³/s</b> ${t('daneben, Streuung', 'à côté, écart type')} <b>${zahl(p.rmse)} m³/s</b>. ${t('Das entspricht in Kaub rund', 'Cela correspond à Kaub à environ')} ${zahl(p.rmse * (wAusQ(Q_GLW + 50) - wAusQ(Q_GLW - 50)) / 100)} cm. ${t('Geschätzte Werte ersetzen keine Messung.', 'Les valeurs estimées ne remplacent pas une mesure.')}` : '') + '</p>'; }
+    el.innerHTML = html;
   }
 
   // ------------------------------------------------------------ Fuss
@@ -454,13 +573,13 @@
   $('stand').textContent = `${T.standT}: ${datum(meta.stand.slice(0, 10))}` + (meta.meldungen.length ? ` · ${meta.meldungen.join(' · ')}` : '');
 
   // ------------------------------------------------------------ Ablauf
-  let lauf = 0;
+  let lauf_ = 0;
   async function alles(nurWerte) {
-    const nr = ++lauf, R = await rechnen();
-    if (nr !== lauf) return;
+    const nr = ++lauf_, R = await rechnen();
+    if (nr !== lauf_) return;
     if (!nurWerte) { wahlZeichnen(R.Y); simWahl(); }
     else { const d = $('wahl').querySelector('input[type=date]'); if (d && Z.tag != null) d.value = isoTag(Z.jahr, Z.tag); }
-    karteZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R);
+    lageZeichnen(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R);
   }
   simSeen(); alles();
 })();
