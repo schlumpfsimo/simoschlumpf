@@ -92,14 +92,17 @@ _BODENSEE = "Gesamtfläche 536 km² nach IGKB; Aufteilung Obersee/Untersee nach 
 SEEN = [
     See("obersee", "Bodensee (Obersee)", "2032", 473.0, _BODENSEE, "2288", False, "nicht reguliert"),
     See("untersee", "Bodensee (Untersee)", "2043", 63.0, _BODENSEE, "2288", False, "nicht reguliert"),
-    See("brienz", "Brienzersee", "2023", 29.8, _BAFU % "Brienzersee", "2135", True, grenzen=(562.80, 565.30)),
-    See("thun", "Thunersee", "2093", 47.7, _BAFU % "Thunersee", "2135", True, grenzen=(557.00, 558.30)),
-    See("murten", "Murtensee", "2004", 23.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen, Wehr Port"),
-    See("neuenburg", "Neuenburgersee", "2642", 217.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen, Wehr Port"),
-    See("biel", "Bielersee", "2208", 39.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen, Wehr Port", grenzen=(428.60, 430.35)),
-    See("vws", "Vierwaldstättersee", "2207", 114.0, _BAFU % "Vierwaldstättersee", "2018", True, grenzen=(433.25, 434.25),
+    See("brienz", "Brienzersee", "2023", 29.8, _BAFU % "Brienzersee", "2135", True,
+        "Grosse und Kleine Staatsschleuse in Unterseen/Interlaken (seit 1854/1855); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern", grenzen=(562.80, 565.30)),
+    See("thun", "Thunersee", "2093", 47.7, _BAFU % "Thunersee", "2135", True,
+        "Mühleschleuse (seit 1724) und Scherzligschleuse (seit 1726) in Thun; Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern", grenzen=(557.00, 558.30)),
+    See("murten", "Murtensee", "2004", 23.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern"),
+    See("neuenburg", "Neuenburgersee", "2642", 217.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern"),
+    See("biel", "Bielersee", "2208", 39.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern", grenzen=(428.60, 430.35)),
+    See("vws", "Vierwaldstättersee", "2207", 114.0, _BAFU % "Vierwaldstättersee", "2018", True, "Reusswehr Luzern (seit 1861, Komplettsanierung 2008–2011)", grenzen=(433.25, 434.25),
         grenzen_art="minimal einzuhaltender Wasserstand / Schadengrenze Stansstad"),
-    See("zuerich", "Zürichsee", "2209", 90.0, _BAFU % "Zürichsee" + "; inkl. Obersee", "2243", True, grenzen=(405.45, 406.60)),
+    See("zuerich", "Zürichsee", "2209", 90.0, _BAFU % "Zürichsee" + "; inkl. Obersee", "2243", True,
+        "Regulierwehr Letten Zürich (seit 1951); Regulierbehörde: Baudirektion Kanton Zürich, AWEL", grenzen=(405.45, 406.60)),
 ]
 
 

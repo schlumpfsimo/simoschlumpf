@@ -36,26 +36,39 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--blau);outline-o
 .spalten{display:grid;grid-template-columns:minmax(0,1fr);gap:36px}
 @media (min-width:980px){.spalten{grid-template-columns:minmax(320px,5fr) minmax(0,7fr);gap:clamp(36px,4vw,90px)}
   .karte{position:sticky;top:16px;align-self:start}}
-.karte{margin:0}
-.karte svg{display:block;width:100%;height:auto;max-height:calc(100vh - 80px);overflow:hidden}
-.karte figcaption{font-size:13px;margin-top:10px;max-width:40em}
-#karte .grenze{fill:none;stroke:var(--raster);stroke-width:.9;stroke-dasharray:0 2.6;stroke-linecap:round}
-#karte .fluss{fill:none;stroke:var(--raster);stroke-width:.7;stroke-dasharray:0 2;stroke-linecap:round}
-#karte .see{fill:var(--tinte);stroke:none}
-#karte .strom{fill:none;stroke:var(--tinte);stroke-linecap:butt;stroke-linejoin:round}
-#karte .strom.leer{stroke:var(--raster);stroke-dasharray:1.5 1.5}
-#karte .strom.blau{stroke:var(--blau)}
-#karte .punkt rect{fill:var(--papier);stroke:var(--tinte);stroke-width:1.1}
-#karte .punkt.ziel rect{fill:var(--tinte)}
-#karte .punkt.gewaehlt rect{fill:var(--blau);stroke:var(--blau)}
-#karte .punkt{cursor:pointer}
-#karte .punkt circle{fill:transparent}
-#karte .punkt:focus-visible{outline:none}
-#karte .punkt:focus-visible rect{stroke:var(--blau);stroke-width:2}
-#karte text{font:700 5.4px "Plex",Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;fill:var(--tinte);
-  paint-order:stroke;stroke:var(--papier);stroke-width:2.2px;stroke-linejoin:round;pointer-events:none}
-#karte text.wert{font-weight:500;letter-spacing:0;text-transform:none}
-
+.karte{margin:0;min-width:0}
+#karte{height:min(78vh,820px);min-height:380px;background:#fff;border:2px solid var(--tinte);font:inherit;z-index:0}
+.karte figcaption{font-size:13px;margin-top:10px;max-width:44em}
+.leaflet-container{font:500 14px/1.45 "Plex",Arial,sans-serif;color:var(--tinte)}
+.leaflet-container a{color:var(--tinte)}
+.grundkarte{filter:grayscale(1) contrast(.9);opacity:.5}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{border-radius:0;box-shadow:none;border:2px solid var(--tinte);color:var(--tinte)}
+.leaflet-popup-content{margin:12px 14px;min-width:230px}
+.leaflet-popup-content h3{font-size:15px;font-weight:700;margin:0 0 6px;line-height:1.3}
+.leaflet-popup-content .raster2{margin:0;column-gap:16px;font-size:13.5px}
+.leaflet-popup-content .raster2 .k{font-size:10.5px}
+.leaflet-popup-content p{margin:8px 0 0;font-size:13px}
+.leaflet-bar,.leaflet-bar a{border-radius:0!important}
+.leaflet-bar{border:2px solid var(--tinte)!important;box-shadow:none!important}
+.leaflet-bar a{color:var(--tinte);border-bottom:2px solid var(--tinte)}
+.leaflet-bar a:last-child{border-bottom:0}
+.leaflet-control-attribution{font-size:11px}
+.pkt{width:11px;height:11px;background:var(--papier);border:2px solid var(--tinte)}
+.pkt.ziel{background:var(--tinte)}
+.wehr{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--tinte)}
+.wehr.frei{width:13px;height:13px;border:2px solid var(--tinte);border-radius:50%;background:var(--papier)}
+.ort{font:700 11px/1 "Plex",Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;color:var(--tinte);
+  text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 3px #fff}
+.vergleich{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 28px;margin:0 0 6px}
+.vergleich div span{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.vergleich div b{display:block;font-size:clamp(26px,2.6vw,44px);line-height:1.15}
+.vergleich div b.sim{color:var(--blau)}
+.vergleich div em{font-style:normal;font-size:14px}
+.regler{display:flex;align-items:center;flex:1 1 100%;min-width:240px}
+.regler input[type=range]{flex:1;accent-color:#003399;height:28px;margin:0}
+.textknopf{font:700 12px/1 "Plex",Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;background:none;border:0;padding:6px 0;cursor:pointer;color:var(--tinte)}
+.textknopf:hover,.textknopf:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;outline:none}
+#verlauf .tag{stroke:var(--tinte);stroke-width:1;stroke-dasharray:3 3}
 .tafel section{margin-bottom:44px}
 .kopfzeile{display:flex;justify-content:space-between;gap:16px;align-items:baseline;flex-wrap:wrap}
 .gross{font-size:clamp(30px,3.2vw,52px);font-weight:700;line-height:1.1;margin:0 0 4px}

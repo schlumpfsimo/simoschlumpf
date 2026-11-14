@@ -23,7 +23,7 @@ def main() -> None:
     t.add_argument("--bis", type=dt.date.fromisoformat, required=True)
     t.add_argument("--csv", action="store_true")
     u.add_parser("stationen", help="Stationsliste")
-    u.add_parser("karte", help="Kartengeometrie neu erzeugen (GeoRhena, Natural Earth)")
+    u.add_parser("karte", help="Kartengeometrie neu erzeugen (HydroRIVERS, braucht pyshp)")
     arg = p.parse_args()
 
     if arg.befehl == "stationen":
@@ -34,8 +34,9 @@ def main() -> None:
     if arg.befehl == "karte":
         import json
         from . import geometrie
-        orte = {s["id"]: (s["lat"], s["lon"]) for s in json.loads((DATEN / "meta.json").read_text())["stationen"] if s["lat"]}
-        (DATEN / "karte.json").write_text(json.dumps(geometrie.bauen(orte), ensure_ascii=False, separators=(",", ":")))
+        stationen = [s for s in json.loads((DATEN / "meta.json").read_text())["stationen"] if s["lat"] and s["mq"]]
+        karte = geometrie.bauen({s["id"]: (s["lat"], s["lon"]) for s in stationen}, {s["id"]: s["mq"] for s in stationen})
+        (DATEN / "karte.json").write_text(json.dumps(karte, ensure_ascii=False, separators=(",", ":")))
         print(f"Geschrieben: {DATEN / 'karte.json'}")
         return
     bestand = daten.laden()
