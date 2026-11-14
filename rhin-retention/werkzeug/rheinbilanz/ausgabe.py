@@ -42,7 +42,7 @@ def jahresdatei(b: Bestand, jahr: int, alt: dict | None = None) -> dict:
         if alt and sid in alt.get("q", {}):
             alte_codes = _entfalten(alt["s"][sid], len(tage))
             for i, w in enumerate(alt["q"][sid][: len(tage)]):
-                if werte[i] is None and w is not None:
+                if w is not None and alte_codes[i] != 5 and (werte[i] is None or codes[i] == 5):   # Messwert geht vor Schätzung
                     werte[i], codes[i] = w, alte_codes[i]
         if any(w is not None for w in werte):
             q[sid], s[sid] = werte, _laeufe(codes)
@@ -136,6 +136,7 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
         "ziele": ZIELE,
         "extreme": {z: _extreme(b.q.get(z, {}), jahre) for z in ZIELE},
         "anteile": {"2289": _anteile(netz, b, "2289", REFERENZ), "25700100": _anteile(netz, b, "25700100", REFERENZ_DE)},
+        "kaub": b.kaub,
         "meldungen": b.meldungen,
     }
 

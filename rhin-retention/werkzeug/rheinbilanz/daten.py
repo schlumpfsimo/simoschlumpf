@@ -6,7 +6,7 @@ import re
 import subprocess
 import sys
 
-from . import cache, quellen
+from . import cache, quellen, schifffahrt
 from .netz import SEEN, STATIONEN
 
 ERSTES_JAHR = 1970      # die BAFU-Datenplattform führt Tageswerte ab 1970
@@ -20,6 +20,7 @@ class Bestand:
         self.w_kaub: dict = {}     # {datum: cm am Pegel}
         self.orte: dict = {}       # {id: (breite, länge)}
         self.dgj_hauptwerte: dict = {}
+        self.kaub: dict = {}       # Kennwerte, Abflusskurve, Vorhersage, Schätzmodell
         self.meldungen: list[str] = []
 
     def setze(self, sid: str, reihe: dict, ueberschreiben: bool = True) -> None:
@@ -103,4 +104,45 @@ def laden(bis_jahr: int | None = None, melde=lambda s: print(s, file=sys.stderr)
         ort = versuch(f"PEGELONLINE {s.name} Lage", lambda: quellen.pegelonline_station(s.id))
         if ort:
             b.orte[s.id] = (ort["latitude"], ort["longitude"])
+    _kaub(b, versuch, heute)
     return b
+
+
+KAUB, BASEL = "25700100", "2289"
+
+
+def _kaub(b: Bestand, versuch, heute: dt.date) -> None:
+    """Schifffahrtsgrössen für Kaub: Kennwerte, Vorhersage, Abflusskurve und die Überbrückung fehlender Tage."""
+    kenn = versuch("PEGELONLINE Kaub Kennwerte", lambda: quellen.pegelonline_kennwerte(KAUB))
+    if kenn:
+        b.kaub.update(kenn)
+    vor = versuch("PEGELONLINE Kaub Vorhersage", lambda: quellen.pegelonline_vorhersage(KAUB))
+    if vor:
+        b.kaub["vorhersage"] = vor
+    q, w, basel = b.q.get(KAUB, {}), b.w_kaub, b.q.get(BASEL, {})
+    if not q or not basel:
+        return
+    # Abflusskurve: Wertepaare des jüngsten Jahrbuchjahres und die Rohwerte danach (aktuelle Kurve der WSV)
+    letztes_dgj = max((t.year for t, c in b.status[KAUB].items() if c == 4), default=None)
+    paare = [(q[t], w[t]) for t in q if t in w and letztes_dgj and t.year >= letztes_dgj]
+    b.kaub["abflusskurve"] = schifffahrt.abflusskurve(paare)
+    b.kaub["abflusskurve_quelle"] = f"Tageswertpaare W/Q: DGJ {letztes_dgj} (geprüft) und PEGELONLINE ab {letztes_dgj + 1} (roh)"
+    # Schätzmodell: angepasst an die letzten zehn Jahrbuchjahre, geprüft an den Rohwerten des laufenden Jahres
+    thur = b.q.get("2044", {})
+    tage = sorted(t for t, c in b.status[KAUB].items() if c == 4 and t.year > letztes_dgj - 10)
+    modell = schifffahrt.anpassen(basel, thur, q, tage)
+    if not modell:
+        return
+    modell["jahre"] = [letztes_dgj - 9, letztes_dgj]
+    roh = sorted(t for t, c in b.status[KAUB].items() if c == 0)
+    modell["pruefung_roh"] = schifffahrt.guete(modell, basel, thur, q, roh)
+    if modell["pruefung_roh"]:
+        modell["pruefung_roh"]["von"], modell["pruefung_roh"]["bis"] = roh[0].isoformat(), roh[-1].isoformat()
+    b.kaub["schaetzung"] = modell
+    tag = dt.date(letztes_dgj + 1, 1, 1)
+    while tag < heute:
+        if tag not in q:
+            s = schifffahrt.schaetzen(modell, basel, thur, tag)
+            if s is not None:
+                b.setze(KAUB, {tag: (s, 5)})
+        tag += dt.timedelta(days=1)

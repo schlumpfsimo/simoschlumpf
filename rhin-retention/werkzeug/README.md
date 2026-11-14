@@ -66,4 +66,17 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 ## Die Seite
 
-`index.html`, `rhin.css`, `rhin.js` (Leaflet). Ansichten: Heute (letzter Tag mit vollständigen Werten), Extremwerte (die zwölf tiefsten jährlichen NM7Q), Datum (jeder Tag seit 1970), Mittelwasser, mittleres Niedrigwasser. Der Schalter «Simuliert» legt den Rückhalt der Seen über Karte und Bilanz: Zusatzband je See, Rückhalt von–bis, Abgabe ab Datum und Dauer. Steht die Abgabe auf «Automatisch», endet sie am angezeigten Tag (Heute, Datum) oder deckt die trockenste Woche (Extremwerte). CSV-Export der angezeigten Bilanz über den Knopf «CSV».
+`index.html`, `rhin.css`, `rhin.js` (Leaflet). Aufbau von oben nach unten:
+
+1. Lage am angezeigten Tag: Abfluss und Pegel Kaub, Abstand zum GlW, Fahrrinnentiefe, Abfluss Basel, dazu Vorhersage und aktueller Rohwert.
+2. Karte und Herkunft: Anteile nach Herkunftsgruppen (Schraffuren) und die Bilanz je Glied.
+3. Optimaler Rückhalt: Einstellbar ist nur die zusätzliche Staukapazität je See. Die Regel steht in `rheinbilanz/simulation.py`.
+4. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
+
+Ansichten: Heute, Extremwerte (die zwölf tiefsten jährlichen NM7Q), Datum (jeder Tag seit 1970), Mittelwasser, mittleres Niedrigwasser.
+
+## Schifffahrt und Schätzung
+
+- `rheinbilanz/schifffahrt.py`: Abflusskurve Kaub (Stützpunkte aus Tageswertpaaren W/Q des jüngsten Jahrbuchjahres und den Rohwerten danach), Fahrrinnentiefe = W − GlW + Tiefe unter GlW, Kennwerte und 4-Tage-Vorhersage aus PEGELONLINE.
+- Tage ohne Messwert in Kaub seit dem letzten Jahrbuchjahr werden geschätzt (Status «geschätzt»): Q_Kaub(t) ≈ a + b · Q_Basel(t − 2) + c · T30 + d · T120, mit T = Mittel der Thur in Andelfingen, getrennt für Basel bis 800 m³/s und darüber. Die Koeffizienten und der Fehler gegen die Rohwerte des laufenden Jahres stehen in `meta.json` unter `kaub.schaetzung` und auf der Seite. Ein Messwert ersetzt die Schätzung, sobald er vorliegt.
+- `rheinbilanz/simulation.py`: optimaler Rückhalt mit zwei Schwellen L* und H* (Kalenderjahr, Speicher am 1. Januar leer, Rückhalt höchstens 10 % des Abflusses). Dieselbe Regel rechnet `rhin.js` im Browser.
