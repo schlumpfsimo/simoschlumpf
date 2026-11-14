@@ -87,27 +87,35 @@ class Optimierung(unittest.TestCase):
         self.assertTrue(all(x is None for x in o["q"][30:35]))
 
 
-class Halten(unittest.TestCase):
-    def test_haelt_die_guenstigsten_tage(self):
-        q = [900.0] * 50 + [700.0, 760.0, 770.0, 600.0] + [900.0] * 50      # Schwelle 775: Fehlbeträge 75, 15, 5, 175
-        v = 86400 * 25.0                                                        # reicht für 5 + 15, nicht für 75
-        o = simulation.halten(q, v, 775.0)
-        self.assertEqual((o["tage_unter_vorher"], o["tage_gehalten"], o["tage_unter_nachher"]), (4, 2, 2))
-        self.assertAlmostEqual(o["q"][51], 775.0)
-        self.assertAlmostEqual(o["q"][52], 775.0)
-        self.assertEqual(o["q"][50], 700.0)                                     # nicht gehaltene Tage bleiben unverändert
-        self.assertAlmostEqual(o["bedarf_alle_m3"], 86400 * 270.0)
+class Heben(unittest.TestCase):
+    def test_hebt_die_tiefsten_tage_auf_ein_niveau(self):
+        q = [900.0] * 50 + [700.0, 600.0, 600.0, 760.0] + [900.0] * 50
+        v = 86400 * 120.0                                # die zwei Tage mit 600 teilen sich 120 m³/s·Tag: L = 660, unter den 700 des dritten
+        o = simulation.heben(q, v, 775.0)
+        self.assertAlmostEqual(o["tief"], 660.0, delta=0.01)
+        self.assertEqual(o["q"][50], 700.0)              # liegt über L*, bleibt
+        self.assertAlmostEqual(o["q"][51], o["q"][52], delta=1e-6)
+        self.assertEqual(o["q"][53], 760.0)              # liegt über L*, bleibt
+        self.assertEqual((o["tage_unter_vorher"], o["tage_unter_nachher"], o["tage_gehoben"]), (4, 4, 2))
+        self.assertAlmostEqual(sum(o["abgabe"]) * 86400, v, delta=1.0)   # jede Anhebung zählt: das ganze Volumen wird genutzt
 
-    def test_staut_nie_unter_die_schwelle(self):
-        q = [800.0] * 30 + [3000.0] * 3 + [800.0] * 30 + [700.0] * 5 + [800.0] * 30
-        o = simulation.halten(q, 40e6, 775.0)
-        self.assertTrue(all(x >= 775.0 - 1e-9 for i, x in enumerate(o["q"]) if o["rueckhalt"][i] > 0))
+    def test_nie_ueber_den_deckel(self):
+        q = [900.0] * 50 + [700.0] * 3 + [900.0] * 50
+        o = simulation.heben(q, 500e6, 775.0)
+        self.assertAlmostEqual(o["tief"], 775.0)
         self.assertEqual(o["tage_unter_nachher"], 0)
-        self.assertGreater(o["hoch"], 800.0)                                    # gestaut wird nur im Hochwasser
+        self.assertTrue(all(abs(x - 775.0) < 1e-9 for x in o["q"][50:53]))
+        self.assertAlmostEqual(o["bedarf_alle_m3"], 3 * 75 * 86400.0)
 
-    def test_ohne_tage_unter_der_schwelle_passiert_nichts(self):
-        o = simulation.halten([900.0] * 40, 10e6, 775.0)
-        self.assertEqual(o["tage_gehalten"], 0)
+    def test_staut_nur_ueber_dem_deckel(self):
+        q = [780.0] * 20 + [760.0] * 20 + [3000.0] * 3 + [760.0] * 20 + [600.0] * 5 + [900.0] * 20
+        o = simulation.heben(q, 30e6, 775.0)
+        self.assertTrue(all(q[i] > 775.0 for i, r in enumerate(o["rueckhalt"]) if r > 0))
+        self.assertGreaterEqual(o["hoch"], 775.0)
+
+    def test_ohne_tage_unter_dem_deckel_passiert_nichts(self):
+        o = simulation.heben([900.0] * 40, 10e6, 775.0)
+        self.assertEqual(o["tage_gehoben"], 0)
         self.assertEqual(sum(o["rueckhalt"]), 0)
 
 
