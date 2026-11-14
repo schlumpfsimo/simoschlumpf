@@ -138,5 +138,30 @@ class Heben(unittest.TestCase):
         self.assertEqual(sum(o["rueckhalt"]), 0)
 
 
+class Seegrenze(unittest.TestCase):
+    def test_grenze_je_see(self):
+        aare = [100.0, 200.0, 80.0, None]          # Tiefstwert 80
+        reuss = [50.0, 60.0, 40.0, 40.0]           # Tiefstwert 40
+        g = simulation.seegrenze([(0.5, aare), (0.5, reuss)])
+        self.assertAlmostEqual(g[0], min(min(20.0, 20.0) / 0.5, min(10.0, 10.0) / 0.5))   # 20
+        self.assertAlmostEqual(g[1], min(40.0 / 0.5, 12.0 / 0.5))                          # 24: die Reuss begrenzt
+        self.assertEqual(g[2], 0.0)                 # am Tiefstwert wird nicht gestaut
+        self.assertEqual(g[3], 0.0)                 # ohne Messwert kein Rückhalt
+
+    def test_rueckhalt_haelt_die_grenze_ein(self):
+        q = [900.0] * 60 + [600.0] * 5 + [900.0] * 20
+        grenze = [5.0] * len(q)
+        o = simulation.heben(q, 50e6, 775.0, grenze=grenze)
+        self.assertTrue(all(r <= 5.0 + 1e-9 for r in o["rueckhalt"]))
+        frei = simulation.heben(q, 50e6, 775.0)
+        self.assertLessEqual(o["tief"], frei["tief"])          # die Grenze kann den Gewinn nur verkleinern
+
+    def test_ohne_zulaessigen_rueckhalt_kein_gewinn(self):
+        q = [900.0] * 60 + [600.0] * 5
+        o = simulation.heben(q, 50e6, 775.0, grenze=[0.0] * len(q))
+        self.assertEqual(sum(o["rueckhalt"]), 0)
+        self.assertAlmostEqual(o["tief"], 600.0, delta=0.01)
+
+
 if __name__ == "__main__":
     unittest.main()
