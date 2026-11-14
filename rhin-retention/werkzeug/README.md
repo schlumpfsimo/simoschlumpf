@@ -87,6 +87,15 @@ Die Seite beantwortet zwei Fragen: Was bedingt die Fahrbarkeit, und was brächte
 - Simuliert: W_sim = W + f(Q + ΔQ) − f(Q) mit der Bezugskurve des Pegels; Q ist der Abfluss am Bezugspegel im Netz. Mannheim und Bingen haben keine eigene Abflussreihe und beziehen sich auf Maxau bzw. Mainz.
 - Karte: Abschnitte entlang der Rheinkilometrierung (GeoRhena nach WSV), Strichart nach Zustand.
 
+## Vier Grafiken
+
+- Längsschnitt Basel–Kaub: Fahrrinnentiefe je Abschnitt über dem Rheinkilometer am gewählten Tag, gemessen und simuliert, mit Soll und Staustufen.
+- Jahresband: Zustand je Abschnitt und Tag des Jahres, gemessen und simuliert.
+- Kapazitätskurve: kleinste Fahrrinnentiefe in Kaub gegen die zusätzliche Staukapazität; die gewählten Stauhöhen werden gemeinsam skaliert.
+- Jahresvergleich Kaub: je Jahr ab 2008 Tage unter GlW, kleinste Fahrrinnentiefe gemessen und simuliert, Bedarf bis zum GlW.
+
+Alle vier rechnet `rhin.js` im Browser aus den Jahresdateien.
+
 ## Datensatz auf der Seite
 
 Der Abschnitt «Datensatz» zeigt jede Reihe mit Quelle, Zeitraum, Anzahl Tage und Status (`meta.json`, Feld `reihen`), die Tageswerte des gewählten Jahres als Tabelle und einen CSV-Export für ein Jahr oder alle Jahre. Die CSV-Datei entsteht im Browser aus den Jahresdateien; Abflussspalten tragen je eine Statusspalte.
