@@ -54,6 +54,20 @@ class Fahrbarkeit(unittest.TestCase):
         self.assertTrue(all(von < p.km < bis for p, (_, von, bis) in zip(netz.RICHTPEGEL, a)))
 
 
+class Auslastung(unittest.TestCase):
+    def test_stuetzpunkte_der_zkr(self):
+        f = schifffahrt.auslastung
+        self.assertEqual([f(44), f(72), f(134), f(250), f(400)], [15.0, 25.0, 50.0, 100.0, 100.0])
+
+    def test_unter_40_cm_keine_schifffahrt(self):
+        self.assertEqual(schifffahrt.auslastung(39.9), 0.0)
+        self.assertEqual(schifffahrt.auslastung(41), 15.0)
+
+    def test_dazwischen_linear(self):
+        self.assertAlmostEqual(schifffahrt.auslastung(103), 37.5)      # Mitte zwischen 72 cm und 134 cm
+        self.assertIsNone(schifffahrt.auslastung(None))
+
+
 class AbflussAusWasserstand(unittest.TestCase):
     KURVE = [(480.0, 10.0), (500.0, 14.0), (600.0, 30.0)]        # 5 m³/s je cm am unteren Ende
 

@@ -79,6 +79,31 @@ def fahrbarkeit(w: float | None, glw: float, tiefe_unter_glw: float, hsw: float 
     return {"tiefe": fahrrinnentiefe(w, glw, tiefe_unter_glw), "fehl": fehl, "klasse": klasse}
 
 
+# Auslastung einer durchschnittlichen Trockengüter- und Tankerflotte nach Pegelstand Kaub (cm, %).
+# Quelle: ZKR, Reflexionspapier «Act now!», Edition 3.0 (2023): «Unterhalb von 134 cm, 72 cm und 44 cm kann sie nur mit
+# 50 %, 25 % bzw. 15 % ihrer Kapazität fahren» (Rhenus Logistics); «Bei einem Pegelstand von unter 40 cm bei Kaub kann keine
+# Binnenschifffahrt stattfinden». 100 % bei 250 cm nennt das Papier für ein Containerschiff (Contargo).
+AUSLASTUNG = [(44.0, 15.0), (72.0, 25.0), (134.0, 50.0), (250.0, 100.0)]
+KEINE_SCHIFFFAHRT_UNTER = 40.0
+
+
+def auslastung(w: float | None) -> float | None:
+    """Auslastung der Flotte in Prozent beim Pegelstand Kaub `w` (cm). Zwischen den Stützpunkten linear (Annahme).
+
+    Unter 40 cm: 0 (keine Schifffahrt). Von 40 bis 44 cm: 15 %. Ab 250 cm: 100 %.
+    """
+    if w is None:
+        return None
+    if w < KEINE_SCHIFFFAHRT_UNTER:
+        return 0.0
+    if w <= AUSLASTUNG[0][0]:
+        return AUSLASTUNG[0][1]
+    for (w0, a0), (w1, a1) in zip(AUSLASTUNG, AUSLASTUNG[1:]):
+        if w <= w1:
+            return a0 + (a1 - a0) * (w - w0) / (w1 - w0)
+    return 100.0
+
+
 def abfluss_aus_wasserstand(kurve: list, w: float, verlaengerung_cm: float = 12.0) -> tuple | None:
     """Abfluss aus dem Wasserstand: (Q, verlängert?). So entsteht auch der amtliche Abfluss eines Pegels.
 

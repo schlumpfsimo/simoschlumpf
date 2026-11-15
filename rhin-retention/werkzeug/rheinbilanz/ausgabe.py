@@ -7,7 +7,7 @@ import io
 import json
 from pathlib import Path
 
-from . import bilanz, quellen
+from . import bilanz, quellen, schifffahrt
 from .daten import ERSTES_JAHR, Bestand
 from .netz import KONTROLLE, REFERENZ, REFERENZ_DE, RICHTPEGEL, SEEN, STAU_BIS, STAU_VON, STAUSTUFEN, ZIELE, Netz, abschnitte
 
@@ -150,7 +150,8 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
             "lat": ort[0] if ort else None, "lon": ort[1] if ort else None, "zeitraum": _zeitraum(stand),
             "band": {k: _rund(v, 3) for k, v in band.items()} if band else None,
             "grenzen": {"tief": see.grenzen[0], "hoch": see.grenzen[1], "art": see.grenzen_art,
-                        "volumen_mio_m3": _rund(see.flaeche_km2 * (see.grenzen[1] - see.grenzen[0]), 1)} if see.grenzen else None,
+                        "volumen_mio_m3": _rund(see.flaeche_km2 * (see.grenzen[1] - see.grenzen[0]), 1) if see.grenzen[0] is not None else None}
+            if see.grenzen else None,
         })
     kontrolle_tage = [t for j in range(REFERENZ[0], REFERENZ[1] + 1) for t in bilanz.jahrestage(j)]
     abw = [k for k in (bilanz.kontrollbilanz(b.q, KONTROLLE["ziel"], KONTROLLE["glieder"], t) for t in kontrolle_tage) if k]
@@ -169,6 +170,8 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
         "anteile": {"2289": _anteile(netz, b, "2289", REFERENZ), "25700100": _anteile(netz, b, "25700100", REFERENZ_DE)},
         "reihen": _reihen(b, netz),
         "kaub": b.kaub,
+        "auslastung": {"punkte": [list(p) for p in schifffahrt.AUSLASTUNG], "keine_unter": schifffahrt.KEINE_SCHIFFFAHRT_UNTER,
+                       "quelle": "ZKR, Reflexionspapier «Act now!» zum Thema Niedrigwasser, Edition 3.0 vom 27.10.2023, Abschnitt 2.1 (Angaben von Rhenus Logistics und Contargo)"},
         "abschnitte_quelle": "GDWS, Schifffahrtspolizeilicher Hinweis über die Fahrrinnenverhältnisse auf der deutschen Rheinstrecke (GlW 2022), ELWIS, Nachricht 2925/2022",
         "richtpegel": [{"id": p.id, "name": p.name, "km": p.km, "bezug": p.bezug, "von": von, "bis": bis,
                         "zeitraum": _zeitraum(b.wp.get(p.id, {})), **b.richt.get(p.id, {})}
