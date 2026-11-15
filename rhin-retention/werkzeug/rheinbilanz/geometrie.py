@@ -75,4 +75,24 @@ def bauen(orte: dict, mq: dict, pfad: str | None = None) -> dict:
                 duenn.append(p)
         duenn.append(linie[-1])
         strecken[f"{k.von}>{k.nach}"] = {"gerade": gerade, "p": [[round(x, 4), round(y, 4)] for x, y in duenn]}
-    return {"quelle": QUELLE, "rahmen": RAHMEN, "strecken": strecken}
+    return {"quelle": QUELLE + " · Rheinkilometer: GeoRhena nach WSV", "rahmen": RAHMEN, "strecken": strecken, "rheinkm": rheinkilometer()}
+
+
+GEORHENA_KM = ("https://geoportal.georhena.eu/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature"
+               "&typeNames=transportation:rhin_points_kilometriques&outputFormat=application/json&srsName=EPSG:4326")
+
+
+def rheinkilometer(von: float = 164.0, bis: float = 570.0) -> list:
+    """Punkte der Rheinkilometrierung alle 500 m: [[km, länge, breite], …] (GeoRhena, Quelle WSV). Für die Abschnitte der Karte."""
+    import json
+
+    from . import cache, quellen
+    roh = cache.holen("karte", "georhena_rheinkm.json", lambda: quellen._http(GEORHENA_KM, kopf={"User-Agent": "Mozilla/5.0"}))
+    punkte = {}
+    for f in json.loads(roh)["features"]:
+        e = f["properties"]
+        if e["river"] == "Rhin / Rhein" and e["pk"] is not None:
+            km = float(e["pk"])
+            if von <= km <= bis and abs(km * 2 - round(km * 2)) < 1e-6:
+                punkte[km] = f["geometry"]["coordinates"]
+    return [[km, round(p[0], 4), round(p[1], 4)] for km, p in sorted(punkte.items())]

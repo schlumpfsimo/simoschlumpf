@@ -106,6 +106,50 @@ SEEN = [
 ]
 
 
+# ---------------------------------------------------------------- Schifffahrt: Richtpegel, Abschnitte, Staustufen
+
+@dataclass(frozen=True)
+class Richtpegel:
+    id: str            # Pegelnummer WSV
+    name: str
+    km: float          # Rheinkilometer (PEGELONLINE)
+    von: float         # amtlicher Streckenabschnitt des Bezugspegels, Rheinkilometer
+    bis: float
+    dgj: tuple | None  # (Ordner, Datei) im Jahrbuch; None, wenn der Pegel dort fehlt
+    bezug: str         # Messstelle im Netz, deren Abfluss den Wasserstand bestimmt (für die Bezugskurve und die Simulation)
+    ersatz: tuple | None = None   # (Pegelnummer, Name, (Ordner, Datei)): Pegel im selben Abschnitt für Tage ohne Wert am Bezugspegel
+
+
+# Bezugspegel und Streckenabschnitte nach dem Schifffahrtspolizeilichen Hinweis der GDWS über die Fahrrinnenverhältnisse
+# auf der deutschen Rheinstrecke (GlW 2022, ELWIS, Nachricht 2925/2022). Für km 508–540 ist Oestrich der Bezugspegel;
+# er fehlt im Jahrbuch, darum dient an Tagen ohne Wert der Pegel Bingen (km 528,4, im selben Abschnitt) als Ersatz.
+RICHTPEGEL = [
+    Richtpegel("23700200", "Maxau", 362.3, 334.0, 384.0, ("Maxau", "23700200_WQ.pdf"), "23700200"),
+    Richtpegel("23700600", "Speyer", 400.6, 384.0, 410.5, ("Speyer", "23700600_WQ.pdf"), "23700200"),
+    Richtpegel("23700700", "Mannheim", 424.7, 410.5, 431.5, ("Mannheim", "23700700_W.pdf"), "23700200"),
+    Richtpegel("23900200", "Worms", 443.4, 431.5, 462.0, ("Worms", "23900200_WQ.pdf"), "23900200"),
+    Richtpegel("25100100", "Mainz", 498.3, 462.0, 508.0, ("Mainz", "25100100_WQ.pdf"), "25100100"),
+    Richtpegel("25100300", "Oestrich", 518.1, 508.0, 540.0, None, "25100100", ersatz=("25300200", "Bingen", ("Bingen", "25300200_W.pdf"))),
+    Richtpegel("25700100", "Kaub", 546.2, 540.0, 566.0, ("Kaub", "25700100_WQ.pdf"), "25700100"),
+]
+STAU_VON, STAU_BIS = 170.0, 334.0      # staugeregelte Strecke Basel–Iffezheim (Schleusen Iffezheim: km 334,00, RheinSchPV § 10.01)
+FREI_BIS = 566.0                       # Ende des Abschnitts Kaub
+
+
+def abschnitte() -> list:
+    """Freie Strecke in den amtlichen Abschnitten je Bezugspegel: [(pegel-id, km von, km bis)]."""
+    return [(p.id, p.von, p.bis) for p in RICHTPEGEL]
+
+
+# Lage nach Wikidata (abgerufen 14.11.2026, nicht amtlich): Name, Breite, Länge, Wikidata-Nummer
+STAUSTUFEN = [
+    ("Birsfelden", 47.5606, 7.6258, "Q1786069"), ("Kembs", 47.6553, 7.5195, "Q1786132"), ("Ottmarsheim", 47.7740, 7.5224, "Q1786175"),
+    ("Fessenheim", 47.9147, 7.5707, "Q1786095"), ("Vogelgrun", 48.0203, 7.5739, "Q1656732"), ("Marckolsheim", 48.1537, 7.5897, "Q1561255"),
+    ("Rhinau", 48.2840, 7.6774, "Q1786190"), ("Gerstheim", 48.4038, 7.7279, "Q1261916"), ("Strasbourg", 48.5256, 7.7966, "Q1786206"),
+    ("Gambsheim", 48.6847, 7.9150, "Q15130268"), ("Iffezheim", 48.8321, 8.1131, "Q872835"),
+]
+
+
 @dataclass
 class Netz:
     stationen: dict = field(default_factory=dict)

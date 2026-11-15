@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import bilanz, quellen
 from .daten import ERSTES_JAHR, Bestand
-from .netz import KONTROLLE, REFERENZ, REFERENZ_DE, SEEN, ZIELE, Netz
+from .netz import KONTROLLE, REFERENZ, REFERENZ_DE, RICHTPEGEL, SEEN, STAU_BIS, STAU_VON, STAUSTUFEN, ZIELE, Netz, abschnitte
 
 QUELLEN = [
     {"kurz": "BAFU", "text": "Bundesamt für Umwelt BAFU, Hydrologische Beobachtungen, Datenplattform BAFU (Freie Nutzung. Quellenangabe ist Pflicht.)", "url": "https://data.bafu.admin.ch"},
@@ -50,7 +50,14 @@ def jahresdatei(b: Bestand, jahr: int, alt: dict | None = None) -> dict:
     wk = [_rund(b.w_kaub.get(t), 0) for t in tage]
     if alt and alt.get("wk"):
         wk = [neu if neu is not None else a for neu, a in zip(wk, alt["wk"] + [None] * len(tage))]
-    datei = {"jahr": jahr, "q": q, "s": s, "w": w}
+    wp = {}
+    for pid, reihe in b.wp.items():                       # Wasserstand der Richtpegel in cm; früher gespeicherte Rohwerte bleiben erhalten
+        werte = [_rund(reihe.get(t), 0) for t in tage]
+        if alt and pid in alt.get("wp", {}):
+            werte = [neu if neu is not None else a for neu, a in zip(werte, alt["wp"][pid] + [None] * len(tage))]
+        if any(x is not None for x in werte):
+            wp[pid] = werte
+    datei = {"jahr": jahr, "q": q, "s": s, "w": w, "wp": wp}
     if any(x is not None for x in wk):
         datei["wk"] = wk
     return datei
@@ -87,6 +94,28 @@ def _extreme(reihe: dict, jahre: list[int], anzahl: int = 12) -> list:
     alle = [(j, bilanz.nm7q(reihe, j)) for j in jahre]
     alle = sorted(((j, n) for j, n in alle if n), key=lambda x: x[1]["wert"])[:anzahl]
     return [{"jahr": j, "beginn": n["beginn"].isoformat(), "ende": n["ende"].isoformat(), "wert": _rund(n["wert"])} for j, n in alle]
+
+
+def _reihen(b: Bestand, netz: Netz) -> list:
+    """Übersicht des ganzen Datensatzes: jede Reihe mit Quelle, Zeitraum, Anzahl Tage und Status."""
+    aus = []
+    for s in netz.stationen.values():
+        r = b.q.get(s.id, {})
+        if r:
+            zaehler: dict = {}
+            for c in b.status[s.id].values():
+                zaehler[c] = zaehler.get(c, 0) + 1
+            aus.append({"id": s.id, "name": f"{s.gewaesser}–{s.name}", "art": "Q", "einheit": "m³/s", "quelle": s.quelle,
+                        "zeitraum": _zeitraum(r), "tage": len(r), "status": {str(k): v for k, v in sorted(zaehler.items())}})
+    for nr, name in [(p.id, p.name) for p in RICHTPEGEL] + [(p.ersatz[0], p.ersatz[1]) for p in RICHTPEGEL if p.ersatz]:
+        r = b.wp.get(nr, {})
+        if r:
+            aus.append({"id": nr, "name": f"Rhein–{name}", "art": "W", "einheit": "cm", "quelle": "WSV", "zeitraum": _zeitraum(r), "tage": len(r)})
+    for see in SEEN:
+        r = b.w.get(see.id, {})
+        if r:
+            aus.append({"id": see.id, "name": f"{see.name} ({see.pegel})", "art": "See", "einheit": "m ü. M.", "quelle": "BAFU", "zeitraum": _zeitraum(r), "tage": len(r)})
+    return aus
 
 
 def meta(b: Bestand, jahre: list[int]) -> dict:
@@ -136,7 +165,14 @@ def meta(b: Bestand, jahre: list[int]) -> dict:
         "ziele": ZIELE,
         "extreme": {z: _extreme(b.q.get(z, {}), jahre) for z in ZIELE},
         "anteile": {"2289": _anteile(netz, b, "2289", REFERENZ), "25700100": _anteile(netz, b, "25700100", REFERENZ_DE)},
+        "reihen": _reihen(b, netz),
         "kaub": b.kaub,
+        "abschnitte_quelle": "GDWS, Schifffahrtspolizeilicher Hinweis über die Fahrrinnenverhältnisse auf der deutschen Rheinstrecke (GlW 2022), ELWIS, Nachricht 2925/2022",
+        "richtpegel": [{"id": p.id, "name": p.name, "km": p.km, "bezug": p.bezug, "von": von, "bis": bis,
+                        "zeitraum": _zeitraum(b.wp.get(p.id, {})), **b.richt.get(p.id, {})}
+                       for p, (_, von, bis) in zip(RICHTPEGEL, abschnitte())],
+        "stau": {"von": STAU_VON, "bis": STAU_BIS},
+        "staustufen": [{"name": n, "lat": la, "lon": lo, "wikidata": q} for n, la, lo, q in STAUSTUFEN],
         "meldungen": b.meldungen,
     }
 

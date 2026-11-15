@@ -70,13 +70,39 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 1. Lage am angezeigten Tag: Abfluss und Pegel Kaub, Abstand zum GlW, Fahrrinnentiefe, Abfluss Basel, dazu Vorhersage und aktueller Rohwert.
 2. Karte und Herkunft: Anteile nach Herkunftsgruppen (Schraffuren) und die Bilanz je Glied.
-3. Optimaler Rückhalt: Einstellbar ist nur die zusätzliche Staukapazität je See. Die Regel steht in `rheinbilanz/simulation.py`.
+3. Rückhalt für die Schifffahrt: Einstellbar sind die zusätzliche Staukapazität je See und das Ziel der Abgabe (bis zum GlW heben oder ohne Deckel heben). Die Regeln stehen in `rheinbilanz/simulation.py`.
+   Darunter: Verlauf an einer wählbaren Messstelle (Ziel, Basel oder die Messstelle unterhalb eines Sees), Speicherinhalt, Abgabe und Rückhalt je Tag nach Seegruppe und eine Tabelle je Seegruppe (Anteil, abgegebenes Volumen, grösste Abgabe, grösster Rückhalt, kleinster Abfluss unterhalb).
 4. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
 
 Ansichten: Heute, Extremwerte (die zwölf tiefsten jährlichen NM7Q), Datum (jeder Tag seit 1970), Mittelwasser, mittleres Niedrigwasser.
+
+## Fahrbarkeit
+
+Die Seite beantwortet zwei Fragen: Was bedingt die Fahrbarkeit, und was brächte eine Retention.
+
+- Basel–Iffezheim (Rheinkilometer 170–334): staugeregelt. Die Seite zeigt die Staustufen (Lage nach Wikidata) und setzt dort keine Abhängigkeit vom Abfluss an.
+- Unterhalb Iffezheim: sieben Abschnitte nach dem schifffahrtspolizeilichen Hinweis der GDWS über die Fahrrinnenverhältnisse auf der deutschen Rheinstrecke (GlW 2022, ELWIS, Nachricht 2925/2022): Maxau km 334–384, Speyer 384–410,5, Mannheim 410,5–431,5, Worms 431,5–462, Mainz 462–508, Oestrich 508–540, Kaub 540–566 (`netz.RICHTPEGEL`). GlW, Fahrrinnentiefe unter GlW und höchster Schifffahrtswasserstand kommen aus PEGELONLINE, die Wasserstände aus dem Jahrbuch (ab 2008) und den Rohwerten der letzten 31 Tage.
+- Oestrich fehlt im Jahrbuch. An Tagen ohne Wert dient der Pegel Bingen (km 528,4, im selben Abschnitt), auf den GlW von Oestrich umgerechnet: W = W_Bingen − GlW_Bingen + GlW_Oestrich. Die Abweichung an den gemeinsamen Tagen steht in `meta.json` (`richtpegel[].ersatz`).
+- Fahrrinnentiefe = W − GlW + Tiefe unter GlW. Das ist dieselbe Rechnung wie die «rechnerisch verfügbaren Fahrrinnentiefen» der WSV auf ELWIS; für Maxau und Kaub am 10. bis 14.11.2026 gegen deren Grafik geprüft, die Werte stimmen überein.
+- Zustand je Abschnitt: `schifffahrt.fahrbarkeit` (voll, bis 30 cm, 30 bis 60 cm, mehr als 60 cm unter GlW, gesperrt über HSW). Die Stufen sind eine Darstellungswahl.
+- Simuliert: W_sim = W + f(Q + ΔQ) − f(Q) mit der Bezugskurve des Pegels; Q ist der Abfluss am Bezugspegel im Netz. Mannheim und Oestrich haben keine eigene Abflussreihe und beziehen sich auf Maxau bzw. Mainz.
+- Karte: Abschnitte entlang der Rheinkilometrierung (GeoRhena nach WSV), Strichart nach Zustand.
+
+## Vier Grafiken
+
+- Längsschnitt Basel–Kaub: Fahrrinnentiefe je Abschnitt über dem Rheinkilometer am gewählten Tag, gemessen und simuliert, mit Soll und Staustufen.
+- Jahresband: Zustand je Abschnitt und Tag des Jahres, gemessen und simuliert.
+- Kapazitätskurve: kleinste Fahrrinnentiefe in Kaub gegen die zusätzliche Staukapazität; die gewählten Stauhöhen werden gemeinsam skaliert.
+- Jahresvergleich Kaub: je Jahr ab 2008 Tage unter GlW, kleinste Fahrrinnentiefe gemessen und simuliert, Bedarf bis zum GlW.
+
+Alle vier rechnet `rhin.js` im Browser aus den Jahresdateien.
+
+## Datensatz auf der Seite
+
+Der Abschnitt «Datensatz» zeigt jede Reihe mit Quelle, Zeitraum, Anzahl Tage und Status (`meta.json`, Feld `reihen`), die Tageswerte des gewählten Jahres als Tabelle und einen CSV-Export für ein Jahr oder alle Jahre. Die CSV-Datei entsteht im Browser aus den Jahresdateien; Abflussspalten tragen je eine Statusspalte.
 
 ## Schifffahrt und Schätzung
 
 - `rheinbilanz/schifffahrt.py`: Abflusskurve Kaub (Stützpunkte aus Tageswertpaaren W/Q des jüngsten Jahrbuchjahres und den Rohwerten danach), Fahrrinnentiefe = W − GlW + Tiefe unter GlW, Kennwerte und 4-Tage-Vorhersage aus PEGELONLINE.
 - Tage ohne Messwert in Kaub seit dem letzten Jahrbuchjahr werden geschätzt (Status «geschätzt»): Q_Kaub(t) ≈ a + b · Q_Basel(t − 2) + c · T30 + d · T120, mit T = Mittel der Thur in Andelfingen, getrennt für Basel bis 800 m³/s und darüber. Die Koeffizienten und der Fehler gegen die Rohwerte des laufenden Jahres stehen in `meta.json` unter `kaub.schaetzung` und auf der Seite. Ein Messwert ersetzt die Schätzung, sobald er vorliegt.
-- `rheinbilanz/simulation.py`: optimaler Rückhalt mit zwei Schwellen L* und H* (Kalenderjahr, Speicher am 1. Januar leer, Rückhalt höchstens 10 % des Abflusses). Dieselbe Regel rechnet `rhin.js` im Browser.
+- `rheinbilanz/simulation.py`: Rückhalt und Abgabe (Speicherjahr vom 1. April bis 31. März, Rückhalt höchstens 10 % des Abflusses; die Seite setzt das Kalenderjahr aus zwei Speicherjahren zusammen und übergibt den Rest als Anfangsinhalt `start_m3`, der Speicher läuft also über den Jahreswechsel). Zwei Ziele: `heben` hebt die Tage unter dem GlW in Kaub, die tiefsten zuerst auf ein gemeinsames Niveau L*, höchstens bis zum GlW; gestaut wird nur über H* ≥ GlW (Standard der Seite). `optimieren` hebt den kleinsten Tagesabfluss ohne Deckel. Hochwassergrenze (`speichergrenze`): Seestand plus Zusatzstau bleibt unter der Hochwassergrenze des Sees; liegt der Inhalt darüber, wird der Überschuss am selben Tag abgegeben. Betriebsregel ohne Voraussicht (`regel`): unter dem GlW auffüllen, höchstens so, dass ein voller Speicher D Tage reicht (Standard 30), stauen ab einem festen Abfluss in Kaub (Standard 1'000 m³/s); sie läuft durchgehend über Vorjahr, Jahr und Folgejahr. Die Seite zeigt beide Rechenweisen und den Abstand zwischen ihnen. Grenze je See (`seegrenze`): Rückhalt höchstens 20 % des Abflusses an der Messstelle unterhalb und nie unter deren gemessenen Jahrestiefstwert; die Seen stauen im Verhältnis ihrer Kapazität, der engste See bestimmt den Rückhalt aller. Dieselben Regeln rechnet `rhin.js` im Browser.

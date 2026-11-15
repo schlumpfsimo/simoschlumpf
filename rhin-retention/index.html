@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Rhein – Abflussbilanz und Rückhalt</title>
+  <title>Rhein – Fahrbarkeit und Rückhalt</title>
   <meta name="description" content="Woher das Wasser des Rheins in Basel und Kaub kommt: Abfluss, Pegel Kaub und Herkunft des Wassers von den Alpen bis Kaub, mit Simulation des Rückhalts in den Seen." />
   <link rel="canonical" href="https://www.simoschlumpf.ch/rhin-retention/" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -24,7 +24,11 @@
 
     <div class="wahl" id="wahl"></div>
 
+    <h2 class="frage" data-t="frage1"></h2>
     <section class="lage" id="lage"></section>
+    <section id="fahrbar"></section>
+    <figure class="grafik" id="laengsfig"><div class="legende" id="laengslegende"></div><svg id="laengs" role="img"></svg></figure>
+    <figure class="grafik" id="bandfig"><div class="legende" id="bandlegende"></div><svg id="band" role="img"></svg></figure>
 
     <div class="spalten">
       <figure class="karte">
@@ -40,6 +44,7 @@
     </div>
 
     <section class="simulator" id="simulator">
+      <h2 class="frage" data-t="frage2"></h2>
       <h2 data-t="simTitel"></h2>
       <p class="lead" data-t="simLead"></p>
       <div class="wahl" id="simwahl"></div>
@@ -49,7 +54,14 @@
         <div class="legende" id="simlegende"></div>
         <div class="rahmen"><svg id="verlauf" role="img"></svg><div class="tip" id="tip" hidden></div></div>
         <svg id="speicher" role="img"></svg>
+        <div class="legende" id="abgabelegende"></div>
+        <svg id="abgabe" role="img"></svg>
       </figure>
+      <div id="nutzen"></div>
+      <figure class="grafik"><svg id="kapkurve" role="img"></svg><p class="hinweis" id="kaptext"></p></figure>
+      <div id="jahre"></div>
+      <figure class="grafik"><svg id="jahregrafik" role="img"></svg></figure>
+      <div id="seetafel"></div>
       <p class="klein" data-t="simHinweis"></p>
     </section>
 
@@ -57,6 +69,14 @@
       <h2 data-t="herTitel"></h2>
       <p class="lead" data-t="herLead"></p>
       <div id="hertext"></div>
+    </section>
+
+    <section class="simulator" id="daten">
+      <h2 data-t="datTitel"></h2>
+      <p class="lead" data-t="datLead"></p>
+      <div id="datuebersicht"></div>
+      <div class="wahl" id="datwahl"></div>
+      <details id="dattage"><summary></summary><div class="datrahmen" id="dattabelle"></div></details>
     </section>
 
     <footer class="fuss">
