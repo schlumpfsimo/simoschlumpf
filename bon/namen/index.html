@@ -68,6 +68,12 @@ button.ghost:hover{background:#000;color:#fff}
     <div><label for="ab">Weiter ab Nr.</label><input id="ab" type="number" inputmode="numeric" min="1" step="1" value="1"></div>
   </div>
 
+  <label>Tempo</label>
+  <div class="seg zwei" id="takt">
+    <button data-k="fest">3½ Stunden<small>ganze Liste an einem Abend</small></button>
+    <button data-k="max">Maximal<small>so schnell der Drucker kann</small></button>
+  </div>
+
   <label>Richtung</label>
   <div class="seg zwei" id="richtung">
     <button data-k="1">Auf dem Kopf<small>hängt hinten herunter</small></button>
@@ -353,9 +359,20 @@ if (!DICHTEN[dichte]) dichte = 'mittel';
 let naechster = +store.get('naechster', 0);
 $('rolle').value = store.get('rolle', '80');
 
-// Festes Tempo: die ganze Liste in 3½ Stunden. Gestartet wird von Hand; nach einer Pause geht es im selben Tempo weiter.
+// Tempo: fest (die ganze Liste in 3½ Stunden) oder maximal (ohne Warten, so schnell der Drucker kann).
+// Gestartet wird von Hand; nach einer Pause geht es im gewählten Tempo weiter.
 const DAUER = 3.5 * 3600;
-const tempo = () => NAMEN.length / DAUER;   // Namen pro Sekunde
+const festTempo = () => NAMEN.length / DAUER;   // Namen pro Sekunde
+let takt = store.get('takt', 'fest') === 'max' ? 'max' : 'fest';
+// Maximaltempo pro Dichte: gemessen im Tempotest oder im letzten Lauf mit Maximaltempo, sonst unbekannt
+const maxTempo = () => +store.get('max.' + dichte, 0) || 0;
+const tempo = () => takt === 'max' ? maxTempo() : festTempo();
+function taktKnoepfe(){ $('takt').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === takt))); }
+$('takt').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || lauf || test) return;
+  takt = b.dataset.k; store.set('takt', takt); taktKnoepfe(); anzeigen();
+});
+taktKnoepfe();
 const uhrzeit = t => new Date(t).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
 function dichteKnoepfe(){
   const rolle = Math.max(1, +$('rolle').value || 80);
@@ -382,14 +399,14 @@ $('ab').addEventListener('change', () => {
 });
 
 function anzeigen(){
-  const N = NAMEN.length, rest = N - naechster, mm = MM_PRO_NAME[dichte] || 0, sek = rest / tempo();
+  const N = NAMEN.length, rest = N - naechster, mm = MM_PRO_NAME[dichte] || 0, v = tempo(), sek = v ? rest / v : 0;
   const zuletzt = naechster > 0 ? name(naechster - 1) : null;
   const rolle = Math.max(1, +$('rolle').value || 80) * 1000;
   const rows = [
     ['Gedruckt', `${zahl(naechster)} von ${zahl(N)}`],
     ['Noch', `${zahl(rest)} Namen`],
-    ['Tempo', `${tempo().toFixed(1)} Namen/s · ${Math.round(tempo() * mm)} mm/s`],
-    ['Dauer', `noch ${Math.floor(sek / 3600)} h ${String(Math.round(sek % 3600 / 60)).padStart(2, '0')} min · fertig um ${uhrzeit(Date.now() + sek * 1000)}`],
+    ['Tempo', v ? `${takt === 'max' ? 'maximal, etwa ' : ''}${v.toFixed(1)} Namen/s · ${Math.round(v * mm)} mm/s` : 'maximal · noch nicht gemessen (Tempotest)'],
+    ['Dauer', v ? `${takt === 'max' ? 'etwa ' : ''}noch ${Math.floor(sek / 3600)} h ${String(Math.round(sek % 3600 / 60)).padStart(2, '0')} min · fertig um ${uhrzeit(Date.now() + sek * 1000)}` : 'unbekannt'],
     ['Papier', `${mm.toFixed(2)} mm/Name · noch ${Math.round(rest * mm / 1000)} m`],
     ['Rollenwechsel', mm ? `etwa alle ${zahl(rolle / mm)} Namen` : ''],
   ];
@@ -421,7 +438,11 @@ async function laufen(){
         await senden(raster(st.bits, st.H, y0, sch.y));
         y0 = sch.y;
         naechster = sch.bis; store.set('naechster', naechster);
-        await warte(t0 + (naechster - ab) / tempo() * 1000 - Date.now());
+        if (takt === 'max') {
+          // nicht warten; gemessenes Tempo für die Anzeige festhalten (erst nach einer halben Minute aussagekräftig)
+          const s = (Date.now() - t0) / 1000;
+          if (s > 30) store.set('max.' + dichte, ((naechster - ab) / s).toFixed(2));
+        } else await warte(t0 + (naechster - ab) / festTempo() * 1000 - Date.now());
         if (!document.hidden) anzeigen();
         say(`Läuft · ${zahl(naechster)} von ${zahl(NAMEN.length)}`);
       }
@@ -490,7 +511,8 @@ $('tempo').addEventListener('click', () => testen(async () => {
     if (i >= NAMEN.length - 100) i = 0;
   }
   await senden(join([bandRaster(), SCHNITT]));
-  const ist = n / ((Date.now() - t0) / 1000), noetig = tempo();
+  const ist = n / ((Date.now() - t0) / 1000), noetig = festTempo();
+  store.set('max.' + dichte, ist.toFixed(2)); anzeigen();
   say(`${ist.toFixed(1)} Namen/s geschafft, nötig für den ganzen Abend: ${noetig.toFixed(1)}. ${ist >= noetig * 1.1 ? 'Reicht.' : 'Reicht nicht: kleinere Dichte wählen.'}`, ist >= noetig * 1.1 ? 'ok' : 'err');
 }, 'Namen · Tempotest'));
 $('reset').addEventListener('click', () => {
