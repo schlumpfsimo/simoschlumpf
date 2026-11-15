@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 from . import cache, quellen, schifffahrt
-from .netz import RICHTPEGEL, SEEN, STATIONEN
+from .netz import HLNUG_Q, HLNUG_W, RICHTPEGEL, SEEN, STATIONEN
 
 ERSTES_JAHR = 1970      # die BAFU-Datenplattform führt Tageswerte ab 1970
 
@@ -95,6 +95,10 @@ def laden(bis_jahr: int | None = None, melde=lambda s: print(s, file=sys.stderr)
             werte = versuch(f"DGJ {s.name} Hauptwerte", lambda: _dgj_hauptwerte(s.dgj[1]))
             if werte:
                 b.dgj_hauptwerte[s.id] = werte
+        if s.id in HLNUG_Q:                               # schliesst die Lücke zwischen Jahrbuch und den letzten 31 Tagen
+            portal = versuch(f"HLNUG {s.name} Q", lambda: quellen.hlnug_tagesmittel(s.id, "Q"))
+            if portal:
+                b.setze(s.id, {t: v for t, v in portal.items() if t < heute and t.year >= ERSTES_JAHR}, ueberschreiben=False)
         aktuell = versuch(f"PEGELONLINE {s.name} Q", lambda: quellen.pegelonline_tagesmittel(s.id, "Q"))
         if aktuell:
             b.setze(s.id, {t: v for t, v in aktuell.items() if t < heute}, ueberschreiben=False)
@@ -107,8 +111,8 @@ def laden(bis_jahr: int | None = None, melde=lambda s: print(s, file=sys.stderr)
         ort = versuch(f"PEGELONLINE {s.name} Lage", lambda: quellen.pegelonline_station(s.id))
         if ort:
             b.orte[s.id] = (ort["latitude"], ort["longitude"])
-    _kaub(b, versuch, heute)
     _richtpegel(b, versuch, heute)
+    _kaub(b, versuch, heute)
     return b
 
 
@@ -117,6 +121,12 @@ def _wasserstand(b: Bestand, versuch, heute: dt.date, nummer: str, name: str, dg
     if nummer not in b.wp:
         jahrbuch = versuch(f"DGJ {name} W", lambda: quellen.dgj_tageswerte(*dgj)) if dgj else None
         b.wp[nummer] = {t: w for t, (w, _) in jahrbuch["W"].items()} if jahrbuch else {}
+    if nummer in HLNUG_W:
+        portal = versuch(f"HLNUG {name} W", lambda: quellen.hlnug_tagesmittel(nummer, "W"))
+        if portal:
+            for t, (w, _) in portal.items():
+                if t < heute:
+                    b.wp[nummer].setdefault(t, w)
     roh = versuch(f"PEGELONLINE {name} W", lambda: quellen.pegelonline_tagesmittel(nummer, "W"))
     if roh:
         for t, (w, _) in roh.items():
@@ -151,7 +161,7 @@ def _richtpegel(b: Bestand, versuch, heute: dt.date) -> None:
                     reihe.setdefault(t, x + versatz)
         q = b.q.get(p.bezug, {})
         jahr = max((t.year for t, c in b.status.get(p.bezug, {}).items() if c == 4), default=None)
-        paare = [(q[t], reihe[t]) for t in reihe if t in q and jahr and t.year >= jahr and b.status[p.bezug].get(t) != 5]
+        paare = [(q[t], reihe[t]) for t in reihe if t in q and jahr and t.year >= jahr and b.status[p.bezug].get(t) in (0, 4, 6)]
         eintrag.update({"kurve": schifffahrt.abflusskurve(paare), "kurve_ab": jahr})
         b.richt[p.id] = eintrag
 
@@ -160,37 +170,32 @@ KAUB, BASEL = "25700100", "2289"
 
 
 def _kaub(b: Bestand, versuch, heute: dt.date) -> None:
-    """Schifffahrtsgrössen für Kaub: Kennwerte, Vorhersage, Abflusskurve und die Überbrückung fehlender Tage."""
+    """Schifffahrtsgrössen für Kaub: Kennwerte, Vorhersage, Abflusskurve und der Abfluss an Tagen, an denen nur der Wasserstand vorliegt."""
     kenn = versuch("PEGELONLINE Kaub Kennwerte", lambda: quellen.pegelonline_kennwerte(KAUB))
     if kenn:
         b.kaub.update(kenn)
     vor = versuch("PEGELONLINE Kaub Vorhersage", lambda: quellen.pegelonline_vorhersage(KAUB))
     if vor:
         b.kaub["vorhersage"] = vor
-    q, w, basel = b.q.get(KAUB, {}), b.w_kaub, b.q.get(BASEL, {})
-    if not q or not basel:
+    b.w_kaub = dict(b.wp.get(KAUB, {}))                # Wasserstand: Jahrbuch, HLNUG, PEGELONLINE (in dieser Reihenfolge)
+    q, w = b.q.get(KAUB, {}), b.w_kaub
+    if not q:
         return
     # Abflusskurve: Wertepaare des jüngsten Jahrbuchjahres und die Rohwerte danach (aktuelle Kurve der WSV)
     letztes_dgj = max((t.year for t, c in b.status[KAUB].items() if c == 4), default=None)
-    paare = [(q[t], w[t]) for t in q if t in w and letztes_dgj and t.year >= letztes_dgj]
-    b.kaub["abflusskurve"] = schifffahrt.abflusskurve(paare)
+    paare = [(q[t], w[t]) for t in q if t in w and letztes_dgj and t.year >= letztes_dgj and b.status[KAUB][t] in (0, 4)]
+    kurve = schifffahrt.abflusskurve(paare)
+    b.kaub["abflusskurve"] = kurve
     b.kaub["abflusskurve_quelle"] = f"Tageswertpaare W/Q: DGJ {letztes_dgj} (geprüft) und PEGELONLINE ab {letztes_dgj + 1} (roh)"
-    # Schätzmodell: angepasst an die letzten zehn Jahrbuchjahre, geprüft an den Rohwerten des laufenden Jahres
-    thur = b.q.get("2044", {})
-    tage = sorted(t for t, c in b.status[KAUB].items() if c == 4 and t.year > letztes_dgj - 10)
-    modell = schifffahrt.anpassen(basel, thur, q, tage)
-    if not modell:
-        return
-    modell["jahre"] = [letztes_dgj - 9, letztes_dgj]
-    roh = sorted(t for t, c in b.status[KAUB].items() if c == 0)
-    modell["pruefung_roh"] = schifffahrt.guete(modell, basel, thur, q, roh)
-    if modell["pruefung_roh"]:
-        modell["pruefung_roh"]["von"], modell["pruefung_roh"]["bis"] = roh[0].isoformat(), roh[-1].isoformat()
-    b.kaub["schaetzung"] = modell
-    tag = dt.date(letztes_dgj + 1, 1, 1)
-    while tag < heute:
-        if tag not in q:
-            s = schifffahrt.schaetzen(modell, basel, thur, tag)
-            if s is not None:
-                b.setze(KAUB, {tag: (s, 5)})
-        tag += dt.timedelta(days=1)
+    # Tage nach dem Jahrbuch mit Wasserstand, aber ohne Abfluss: Abfluss aus dem Wasserstand über die Kurve
+    aus_w, verlaengert, ohne = 0, 0, 0
+    for tag in sorted(t for t in w if letztes_dgj and t.year > letztes_dgj and t not in q):
+        wert = schifffahrt.abfluss_aus_wasserstand(kurve, w[tag])
+        if wert is None:
+            ohne += 1
+            continue
+        b.setze(KAUB, {tag: (wert[0], 8 if wert[1] else 7)})
+        aus_w += 1
+        verlaengert += wert[1]
+    b.kaub["abfluss_aus_w"] = {"ab": f"{letztes_dgj + 1}-01-01", "tage": aus_w, "davon_verlaengert": verlaengert, "ohne_wert": ohne,
+                               "tiefster_stuetzpunkt": kurve[0] if kurve else None}

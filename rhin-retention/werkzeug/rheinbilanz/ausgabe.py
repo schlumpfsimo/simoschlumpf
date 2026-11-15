@@ -13,9 +13,10 @@ from .netz import KONTROLLE, REFERENZ, REFERENZ_DE, RICHTPEGEL, SEEN, STAU_BIS, 
 
 QUELLEN = [
     {"kurz": "BAFU", "text": "Bundesamt für Umwelt BAFU, Hydrologische Beobachtungen, Datenplattform BAFU (Freie Nutzung. Quellenangabe ist Pflicht.)", "url": "https://data.bafu.admin.ch"},
+    {"kurz": "HLNUG", "text": "Hessisches Landesamt für Naturschutz, Umwelt und Geologie (HLNUG), Pegelportal: Tagesmittel der WSV-Pegel Kaub, Mainz, Worms, Bingen und Frankfurt Osthafen", "url": "https://www.hlnug.de/static/pegel/wiskiweb3/webpublic/"},
     {"kurz": "WSV/BfG", "text": "Wasserstrassen- und Schifffahrtsverwaltung des Bundes (WSV), bereitgestellt durch die Bundesanstalt für Gewässerkunde (BfG): Deutsches Gewässerkundliches Jahrbuch und PEGELONLINE (Rohdaten)", "url": "https://www.pegelonline.wsv.de"},
 ]
-QUELLENZEILE = "Quellen: BAFU, Hydrologische Beobachtungen (data.bafu.admin.ch) · WSV, bereitgestellt durch die BfG (DGJ, PEGELONLINE)"
+QUELLENZEILE = "Quellen: BAFU, Hydrologische Beobachtungen (data.bafu.admin.ch) · WSV, bereitgestellt durch die BfG (DGJ, PEGELONLINE) und über das HLNUG"
 
 
 def _rund(x, n=1):
@@ -42,7 +43,8 @@ def jahresdatei(b: Bestand, jahr: int, alt: dict | None = None) -> dict:
         if alt and sid in alt.get("q", {}):
             alte_codes = _entfalten(alt["s"][sid], len(tage))
             for i, w in enumerate(alt["q"][sid][: len(tage)]):
-                if w is not None and alte_codes[i] != 5 and (werte[i] is None or codes[i] == 5):   # Messwert geht vor Schätzung
+                # früher gespeicherte Messwerte bleiben; gerechnete Werte (5 alt, 7, 8) werden nie zurückgeholt und weichen einem Messwert
+                if w is not None and alte_codes[i] not in (5, 7, 8) and (werte[i] is None or codes[i] in (7, 8)):
                     werte[i], codes[i] = w, alte_codes[i]
         if any(w is not None for w in werte):
             q[sid], s[sid] = werte, _laeufe(codes)
@@ -91,7 +93,7 @@ def _anteile(netz: Netz, b: Bestand, ziel: str, periode) -> dict:
 
 def _extreme(reihe: dict, jahre: list[int], anzahl: int = 12) -> list:
     """Die tiefsten jährlichen NM7Q eines Pegels über alle Jahre mit Daten, tiefstes zuerst."""
-    alle = [(j, bilanz.nm7q(reihe, j)) for j in jahre]
+    alle = [(j, bilanz.nm7q(reihe, j, teiljahr=(j == jahre[-1]))) for j in jahre]      # das laufende Jahr zählt mit dem, was vorliegt
     alle = sorted(((j, n) for j, n in alle if n), key=lambda x: x[1]["wert"])[:anzahl]
     return [{"jahr": j, "beginn": n["beginn"].isoformat(), "ende": n["ende"].isoformat(), "wert": _rund(n["wert"])} for j, n in alle]
 

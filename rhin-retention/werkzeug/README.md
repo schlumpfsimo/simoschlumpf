@@ -34,6 +34,7 @@ Die Seite aktualisiert sich täglich über `.github/workflows/rhin-retention.yml
 ## Quellen
 
 - BAFU, Hydrologische Beobachtungen, Datenplattform BAFU (`data.bafu.admin.ch/api`). Tagesmittel ab 1970. Lizenz: Freie Nutzung, Quellenangabe ist Pflicht.
+- HLNUG, Pegelportal Hessen (`hlnug.de/static/pegel/wiskiweb3`): Tagesmittel der WSV-Pegel am Rhein und Main, ab 2006 (Mainz Abfluss ab 1930) bis zum Vortag.
 - WSV, bereitgestellt durch die BfG: Deutsches Gewässerkundliches Jahrbuch (`dgj-daten.bafg.de`, PDF je Pegel, Tageswerte der Abflussjahre 2008–2025) und PEGELONLINE (Rohdaten der letzten 31 Tage).
 - Karte: Flussläufe aus HydroRIVERS v1.0 (Lehner & Grill 2013, hydrosheds.org). Für `karte` das Paket `pyshp` installieren, `HydroRIVERS_v10_eu_shp.zip` von hydrosheds.org entpacken und `RHEINBILANZ_HYDRORIVERS` auf die `.shp`-Datei setzen. Grundkarte der Seite: swisstopo (Schweiz) und OpenStreetMap.
 - Seen: Flächen sowie Nieder- und Hochwassergrenzen aus den BAFU-Faktenblättern «Seeregulierung» (2020, bafu.admin.ch/de/wichtige-seeregulierungen). Für Neuenburger- und Murtensee nennt das Faktenblatt keine eigenen Grenzen. Bodensee: 536 km² nach IGKB, Aufteilung Obersee 473 / Untersee 63 km² nicht amtlich belegt. Die Werte stehen in `netz.py`.
@@ -59,7 +60,7 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 ## Bekannte Lücken
 
-- Deutsche Pegel: keine Tageswerte vor November 2007 und keine zwischen 1.1.2026 und dem Beginn des 31-Tage-Fensters von PEGELONLINE. Einmal geholte Rohwerte bleiben in der Jahresdatei erhalten.
+- Maxau, Speyer, Mannheim, Oestrich und der Neckar: keine Tageswerte zwischen 1.1.2026 und dem Beginn des 31-Tage-Fensters von PEGELONLINE (Mitte Oktober 2026). Einmal geholte Rohwerte bleiben in der Jahresdatei erhalten.
 - Neckar (Rockenau): Abfluss im Jahrbuch nur 2010–2020.
 - Die Nahe (Mündung bei Bingen) ist nicht als Messstelle geführt; sie steckt im Zwischengebiet Mainz–Kaub.
 - Die Simulation verschiebt das Volumen nur mit der Fliesszeit, ohne Abflachung der Welle und ohne Regulierreglemente.
@@ -104,5 +105,6 @@ Der Abschnitt «Datensatz» zeigt jede Reihe mit Quelle, Zeitraum, Anzahl Tage u
 ## Schifffahrt und Schätzung
 
 - `rheinbilanz/schifffahrt.py`: Abflusskurve Kaub (Stützpunkte aus Tageswertpaaren W/Q des jüngsten Jahrbuchjahres und den Rohwerten danach), Fahrrinnentiefe = W − GlW + Tiefe unter GlW, Kennwerte und 4-Tage-Vorhersage aus PEGELONLINE.
-- Tage ohne Messwert in Kaub seit dem letzten Jahrbuchjahr werden geschätzt (Status «geschätzt»): Q_Kaub(t) ≈ a + b · Q_Basel(t − 2) + c · T30 + d · T120, mit T = Mittel der Thur in Andelfingen, getrennt für Basel bis 800 m³/s und darüber. Die Koeffizienten und der Fehler gegen die Rohwerte des laufenden Jahres stehen in `meta.json` unter `kaub.schaetzung` und auf der Seite. Ein Messwert ersetzt die Schätzung, sobald er vorliegt.
+- Lücke nach dem Jahrbuch: Für Kaub, Mainz, Worms, Bingen und Frankfurt Osthafen liefert das Pegelportal des HLNUG (`quellen.hlnug_tagesmittel`) Tagesmittel bis zum Vortag (Status «Tagesmittel WSV über HLNUG»). Reihenfolge je Tag: Jahrbuch, HLNUG, PEGELONLINE.
+- Abfluss Kaub: Das HLNUG führt für Kaub nur den Wasserstand. An Tagen ohne Abflusswert wird er aus dem Wasserstand über die Abflusskurve gerechnet (`schifffahrt.abfluss_aus_wasserstand`, Status «aus Wasserstand»); unter dem tiefsten Stützpunkt wird die Kurve um höchstens 12 cm linear verlängert (eigener Status). Wasserstand und Fahrrinnentiefe sind an diesen Tagen gemessen. Ein gemessener Abfluss ersetzt den gerechneten, sobald er vorliegt.
 - `rheinbilanz/simulation.py`: Rückhalt und Abgabe (Speicherjahr vom 1. April bis 31. März, Rückhalt höchstens 10 % des Abflusses; die Seite setzt das Kalenderjahr aus zwei Speicherjahren zusammen und übergibt den Rest als Anfangsinhalt `start_m3`, der Speicher läuft also über den Jahreswechsel). Zwei Ziele: `heben` hebt die Tage unter dem GlW in Kaub, die tiefsten zuerst auf ein gemeinsames Niveau L*, höchstens bis zum GlW; gestaut wird nur über H* ≥ GlW (Standard der Seite). `optimieren` hebt den kleinsten Tagesabfluss ohne Deckel. Hochwassergrenze (`speichergrenze`): Seestand plus Zusatzstau bleibt unter der Hochwassergrenze des Sees; liegt der Inhalt darüber, wird der Überschuss am selben Tag abgegeben. Betriebsregel ohne Voraussicht (`regel`): unter dem GlW auffüllen, höchstens so, dass ein voller Speicher D Tage reicht (Standard 30), stauen ab einem festen Abfluss in Kaub (Standard 1'000 m³/s); sie läuft durchgehend über Vorjahr, Jahr und Folgejahr. Die Seite zeigt beide Rechenweisen und den Abstand zwischen ihnen. Grenze je See (`seegrenze`): Rückhalt höchstens 20 % des Abflusses an der Messstelle unterhalb und nie unter deren gemessenen Jahrestiefstwert; die Seen stauen im Verhältnis ihrer Kapazität, der engste See bestimmt den Rückhalt aller. Dieselben Regeln rechnet `rhin.js` im Browser.

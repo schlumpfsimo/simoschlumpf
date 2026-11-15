@@ -6,7 +6,9 @@ Status (Freigabe) je Wert:
   2 validiert  BAFU releaseState 2
   3 definitiv  BAFU releaseState 3
   4 geprüft    Deutsches Gewässerkundliches Jahrbuch (BfG/WSV)
-  5 geschätzt  kein Messwert: Regression aus dem Abfluss in Basel (nur Kaub, nur für Tage ohne Messwert)
+  6 HLNUG      Tagesmittel der WSV-Pegel aus dem Pegelportal des HLNUG; Prüfstatus dort nicht angegeben
+  7 aus W      kein Abflusswert: aus dem gemessenen Wasserstand über die Abflusskurve gerechnet (nur Kaub)
+  8 aus W, verlängert  wie 7, der Wasserstand liegt unter dem tiefsten Stützpunkt, die Kurve ist linear verlängert
 """
 from __future__ import annotations
 
@@ -23,8 +25,10 @@ KENNUNG = "rheinbilanz/1.0 (Python urllib)"
 BAFU_API = "https://data.bafu.admin.ch/api"
 PEGELONLINE = "https://www.pegelonline.wsv.de/webservices/rest-api/v2"
 DGJ = "https://dgj-daten.bafg.de/Rhein"
+HLNUG = "https://www.hlnug.de/static/pegel/wiskiweb3/data/internet/stations/0"
 
-STATUS = {0: "roh", 1: "provisorisch", 2: "validiert", 3: "definitiv", 4: "geprüft (DGJ)", 5: "geschätzt (aus Basel)"}
+STATUS = {0: "roh", 1: "provisorisch", 2: "validiert", 3: "definitiv", 4: "geprüft (DGJ)", 6: "Tagesmittel WSV über HLNUG",
+          7: "aus Wasserstand (Abflusskurve)", 8: "aus Wasserstand (Kurve verlängert)"}
 
 Reihe = dict  # {datetime.date: (float, int)}
 
@@ -123,6 +127,20 @@ def pegelonline_vorhersage(nummer: str) -> list:
 def pegelonline_station(nummer: str) -> dict:
     roh = cache.holen("pegelonline", f"{nummer}_station.json", lambda: _http(f"{PEGELONLINE}/stations/{nummer}.json"), 24 * 30)
     return json.loads(roh)
+
+
+# ---------------------------------------------------------------- HLNUG (Pegelportal Hessen)
+
+def hlnug_tagesmittel(nummer: str, parameter: str) -> Reihe:
+    """Tagesmittel eines WSV-Pegels aus dem Pegelportal des HLNUG ('W' in cm, 'Q' in m³/s), meist ab 2006 bis gestern.
+
+    Die Datei führt je Tag einen Zeitstempel 00.00 Uhr MEZ; Tage ohne Wert bleiben leer.
+    """
+    roh = cache.holen("hlnug", f"{nummer}_{parameter}.json", lambda: _http(f"{HLNUG}/{nummer}/{parameter}/year.json", kopf={"User-Agent": "Mozilla/5.0"}), 6)
+    daten = json.loads(roh)
+    if not daten or daten[0].get("ts_name") != "TagMittel":
+        raise QuelleNichtErreichbar(f"HLNUG {nummer} {parameter}: keine Tagesmittel")
+    return {dt.date.fromisoformat(t[:10]): (float(v), 6) for t, v in daten[0]["data"] if v is not None}
 
 
 # ---------------------------------------------------------------- DGJ (PDF)

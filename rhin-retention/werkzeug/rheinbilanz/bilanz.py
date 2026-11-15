@@ -121,14 +121,14 @@ def mq(reihe: dict, von: int, bis: int, mindestanteil: float = 0.95) -> dict | N
     return {"wert": sum(werte) / len(werte), "tage": len(werte), "tage_soll": len(tage)}
 
 
-def nm7q(reihe: dict, jahr: int) -> dict | None:
+def nm7q(reihe: dict, jahr: int, teiljahr: bool = False) -> dict | None:
     """Kleinstes Mittel über 7 aufeinanderfolgende Tage im Kalenderjahr. Fenster mit Lücken zählen nicht.
 
-    None, wenn im Jahr mehr als 5 % der Tage fehlen.
+    None, wenn im Jahr mehr als 5 % der Tage fehlen. Mit `teiljahr` (laufendes Jahr) zählt, was vorliegt.
     """
     tage = jahrestage(jahr)
     werte = [reihe.get(t) for t in tage]
-    if sum(w is None for w in werte) > 0.05 * len(tage):
+    if not teiljahr and sum(w is None for w in werte) > 0.05 * len(tage):
         return None
     bestes = None
     for i in range(len(tage) - 6):

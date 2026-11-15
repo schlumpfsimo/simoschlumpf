@@ -200,3 +200,4 @@ h2.frage{font-size:clamp(20px,2vw,30px);letter-spacing:.12em;line-height:1.2;mar
 @media (min-width:760px){#bandlegende span,#laengslegende span{white-space:nowrap}}
 .grafik .legende svg{display:inline-block;width:24px;height:12px;flex:none}
 #bandlegende{margin-bottom:14px}
+.fuss a,.fuss li{overflow-wrap:anywhere}

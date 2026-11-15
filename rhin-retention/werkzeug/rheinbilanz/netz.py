@@ -150,6 +150,11 @@ STAUSTUFEN = [
 ]
 
 
+# WSV-Pegel, für die das Pegelportal des HLNUG Tagesmittel bis zum Vortag führt (schliesst die Lücke nach dem Jahrbuch)
+HLNUG_Q = {"23900200", "25100100", "24700404"}                 # Worms, Mainz, Frankfurt Osthafen
+HLNUG_W = {"23900200", "25100100", "25300200", "25700100"}     # Worms, Mainz, Bingen, Kaub
+
+
 @dataclass
 class Netz:
     stationen: dict = field(default_factory=dict)

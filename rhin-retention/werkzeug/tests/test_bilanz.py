@@ -123,6 +123,11 @@ class Kennwerte(unittest.TestCase):
         n = bilanz.nm7q(r, 2019)
         self.assertGreater(n["wert"], 30.0)         # das lückenhafte Fenster zählt nicht, nichts wird aufgefüllt
 
+    def test_nm7q_im_laufenden_jahr(self):
+        r = {t: 50.0 for t in bilanz.jahrestage(2019)[:200]}       # Jahr erst zu gut der Hälfte vorhanden
+        self.assertIsNone(bilanz.nm7q(r, 2019))
+        self.assertEqual(bilanz.nm7q(r, 2019, teiljahr=True)["wert"], 50.0)
+
     def test_niedrigwasser_tage(self):
         r = self.reihe(2019)
         for i in range(7):
