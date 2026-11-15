@@ -67,13 +67,26 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 ## Die Seite
 
-`index.html`, `rhin.css`, `rhin.js` (Leaflet). Aufbau von oben nach unten:
+`index.html`, `rhin.css`, `rhin.js` (Leaflet). Die Seite ist zweisprachig (`?l=fr`) und in Kapitel gegliedert. In den Kapiteln 1 bis 3 bleibt die Grafik stehen, der Text läuft in Schritten daran vorbei und verändert sie.
 
-1. Lage am angezeigten Tag: Abfluss und Pegel Kaub, Abstand zum GlW, Fahrrinnentiefe, Abfluss Basel, dazu Vorhersage und aktueller Rohwert.
-2. Karte und Herkunft: Anteile nach Herkunftsgruppen (Schraffuren) und die Bilanz je Glied.
-3. Rückhalt für die Schifffahrt: Einstellbar sind die zusätzliche Staukapazität je See und das Ziel der Abgabe (bis zum GlW heben oder ohne Deckel heben). Die Regeln stehen in `rheinbilanz/simulation.py`.
-   Darunter: Verlauf an einer wählbaren Messstelle (Ziel, Basel oder die Messstelle unterhalb eines Sees), Speicherinhalt, Abgabe und Rückhalt je Tag nach Seegruppe und eine Tabelle je Seegruppe (Anteil, abgegebenes Volumen, grösste Abgabe, grösster Rückhalt, kleinster Abfluss unterhalb).
-4. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
+1. Der Rhein bis Kaub: Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
+2. Die Jahre: Abfluss in Kaub für 2019, 2018, 2022 und das laufende Jahr, Tage unter dem GlW schraffiert; für das laufende Jahr die Herkunft in den sieben trockensten Tagen gegen das mittlere Niedrigwasser. Darunter die Liste «Nötige Speicherkapazität pro Jahr».
+3. Rückhalt in den Seen: wählbares Jahr, sechs Schritte (ein Zentimeter, zwei Rechenweisen, Stufen 1 bis 3, GlW an allen Tagen).
+4. Simulator: Jahr, Stufe, Rechenweise und Zusatzstau je See; Verlauf, Speicher, Abgabe, Fahrbarkeit im Jahr, Nutzen nach Staukapazität, Seestand je See.
+5. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
+6. Datensatz.
+
+Drei Stufen (`stufeCM`, `szenario` in `rhin.js`):
+
+- Stufe 1, heutiger Rahmen: Die regulierten Seen stauen bis zur Hochwassergrenze. Die Kapazität je See ist der Abstand des tiefsten Seestands im Jahr zur Grenze; die Grenze selbst gilt Tag für Tag. Das ist eine Obergrenze.
+- Stufe 2, neue Staukapazität: dazu 50 cm über der Hochwassergrenze (im Simulator einstellbar).
+- Stufe 3, mit Bodensee: dazu derselbe Zusatzstau auf Ober- und Untersee. Der Bodensee ist nicht reguliert (Kantonsverfassung Thurgau § 76 Abs. 3; IGKB 2024; KHR 2018).
+
+Zwei Rechenweisen: «mit Voraussicht» kennt alle Tageswerte des Speicherjahrs im Voraus (Bestfall), die Betriebsregel nur den Abfluss des Tages und den Speicherinhalt. Die Jahresliste rechnet die Stufen mit der Betriebsregel. Beim simulierten Pegel gilt 1 cm Toleranz zum GlW (Abweichung zwischen Messung und Abflusskurve).
+
+Fliesszeit Bodensee: Für den Rückhalt im Bodensee rechnet die Seite zwei Tage mehr bis Basel (`BODENSEE_TAGE`), abgeleitet aus der Angabe der IGKB (2024), dass das Wasser vom Bodensee bis Mannheim rund vier Tage braucht. Die Bilanz bleibt davon unberührt.
+
+Unter jeder Grafik steht ein Knopf «CSV herunterladen» mit den Werten der Grafik.
 
 Ansichten: Heute, Extremwerte (die zwölf tiefsten jährlichen NM7Q), Datum (jeder Tag seit 1970), Mittelwasser, mittleres Niedrigwasser.
 

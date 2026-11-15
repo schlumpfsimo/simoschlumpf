@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Rhein – Fahrbarkeit und Rückhalt</title>
-  <meta name="description" content="Woher das Wasser des Rheins in Basel und Kaub kommt: Abfluss, Pegel Kaub und Herkunft des Wassers von den Alpen bis Kaub, mit Simulation des Rückhalts in den Seen." />
+  <meta name="description" content="Wovon die Fahrbarkeit des Rheins bis Kaub abhängt und was ein Rückhalt in den Seen brächte: gemessene Abflüsse, Pegel Kaub, Herkunft des Wassers und Simulation." />
   <link rel="canonical" href="https://www.simoschlumpf.ch/rhin-retention/" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#ffffff" />
@@ -19,62 +19,92 @@
   <main class="blatt">
     <nav class="sprache" id="sprache"></nav>
     <h1 class="name" data-t="titel"></h1>
-    <div class="sterne" aria-hidden="true"><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg><svg viewBox="-1 -1 2 2"><path d="M0,-1L.2245,-.309L.951,-.309L.363,.118L.588,.809L0,.382L-.588,.809L-.363,.118L-.951,-.309L-.2245,-.309Z"/></svg></div>
-    <p class="lead" data-t="lead"></p>
+    <p class="lead kopf" data-t="lead"></p>
+    <nav class="inhalt" id="inhalt"></nav>
 
-    <div class="wahl" id="wahl"></div>
-
-    <h2 class="frage" data-t="frage1"></h2>
-    <section class="lage" id="lage"></section>
-    <section id="fahrbar"></section>
-    <figure class="grafik" id="laengsfig"><div class="legende" id="laengslegende"></div><svg id="laengs" role="img"></svg></figure>
-    <figure class="grafik" id="bandfig"><div class="legende" id="bandlegende"></div><svg id="band" role="img"></svg></figure>
-
-    <div class="spalten">
-      <figure class="karte">
-        <div id="karte"></div>
-        <figcaption id="kartenlegende"></figcaption>
-      </figure>
-
-      <div class="tafel">
+    <!-- 1 Heute -->
+    <section class="kapitel" id="k1">
+      <h2 class="frage" data-t="k1Titel"></h2>
+      <p class="lead" data-t="k1Lead"></p>
+      <div class="wahl" id="wahl"></div>
+      <section class="lage" id="lage"></section>
+      <div class="scrolly" id="sc1">
+        <div class="buehne">
+          <figure class="karte"><div id="karte"></div></figure>
+        </div>
+        <div class="schritte" id="st1"></div>
+      </div>
+      <p class="klein" id="kartenlegende"></p>
+      <section id="fahrbar"></section>
+      <figure class="grafik" id="laengsfig"><div class="legende" id="laengslegende"></div><svg id="laengs" role="img"></svg></figure>
+      <div class="tafel zwei">
         <section id="herkunft"></section>
         <section id="bilanz"></section>
         <section id="seen"></section>
       </div>
-    </div>
+    </section>
 
-    <section class="simulator" id="simulator">
-      <h2 class="frage" data-t="frage2"></h2>
-      <h2 data-t="simTitel"></h2>
+    <!-- 2 Die Jahre -->
+    <section class="kapitel" id="k2">
+      <h2 class="frage" data-t="k2Titel"></h2>
+      <p class="lead" data-t="k2Lead"></p>
+      <div class="scrolly" id="sc2">
+        <div class="buehne frei">
+          <figure class="grafik" id="jahrfig"><div class="legende" id="jahrlegende"></div><svg id="jahrkaub" role="img"></svg></figure>
+        </div>
+        <div class="schritte" id="st2"></div>
+      </div>
+      <div id="jahre"></div>
+      <figure class="grafik" id="jahrefig"><svg id="jahregrafik" role="img"></svg></figure>
+    </section>
+
+    <!-- 3 Rückhalt -->
+    <section class="kapitel" id="k3">
+      <h2 class="frage" data-t="k3Titel"></h2>
+      <p class="lead" data-t="k3Lead"></p>
+      <div class="wahl" id="k3wahl"></div>
+      <div class="scrolly" id="sc3">
+        <div class="buehne frei">
+          <figure class="grafik" id="szenfig"><div class="legende" id="szenlegende"></div><svg id="szen" role="img"></svg></figure>
+        </div>
+        <div class="schritte" id="st3"></div>
+      </div>
+    </section>
+
+    <!-- 4 Simulator -->
+    <section class="kapitel" id="simulator">
+      <h2 class="frage" data-t="simTitel"></h2>
       <p class="lead" data-t="simLead"></p>
+      <div class="wahl" id="simjahr"></div>
       <div class="wahl" id="simwahl"></div>
+      <p class="hinweis" id="stufentext"></p>
       <div id="simseen"></div>
       <div class="werte" id="simwerte"></div>
-      <figure class="verlauf">
+      <figure class="verlauf" id="verlauffig">
         <div class="legende" id="simlegende"></div>
         <div class="rahmen"><svg id="verlauf" role="img"></svg><div class="tip" id="tip" hidden></div></div>
         <svg id="speicher" role="img"></svg>
         <div class="legende" id="abgabelegende"></div>
         <svg id="abgabe" role="img"></svg>
       </figure>
+      <figure class="grafik" id="bandfig"><div class="legende" id="bandlegende"></div><svg id="band" role="img"></svg></figure>
       <div id="nutzen"></div>
-      <figure class="grafik"><svg id="kapkurve" role="img"></svg><p class="hinweis" id="kaptext"></p></figure>
-      <div id="jahre"></div>
-      <figure class="grafik"><svg id="jahregrafik" role="img"></svg></figure>
+      <figure class="grafik" id="kapfig"><svg id="kapkurve" role="img"></svg><p class="hinweis" id="kaptext"></p></figure>
       <div id="seetafel"></div>
       <div class="wahl" id="seewahl"></div>
-      <figure class="grafik"><div class="legende" id="seelegende"></div><svg id="seegrafik" role="img"></svg><p class="hinweis" id="seetext"></p></figure>
+      <figure class="grafik" id="seefig"><div class="legende" id="seelegende"></div><svg id="seegrafik" role="img"></svg><p class="hinweis" id="seetext"></p></figure>
       <p class="klein" data-t="simHinweis"></p>
     </section>
 
-    <section class="simulator" id="herleitung">
-      <h2 data-t="herTitel"></h2>
+    <!-- 5 Herleitung, 6 Datensatz -->
+    <section class="kapitel" id="herleitung">
+      <h2 class="frage" data-t="herTitel"></h2>
       <p class="lead" data-t="herLead"></p>
       <div id="hertext"></div>
     </section>
 
-    <section class="simulator" id="daten">
-      <h2 data-t="datTitel"></h2>
+    <section class="kapitel" id="daten">
+      <h2 class="frage" data-t="datTitel"></h2>
       <p class="lead" data-t="datLead"></p>
       <div id="datuebersicht"></div>
       <div class="wahl" id="datwahl"></div>
@@ -90,6 +120,6 @@
       <p class="klein"><a href="/">simoschlumpf.ch</a></p>
     </footer>
   </main>
-  <noscript><p style="padding:24px">Diese Seite braucht JavaScript.</p></noscript>
+  <noscript><p style="padding:24px">Diese Seite braucht JavaScript. / Cette page nécessite JavaScript.</p></noscript>
 </body>
 </html>
