@@ -263,3 +263,11 @@ label.jahrzahl{display:block}
 .bedarf{margin:0 0 34px;padding:0 0 10px;border-bottom:2px solid var(--tinte)}.bedarf table.erg td:first-child{width:40%}
 span.hw{white-space:nowrap}
 @media (max-width:600px){#bedarffig text{font-size:11px}}
+/* Handy: Die Textkarten laufen über die stehende Grafik, statt darunter zu verschwinden.
+   Zwischen zwei Karten ist die Grafik frei sichtbar. */
+@media (max-width:979px){
+  .schritte{position:relative;z-index:5;pointer-events:none}
+  .schritt{opacity:1;min-height:0;align-items:flex-start;padding:0 0 70vh}     /* 70vh Abstand gehört zum Schritt: dazwischen ist die Grafik frei und zeigt diesen Schritt */
+  .schritt:first-child{margin-top:20vh}
+  .karton{pointer-events:auto;background:var(--papier);border:2px solid var(--tinte);padding:14px 16px 4px;box-shadow:0 0 0 6px rgba(255,255,255,.85)}
+}
