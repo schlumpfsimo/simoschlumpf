@@ -235,7 +235,6 @@ table.erg td.blau,td.blau{color:var(--blau);font-weight:700}
 @media (max-width:979px){.schritt{align-items:flex-start;padding-top:26px}.karton table{font-size:13px}.karton th{letter-spacing:.04em}.buehne .legende{font-size:12px;gap:2px 14px;margin-bottom:4px}.buehne .herunter{margin:0}}
 .karton .marke{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 4px}
 /* Schmale Bildschirme: ältere Grafiken behalten eine lesbare Schrift und lassen sich seitlich schieben */
-@media (max-width:700px){figure.grafik:not(#jahrfig):not(#szenfig):not(#bedarffig),figure.verlauf{overflow-x:auto}figure.grafik:not(#jahrfig):not(#szenfig):not(#bedarffig)>svg,figure.verlauf svg{min-width:760px}}
 /* Hochwasserschutz: schwarz umrandet, damit es nicht übersehen wird */
 .warnung{border:3px solid var(--tinte);padding:14px 18px;margin:0 0 30px;max-width:60em;font-size:16px}
 .warnung b:first-child{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
@@ -283,3 +282,19 @@ span.hw{white-space:nowrap}
 h3.unter{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:44px 0 6px}
 .teiltitel:empty{display:none}
 @media (max-width:600px){.teiltitel{font-size:6.2vw;letter-spacing:.05em;hyphens:auto;overflow-wrap:anywhere}}
+/* Handy: alles ohne seitliches Scrollen. Tabellen stehen untereinander, jede Zelle mit ihrem Spaltenkopf. */
+@media (max-width:700px){
+  table.stapel thead{display:none}
+  table.stapel,table.stapel tbody,table.stapel tr,table.stapel td{display:block;width:100%}
+  table.stapel tr{border-top:2px solid var(--tinte);padding:6px 0 8px}
+  table.stapel td{display:flex;justify-content:space-between;align-items:center;gap:14px;border:0;padding:3px 0;text-align:right;white-space:normal}
+  table.stapel td[data-l]::before{content:attr(data-l);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:left;flex:1 1 auto}
+  table.stapel td:first-child{font-weight:700;text-align:left;justify-content:flex-start}
+  table.stapel tr.gruppenkopf td,table.stapel tr.summe td{justify-content:flex-start}
+  table.stapel input[type=range]{width:55%;flex:0 0 55%}
+}
+/* Breite Tabellen ohne seitliches Scrollen: Köpfe dürfen umbrechen, Zahlen bleiben zusammen */
+#k3 th.z,#simulator th.z,#k1 th.z{white-space:normal;hyphens:auto;overflow-wrap:anywhere;letter-spacing:.06em}
+#jahre table{font-size:14px}#jahre td{padding-right:8px}#jahre th{font-size:10px;padding-right:8px}
+#jahre td.blau{white-space:normal}
+@media (max-width:700px){span.hw{white-space:normal}.bedarf table.erg td:first-child{width:38%}.bedarf td{overflow-wrap:anywhere}}

@@ -166,6 +166,8 @@
     HLNUG: 'Office hessois de l’environnement HLNUG, portail des échelles : moyennes journalières des échelles WSV de Kaub, Mayence, Worms, Bingen et Francfort Osthafen',
     'WSV/BfG': 'Administration fédérale allemande des voies navigables (WSV), données mises à disposition par la BfG : annuaire hydrologique allemand et PEGELONLINE (données brutes)' };
   const nm = s => FR ? (NAMEN[s] || s) : s, GW = s => nm(s.gewaesser), statusName = c => FR ? (STATUS_FR[c] || meta.status[c]) : meta.status[c];
+  // Breite der Grafiken in Pixeln der Seite: Schrift bleibt auf dem Handy lesbar, ohne seitliches Scrollen
+  const BREITE = () => Math.max(360, Math.min(1000, Math.round(($('simulator') || document.body).clientWidth) || 1000));
   const DP = FR ? '\u00a0: ' : ': ';                  // Doppelpunkt: im Französischen mit Abstand davor
   const GERECHNET = c => c === 7 || c === 8 || c === 9;    // Abfluss nicht gemessen, sondern aus dem Wasserstand gerechnet
   const statusAm = (Y, id, i) => { let c = null; for (const [start, code] of (Y.s[id] || [])) { if (start <= i) c = code; else break; } return c; };
@@ -652,7 +654,7 @@
     const svg = $('laengs'), A = abschnitte(R);
     if (!A.length) { $('laengsfig').hidden = true; return; }
     $('laengsfig').hidden = false;
-    const B = 1000, H = 346, L = 62, RR = 14, O = 34, U = 78, k0 = 164, k1 = RP[RP.length - 1].bis;
+    const B = BREITE(), H = 346, L = 62, RR = 14, O = 34, U = 78, k0 = 164, k1 = RP[RP.length - 1].bis;
     const werte = A.flatMap(a => [a.zm && a.zm.tiefe, a.zs && a.zs.tiefe, a.p.tugl]).filter(v => v != null), max = Math.max(260, ...werte) + 20;
     const x = km => L + (B - L - RR) * (km - k0) / (k1 - k0), y = v => O + (H - O - U) * (1 - v / max);
     let s = `<text class="fett" x="${L}" y="14">${T.lTitel}, ${datum(isoTag(Z.jahr, R.i1))}</text>`;
@@ -677,7 +679,7 @@
     const svg = $('band'), Y = R.Y;
     if (!Y || !RP.length) { $('bandfig').hidden = true; return; }
     $('bandfig').hidden = false;
-    const n = (Y.q[BASEL] || []).length, S = R.S, sim = S && S.O, B = 1000, L = 96, RR = 14, zh = 17, ab = 3, x = i => L + (B - L - RR) * i / n;
+    const n = (Y.q[BASEL] || []).length, S = R.S, sim = S && S.O, B = BREITE(), L = 96, RR = 14, zh = 17, ab = 3, x = i => L + (B - L - RR) * i / n;
     const teilsGesch = false;      // der Wasserstand in Kaub ist gemessen; nur der Abfluss ist an manchen Tagen gerechnet
     const block = (titel, simuliert, oben) => {
       let s = `<text class="fett" x="${L}" y="${oben - 6}">${titel}</text>`;
@@ -718,7 +720,7 @@
     const punkte = [0, 10, 25, 50, 100, 150, 200, 300, 400, 600].map(cm => { const z = cm ? szenario(Y, 0, 'glw', cm) : { k: kaubJahr(Y, OHNE), v: 0 }; return { cm, v: z.v, ...z.k }; }).filter(p => p.t1 != null);
     const stufen = STUFEN.map(st => { const z = szenario(Y, st, 'glw'); return { st, v: z.genutzt, t1: z.k.t1 }; }).filter(p => p.t1 != null);
     if (punkte.length < 2) { svg.innerHTML = ''; $('kaptext').textContent = ''; return; }
-    const B = 1000, H = 320, L = 62, RR = 20, O = 34, U = 46, xmax = punkte[punkte.length - 1].v, ymin = Math.floor(Math.min(...punkte.map(p => p.t1)) / 20) * 20 - 20, ymax = Math.max(PK.tugl, ...punkte.map(p => p.t1)) + 20;
+    const B = BREITE(), H = 320, L = 62, RR = 20, O = 34, U = 46, xmax = punkte[punkte.length - 1].v, ymin = Math.floor(Math.min(...punkte.map(p => p.t1)) / 20) * 20 - 20, ymax = Math.max(PK.tugl, ...punkte.map(p => p.t1)) + 20;
     const x = v => L + (B - L - RR) * v / xmax, y = t => O + (H - O - U) * (1 - (t - ymin) / (ymax - ymin));
     let s = `<text class="fett" x="${L}" y="14">${T.kTitel} (${Z.jahr})</text>`;
     for (let t = Math.ceil(ymin / 20) * 20; t <= ymax; t += 20) s += `<line class="gitter" x1="${L}" x2="${B - RR}" y1="${y(t)}" y2="${y(t)}"/><text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
@@ -749,11 +751,11 @@
       zeilen.push({ j, ...k, bedarf: bedarfGlw(Y), st, reicht });
       await new Promise(r => setTimeout(r, 0));
     }
-    setTimeout(() => typoFr($('k3')), 0);
+    setTimeout(() => { typoFr($('k3')); stapeln($('k3')); }, 0);
     el.innerHTML = `<h2>${T.jTitel}</h2><p class="hinweis">${T.jText}</p><div class="rollen"><table><thead><tr><th>${T.jJahr}</th><th class="z">${T.nTage}</th><th class="z">${T.nUnter}</th><th class="z">${T.aTage}</th><th class="z">${T.nTief}</th><th class="z">${T.jBedarf}</th>${STUFEN.map(s => `<th class="z">${T.stufe} ${s}</th>`).join('')}<th>${T.jReicht}</th></tr></thead><tbody>` +
       zeilen.map(z => `<tr><td>${z.j}</td><td class="z">${z.tage}</td><td class="z">${z.u0}</td><td class="z">${z.k0}</td><td class="z">${zahl(z.t0)}</td><td class="z">${z.u0 ? zahl(z.bedarf) : '–'}</td>` +
         z.st.map(x => `<td class="z blau">${z.u0 ? `${x.u1} · ${zahl(x.t1)}${x.hw ? ` <span class="hw">${x.hw}</span>` : ''}` : '–'}</td>`).join('') + `<td>${z.reicht === 0 ? T.unnoetig : z.reicht ? `${T.stufe} ${z.reicht}` : T.jNie}</td></tr>`).join('') + '</tbody></table></div>';
-    const B = 1000, H = 300, L = 62, RR = 14, O = 34, U = 36, max = Math.min(420, Math.max(PK.tugl, ...zeilen.map(z => Math.max(z.t0, ...z.st.map(x => x.t1)))) + 20), bw = (B - L - RR) / zeilen.length;
+    const B = BREITE(), H = 300, L = 62, RR = 14, O = 34, U = 36, max = Math.min(420, Math.max(PK.tugl, ...zeilen.map(z => Math.max(z.t0, ...z.st.map(x => x.t1)))) + 20), bw = (B - L - RR) / zeilen.length;
     const y = v => O + (H - O - U) * (1 - Math.min(v, max) / max), FL = ['#000', '#fff', 'url(#s_e1)', 'url(#s_e1)', 'url(#s_e2)', '#003399'];
     let s = `<text class="fett" x="${L}" y="14">${T.jGrafik}</text>`;
     for (let v = 0; v <= max; v += 50) s += (v ? `<line class="gitter" x1="${L}" x2="${B - RR}" y1="${y(v)}" y2="${y(v)}"/>` : '') + `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
@@ -1068,7 +1070,7 @@
     abgabeGrafik(R, i0, i1); nutzenTafel(R); kapazitaetskurve(R); seeTafel(R); seeGrafik(R);
   }
   function verlauf(R, q, qs, O, z, linien) {
-    const B = 1000, H = 400, L = 62, RR = 14, OO = 22, U = 40, n = q.length, svg = $('verlauf');
+    const B = BREITE(), H = 400, L = 62, RR = 14, OO = 22, U = 40, n = q.length, svg = $('verlauf');
     let i0 = 0, i1 = n - 1;
     if (Z.zoom) { let a = n, b = -1; O.abgabe.forEach((x, i) => { if (x > 0) { a = Math.min(a, i); b = Math.max(b, i); } }); if (b >= 0) { i0 = Math.max(0, a - 20); i1 = Math.min(n - 1, b + 20); } }
     const sicht = [...q.slice(i0, i1 + 1), ...qs.slice(i0, i1 + 1)].filter(v => v != null);
@@ -1112,7 +1114,7 @@
   }
   // Zweite Grafik: Abgabe und Rückhalt je Tag an den Seen, gestapelt nach Seegruppe (Muster), gleiche Zeitachse wie der Verlauf
   function abgabeGrafik(R, i0, i1) {
-    const S = R.S, B = 1000, H = 210, L = 62, RR = 14, svg = $('abgabe'), teile = S.teile.filter(x => x.teil > 0);
+    const S = R.S, B = BREITE(), H = 210, L = 62, RR = 14, svg = $('abgabe'), teile = S.teile.filter(x => x.teil > 0);
     let auf = 0, ab = 0; for (let i = i0; i <= i1; i++) { auf = Math.max(auf, S.aktion[i]); ab = Math.min(ab, S.aktion[i]); }
     if (!auf && !ab) { svg.innerHTML = ''; $('abgabelegende').innerHTML = ''; return; }
     const o = 26, u = H - 12, spanne = (auf - ab) || 1, y = v => o + (u - o) * (auf - v) / spanne, x = i => L + (B - L - RR) * (i - i0) / Math.max(1, i1 - i0), bw = Math.max(1, (B - L - RR) / Math.max(1, i1 - i0));
@@ -1142,7 +1144,7 @@
     const s = seen.find(x => x.id === Z.see), teil = CM[s.id] * s.flaeche_km2 * 1e4 / S.V, mess = Y.w[s.id];
     // Der See trägt seinen Anteil am Speicherinhalt; die Aktion am See liegt lz Tage vor der Wirkung am Ziel
     const lzs = S.lz + (s.knoten === BODENSEE ? BODENSEE_TAGE : 0), si = O.seeId.indexOf(s.id), zus = mess.map((x, j) => si >= 0 && j + lzs < n ? O.see[si][j + lzs] / (s.flaeche_km2 * 1e6) : 0), mit = mess.map((x, j) => x == null ? null : x + zus[j]);
-    const B = 1000, H = 300, L = 62, RR = 14, OO = 26, U = 36, alle = [...mess, ...mit].filter(v => v != null).concat(s.grenzen ? [s.grenzen.hoch] : []);
+    const B = BREITE(), H = 300, L = 62, RR = 14, OO = 26, U = 36, alle = [...mess, ...mit].filter(v => v != null).concat(s.grenzen ? [s.grenzen.hoch] : []);
     const lo = Math.min(...alle), hi = Math.max(...alle), sch = [.1, .2, .25, .5, 1].find(q => (hi - lo) / q <= 6) || 2, u = Math.floor(lo / sch) * sch, o = Math.ceil(hi / sch) * sch + 1e-9;
     const x = i => L + (B - L - RR) * i / (mess.length - 1), y = v => OO + (H - OO - U) * (1 - (v - u) / (o - u));
     const linie = a => { let d = '', an = false; a.forEach((v, i) => { if (v == null) { an = false; return; } d += (an ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); an = true; }); return d; };
@@ -1536,10 +1538,10 @@
       `<div class="rollen"><table class="erg"><thead><tr><th>${T.stufe}</th><th>${T.glwImmer}</th><th class="z">${T.eBest}</th><th class="z">${T.eRegel}</th><th class="z">${T.hwT}</th></tr></thead><tbody>${urteil}</tbody></table></div>` +
       LL(`<p>Der Speicher füllt sich nicht ganz, wenn im Frühsommer wenig Wasser kommt. Gestaut wird nur, wenn Kaub über dem GlW liegt, und nie mehr als 10 % des Abflusses in Kaub. Die Liste darunter zeigt das für alle Jahre seit 2008. Der Simulator rechnet jede Stufe für jedes Jahr.</p>`,
         `<p>Le réservoir ne se remplit pas entièrement quand il arrive peu d’eau au début de l’été. On ne retient que si Kaub est au-dessus du GlW, et jamais plus de 10 % du débit à Kaub. La liste ci-dessous le montre pour toutes les années depuis 2008. Le simulateur calcule chaque palier pour chaque année.</p>`));
-    zeige3(sc3.jetzt()); typoFr($('k3'));
+    zeige3(sc3.jetzt()); typoFr($('k3')); stapeln($('k3'));
   }
   let breite = innerWidth;
-  addEventListener('resize', () => { if (Math.abs(innerWidth - breite) < 40) return; breite = innerWidth; map.invalidateSize(); if (jetzt2 != null) zeige2(jetzt2); zeige3(sc3.jetzt()); });
+  addEventListener('resize', () => { if (Math.abs(innerWidth - breite) < 40) return; breite = innerWidth; map.invalidateSize(); alles(true); if (jetzt2 != null) zeige2(jetzt2); zeige3(sc3.jetzt()); });
 
   function csvBestehend(R) {
     const Y = R.Y, S = R.S, tag = Y && R.i1 != null ? isoTag(Z.jahr, R.i1) : '';
@@ -1577,6 +1579,15 @@
       if (a !== b) k.nodeValue = b;
     }
   }
+  // Tabellen mit mehr als drei Spalten: Spaltenkopf in jede Zelle schreiben, damit sie auf dem Handy untereinander stehen können
+  function stapeln(wurzel = document) {
+    for (const tab of wurzel.querySelectorAll('main table')) { if (tab.closest('#dattabelle')) continue;
+      const kopf = tab.querySelector('thead tr:last-child'); if (!kopf) continue;
+      const th = [...kopf.children]; if (th.length <= 3) continue;
+      tab.classList.add('stapel');
+      for (const tr of tab.querySelectorAll('tbody tr')) { const td = [...tr.children]; if (td.length !== th.length) continue; td.forEach((c, k) => { if (k && th[k].textContent.trim()) c.dataset.l = th[k].textContent.trim(); }); }
+    }
+  }
   // ------------------------------------------------------------ Ablauf
   let lauf_ = 0;
   async function alles(nurWerte) {
@@ -1584,7 +1595,7 @@
     if (nr !== lauf_) return;
     if (!nurWerte) { wahlZeichnen(R.Y); simWahl(R); }
     else { const d = $('wahl').querySelector('input[type=date]'); if (d && Z.tag != null) d.value = isoTag(Z.jahr, Z.tag); }
-    datenZeichnen(R); lageZeichnen(R); fahrbarZeichnen(R); laengsschnitt(R); jahresband(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R); kapitel1(R); csvBestehend(R); typoFr(document.body);
+    datenZeichnen(R); lageZeichnen(R); fahrbarZeichnen(R); laengsschnitt(R); jahresband(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R); kapitel1(R); csvBestehend(R); typoFr(document.body); stapeln();
   }
   window.rhin = { szenario, jahr, nachbarn, bedarfGlw };     // für Prüfungen in der Konsole
   simSeen(); alles(); kapitel2(); kapitel3(); jahresvergleich();
