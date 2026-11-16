@@ -246,3 +246,4 @@ span.hw{padding:1px 5px;margin-left:4px}
 tr.hw td:first-child{font-weight:700}
 .karton table{width:100%}.karton th{white-space:normal;letter-spacing:.04em;font-size:10px;vertical-align:bottom}.karton td,.karton th{padding-left:6px;padding-right:6px}
 #fehlend{margin:0 0 40px}#fehlend td{vertical-align:top;font-size:15px}#fehlend td:first-child{font-weight:700;width:2em}
+.noetig{border-left:6px solid var(--blau);padding:10px 16px;margin:0 0 30px;max-width:60em;font-size:16px}.noetig b:first-child{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}.noetig .textknopf{margin-left:8px}

@@ -84,6 +84,10 @@ Stufen (`stufeCM`, `stufeZiel`, `szenario` in `rhin.js`):
 - Stufe 2, über der Hochwassergrenze: dazu 50 cm über der Grenze (im Simulator einstellbar).
 - Stufe 3, mit Bodensee: dazu derselbe Zusatzstau auf Ober- und Untersee.
 
+Stufe «Unbegrenzt» (`UNB`, `unbAnwenden`, `noetigZeichnen`): Die Staukapazität ist frei in Mio. m³ einstellbar, ohne Obergrenze und ohne Hochwassergrenze, und wird im Verhältnis der Fläche auf die regulierten Seen (wahlweise mit Bodensee) verteilt. Die Seite sucht durch Halbieren die kleinste Kapazität, mit der Kaub im gewählten Jahr an keinem Tag unter dem GlW liegt, für die gewählte Rechenweise, bis höchstens 10'000 Mio. m³. Wahlweise ohne Schranken: Dann dürfen die Seen ihren ganzen Abfluss zurückhalten und es gilt keine 10-%-Grenze in Kaub. Das ist die physikalische Obergrenze, nicht zulässig.
+
+Füllen je See (`becken.fuellen`): Der Rückhalt aller Seen oberhalb einer Messstelle bleibt unter deren Grenze (20 % des Abflusses, nie unter den Tiefstwert im Fenster). Was ein See deshalb nicht aufnehmen kann, geht an die übrigen Seen. Vorher bestimmte die engste Messstelle den Rückhalt aller Seen.
+
 Hochwasserschutz: Als Hochwassertag zählt jeder Tag, an dem ein See mit Zusatzstau über seiner heutigen Hochwassergrenze steht (`O.ueber`, je See `O.hwSee`). Die Seite markiert diese Tage schwarz in den Grafiken, umrandet die Zahl in den Tabellen und zeigt im Simulator einen umrandeten Hinweis mit den Tagen je See.
 
 Betriebsregel (`regel`, `REGEL`): stauen nur in den Staumonaten (Standard April bis September) und nur über einem Abfluss in Kaub (Standard 1'000 m³/s); abgeben unter dem GlW, höchstens so viel, dass ein voller Speicher 30 Tage reicht; Winterleerung ab 1. November über 30 Tage (bis Ende Februar wird nicht gestaut). Reserve zur Grenze 20 cm. Alle Werte sind im Simulator einstellbar.
