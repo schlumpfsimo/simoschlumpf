@@ -235,7 +235,7 @@ table.erg td.blau,td.blau{color:var(--blau);font-weight:700}
 @media (max-width:979px){.schritt{align-items:flex-start;padding-top:26px}.karton table{font-size:13px}.karton th{letter-spacing:.04em}.buehne .legende{font-size:12px;gap:2px 14px;margin-bottom:4px}.buehne .herunter{margin:0}}
 .karton .marke{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 4px}
 /* Schmale Bildschirme: ältere Grafiken behalten eine lesbare Schrift und lassen sich seitlich schieben */
-@media (max-width:700px){figure.grafik:not(#jahrfig):not(#szenfig),figure.verlauf{overflow-x:auto}figure.grafik:not(#jahrfig):not(#szenfig)>svg,figure.verlauf svg{min-width:760px}}
+@media (max-width:700px){figure.grafik:not(#jahrfig):not(#szenfig):not(#bedarffig),figure.verlauf{overflow-x:auto}figure.grafik:not(#jahrfig):not(#szenfig):not(#bedarffig)>svg,figure.verlauf svg{min-width:760px}}
 /* Hochwasserschutz: schwarz umrandet, damit es nicht übersehen wird */
 .warnung{border:3px solid var(--tinte);padding:14px 18px;margin:0 0 30px;max-width:60em;font-size:16px}
 .warnung b:first-child{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
@@ -260,3 +260,6 @@ select.jahrwahl{display:block;font:700 clamp(40px,4.6vw,76px)/1 "Plex",Arial,san
 select.jahrwahl:hover{background:#eef1f8}
 label.jahrzahl{display:block}
 @media (max-width:979px){.buehne select.jahrwahl{font-size:34px}}
+.bedarf{margin:0 0 34px;padding:0 0 10px;border-bottom:2px solid var(--tinte)}.bedarf table.erg td:first-child{width:40%}
+span.hw{white-space:nowrap}
+@media (max-width:600px){#bedarffig text{font-size:11px}}

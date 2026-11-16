@@ -129,3 +129,17 @@ Nötige Staukapazität auf den regulierten Seen, mit Schranken:
 | 2026 | 2'324 | nicht erreichbar | nicht erreichbar |
 
 2026 reicht auch eine unbegrenzte Kapazität nicht, weil das Wasser zum Füllen fehlt. Mit der Betriebsregel bleiben bei 10'000 Mio. m³ 101 von 125 Tagen unter dem GlW, ohne Schranken 91.
+
+## 9 Nachtrag: Wasser aus dem Winter, Simulator beginnt mit der nötigen Kapazität
+
+- Mit Voraussicht wird von Januar bis März zusätzlich gestaut, sobald Kaub mindestens 10 cm über dem GlW liegt. Dieses Wasser geht ins nächste Speicherjahr. Vorher zählte Wasser aus dem Winter vor dem 1. April nicht.
+- Der Simulator beginnt mit der nötigen Speicherkapazität des gewählten Jahres.
+
+Nötige Speicherkapazität auf den regulierten Seen (mit Schranken, ausser wo vermerkt):
+
+| Jahr | Fehlmenge bis GlW | mit Voraussicht | Betriebsregel |
+|---|---|---|---|
+| 2011 | 181 Mio. m³ | 170 | 334 |
+| 2018 | 967 | 918 | 1'379 |
+| 2022 | 288 | 270 | 516 |
+| 2026 | 2'324 | nicht erreichbar; ohne Schranken 2'306 | nicht erreichbar |

@@ -69,10 +69,10 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 `index.html`, `rhin.css`, `rhin.js` (Leaflet). Die Seite ist zweisprachig (`?l=fr`) und in Kapitel gegliedert. In den Kapiteln 1 bis 3 bleibt die Grafik stehen, der Text läuft in Schritten daran vorbei und verändert sie.
 
-1. Der Rhein bis Kaub (nur gemessene Werte): Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
+1. Der Rhein bis Kaub (nur gemessene Werte, immer an Kaub; der frühere Schalter «Bilanz für Basel» entfällt): Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
 2. Die Jahre: Abfluss in Kaub für 2019, 2018, 2022 und das laufende Jahr, Tage unter dem GlW schraffiert; für das laufende Jahr die Herkunft in den sieben trockensten Tagen gegen das mittlere Niedrigwasser. Nur gemessene Werte.
 3. Rückhalt in den Seen: wählbares Jahr, sieben Schritte (ein Zentimeter, wie der Rückhalt wirkt, zwei Rechenweisen, Stufen 1, 2, 3, GlW an allen Tagen), danach die Liste «Nötige Speicherkapazität pro Jahr». Die gerechnete Linie erscheint erst im Schritt, der sie einführt.
-4. Simulator: Jahr, Stufe, Rechenweise und Zusatzstau je See; Verlauf, Speicher, Abgabe, Fahrbarkeit im Jahr, Nutzen nach Staukapazität, Seestand je See.
+4. Simulator: beginnt mit der nötigen Speicherkapazität des gewählten Jahres (Fehlmenge bis zum GlW, nötige Kapazität mit Voraussicht und mit Betriebsregel, bei Bedarf ohne Schranken, daneben der Platz je Stufe; `suche`, `bedarfZeichnen`). Das Jahr wird in der grossen Jahreszahl gewählt. Danach Stufe, Rechenweise und Zusatzstau je See; Verlauf, Speicher, Abgabe, Fahrbarkeit im Jahr, Nutzen nach Staukapazität, Seestand je See.
 5. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
 6. Datensatz.
 
@@ -94,7 +94,7 @@ Betriebsregel (`regel`, `REGEL`): stauen nur in den Staumonaten (Standard April 
 
 Speicher je See (nur `rhin.js`, Funktion `becken`): Jeder See führt seinen eigenen Inhalt. Gefüllt wird im Verhältnis des freien Platzes bis 20 cm unter die Hochwassergrenze (`RESERVE`), geleert im Verhältnis des Inhalts. Steigt ein See über die Grenze, gibt er den Überschuss ab, höchstens mit 20 % des Abflusses unterhalb. Reicht das nicht, zählt der Tag als «Tag mit einem See über der Grenze». `simulation.py` rechnet weiterhin mit einem gemeinsamen Speicher und dient nur noch den Tests der Grundregeln.
 
-Zwei Rechenweisen: «mit Voraussicht» kennt alle Tageswerte des Speicherjahrs im Voraus (Bestfall), die Betriebsregel nur den Abfluss des Tages und den Speicherinhalt. Die Jahresliste rechnet die Stufen mit der Betriebsregel. Beim simulierten Pegel gilt 1 cm Toleranz zum GlW (Abweichung zwischen Messung und Abflusskurve).
+Zwei Rechenweisen: «mit Voraussicht» kennt alle Tageswerte des Speicherjahrs im Voraus (Bestfall); von Januar bis März wird zusätzlich gestaut, sobald Kaub mindestens 10 cm über dem GlW liegt, und dieses Wasser aus dem Winter geht ins nächste Speicherjahr (`VORRAT`), die Betriebsregel nur den Abfluss des Tages und den Speicherinhalt. Die Jahresliste rechnet die Stufen mit der Betriebsregel. Beim simulierten Pegel gilt 1 cm Toleranz zum GlW (Abweichung zwischen Messung und Abflusskurve).
 
 Fliesszeit Bodensee: kein Zuschlag. Eine Änderung in Neuhausen erscheint nach den Messreihen am selben Tag in Rekingen und Basel (Regression der Tagesdifferenzen). Die Angabe der IGKB (2024) von rund vier Tagen bis Mannheim meint die Laufzeit des Wassers.
 
