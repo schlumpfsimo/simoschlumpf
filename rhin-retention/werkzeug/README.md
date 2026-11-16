@@ -67,7 +67,7 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 ## Die Seite
 
-`index.html`, `rhin.css`, `rhin.js` (Leaflet). Die Seite ist zweisprachig (`?l=fr`) und in Kapitel gegliedert. In den Kapiteln 1 bis 3 bleibt die Grafik stehen, der Text läuft in Schritten daran vorbei und verändert sie.
+`index.html`, `rhin.css`, `rhin.js` (Leaflet). Die Seite ist zweisprachig (`?l=fr`) und in zwei Teile und einen Anhang gegliedert: Teil 1 «Abfluss und Fahrbarkeit bis Kaub» (Kapitel 1 und 2, nur gemessene Werte), Teil 2 «Retentionssimulator» (Kapitel 3 und 4), Anhang (Herleitung mit der Bilanz des gewählten Tages, Datensatz, fehlende Daten). In den Kapiteln 1 bis 3 bleibt die Grafik stehen, der Text läuft in Schritten daran vorbei und verändert sie.
 
 1. Der Rhein bis Kaub (nur gemessene Werte, immer an Kaub; der frühere Schalter «Bilanz für Basel» entfällt): Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
 2. Die Jahre: Abfluss in Kaub für 2019, 2018, 2022 und das laufende Jahr, Tage unter dem GlW schraffiert; für das laufende Jahr die Herkunft in den sieben trockensten Tagen gegen das mittlere Niedrigwasser. Nur gemessene Werte.

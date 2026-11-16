@@ -271,3 +271,15 @@ span.hw{white-space:nowrap}
   .schritt:first-child{margin-top:20vh}
   .karton{pointer-events:auto;background:var(--papier);border:2px solid var(--tinte);padding:14px 16px 4px;box-shadow:0 0 0 6px rgba(255,255,255,.85)}
 }
+/* Zwei Teile und Anhang */
+.teil{margin-top:clamp(70px,8vw,150px);padding-top:26px;border-top:6px solid var(--tinte)}
+.teilnr{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blau);margin:0}
+.teiltitel{font-size:clamp(28px,3.4vw,58px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:1.1;margin:8px 0 18px}
+.teil+.kapitel,.teil+.kapitel+*{margin-top:28px}
+.teil+.kapitel{border-top:2px solid var(--tinte)}
+.inhalt{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 36px}
+.inhalt div{display:flex;flex-direction:column;gap:8px}
+.inhalt .teillink{color:var(--blau)}
+h3.unter{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:44px 0 6px}
+.teiltitel:empty{display:none}
+@media (max-width:600px){.teiltitel{font-size:6.2vw;letter-spacing:.05em;hyphens:auto;overflow-wrap:anywhere}}
