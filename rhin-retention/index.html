@@ -37,6 +37,7 @@
       <div class="scrolly" id="sc1">
         <div class="buehne">
           <figure class="karte"><div id="karte"></div></figure>
+          <figure class="grafik netzbild" id="netzfig" hidden><div class="legende" id="netzlegende"></div><svg id="netz" role="img"></svg></figure>
         </div>
         <div class="schritte" id="st1"></div>
       </div>
@@ -70,6 +71,7 @@
       <div class="scrolly" id="sc3">
         <div class="buehne frei">
           <div class="jahrkopf" id="k3kopf"></div>
+          <figure class="grafik" id="kettefig" hidden><svg id="kette" role="img"></svg></figure>
           <figure class="grafik" id="szenfig"><div class="legende" id="szenlegende"></div><svg id="szen" role="img"></svg></figure>
         </div>
         <div class="schritte" id="st3"></div>
@@ -83,28 +85,47 @@
       <h2 class="frage" data-t="simTitel"></h2>
       <p class="lead" data-t="simLead"></p>
       <div class="jahrkopf gross" id="simkopf"></div>
+
+      <h3 class="rkfrage" data-t="rk1"></h3>
       <section class="bedarf" id="bedarf"></section>
-      <div class="wahl" id="simjahr"></div>
-      <div class="wahl" id="simwahl"></div>
+      <details class="mehr"><summary data-t="rk1m"></summary><div id="rkmethode"></div><p class="klein" data-t="simHinweis"></p></details>
+
+      <h3 class="rkfrage" data-t="rk2"></h3>
+      <div id="rkregler" class="rkregler"></div>
       <p class="hinweis" id="stufentext"></p>
-      <div id="simseen"></div>
+      <details class="mehr" id="rkjesee"><summary data-t="rk2a"></summary>
+        <div class="wahl" id="simjahr"></div>
+        <p class="noetig" id="noetig" hidden></p>
+        <div id="simseen"></div>
+      </details>
+      <details class="mehr"><summary data-t="rk2b"></summary><div class="wahl" id="simwahl"></div></details>
+
+      <h3 class="rkfrage" data-t="rk3"></h3>
+      <div class="werte rkzahlen" id="rkzahlen"></div>
       <p class="warnung" id="hochwasser"></p>
-      <p class="noetig" id="noetig" hidden></p>
-      <div class="werte" id="simwerte"></div>
-      <figure class="verlauf" id="verlauffig">
-        <div class="legende" id="simlegende"></div>
-        <div class="rahmen"><svg id="verlauf" role="img"></svg><div class="tip" id="tip" hidden></div></div>
-        <svg id="speicher" role="img"></svg>
-        <div class="legende" id="abgabelegende"></div>
-        <svg id="abgabe" role="img"></svg>
-      </figure>
-      <figure class="grafik" id="bandfig"><div class="legende" id="bandlegende"></div><svg id="band" role="img"></svg></figure>
-      <div id="nutzen"></div>
-      <figure class="grafik" id="kapfig"><svg id="kapkurve" role="img"></svg><p class="hinweis" id="kaptext"></p></figure>
-      <div id="seetafel"></div>
-      <div class="wahl" id="seewahl"></div>
-      <figure class="grafik" id="seefig"><div class="legende" id="seelegende"></div><svg id="seegrafik" role="img"></svg><p class="hinweis" id="seetext"></p></figure>
-      <p class="klein" data-t="simHinweis"></p>
+      <figure class="grafik" id="rkfig"><div class="legende" id="rklegende"></div><svg id="rkgrafik" role="img"></svg></figure>
+      <details class="mehr"><summary data-t="rk3m"></summary>
+        <div class="wahl" id="simdetail"></div>
+        <div class="werte" id="simwerte"></div>
+        <figure class="verlauf" id="verlauffig">
+          <div class="legende" id="simlegende"></div>
+          <div class="rahmen"><svg id="verlauf" role="img"></svg><div class="tip" id="tip" hidden></div></div>
+          <svg id="speicher" role="img"></svg>
+          <div class="legende" id="abgabelegende"></div>
+          <svg id="abgabe" role="img"></svg>
+        </figure>
+        <figure class="grafik" id="bandfig"><div class="legende" id="bandlegende"></div><svg id="band" role="img"></svg></figure>
+        <div id="nutzen"></div>
+        <figure class="grafik" id="kapfig"><svg id="kapkurve" role="img"></svg><p class="hinweis" id="kaptext"></p></figure>
+      </details>
+
+      <h3 class="rkfrage" data-t="rk4"></h3>
+      <div class="rkseen" id="rkseen"></div>
+      <details class="mehr"><summary data-t="rk4m"></summary>
+        <div id="seetafel"></div>
+        <div class="wahl" id="seewahl"></div>
+        <figure class="grafik" id="seefig"><div class="legende" id="seelegende"></div><svg id="seegrafik" role="img"></svg><p class="hinweis" id="seetext"></p></figure>
+      </details>
     </section>
 
     <header class="teil" id="anhang">
