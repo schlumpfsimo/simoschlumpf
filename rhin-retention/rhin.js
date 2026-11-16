@@ -38,7 +38,7 @@
     bisMaerz: 'jusqu’au 31.3.', simHinweis: 'Le calcul se fait par années de stockage du 1er avril au 31 mars. Le réservoir commence vide le 1er avril de l’année précédente, un reste passe à l’année de stockage suivante. Chaque lac a son propre contenu. On retient au plus 10 % du débit à Kaub et au plus 20 % du débit en aval d’un lac. Le remplissage s’arrête 20 cm sous la limite de hautes eaux. Si un lac dépasse la limite, il restitue l’excédent, au plus 20 % du débit en aval. Si cela ne suffit pas, le jour compte comme jour au-dessus de la limite. Les règlements et l’écologie ne sont pas pris en compte.',
     herTitel: 'Méthode de calcul', herLead: 'Chaque nombre de cette page découle des formules ci-dessous, ici avec les valeurs du jour affiché.',
     methode: 'Hypothèses et lacunes', quellen: 'Sources', standT: 'État des données', monate: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
-    legende: 'Rhin dès Bâle : navigabilité par tronçon (trait plein = pleine profondeur, plus les tirets sont courts, plus on est sous le GlW). Barres en travers : barrages. En amont de Bâle et sur les affluents : largeur du trait = débit. Noir : débit de la station amont. Gris : apport du bassin intermédiaire (reste calculé). Bleu : tronçon modifié par la simulation. Carré : station. Triangle : lac régulé. Cercle : lac non régulé. Fond : swisstopo et OpenStreetMap, en trame de points.', fehlt: 'Les données n’ont pas pu être chargées.',
+    legende: 'Rhin dès Bâle : navigabilité par tronçon (trait plein = pleine profondeur, plus les tirets sont courts, plus on est sous le GlW). Barres en travers : barrages. En amont de Bâle et sur les affluents : largeur du trait = débit. Noir : débit de la station amont. Gris : apport du bassin intermédiaire (reste calculé). Carré : station. Triangle : lac régulé. Cercle : lac non régulé. Fond : swisstopo et OpenStreetMap, en trame de points.', fehlt: 'Les données n’ont pas pu être chargées.',
     meth: ['Temps de parcours : hypothèses en jours entiers (Bâle–Maxau 1, Maxau–Worms 1, Neckar–Worms 1, sinon 0 ; Bâle–Kaub 2), non mesurés. Vérifié par corrélation croisée des valeurs journalières : Bâle–Maxau 0,8, Maxau–Worms 0,8, Bâle–Kaub 2,2 jours.', 'Le palier 1 est une borne supérieure : il utilise toute la place jusqu’à la limite de hautes eaux. Les règlements, la protection contre les crues et l’écologie en permettent moins.',
       'Stations allemandes : valeurs journalières contrôlées de l’annuaire (2008–2025), puis données brutes des 31 derniers jours. Neckar : 2010–2020. Pour Kaub, Mayence, Worms, Bingen et le Main, les moyennes journalières du portail du HLNUG comblent la lacune depuis l’annuaire. Le débit à Kaub y est calculé à partir du niveau mesuré et désigné comme tel. Pour Maxau, Spire et Mannheim, les valeurs manquent du 1.1.2026 à la mi-octobre 2026.',
       'Si les stations entre Bâle et Kaub manquent, le bilan regroupe tout l’aval de Bâle en un seul reste.',
@@ -73,7 +73,7 @@
     bisMaerz: 'bis 31.3.', simHinweis: 'Gerechnet wird in Speicherjahren vom 1. April bis 31. März. Der Speicher beginnt am 1. April des Vorjahres leer, ein Rest geht ins nächste Speicherjahr. Jeder See führt seinen eigenen Inhalt. Gestaut werden höchstens 10 % des Abflusses in Kaub und höchstens 20 % des Abflusses unterhalb eines Sees. Gefüllt wird bis 20 cm unter die Hochwassergrenze. Steigt ein See über die Grenze, gibt er den Überschuss ab, höchstens 20 % des Abflusses unterhalb. Reicht das nicht, zählt der Tag als Tag über der Grenze. Reglemente und Ökologie sind nicht berücksichtigt.',
     herTitel: 'Herleitung', herLead: 'Jede Zahl dieser Seite folgt aus den Formeln unten, hier mit den Werten des angezeigten Tages.',
     methode: 'Annahmen und Lücken', quellen: 'Quellen', standT: 'Datenstand', monate: ['Jan', 'Feb', 'Mrz', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
-    legende: 'Rhein ab Basel: Fahrbarkeit je Abschnitt (durchgezogen = volle Fahrrinnentiefe, je kürzer die Striche, desto weiter unter dem GlW). Balken quer zum Rhein: Staustufen. Oberhalb von Basel und an den Zuflüssen: Strichbreite = Abfluss. Schwarz: Abfluss der Messstelle oberhalb. Grau: Zuwachs aus dem Zwischengebiet (gerechneter Rest). Blau: Strecke, die die Simulation verändert. Quadrat: Messstation. Dreieck: regulierter See. Kreis: nicht regulierter See. Grundkarte: swisstopo und OpenStreetMap, als Punkteraster.', fehlt: 'Die Daten konnten nicht geladen werden.',
+    legende: 'Rhein ab Basel: Fahrbarkeit je Abschnitt (durchgezogen = volle Fahrrinnentiefe, je kürzer die Striche, desto weiter unter dem GlW). Balken quer zum Rhein: Staustufen. Oberhalb von Basel und an den Zuflüssen: Strichbreite = Abfluss. Schwarz: Abfluss der Messstelle oberhalb. Grau: Zuwachs aus dem Zwischengebiet (gerechneter Rest). Quadrat: Messstation. Dreieck: regulierter See. Kreis: nicht regulierter See. Grundkarte: swisstopo und OpenStreetMap, als Punkteraster.', fehlt: 'Die Daten konnten nicht geladen werden.',
     meth: ['Fliesszeiten: Annahmen in ganzen Tagen (Basel–Maxau 1, Maxau–Worms 1, Neckar–Worms 1, sonst 0; Basel–Kaub 2), nicht gemessen. Geprüft per Kreuzkorrelation der Tageswerte: Basel–Maxau 0.8, Maxau–Worms 0.8, Basel–Kaub 2.2 Tage.', 'Stufe 1 ist eine Obergrenze: Sie nutzt den ganzen Platz bis zur Hochwassergrenze. Reglemente, Hochwasserschutz und Ökologie lassen weniger zu.',
       'Deutsche Pegel: geprüfte Tageswerte aus dem Jahrbuch (2008–2025), danach Rohdaten der letzten 31 Tage. Neckar: 2010–2020. Für Kaub, Mainz, Worms, Bingen und den Main schliessen die Tagesmittel aus dem Pegelportal des HLNUG die Lücke seit dem Jahrbuch. Der Abfluss in Kaub ist dort aus dem gemessenen Wasserstand gerechnet und so bezeichnet. Für Maxau, Speyer und Mannheim fehlen die Werte vom 1.1.2026 bis Mitte Oktober 2026.',
       'Fehlen die Pegel zwischen Basel und Kaub, fasst die Bilanz alles unterhalb von Basel zu einem Rest zusammen.',
@@ -90,9 +90,9 @@
     csv: 'Télécharger le CSV', csvQuelle: 'Sources : OFEV (data.bafu.admin.ch) ; WSV, données mises à disposition par la BfG ; HLNUG. Calculs : simoschlumpf.ch/rhin-retention',
     gTitel: 'Débit à Kaub', g40: 'en dessous, pratiquement pas de navigation', gBest: 'avec retenue, avec prévision', gRegel: 'avec retenue, règle d’exploitation', gUnter: 'sous le GlW', gHub: 'relèvement', gSchnitt: 'Axe coupé à 2 000 m³/s.',
     fTitel2: 'Débit à Kaub selon l’origine',
-    stufe: 'Palier', st1a: 'Palier 1a : dans la tranche utilisée', st1b: 'Palier 1b : jusqu’à la limite de hautes eaux', st1c: 'Palier 1c : lacs du pied du Jura jusqu’au degré de danger 4', st2: 'Palier 2 : au-dessus de la limite de hautes eaux', st3: 'Palier 3 : avec le lac de Constance', stFrei: 'Libre',
+    stufe: 'Palier', st1a: 'Palier 1a : dans la tranche utilisée', st1b: 'Palier 1b : jusqu’à la limite de hautes eaux', st1c: 'Palier 1c : lacs du pied du Jura jusqu’au degré de danger 4', st2: 'Palier 2 : au-dessus de la limite de hautes eaux', st3: 'Palier 3 : avec le lac de Constance', stFrei: 'Libre', jkRechnet: 'Calculé avec les débits mesurés de', jkAnderes: 'Autre année', skJahr: 'Simulation pour l’année', skText: 'Tous les chiffres et graphiques du simulateur valent pour cette seule année, avec ses débits mesurés. L’année se change juste en dessous.', stUnb: 'Illimité', uMio: 'Capacité de retenue totale, mio m³', uSeen: 'Lacs', uReg: 'lacs régulés', uMitB: 'lacs régulés et lac de Constance', uSchr: 'Limites 10 % / 20 %', uBleiben: 'appliquées', uAuf: 'levées', uTitel: 'Capacité de retenue nécessaire', uUebernehmen: 'Reprendre', uOhneText: 'Sans limites, les lacs peuvent retenir tout leur débit, le barrage serait fermé. C’est la limite physique, pas une valeur admissible.',
     hwT: 'Protection contre les crues', hwLeg: 'jour avec un lac au-dessus de la limite de hautes eaux', hwKein: 'Aucun lac au-dessus de la limite de hautes eaux.', hwSatz: 'jours, un lac serait au-dessus de sa limite actuelle de hautes eaux à cause de la retenue', rVon: 'Retenir du mois', rBis: 'au mois', rWinter: 'Vidange d’hiver dès le 1.11.', rRes: 'Réserve sous la limite cm', an: 'oui', aus: 'non',
-    stText: { '1a': 'Palier 1a : les lacs régulés retiennent jusqu’au bord supérieur de la tranche qu’ils ont utilisée de 1991 à 2020 (99e centile du niveau). Ils ont atteint ce niveau 1 % des jours jusqu’ici.', '1b': 'Palier 1b : les lacs dotés d’une limite officielle de hautes eaux retiennent jusqu’à 20 cm en dessous. Les lacs de Neuchâtel et de Morat n’ont pas de limite officielle et restent dans la tranche utilisée.', '1c': 'Palier 1c : comme 1b, et les lacs de Neuchâtel et de Morat retiennent jusqu’à 20 cm sous le début du degré de danger 4 de l’OFEV.', 2: 'Palier 2 : les lacs régulés retiennent au-dessus de leur limite actuelle de hautes eaux. Chaque jour au-dessus est marqué comme jour de crue.', 3: 'Palier 3 : comme le palier 2, avec la même surélévation sur le lac de Constance. Il n’est pas régulé ; la CHR (2018) juge une régulation politiquement difficile à réaliser.', frei: 'Libre : la surélévation se règle par lac. La limite de hautes eaux s’applique avec le supplément indiqué.' },
+    stText: { '1a': 'Palier 1a : les lacs régulés retiennent jusqu’au bord supérieur de la tranche qu’ils ont utilisée de 1991 à 2020 (99e centile du niveau). Ils ont atteint ce niveau 1 % des jours jusqu’ici.', '1b': 'Palier 1b : les lacs dotés d’une limite officielle de hautes eaux retiennent jusqu’à 20 cm en dessous. Les lacs de Neuchâtel et de Morat n’ont pas de limite officielle et restent dans la tranche utilisée.', '1c': 'Palier 1c : comme 1b, et les lacs de Neuchâtel et de Morat retiennent jusqu’à 20 cm sous le début du degré de danger 4 de l’OFEV.', 2: 'Palier 2 : les lacs régulés retiennent au-dessus de leur limite actuelle de hautes eaux. Chaque jour au-dessus est marqué comme jour de crue.', 3: 'Palier 3 : comme le palier 2, avec la même surélévation sur le lac de Constance. Il n’est pas régulé ; la CHR (2018) juge une régulation politiquement difficile à réaliser.', frei: 'Libre : la surélévation se règle par lac, sans plafond. La limite de hautes eaux s’applique avec le supplément indiqué.', unb: 'Illimité : la capacité de retenue se règle sans plafond et sans limite de hautes eaux. Elle est répartie sur les lacs choisis selon leur surface. La page calcule la capacité qu’il aurait fallu pour tenir le GlW tous les jours. Cela montre l’ordre de grandeur, pas ce qui serait admissible.' },
     zusatzU: 'Au-dessus de la limite de hautes eaux (cm)', simJahr: 'Année',
     glwImmer: 'GlW tous les jours', ja: 'atteint', nein: 'non atteint', unnoetig: 'pas nécessaire', eBest: 'avec prévision', eRegel: 'règle d’exploitation', eRest: 'Jours restants sous le GlW', ueberT: 'Jours avec un lac au-dessus de la limite', rText: { glw: 'Avec prévision : le calcul connaît d’avance tous les débits de l’année. Il retient autant d’eau qu’il en faudra plus tard et relève surtout les jours les plus bas. Ce réservoir ne permet pas de relever davantage le jour le plus bas.', regel: 'Règle d’exploitation : le calcul ne connaît que le débit du jour et le contenu du réservoir. Pendant les mois de retenue, on retient au-dessus du débit réglé ; sous le GlW, on restitue jusqu’à ce que le réservoir soit vide. Dès le 1er novembre, le reste est restitué.', min: 'Sans plafond : comme avec prévision, mais les jours les plus bas sont relevés aussi au-delà du GlW.' },
     jTitel: 'Capacité nécessaire par année', jText: 'Pour chaque année : ce qui a été mesuré à Kaub, combien d’eau il aurait fallu pour tenir le GlW tous les jours, et ce que donnent les paliers avec la règle d’exploitation (jours sous le GlW · profondeur minimale du chenal en cm). Un nombre encadré à la suite indique les jours où un lac serait au-dessus de sa limite de hautes eaux.', jReicht: 'Le GlW tous les jours est atteint à partir du', jNie: 'aucun palier', jGrafik: 'Profondeur minimale du chenal à Kaub par année, cm : mesuré (noir) et paliers 1a, 1b, 1c, 2, 3',
@@ -107,9 +107,9 @@
     csv: 'CSV herunterladen', csvQuelle: 'Quellen: BAFU (data.bafu.admin.ch); WSV, bereitgestellt durch die BfG; HLNUG. Rechnung: simoschlumpf.ch/rhin-retention',
     gTitel: 'Abfluss in Kaub', g40: 'darunter praktisch keine Schifffahrt', gBest: 'mit Rückhalt, mit Voraussicht', gRegel: 'mit Rückhalt, Betriebsregel', gUnter: 'unter dem GlW', gHub: 'Anhebung', gSchnitt: 'Achse bei 2’000 m³/s abgeschnitten.',
     fTitel2: 'Abfluss in Kaub nach Herkunft',
-    stufe: 'Stufe', st1a: 'Stufe 1a: im genutzten Band', st1b: 'Stufe 1b: bis zur Hochwassergrenze', st1c: 'Stufe 1c: Jurarandseen bis Gefahrenstufe 4', st2: 'Stufe 2: über der Hochwassergrenze', st3: 'Stufe 3: mit Bodensee', stFrei: 'Frei',
+    stufe: 'Stufe', st1a: 'Stufe 1a: im genutzten Band', st1b: 'Stufe 1b: bis zur Hochwassergrenze', st1c: 'Stufe 1c: Jurarandseen bis Gefahrenstufe 4', st2: 'Stufe 2: über der Hochwassergrenze', st3: 'Stufe 3: mit Bodensee', stFrei: 'Frei', jkRechnet: 'Gerechnet mit den gemessenen Abflüssen von', jkAnderes: 'Anderes Jahr', skJahr: 'Simulation für das Jahr', skText: 'Alle Zahlen und Grafiken des Simulators gelten für dieses eine Jahr, mit seinen gemessenen Abflüssen. Das Jahr lässt sich gleich darunter wechseln.', stUnb: 'Unbegrenzt', uMio: 'Staukapazität gesamt, Mio. m³', uSeen: 'Seen', uReg: 'regulierte Seen', uMitB: 'regulierte Seen und Bodensee', uSchr: 'Schranken 10 % / 20 %', uBleiben: 'gelten', uAuf: 'aufgehoben', uTitel: 'Nötige Staukapazität', uUebernehmen: 'Übernehmen', uOhneText: 'Ohne Schranken dürfen die Seen ihren ganzen Abfluss zurückhalten, das Wehr wäre zu. Das ist die physikalische Obergrenze, nicht zulässig.',
     hwT: 'Hochwasserschutz', hwLeg: 'Tag mit einem See über der Hochwassergrenze', hwKein: 'Kein See über der Hochwassergrenze.', hwSatz: 'Tage stünde ein See wegen des Rückhalts über seiner heutigen Hochwassergrenze', rVon: 'Stauen von Monat', rBis: 'bis Monat', rWinter: 'Winterleerung ab 1.11.', rRes: 'Reserve zur Grenze cm', an: 'ein', aus: 'aus',
-    stText: { '1a': 'Stufe 1a: Die regulierten Seen stauen bis zum oberen Rand des Bandes, das sie 1991–2020 genutzt haben (99. Perzentil des Seestands). So hoch standen sie bisher an 1 % der Tage.', '1b': 'Stufe 1b: Die Seen mit amtlicher Hochwassergrenze stauen bis 20 cm darunter. Neuenburger- und Murtensee haben keine amtliche Grenze und bleiben im genutzten Band.', '1c': 'Stufe 1c: wie 1b, dazu stauen Neuenburger- und Murtensee bis 20 cm unter den Beginn der Gefahrenstufe 4 des BAFU.', 2: 'Stufe 2: Die regulierten Seen stauen über ihre heutige Hochwassergrenze hinaus. Jeder Tag darüber ist als Hochwassertag markiert.', 3: 'Stufe 3: wie Stufe 2, dazu derselbe Zusatzstau auf dem Bodensee. Er ist nicht reguliert; die KHR (2018) hält eine Regulierung für politisch kaum realisierbar.', frei: 'Frei: Der Zusatzstau lässt sich je See einstellen. Die Hochwassergrenze gilt mit dem angegebenen Zuschlag.' },
+    stText: { '1a': 'Stufe 1a: Die regulierten Seen stauen bis zum oberen Rand des Bandes, das sie 1991–2020 genutzt haben (99. Perzentil des Seestands). So hoch standen sie bisher an 1 % der Tage.', '1b': 'Stufe 1b: Die Seen mit amtlicher Hochwassergrenze stauen bis 20 cm darunter. Neuenburger- und Murtensee haben keine amtliche Grenze und bleiben im genutzten Band.', '1c': 'Stufe 1c: wie 1b, dazu stauen Neuenburger- und Murtensee bis 20 cm unter den Beginn der Gefahrenstufe 4 des BAFU.', 2: 'Stufe 2: Die regulierten Seen stauen über ihre heutige Hochwassergrenze hinaus. Jeder Tag darüber ist als Hochwassertag markiert.', 3: 'Stufe 3: wie Stufe 2, dazu derselbe Zusatzstau auf dem Bodensee. Er ist nicht reguliert; die KHR (2018) hält eine Regulierung für politisch kaum realisierbar.', frei: 'Frei: Der Zusatzstau lässt sich je See einstellen, ohne Obergrenze. Die Hochwassergrenze gilt mit dem angegebenen Zuschlag.', unb: 'Unbegrenzt: Die Staukapazität lässt sich beliebig hoch einstellen, ohne Hochwassergrenze. Sie wird im Verhältnis der Fläche auf die gewählten Seen verteilt. Die Seite rechnet aus, wie viel Kapazität es für den GlW an allen Tagen gebraucht hätte. Das zeigt die Grössenordnung, nicht was zulässig wäre.' },
     zusatzU: 'Über der Hochwassergrenze (cm)', simJahr: 'Jahr',
     glwImmer: 'GlW an allen Tagen', ja: 'erreicht', nein: 'nicht erreicht', unnoetig: 'nicht nötig', eBest: 'mit Voraussicht', eRegel: 'Betriebsregel', eRest: 'Verbleibende Tage unter GlW', ueberT: 'Tage mit einem See über der Grenze', rText: { glw: 'Mit Voraussicht: Die Rechnung kennt alle Abflüsse des Jahres im Voraus. Sie staut so viel, wie später gebraucht wird, und hebt die tiefsten Tage am stärksten. Höher lässt sich der tiefste Tag mit diesem Speicher nicht heben.', regel: 'Betriebsregel: Die Rechnung kennt nur den heutigen Abfluss und den Speicherinhalt. In den Staumonaten wird über dem eingestellten Abfluss gestaut, unter dem GlW wird abgegeben, bis der Speicher leer ist. Ab 1. November wird der Rest abgegeben.', min: 'Ohne Deckel: wie mit Voraussicht, die tiefsten Tage werden aber auch über den GlW hinaus gehoben.' },
     jTitel: 'Nötige Speicherkapazität pro Jahr', jText: 'Für jedes Jahr: was in Kaub gemessen wurde, wie viel Wasser für den GlW an allen Tagen gefehlt hat, und was die Stufen mit der Betriebsregel ergeben (Tage unter GlW · kleinste Fahrrinnentiefe in cm). Eine umrandete Zahl dahinter nennt die Tage, an denen ein See über seiner Hochwassergrenze stünde.', jReicht: 'GlW an allen Tagen erreicht ab', jNie: 'keine Stufe', jGrafik: 'Kleinste Fahrrinnentiefe in Kaub je Jahr, cm: gemessen (schwarz) und Stufen 1a, 1b, 1c, 2, 3',
@@ -235,10 +235,10 @@
   const Q_STAU = GLW != null ? qAusW(GLW + 10) : null;     // gestaut wird erst 10 cm über dem GlW, damit kein Tag durch den Rückhalt unter den GlW fällt
 
   // ------------------------------------------------------------ Optimaler Rückhalt (wie simulation.py)
-  const SEK = 86400, P_MAX = 0.10, P_SEE = 0.20; let RESERVE = 0.20;   // RESERVE: Abstand zur Hochwassergrenze beim Füllen (m)
+  const SEK = 86400, P_MAX = 0.10, P_SEE = 0.20; let RESERVE = 0.20, OFFEN = false;   // OFFEN: Schranken 10 % / 20 % aufgehoben (Stufe «Unbegrenzt»)   // RESERVE: Abstand zur Hochwassergrenze beim Füllen (m)
   let MONAT = null;                             // Monat (1–12) je Tag des Rechenfensters, für die Betriebsregel
   let SEEN = [];                                // Seen im Rechenfenster: { cap, kap, rate, start } in m³ bzw. m³/s
-  let GRENZE = null;                            // grösster zulässiger Rückhalt je Tag aus den Grenzen der Seen (m³/s am Ziel)
+  let STAT = [];                                // Messstellen unterhalb der Seen: { lim: grösster Rückhalt je Tag (m³/s), seen: Indizes der Seen oberhalb }
   // Jeder See führt seinen eigenen Inhalt. Gefüllt wird im Verhältnis des freien Platzes, geleert im Verhältnis des Inhalts.
   // Steigt ein See über seine Grenze, gibt er den Überschuss ab, höchstens mit rate (20 % des Abflusses unterhalb);
   // reicht das nicht, steht der See an diesem Tag über der Grenze (ueber).
@@ -248,7 +248,21 @@
     return { see, ueber, ss,
       inhalt: () => { let a = 0; for (const x of ss) a += x; return a; },
       frei: i => { let a = 0; L.forEach((l, k) => { a += Math.max(0, grenze(l, i) - ss[k]); }); return a; },
-      fuellen: (vol, i) => { const f = L.map((l, k) => Math.max(0, grenze(l, i) - ss[k])); let sum = 0; for (const x of f) sum += x; if (sum > 0) f.forEach((x, k) => { ss[k] += vol * x / sum; }); },
+      // Füllen: im Verhältnis des freien Platzes; der Rückhalt aller Seen oberhalb einer Messstelle bleibt unter deren Grenze.
+      // Was ein See wegen seiner Messstelle nicht aufnehmen kann, geht an die übrigen Seen. Gibt das tatsächlich gestaute Volumen zurück.
+      fuellen: (vol, i) => {
+        const room = L.map((l, k) => Math.max(0, grenze(l, i) - ss[k])), add = L.map(() => 0), slack = STAT.map(s => s.lim[i] * SEK);
+        for (let it = 0; it < 5; it++) {
+          let rest = vol; for (const x of add) rest -= x; if (rest < 1) break;
+          const frei = L.map((l, k) => room[k] - add[k] > 1 && l.st.every(g => slack[g] > 1) ? room[k] - add[k] : 0);
+          let sum = 0; for (const x of frei) sum += x; if (sum <= 0) break;
+          const inc = frei.map(x => Math.min(x, rest * x / sum));
+          STAT.forEach((s, g) => { let a = 0; for (const k of s.seen) a += inc[k]; if (a > 0 && a > slack[g]) { const f = Math.max(0, slack[g]) / a; for (const k of s.seen) inc[k] *= f; } });
+          STAT.forEach((s, g) => { for (const k of s.seen) slack[g] -= inc[k]; });
+          inc.forEach((x, k) => { add[k] += x; });
+        }
+        let gesamt = 0; add.forEach((x, k) => { ss[k] += x; gesamt += x; }); return gesamt;
+      },
       leeren: vol => { let sum = 0; for (const x of ss) sum += x; if (sum > 0) ss.forEach((x, k) => { ss[k] = Math.max(0, x - vol * x / sum); }); },
       entlasten: i => { let e = 0; L.forEach((l, k) => { if (!l.kap) return; const o = ss[k] - l.kap[i]; if (o > 1) { const a = Math.min(o, l.rate[i] * SEK); ss[k] -= a; e += a; if (o - a > 1) ueber[i] = 1; } }); return e / SEK; },
       merke: i => { ss.forEach((x, k) => { see[k][i] = x; }); } };
@@ -260,7 +274,7 @@
       const x = q[i];
       if (x != null) {
         if (x < tief) { const bedarf = (tief - x) * SEK; if (bedarf > B.inhalt() + 1e-6) return null; B.leeren(bedarf); abgabe[i] = tief - x; }
-        else if (x > hoch && i < letzter) { const r = Math.max(0, Math.min(x - hoch, P_MAX * x, B.frei(i) / SEK, GRENZE ? GRENZE[i] : Infinity)); if (r > 0) { B.fuellen(r * SEK, i); rueck[i] = r; } }
+        else if (x > hoch && i < letzter) { const r = Math.max(0, Math.min(x - hoch, (OFFEN ? x : P_MAX * x), B.frei(i) / SEK)); if (r > 0) rueck[i] = B.fuellen(r * SEK, i) / SEK; }
       }
       entl[i] = B.entlasten(i); speicher[i] = B.inhalt(); B.merke(i);
     }
@@ -275,7 +289,7 @@
       const x = q[i];
       if (x != null) {
         if (x < deckel) { const a = Math.max(0, Math.min(deckel - x, hoechst, B.inhalt() / SEK)); if (a > 0) { B.leeren(a * SEK); abgabe[i] = a; } }
-        else if (x > stauAb && stauzeit(i)) { const r = Math.max(0, Math.min(x - stauAb, P_MAX * x, B.frei(i) / SEK, GRENZE ? GRENZE[i] : Infinity)); if (r > 0) { B.fuellen(r * SEK, i); rueck[i] = r; } }
+        else if (x > stauAb && stauzeit(i)) { const r = Math.max(0, Math.min(x - stauAb, (OFFEN ? x : P_MAX * x), B.frei(i) / SEK)); if (r > 0) rueck[i] = B.fuellen(r * SEK, i) / SEK; }
         else if (winter(i) && B.inhalt() > 1) { const a = Math.min(B.inhalt(), V / REGEL.leeren) / SEK; B.leeren(a * SEK); entl[i] += a; }     // Winterleerung: gleichmässig, auch über dem GlW
       }
       entl[i] += B.entlasten(i); speicher[i] = B.inhalt(); B.merke(i);
@@ -333,20 +347,31 @@
     }
     return cm;
   }
+  // Stufe «Unbegrenzt»: Kapazität frei in Mio. m³, im Verhältnis der Fläche auf die gewählten Seen verteilt, ohne Hochwassergrenze
+  const UNB = { mio: 1000, bodensee: false, ohne: false };
+  const unbSeen = () => meta.seen.filter(s => s.reguliert || UNB.bodensee);
+  function unbAnwenden() {
+    const seen = unbSeen(), fl = seen.reduce((a, s) => a + s.flaeche_km2, 0);
+    for (const s of meta.seen) CM[s.id] = seen.includes(s) ? UNB.mio / fl * 100 : 0;
+    UEBER = Infinity; ZIEL = { ...HW }; MIT_RESERVE = false;
+  }
   function stufeAnwenden(Y) {
+    OFFEN = Z.stufe === 'unb' && UNB.ohne;
+    if (Z.stufe === 'unb') { unbAnwenden(); return; }
     if (Z.stufe === 'frei' || !Y) { ZIEL = { ...HW }; MIT_RESERVE = true; return; }
     Object.assign(CM, stufeCM(Y, Z.stufe, Z.zusatz)); UEBER = stufeNr(Z.stufe) >= 2 ? Z.zusatz : 0; ZIEL = stufeZiel(Z.stufe); MIT_RESERVE = Z.stufe !== '1a';
   }
   // Rechnet ein Jahr mit einer Stufe (oder mit festen cm auf den regulierten Seen ohne Hochwassergrenze), ohne den Zustand der Seite zu ändern
   function szenario(Y, stufe, modus = 'glw', cmFrei = null) {
-    const altCM = { ...CM }, altU = UEBER, altM = Z.modus, altN = NETZ, altZ = ZIEL, altR = MIT_RESERVE, altRegel = { ...REGEL }, altRes = RESERVE;
+    const altCM = { ...CM }, altU = UEBER, altM = Z.modus, altN = NETZ, altZ = ZIEL, altR = MIT_RESERVE, altRegel = { ...REGEL }, altRes = RESERVE, altO = OFFEN;
+    OFFEN = false;
     Object.assign(REGEL, REGEL_STD); RESERVE = 0.20;     // Kapitel 2 und 3 rechnen immer mit den Standardwerten, unabhängig vom Simulator
     if (cmFrei != null) { for (const s of meta.seen) CM[s.id] = s.reguliert ? cmFrei : 0; UEBER = Infinity; ZIEL = { ...HW }; }
     else if (!stufe) { for (const s of meta.seen) CM[s.id] = 0; UEBER = 0; }
     else { Object.assign(CM, stufeCM(Y, String(stufe), 50)); UEBER = stufeNr(stufe) >= 2 ? 50 : 0; ZIEL = stufeZiel(String(stufe)); MIT_RESERVE = String(stufe) !== '1a'; }
     Z.modus = modus; NETZ = VOLL;
     try { const S = simulieren(Y); return { S, k: kaubJahr(Y, S), v: S.V / 1e6, genutzt: S.O ? Math.max(...S.O.speicher) / 1e6 : 0, ueber: S.O ? S.O.ueber.reduce((a, b) => a + b, 0) : 0 }; }
-    finally { Object.assign(CM, altCM); UEBER = altU; Z.modus = altM; NETZ = altN; ZIEL = altZ; MIT_RESERVE = altR; Object.assign(REGEL, altRegel); RESERVE = altRes; }
+    finally { Object.assign(CM, altCM); UEBER = altU; Z.modus = altM; NETZ = altN; ZIEL = altZ; MIT_RESERVE = altR; Object.assign(REGEL, altRegel); RESERVE = altRes; OFFEN = altO; }
   }
   const bedarfGlw = Y => Y.q[KAUB] && Q_GLW != null ? Y.q[KAUB].reduce((s, x) => s + (x == null ? 0 : Math.max(0, Q_GLW - x)), 0) * SEK / 1e6 : null;
 
@@ -369,14 +394,15 @@
     // Grenze je Messstelle unterhalb eines Sees: höchstens P_SEE des Abflusses dort und nie unter dessen gemessenen Tiefstwert im Speicherjahr.
     // Die Seen stauen im Verhältnis ihrer Kapazität; an der Messstelle kommt der Rückhalt aller Seen oberhalb zusammen.
     const anteil = ids => ids.reduce((s, id) => s + CM[id] * SEE[id].flaeche_km2 * 1e4, 0) / V;
-    const gruppen = SEEGRUPPEN.filter(([, ids]) => anteil(ids)).map(([, , knoten]) => ({ qk: reihe(knoten), lag: zumZiel[knoten] || 0,
-      teil: SEEGRUPPEN.reduce((s, [, ids2, k2]) => s + (k2 in einzug(knoten) ? anteil(ids2) : 0), 0) }));
     const fenster = (a, b, start) => {
-      GRENZE = new Float64Array(b - a).fill(Infinity);
-      for (const g of gruppen) {
+      // Grenze je Messstelle unterhalb eines Sees: Rückhalt aller Seen oberhalb zusammen höchstens P_SEE des Abflusses dort
+      // und nie unter dessen gemessenen Tiefstwert im Fenster. Ohne Schranken: höchstens der ganze Abfluss (Wehr zu).
+      STAT = gruppen.map(g => {
         let tief = Infinity; for (let i = a; i < b; i++) { const x = g.qk[i - g.lag]; if (x != null && x < tief) tief = x; }
-        for (let i = a; i < b; i++) { const x = g.qk[i - g.lag], c = x == null ? 0 : Math.max(0, Math.min(P_SEE * x, x - tief)) / g.teil; if (c < GRENZE[i - a]) GRENZE[i - a] = c; }
-      }
+        const lim = new Float64Array(b - a);
+        for (let i = a; i < b; i++) { const x = g.qk[i - g.lag]; lim[i - a] = x == null ? 0 : Math.max(0, OFFEN ? x : Math.min(P_SEE * x, x - tief)); }
+        return { lim, seen: g.seen };
+      });
       // Hochwassergrenze je See: Seestand plus Zusatzstau bleibt unter der Grenze (plus Zuschlag UEBER). Zulässiger Inhalt des Sees s
       // am Tag t: (Grenze_s − W_s(t)) · A_s. Die Aktion am See liegt um die Fliesszeit vor der Wirkung am Ziel.
       SEEN = seenSim.map((g, k) => {
@@ -384,16 +410,17 @@
         for (let i = a; i < b; i++) { const w = g.w[i - g.lag], x = g.qk[i - g.lag];
           if (kap && w != null) { kap[i - a] = Math.max(0, g.hoch + UEBER / 100 - w) * g.flaeche * 1e6; voll[i - a] = Math.max(0, g.hoch + UEBER / 100 - (MIT_RESERVE ? RESERVE : 0) - w) * g.flaeche * 1e6; }
           if (x != null) rate[i - a] = P_SEE * x; }
-        return { cap: g.cap, kap, voll, rate, start: start ? start[k] : 0 };
+        return { cap: g.cap, kap, voll, rate, start: start ? start[k] : 0, st: gruppen.map((x, gi) => x.seen.includes(k) ? gi : -1).filter(gi => gi >= 0) };
       });
       MONAT = monat.slice(a, b);
       const o = Z.modus === 'regel' && glw ? regel(qz.slice(a, b), V, Q_GLW, REGEL.stauAb, REGEL.tage) : glw ? heben(qz.slice(a, b), V, Q_GLW, Q_STAU) : optimieren(qz.slice(a, b), V);
-      GRENZE = null; SEEN = []; return o;
+      STAT = []; SEEN = []; return o;
     };
     const lz = zumZiel[BASEL] || 0, monat = [];
     for (const [y, len] of [[Y.jahr - 1, nv], [Y.jahr, n], [Y.jahr + 1, nn]]) for (let i = 0; i < len; i++) monat.push(new Date(Date.UTC(y, 0, 1 + i)).getUTCMonth() + 1);
     const stand = id => { const a = new Array(nv + n + nn).fill(null); for (const [y, o] of [[Yv, 0], [Y, nv], [Yn, nv + n]]) if (y && y.w[id]) y.w[id].forEach((x, i) => { a[o + i] = x; }); return a; };
-    const seenSim = meta.seen.filter(s => CM[s.id] > 0 && s.knoten in zumZiel).map(s => ({ id: s.id, cap: CM[s.id] * s.flaeche_km2 * 1e4, w: stand(s.id), hoch: ZIEL[s.id], hw: HW[s.id], flaeche: s.flaeche_km2, qk: reihe(s.knoten), lag: zumZiel[s.knoten] || 0 }));
+    const seenSim = meta.seen.filter(s => CM[s.id] > 0 && s.knoten in zumZiel).map(s => ({ id: s.id, cap: CM[s.id] * s.flaeche_km2 * 1e4, w: stand(s.id), hoch: ZIEL[s.id], hw: HW[s.id], flaeche: s.flaeche_km2, qk: reihe(s.knoten), lag: zumZiel[s.knoten] || 0, knoten: s.knoten }));
+    const gruppen = SEEGRUPPEN.map(([, , knoten]) => ({ qk: reihe(knoten), lag: zumZiel[knoten] || 0, seen: seenSim.map((s, k) => s.knoten in einzug(knoten) ? k : -1).filter(k => k >= 0) })).filter(g => g.seen.length);
     const istRegel = Z.modus === 'regel' && glw;
     // Mit Voraussicht: zwei Speicherjahre mit Übertrag. Betriebsregel: ein Lauf über Vorjahr, Jahr und Folgejahr, Beginn leer.
     const O1 = istRegel ? fenster(0, nv + n + nn, null) : fenster(a1, b1, null), O2 = istRegel ? null : fenster(b1, b2, O1 ? O1.ende : null);
@@ -440,7 +467,7 @@
       if (v === 'tag' && Z.ansicht === 'extrem' && Z.i0 != null) Z.tag = Z.i0;
       Z.ansicht = v; if (v === 'heute') { Z.jahr = LETZTES; Z.tag = null; } alles();
     }));
-    if (tagAnsicht()) w.append(knoepfe(T.werte, [['0', T.gem], ['1', T.simu]], Z.sim ? '1' : '0', v => { Z.sim = v === '1'; alles(); }));
+    Z.sim = false;                               // Kapitel 1 zeigt nur Gemessenes; gerechnet wird erst ab Kapitel 3
     if (Z.ansicht === 'extrem') {
       const f = feld(T.lage, `<select>${meta.extreme[Z.ziel].map((e, i) => `<option value="${i}"${i === Z.extrem ? ' selected' : ''}>${e.jahr} · ${datum(e.beginn).slice(0, -4)}–${datum(e.ende)} · ${zahl(e.wert)} m³/s</option>`).join('')}</select>`);
       f.querySelector('select').addEventListener('change', e => { Z.extrem = +e.target.value; alles(); });
@@ -628,12 +655,12 @@
       const a = x(p.von), b = x(p.bis), tief = nr % 2 ? 30 : 0;      // Namen abwechselnd auf zwei Zeilen
       s += `<line class="soll" x1="${a}" x2="${b}" y1="${y(p.tugl)}" y2="${y(p.tugl)}"/><line class="achse" x1="${b}" x2="${b}" y1="${H - U}" y2="${H - U + 5}"/>`;
       if (zm) s += `<line x1="${a}" x2="${b}" y1="${y(zm.tiefe)}" y2="${y(zm.tiefe)}" stroke="#000" stroke-width="4"/><text class="fett" x="${(a + b) / 2}" y="${y(zm.tiefe) + 17}" text-anchor="middle">${zahl(zm.tiefe)}</text>`;
-      if (zs && zm && Math.abs(zs.tiefe - zm.tiefe) >= .5) s += `<line x1="${a}" x2="${b}" y1="${y(zs.tiefe)}" y2="${y(zs.tiefe)}" stroke="#003399" stroke-width="4"/><text class="blau" x="${(a + b) / 2}" y="${y(zs.tiefe) - 7}" text-anchor="middle">${zahl(zs.tiefe)}</text>`;
+      if (Z.sim && zs && zm && Math.abs(zs.tiefe - zm.tiefe) >= .5) s += `<line x1="${a}" x2="${b}" y1="${y(zs.tiefe)}" y2="${y(zs.tiefe)}" stroke="#003399" stroke-width="4"/><text class="blau" x="${(a + b) / 2}" y="${y(zs.tiefe) - 7}" text-anchor="middle">${zahl(zs.tiefe)}</text>`;
       s += `<text x="${x(p.km)}" y="${H - U + 20 + tief}" text-anchor="middle">${h(p.name)} ${zahl(p.km, 0)}</text>`;
     }
     s += `<line class="achse" x1="${L}" x2="${B - RR}" y1="${H - U}" y2="${H - U}"/><text x="${x(170)}" y="${H - U + 20}" text-anchor="middle">${nm('Basel')} 170</text><text x="${x(334) - 6}" y="${H - U + 20}" text-anchor="end">Iffezheim 334</text><text x="${B - RR}" y="${H - 6}" text-anchor="end">${T.lKm}</text>`;
     svg.setAttribute('viewBox', `0 0 ${B} ${H}`); svg.innerHTML = s;
-    $('laengslegende').innerHTML = `<span><i></i>${T.gemessen}</span>${R.S && R.S.O ? `<span><i class="blau"></i>${T.simu.toLowerCase()}</span>` : ''}<span><i class="strich"></i>${T.lSoll}</span>`;
+    $('laengslegende').innerHTML = `<span><i></i>${T.gemessen}</span>${Z.sim && R.S && R.S.O ? `<span><i class="blau"></i>${T.simu.toLowerCase()}</span>` : ''}<span><i class="strich"></i>${T.lSoll}</span>`;
   }
 
   // 2 Jahresband: Zustand je Abschnitt und Tag, gemessen und simuliert
@@ -713,7 +740,7 @@
       zeilen.push({ j, ...k, bedarf: bedarfGlw(Y), st, reicht });
       await new Promise(r => setTimeout(r, 0));
     }
-    setTimeout(() => typoFr($('k2')), 0);
+    setTimeout(() => typoFr($('k3')), 0);
     el.innerHTML = `<h2>${T.jTitel}</h2><p class="hinweis">${T.jText}</p><div class="rollen"><table><thead><tr><th>${T.jJahr}</th><th class="z">${T.nTage}</th><th class="z">${T.nUnter}</th><th class="z">${T.aTage}</th><th class="z">${T.nTief}</th><th class="z">${T.jBedarf}</th>${STUFEN.map(s => `<th class="z">${T.stufe} ${s}</th>`).join('')}<th>${T.jReicht}</th></tr></thead><tbody>` +
       zeilen.map(z => `<tr><td>${z.j}</td><td class="z">${z.tage}</td><td class="z">${z.u0}</td><td class="z">${z.k0}</td><td class="z">${zahl(z.t0)}</td><td class="z">${z.u0 ? zahl(z.bedarf) : '–'}</td>` +
         z.st.map(x => `<td class="z blau">${z.u0 ? `${x.u1} · ${zahl(x.t1)}${x.hw ? ` <span class="hw">${x.hw}</span>` : ''}` : '–'}</td>`).join('') + `<td>${z.reicht === 0 ? T.unnoetig : z.reicht ? `${T.stufe} ${z.reicht}` : T.jNie}</td></tr>`).join('') + '</tbody></table></div>';
@@ -866,16 +893,26 @@
   function simWahl(R) {
     const w = $('simwahl'); w.textContent = '';
     const sj = $('simjahr'); sj.textContent = '';
+    $('simkopf').innerHTML = `<div class="jahrzahl"><span>${T.skJahr}</span><b>${Z.jahr}</b></div><p class="klein">${T.skText}</p>`;
     const jw = feld(T.simJahr, `<select>${meta.jahre.slice().reverse().map(x => `<option${x === Z.jahr ? ' selected' : ''}>${x}</option>`).join('')}</select>`);
     jw.querySelector('select').addEventListener('change', e => { Z.jahr = +e.target.value; Z.tag = null; Z.ansicht = Z.jahr === LETZTES ? 'heute' : 'tag'; alles(); });
-    sj.append(jw, knoepfe(T.stufe, [...STUFEN.map(s => [s, T['st' + s].split(/ ?:/)[0]]), ['frei', T.stFrei]], Z.stufe, v => { Z.stufe = v; if (v === 'frei') UEBER = 0; alles(); }));
-    if (stufeNr(Z.stufe) !== 1) { const zu = feld(T.zusatzU, `<input type="number" min="0" max="200" step="5" value="${Z.stufe === 'frei' ? UEBER : Z.zusatz}">`);
-      zu.querySelector('input').addEventListener('change', e => { const v = Math.max(0, Math.min(200, +e.target.value || 0)); if (Z.stufe === 'frei') UEBER = v; else Z.zusatz = v; alles(); }); sj.append(zu); }
-    $('stufentext').textContent = `${T.stText[Z.stufe]} ${T.rText[Z.modus]}`;
+    sj.append(jw, knoepfe(T.stufe, [...STUFEN.map(s => [s, T['st' + s].split(/ ?:/)[0]]), ['frei', T.stFrei], ['unb', T.stUnb]], Z.stufe, v => { Z.stufe = v; if (v === 'frei') UEBER = 0; alles(); }));
+    if (Z.stufe === 'unb') {
+      const m = feld(T.uMio, `<input type="number" min="0" step="50" value="${Math.round(UNB.mio)}">`);
+      m.querySelector('input').addEventListener('change', e => { UNB.mio = Math.max(0, +e.target.value || 0); alles(); });
+      const se = feld(T.uSeen, `<select><option value="0"${UNB.bodensee ? '' : ' selected'}>${T.uReg}</option><option value="1"${UNB.bodensee ? ' selected' : ''}>${T.uMitB}</option></select>`);
+      se.querySelector('select').addEventListener('change', e => { UNB.bodensee = e.target.value === '1'; alles(); });
+      const sc = feld(T.uSchr, `<select><option value="0"${UNB.ohne ? '' : ' selected'}>${T.uBleiben}</option><option value="1"${UNB.ohne ? ' selected' : ''}>${T.uAuf}</option></select>`);
+      sc.querySelector('select').addEventListener('change', e => { UNB.ohne = e.target.value === '1'; alles(); });
+      sj.append(m, se, sc);
+    }
+    if (stufeNr(Z.stufe) !== 1 && Z.stufe !== 'unb') { const zu = feld(T.zusatzU, `<input type="number" min="0" step="5" value="${Z.stufe === 'frei' ? UEBER : Z.zusatz}">`);
+      zu.querySelector('input').addEventListener('change', e => { const v = Math.max(0, +e.target.value || 0); if (Z.stufe === 'frei') UEBER = v; else Z.zusatz = v; alles(); }); sj.append(zu); }
+    $('stufentext').textContent = `${T.stText[Z.stufe]}${Z.stufe === 'unb' && UNB.ohne ? ' ' + T.uOhneText : ''} ${T.rText[Z.modus]}`;
     const res = feld(T.rRes, `<input type="number" min="0" max="100" step="5" value="${Math.round(RESERVE * 100)}">`);
     res.querySelector('input').addEventListener('change', e => { RESERVE = Math.max(0, Math.min(100, +e.target.value || 0)) / 100; alles(); });
-    const alle = feld(T.alle, `<input type="number" min="0" max="100" value="">`);
-    alle.querySelector('input').addEventListener('change', e => { const v = Math.max(0, Math.min(100, +e.target.value || 0)); meta.seen.forEach(s => { if (s.reguliert) CM[s.id] = v; }); Z.stufe = 'frei'; alles(); });
+    const alle = feld(T.alle, `<input type="number" min="0" value="">`);
+    alle.querySelector('input').addEventListener('change', e => { const v = Math.max(0, +e.target.value || 0); meta.seen.forEach(s => { if (s.reguliert) CM[s.id] = v; }); Z.stufe = 'frei'; alles(); });
     const orte = [...new Set([R && R.S && R.S.zid || Z.ziel, KAUB, BASEL, '2288', '2135', '2029', '2018', '2243', '2205'])];
     const ort = feld(T.verlaufFuer, `<select>${orte.map(id => `<option value="${id}"${id === Z.verlauf ? ' selected' : ''}>${h(GW(ST[id]))}–${h(kurz(ST[id]))}</option>`).join('')}</select>`);
     ort.querySelector('select').addEventListener('change', e => { Z.verlauf = e.target.value; alles(); });
@@ -893,6 +930,39 @@
     }
     w.append(knoepfe(T.zielAbgabe, [['glw', T.zGlw], ['regel', T.zRegel], ['min', T.zMin]], Z.modus, v => { Z.modus = v; alles(); }), ...regelFelder, res, ...(Z.stufe === 'frei' ? [alle] : []), ort, knoepfe(T.ausschnitt, [['0', T.ganz], ['1', T.phase]], Z.zoom ? '1' : '0', v => { Z.zoom = v === '1'; alles(); }));
   }
+  // Nötige Staukapazität für den GlW an allen Tagen: gleiche Seen, gleiche Regeln, Kapazität durch Halbieren gesucht
+  let noetigNr = 0; const MAXMIO = 10000;
+  function noetigZeichnen(R) {
+    const el = $('noetig');
+    if (Z.stufe !== 'unb' || !R.Y || !R.Y.q[KAUB] || !PK) { el.hidden = true; el.innerHTML = ''; el.dataset.schl = ''; return; }
+    const Y = R.Y, schl = JSON.stringify([Y.jahr, Z.modus, UNB.bodensee, UNB.ohne, REGEL, RESERVE]);
+    el.hidden = false; if (el.dataset.schl === schl) return;
+    el.dataset.schl = schl; el.innerHTML = `<b>${T.uTitel}</b> ${T.jRechnet}`;
+    const nr = ++noetigNr;
+    setTimeout(() => {
+      if (nr !== noetigNr) return;
+      const pruef = mio => { const alt = { ...CM }, a = [UEBER, ZIEL, MIT_RESERVE, UNB.mio, NETZ];
+        UNB.mio = mio; unbAnwenden(); NETZ = VOLL;
+        try { const S = simulieren(Y); return { ...kaubJahr(Y, S), hw: S.O ? S.O.ueber.reduce((x, y) => x + y, 0) : 0 }; }
+        finally { Object.assign(CM, alt); [UEBER, ZIEL, MIT_RESERVE, UNB.mio, NETZ] = a; } };
+      const fl = unbSeen().reduce((a, s) => a + s.flaeche_km2, 0), bed = bedarfGlw(Y), k0 = kaubJahr(Y, OHNE);
+      const seenT = UNB.bodensee ? T.uMitB : T.uReg, weise = Z.modus === 'regel' ? T.eRegel : T.eBest;
+      if (!k0.u0) { el.innerHTML = `<b>${T.uTitel}</b> ${T.nieUnter}`; return; }
+      let lo = 0, hi = Math.max(100, bed), kh = pruef(hi);
+      while (kh.u1 > 0 && hi < MAXMIO) { lo = hi; hi = Math.min(MAXMIO, hi * 2); kh = pruef(hi); }
+      if (kh.u1 > 0) {
+        el.innerHTML = `<b>${T.uTitel}</b> ` + LL(`Auch mit ${zahl(hi)} Mio. m³ bleiben ${Y.jahr} ${kh.u1} von ${k0.u0} Tagen unter dem GlW (${weise}). Mehr Platz nützt nicht, es fehlt das Wasser zum Füllen. Gestaut wird nur${Z.modus === 'regel' ? ` von ${T.monate[REGEL.von - 1]} bis ${T.monate[REGEL.bis - 1]} und nur über ${zahl(REGEL.stauAb)} m³/s in Kaub` : ', wenn Kaub mindestens 10 cm über dem GlW liegt'}${UNB.ohne ? '' : ', höchstens 10 % des Abflusses in Kaub und 20 % des Abflusses unterhalb der Seen'}.${Z.modus === 'regel' ? ' Mehr bringen längere Staumonate oder eine tiefere Schwelle.' : ' Wasser aus dem Winter vor dem 1. April zählt nicht, weil das Speicherjahr dort beginnt.'}${UNB.ohne ? '' : ' Mit «Schranken aufgehoben» rechnen.'}`,
+          `Même avec ${zahl(hi)} mio m³, ${kh.u1} jours sur ${k0.u0} restent sous le GlW en ${Y.jahr} (${weise}). Plus de place n’aide pas, il manque l’eau pour le remplissage. On ne retient ${Z.modus === 'regel' ? `que de ${T.monate[REGEL.von - 1]} à ${T.monate[REGEL.bis - 1]} et qu’au-dessus de ${zahl(REGEL.stauAb)} m³/s à Kaub` : 'que si Kaub est au moins 10 cm au-dessus du GlW'}${UNB.ohne ? '' : ', au plus 10 % du débit à Kaub et 20 % du débit en aval des lacs'}.${Z.modus === 'regel' ? ' Des mois de retenue plus longs ou un seuil plus bas apportent davantage.' : ' L’eau de l’hiver avant le 1er avril ne compte pas, car l’année de stockage commence à cette date.'}${UNB.ohne ? '' : ' Calculer avec les limites « levées ».'}`);
+        typoFr(el); return;
+      }
+      for (let i = 0; i < 24 && hi - lo > Math.max(1, hi * .005); i++) { const m = (lo + hi) / 2, km = pruef(m); if (km.u1 === 0) { hi = m; kh = km; } else lo = m; }
+      el.innerHTML = `<b>${T.uTitel}</b> ` + LL(`Für den GlW an allen Tagen ${Y.jahr} hätte es <b>${zahl(hi)} Mio. m³</b> gebraucht (${weise}). Das sind ${zahl(hi / fl * 100)} cm auf ${zahl(fl)} km² (${seenT}). Summe der Fehlbeträge: ${zahl(bed)} Mio. m³. ${kh.hw ? `Mit dieser Kapazität stünde ein See an <b>${kh.hw} ${kh.hw === 1 ? 'Tag' : 'Tagen'}</b> über seiner Hochwassergrenze.` : 'Kein See stünde über seiner Hochwassergrenze.'}`,
+        `Pour tenir le GlW tous les jours en ${Y.jahr}, il aurait fallu <b>${zahl(hi)} mio m³</b> (${weise}). Cela fait ${zahl(hi / fl * 100)} cm sur ${zahl(fl)} km² (${seenT}). Somme des déficits : ${zahl(bed)} mio m³. ${kh.hw ? `Avec cette capacité, un lac serait <b>${kh.hw} ${kh.hw === 1 ? 'jour' : 'jours'}</b> au-dessus de sa limite de hautes eaux.` : 'Aucun lac ne serait au-dessus de sa limite de hautes eaux.'}`) +
+        ` <button type="button" class="textknopf">${T.uUebernehmen}</button>`;
+      el.querySelector('button').addEventListener('click', () => { UNB.mio = Math.ceil(hi); alles(); });
+      typoFr(el);
+    }, 30);
+  }
   function simSeen() {
     $('simseen').innerHTML = `<div class="rollen"><table><thead><tr><th>${T.see}</th><th class="z">${T.flaeche} km²</th><th class="z">${T.jecm} Mio. m³</th><th class="z">${T.band}</th><th class="z">${T.grenzenK}</th><th style="width:22%">${T.zusatz}</th><th class="z">cm</th><th class="z">${T.vol} Mio. m³</th></tr></thead><tbody>` +
       SEEGRUPPEN.map(([g, ids]) => `<tr class="gruppenkopf"><td colspan="8">${T[g]}</td></tr>` + ids.map(id => { const s = SEE[id]; return `<tr><td>${h(nm(s.name))}</td><td class="z">${zahl(s.flaeche_km2, 1)}</td><td class="z">${zahl(s.flaeche_km2 / 100, 2)}</td>` +
@@ -906,7 +976,7 @@
   const tageUnter = (q, grenze) => grenze == null || !q ? null : q.reduce((n, x) => n + (x != null && x < grenze ? 1 : 0), 0);
   function simZeichnen(R) {
     let v = 0;
-    for (const s of meta.seen) { const m = CM[s.id] * s.flaeche_km2 / 100; v += m; $('cm-' + s.id).textContent = CM[s.id]; const r = $('simseen').querySelector(`input[data-see="${s.id}"]`); if (r && +r.value !== CM[s.id]) r.value = CM[s.id]; $('vol-' + s.id).textContent = zahl(m, 1); }
+    for (const s of meta.seen) { const m = CM[s.id] * s.flaeche_km2 / 100; v += m; $('cm-' + s.id).textContent = zahl(CM[s.id]); const r = $('simseen').querySelector(`input[data-see="${s.id}"]`); if (r && CM[s.id] > +r.max) r.max = Math.ceil(CM[s.id]); if (r && +r.value !== CM[s.id]) r.value = CM[s.id]; $('vol-' + s.id).textContent = zahl(m, 1); }
     $('vol-summe').textContent = zahl(v, 1);
     const S = R.S, z = ST[S && S.zid || Z.ziel], q = R.Y && R.Y.q[z.id];
     if (!q || !S || !S.O) { $('simwerte').innerHTML = `<p>${q ? T.nurTag : T.keinJahr}</p>`; $('verlauf').innerHTML = ''; $('speicher').innerHTML = ''; $('abgabe').innerHTML = ''; $('abgabelegende').innerHTML = ''; $('nutzen').innerHTML = ''; $('seetafel').innerHTML = ''; $('seewahl').textContent = ''; $('seegrafik').innerHTML = ''; $('seelegende').innerHTML = ''; $('seetext').textContent = ''; $('simlegende').innerHTML = ''; R.sz = null; return; }
@@ -922,11 +992,12 @@
     const hub = tA ? O.abgabe.reduce((s, x) => s + x, 0) / tA : 0, cmJe = Q_GLW != null ? (wAusQ(Q_GLW) - wAusQ(Q_GLW - 100)) / 100 : null;
     const kjU = PK ? kaubJahr(R.Y, S) : null;
     const kopf = O.glw ? (kjU ? kachel(`${T.glwImmer} ${Z.jahr}`, !kjU.u0 ? T.unnoetig : kjU.u1 === 0 ? T.ja : T.nein, kjU.u0 ? `${T.eRest}${DP}${kjU.u1} ${T.von_} ${kjU.u0}` : '') : '') + kachel(`${T.gehoben} ${Z.jahr}`, `${tA} ${T.tageW}`, tA ? `${T.imMittel} ${vz(hub, 0)} m³/s${cmJe != null ? ` · ${T.rund} ${vz(hub * cmJe, 0)} cm` : ''}` : '') +
-      kachel(T.unterGlw, kjU ? `${zahl(kjU.u0)} → ${zahl(kjU.u1)}` : `${zahl(u0)} → ${zahl(u1)}`, `GlW ${zahl(GLW)} cm = ${zahl(Q_GLW)} m³/s`) +
+      kachel(`${T.unterGlw} ${Z.jahr}`, kjU ? `${zahl(kjU.u0)} → ${zahl(kjU.u1)}` : `${zahl(u0)} → ${zahl(u1)}`, `GlW ${zahl(GLW)} cm = ${zahl(Q_GLW)} m³/s`) +
       kachel(T.bedarf, `${zahl(O.bedarf / 1e6)} ${T.mio}`, `${T.bedarfText} ${zahl(O.bedarf / 1e4 / flaeche)} cm`) : '';
     const hwTage = O.ueber.reduce((a, b) => a + b, 0), hwSeen = O.seeId.filter((id, k) => O.hwSee[k]).map((id, k2) => nm(SEE[id].name));
     $('hochwasser').className = hwTage ? 'warnung' : 'warnung ok';
     $('hochwasser').innerHTML = `<b>${T.hwT}</b> ` + (hwTage ? `${FR ? 'Sur' : 'An'} <b>${hwTage}</b> ${T.hwSatz}${DP}${O.seeId.map((id, k) => O.hwSee[k] ? `${h(nm(SEE[id].name))} ${O.hwSee[k]}` : '').filter(Boolean).join(', ')}.` : T.hwKein);
+    noetigZeichnen(R);
     $('simwerte').innerHTML = kopf + kachel(`${T.minTag} ${kurz(z)} ${Z.jahr}`, `${zahl(min0)} → ${zahl(min1)} m³/s`, `${vz(min1 - min0, 1)} m³/s · ${vz(100 * (min1 - min0) / min0, 1)} %`) +
       (a && b ? kachel(`${T.nm7qSim} ${kurz(z)}`, `${zahl(a.wert)} → ${zahl(b.wert)} m³/s`, `${vz(b.wert - a.wert, 1)} m³/s`) : '') +
       (w0 != null && w1 != null ? kachel(T.pegelMin, `${zahl(w0)} → ${zahl(w1)} cm`, `${vz(w1 - w0, 0)} cm · ${T.ausKurve}`) : '') +
@@ -1336,12 +1407,12 @@
   // ---- Kapitel 3: Rückhalt in drei Stufen
   const K3 = [2011, 2015, 2018, 2022, LETZTES].filter((j, i, a) => meta.jahre.includes(j) && a.indexOf(j) === i), D3 = {};
   let jahr3 = K3[K3.length - 1];
-  const sc3 = scrolly('st3', 6, i => zeige3(i));
+  const sc3 = scrolly('st3', 7, i => zeige3(i));
   function zeige3(i) {
     const d = D3[jahr3]; if (!d) return;
-    const st = [0, '1b', '1b', '2', '3', '3'][i], z = st ? d.st[st] : null;
-    jahrGrafik($('szen'), d.Y, { titel: `${T.gTitel} ${jahr3}${st ? ` · ${T['st' + st]}` : ''}`, sim: z ? z.v.S.q[KAUB] : null, sim2: z ? z.r.S.q[KAUB] : null, speicher: z && z.v.S.O ? z.v.S.O.speicher : null, hw: z && z.r.S.O ? z.r.S.O.ueber : null });
-    $('szenlegende').innerHTML = jahrLegende(!!z, !!z, !!z);
+    const st = [0, '1b', '1b', '1b', '2', '3', '3'][i], z = st ? d.st[st] : null, beide = i >= 2;   // Schritt 1 führt die gerechnete Linie ein, Schritt 2 die Betriebsregel
+    jahrGrafik($('szen'), d.Y, { titel: `${T.gTitel} ${jahr3}${st ? ` · ${T['st' + st]}` : ''}`, sim: z ? z.v.S.q[KAUB] : null, sim2: z && beide ? z.r.S.q[KAUB] : null, speicher: z && z.v.S.O ? z.v.S.O.speicher : null, hw: z && beide && z.r.S.O ? z.r.S.O.ueber : null });
+    $('szenlegende').innerHTML = jahrLegende(!!z, !!z && beide, !!z && beide);
     csvKnopf($('szenfig'), () => `rhein-kaub-${jahr3}-stufe-${st}`, () => ({ titel: `${T.gTitel} ${jahr3}${st ? ` · ${T['st' + st]}` : ''}`, ...jahrCsv(d.Y, z) }));
   }
   const ergebnis = (d, z) => `<div class="rollen"><table class="erg"><thead><tr><th></th><th class="z">${T.gemessen}</th><th class="z">${T.eBest}</th><th class="z">${T.eRegel}</th></tr></thead><tbody>` +
@@ -1353,31 +1424,36 @@
       d = D3[j] = { Y, k: kaubJahr(Y, OHNE), bed: bedarfGlw(Y), st: {} };
       for (const st of STUFEN) d.st[st] = { v: szenario(Y, st, 'glw'), r: szenario(Y, st, 'regel') }; }
     if (j !== jahr3) return;
-    const w = $('k3wahl'); w.textContent = ''; w.append(knoepfe(T.jahr, K3.map(x => [String(x), String(x)]), String(j), v => { jahr3 = +v; kapitel3(); }));
+    const kk = $('k3kopf'); kk.innerHTML = `<div class="jahrzahl"><span>${T.jkRechnet}</span><b>${j}</b></div>`;
+    kk.append(knoepfe(T.jkAnderes, K3.map(x => [String(x), String(x)]), String(j), v => { jahr3 = +v; kapitel3(); }));
+    const f3 = (i, html) => sc3.fuelle(i, `<p class="jahrmarke">${T.jahr} ${j}</p>` + html);
     const reg = meta.seen.filter(s => s.reguliert), fr = reg.reduce((s, x) => s + x.flaeche_km2, 0), fb = meta.seen.filter(s => !s.reguliert).reduce((s, x) => s + x.flaeche_km2, 0), cm1 = fr / 100;
     const q30 = 100e6 / (30 * SEK), hub = q => wAusQ(Q_GLW) - wAusQ(Q_GLW - q), frei = stufeCM(d.Y, '1b', 0), v1 = reg.reduce((s, x) => s + frei[x.id] * x.flaeche_km2 / 100, 0);
-    sc3.fuelle(0, LL(`<h3>Was ein Zentimeter ist</h3><p>Die regulierten Seen haben zusammen ${zahl(fr)} km². Ein Zentimeter mehr Seestand sind <b>${zahl(cm1, 1)} Mio. m³</b>. 100 Mio. m³, über 30 Tage abgegeben, sind ${zahl(q30, 1)} m³/s. Das hebt den Pegel Kaub beim GlW um rund ${zahl(hub(q30))} cm.</p><p>${j} fehlten für den GlW an allen Tagen <b>${zahl(d.bed)} Mio. m³</b>. Das wären ${zahl(d.bed / cm1)} cm auf allen regulierten Seen.</p>`,
+    f3(0, LL(`<h3>Was ein Zentimeter ist</h3><p>Die regulierten Seen haben zusammen ${zahl(fr)} km². Ein Zentimeter mehr Seestand sind <b>${zahl(cm1, 1)} Mio. m³</b>. 100 Mio. m³, über 30 Tage abgegeben, sind ${zahl(q30, 1)} m³/s. Das hebt den Pegel Kaub beim GlW um rund ${zahl(hub(q30))} cm.</p><p>${j} fehlten für den GlW an allen Tagen <b>${zahl(d.bed)} Mio. m³</b>. Das wären ${zahl(d.bed / cm1)} cm auf allen regulierten Seen.</p>`,
       `<h3>Ce que vaut un centimètre</h3><p>Les lacs régulés totalisent ${zahl(fr)} km². Un centimètre de niveau en plus représente <b>${zahl(cm1, 1)} mio m³</b>. 100 mio m³ restitués en 30 jours font ${zahl(q30, 1)} m³/s. Cela relève le niveau à Kaub d’environ ${zahl(hub(q30))} cm au voisinage du GlW.</p><p>En ${j}, il manquait <b>${zahl(d.bed)} mio m³</b> pour tenir le GlW tous les jours. Cela ferait ${zahl(d.bed / cm1)} cm sur tous les lacs régulés.</p>`));
-    sc3.fuelle(1, LL(`<h3>Zwei Rechenweisen</h3><p class="marke">Mit Voraussicht</p><p>Die Rechnung kennt alle Abflüsse des Jahres im Voraus. Im Betrieb kennt sie niemand. Sie staut so viel, wie später gebraucht wird, und verteilt das Wasser auf alle tiefen Tage. Die tiefsten Tage werden am stärksten gehoben. Höher lässt sich der tiefste Tag mit diesem Speicher nicht heben. Die Zahl der Tage unter dem GlW sinkt dabei kaum, weil das Wasser auf viele Tage verteilt wird.</p><p class="marke">Betriebsregel</p><p>Die Rechnung kennt nur den heutigen Abfluss und den Speicherinhalt. Von ${T.monate[REGEL.von - 1]} bis ${T.monate[REGEL.bis - 1]} wird gestaut, wenn der Rhein in Kaub mehr als ${zahl(REGEL.stauAb)} m³/s führt. Ab 1. November wird der Rest abgegeben, damit die Seen im Winter Platz für Hochwasser haben. Fällt Kaub unter den GlW, wird bis zum GlW aufgefüllt, höchstens mit der Menge, bei der ein voller Speicher ${REGEL.tage} Tage reicht. Ist der Speicher leer, gilt wieder der gemessene Abfluss.</p><p>In der Grafik ist die Rechnung mit Voraussicht blau durchgezogen, die Betriebsregel blau gestrichelt. Mit Voraussicht steigt der tiefste Stand. Mit der Betriebsregel sinkt die Zahl der Tage unter dem GlW, solange der Speicher reicht.</p>`,
-      `<h3>Deux modes de calcul</h3><p class="marke">Avec prévision</p><p>Le calcul connaît d’avance tous les débits de l’année. En exploitation, personne ne les connaît. Il retient autant d’eau qu’il en faudra plus tard et la répartit sur tous les jours bas. Les jours les plus bas sont les plus relevés. Ce réservoir ne permet pas de relever davantage le jour le plus bas. Le nombre de jours sous le GlW ne diminue guère, car l’eau est répartie sur de nombreux jours.</p><p class="marke">Règle d’exploitation</p><p>Le calcul ne connaît que le débit du jour et le contenu du réservoir. De ${T.monate[REGEL.von - 1]} à ${T.monate[REGEL.bis - 1]}, on retient quand le Rhin dépasse ${zahl(REGEL.stauAb)} m³/s à Kaub. Dès le 1er novembre, le reste est restitué pour que les lacs gardent de la place pour les crues en hiver. Si Kaub passe sous le GlW, on complète jusqu’au GlW, au plus avec la quantité qui permet à un réservoir plein de tenir ${REGEL.tage} jours. Quand le réservoir est vide, le débit mesuré s’applique de nouveau.</p><p>Dans le graphique, le calcul avec prévision est en trait bleu plein, la règle d’exploitation en tirets bleus. Avec prévision, le niveau le plus bas monte. Avec la règle d’exploitation, le nombre de jours sous le GlW diminue tant que le réservoir suffit.</p>`));
+    const b1 = d.st['1b'].v, qm = Math.min(...d.Y.q[KAUB].filter(x => x != null)), qs = Math.min(...b1.S.q[KAUB].filter(x => x != null));
+    f3(1, LL(`<h3>Wie der Rückhalt wirkt</h3><p>Ab hier zeigt die Grafik eine zweite, gerechnete Linie. Die Seen halten Wasser zurück, solange Kaub über dem GlW liegt, und geben es ab, wenn Kaub darunter fällt. Zurückgehalten wird aus dem Abfluss, der unterhalb der Seen gemessen wurde. Die Wirkung erreicht Kaub zwei Tage später.</p><p>Die blaue Linie ist der Abfluss in Kaub mit diesem Rückhalt, die blau schraffierte Fläche die Anhebung. Unten steht, wie viel Wasser in den Seen gespeichert ist. Als Beispiel dient Stufe 1b: Die regulierten Seen stauen bis 20 cm unter ihre Hochwassergrenze. Die Stufen folgen weiter unten.</p><p>${j}${DP}Gespeichert werden höchstens <b>${zahl(b1.genutzt)} Mio. m³</b>. Der kleinste Tagesabfluss in Kaub steigt von ${zahl(qm)} auf <b>${zahl(qs)} m³/s</b>, die kleinste Fahrrinnentiefe von ${zahl(d.k.t0)} auf <b>${zahl(b1.k.t1)} cm</b>.</p>`,
+      `<h3>Comment agit la retenue</h3><p>Dès ici, le graphique montre une deuxième ligne, calculée. Les lacs retiennent de l’eau tant que Kaub est au-dessus du GlW et la restituent quand Kaub passe en dessous. La retenue est prélevée sur le débit mesuré en aval des lacs. L’effet atteint Kaub deux jours plus tard.</p><p>La ligne bleue est le débit à Kaub avec cette retenue, la surface hachurée en bleu le relèvement. En bas figure le volume stocké dans les lacs. L’exemple est le palier 1b : les lacs régulés retiennent jusqu’à 20 cm sous leur limite de hautes eaux. Les paliers suivent plus bas.</p><p>${j}${DP}le volume stocké atteint au plus <b>${zahl(b1.genutzt)} mio m³</b>. Le plus faible débit journalier à Kaub passe de ${zahl(qm)} à <b>${zahl(qs)} m³/s</b>, la profondeur minimale du chenal de ${zahl(d.k.t0)} à <b>${zahl(b1.k.t1)} cm</b>.</p>`));
+    f3(2, LL(`<h3>Zwei Rechenweisen</h3><p class="marke">Mit Voraussicht</p><p>Die Rechnung kennt alle Abflüsse des Jahres im Voraus. Im Betrieb kennt sie niemand. Sie staut so viel, wie später gebraucht wird, und verteilt das Wasser auf alle tiefen Tage. Die tiefsten Tage werden am stärksten gehoben. Höher lässt sich der tiefste Tag mit diesem Speicher nicht heben. Die Zahl der Tage unter dem GlW sinkt dabei kaum, weil das Wasser auf viele Tage verteilt wird.</p><p class="marke">Betriebsregel</p><p>Die Rechnung kennt nur den heutigen Abfluss und den Speicherinhalt. Von ${T.monate[REGEL.von - 1]} bis ${T.monate[REGEL.bis - 1]} wird gestaut, wenn der Rhein in Kaub mehr als ${zahl(REGEL.stauAb)} m³/s führt. Ab 1. November wird der Rest abgegeben, damit die Seen im Winter Platz für Hochwasser haben. Fällt Kaub unter den GlW, wird bis zum GlW aufgefüllt, höchstens mit der Menge, bei der ein voller Speicher ${REGEL.tage} Tage reicht. Ist der Speicher leer, gilt wieder der gemessene Abfluss.</p><p>Die blaue Linie bisher war die Rechnung mit Voraussicht. Neu kommt die Betriebsregel blau gestrichelt dazu, und schwarze Balken oben markieren Tage, an denen ein See über seiner Hochwassergrenze stünde. Mit Voraussicht steigt der tiefste Stand. Mit der Betriebsregel sinkt die Zahl der Tage unter dem GlW, solange der Speicher reicht.</p>`,
+      `<h3>Deux modes de calcul</h3><p class="marke">Avec prévision</p><p>Le calcul connaît d’avance tous les débits de l’année. En exploitation, personne ne les connaît. Il retient autant d’eau qu’il en faudra plus tard et la répartit sur tous les jours bas. Les jours les plus bas sont les plus relevés. Ce réservoir ne permet pas de relever davantage le jour le plus bas. Le nombre de jours sous le GlW ne diminue guère, car l’eau est répartie sur de nombreux jours.</p><p class="marke">Règle d’exploitation</p><p>Le calcul ne connaît que le débit du jour et le contenu du réservoir. De ${T.monate[REGEL.von - 1]} à ${T.monate[REGEL.bis - 1]}, on retient quand le Rhin dépasse ${zahl(REGEL.stauAb)} m³/s à Kaub. Dès le 1er novembre, le reste est restitué pour que les lacs gardent de la place pour les crues en hiver. Si Kaub passe sous le GlW, on complète jusqu’au GlW, au plus avec la quantité qui permet à un réservoir plein de tenir ${REGEL.tage} jours. Quand le réservoir est vide, le débit mesuré s’applique de nouveau.</p><p>La ligne bleue montrée jusqu’ici était le calcul avec prévision. La règle d’exploitation s’y ajoute en tirets bleus, et des barres noires en haut marquent les jours où un lac serait au-dessus de sa limite de hautes eaux. Avec prévision, le niveau le plus bas monte. Avec la règle d’exploitation, le nombre de jours sous le GlW diminue tant que le réservoir suffit.</p>`));
     const teil = STUFEN.slice(0, 3).map(st => { const z = d.st[st];
       return `<tr><td>${st}</td><td class="z">${zahl(z.r.genutzt)}</td><td class="z blau">${zahl(z.v.k.u1)}</td><td class="z blau">${zahl(z.r.k.u1)}</td><td class="z${z.r.ueber ? ' hw' : ''}">${zahl(z.r.ueber)}</td></tr>`; }).join('');
-    sc3.fuelle(2, LL(`<h3>Stufe 1: ohne neue Grenzen</h3><p>Die regulierten Seen stauen höher als heute, aber nicht über ihre Hochwassergrenze. Drei Teilstufen:</p><p class="marke">1a im genutzten Band</p><p>Bis zum Stand, den der See 1991–2020 an 1 % der Tage erreicht hat.</p><p class="marke">1b bis zur Hochwassergrenze</p><p>Bis 20 cm unter die amtliche Hochwassergrenze. Neuenburger- und Murtensee haben keine und bleiben im Band.</p><p class="marke">1c Jurarandseen bis Gefahrenstufe 4</p><p>Dazu Neuenburger- und Murtensee bis 20 cm unter den Beginn der Gefahrenstufe 4.</p>`,
+    f3(3, LL(`<h3>Stufe 1: ohne neue Grenzen</h3><p>Die regulierten Seen stauen höher als heute, aber nicht über ihre Hochwassergrenze. Drei Teilstufen:</p><p class="marke">1a im genutzten Band</p><p>Bis zum Stand, den der See 1991–2020 an 1 % der Tage erreicht hat.</p><p class="marke">1b bis zur Hochwassergrenze</p><p>Bis 20 cm unter die amtliche Hochwassergrenze. Neuenburger- und Murtensee haben keine und bleiben im Band.</p><p class="marke">1c Jurarandseen bis Gefahrenstufe 4</p><p>Dazu Neuenburger- und Murtensee bis 20 cm unter den Beginn der Gefahrenstufe 4.</p>`,
       `<h3>Palier 1 : sans nouvelles limites</h3><p>Les lacs régulés retiennent plus haut qu’aujourd’hui, mais pas au-dessus de leur limite de hautes eaux. Trois sous-paliers :</p><p class="marke">1a dans la tranche utilisée</p><p>Jusqu’au niveau que le lac a atteint 1 % des jours de 1991 à 2020.</p><p class="marke">1b jusqu’à la limite de hautes eaux</p><p>Jusqu’à 20 cm sous la limite officielle de hautes eaux. Les lacs de Neuchâtel et de Morat n’en ont pas et restent dans la tranche.</p><p class="marke">1c lacs du pied du Jura jusqu’au degré de danger 4</p><p>En plus, les lacs de Neuchâtel et de Morat jusqu’à 20 cm sous le début du degré de danger 4.</p>`) +
       `<div class="rollen"><table class="erg"><thead><tr><th>${T.stufe}</th><th class="z">${T.genutzt} ${T.mio}</th><th class="z">${T.nUnter}, ${T.eBest}</th><th class="z">${T.eRegel}</th><th class="z">${T.hwT}</th></tr></thead><tbody><tr><td>${T.gemessen}</td><td class="z">–</td><td class="z">${zahl(d.k.u0)}</td><td class="z">${zahl(d.k.u0)}</td><td class="z">–</td></tr>${teil}</tbody></table></div>` +
       LL(`<p class="hinweis">Spalte «Hochwasserschutz»: Tage, an denen ein See wegen des Rückhalts über seiner Hochwassergrenze stünde (Betriebsregel). Die Grafik zeigt Stufe 1b.</p>`, `<p class="hinweis">Colonne « Protection contre les crues » : jours où un lac serait au-dessus de sa limite de hautes eaux à cause de la retenue (règle d’exploitation). Le graphique montre le palier 1b.</p>`));
-    sc3.fuelle(3, LL(`<h3>Stufe 2: über der Hochwassergrenze</h3><p>Dieselben Seen, aber mit 50 cm über der heutigen Hochwassergrenze. Die Wehre gibt es schon. Nötig wären neue Reglemente und Schutzbauten an den Ufern. Jeder Tag über der heutigen Grenze ist in der Grafik oben schwarz markiert.</p>`,
+    f3(4, LL(`<h3>Stufe 2: über der Hochwassergrenze</h3><p>Dieselben Seen, aber mit 50 cm über der heutigen Hochwassergrenze. Die Wehre gibt es schon. Nötig wären neue Reglemente und Schutzbauten an den Ufern. Jeder Tag über der heutigen Grenze ist in der Grafik oben schwarz markiert.</p>`,
       `<h3>Palier 2 : au-dessus de la limite de hautes eaux</h3><p>Les mêmes lacs, mais avec 50 cm au-dessus de la limite actuelle de hautes eaux. Les barrages existent déjà. Il faudrait de nouveaux règlements et des ouvrages de protection sur les rives. Chaque jour au-dessus de la limite actuelle est marqué en noir en haut du graphique.</p>`) + ergebnis(d, d.st['2']));
-    sc3.fuelle(4, LL(`<h3>Stufe 3: mit dem Bodensee</h3><p>Dazu 50 cm auf dem Bodensee, mit ${zahl(fb)} km² die grösste Fläche. Der Bodensee ist nicht reguliert. Seit einer Volksabstimmung vom 26. August 1973 verpflichtet die Thurgauer Verfassung Kanton und Gemeinden, sich gegen Massnahmen zu wenden, welche die natürlichen Verhältnisse der See- und Flusslandschaft an Bodensee, Untersee und Rhein beeinträchtigen (heute § 76 Abs. 3 KV). Baden-Württemberg hat 1995 die Nutzung als Rückhaltebecken abgelehnt. Die KHR (2018) hält eine Regulierung unter den heutigen politischen und rechtlichen Bedingungen für kaum realisierbar. Die IGKB (2024) bewertet sie ökologisch sehr kritisch.</p>`,
+    f3(5, LL(`<h3>Stufe 3: mit dem Bodensee</h3><p>Dazu 50 cm auf dem Bodensee, mit ${zahl(fb)} km² die grösste Fläche. Der Bodensee ist nicht reguliert. Seit einer Volksabstimmung vom 26. August 1973 verpflichtet die Thurgauer Verfassung Kanton und Gemeinden, sich gegen Massnahmen zu wenden, welche die natürlichen Verhältnisse der See- und Flusslandschaft an Bodensee, Untersee und Rhein beeinträchtigen (heute § 76 Abs. 3 KV). Baden-Württemberg hat 1995 die Nutzung als Rückhaltebecken abgelehnt. Die KHR (2018) hält eine Regulierung unter den heutigen politischen und rechtlichen Bedingungen für kaum realisierbar. Die IGKB (2024) bewertet sie ökologisch sehr kritisch.</p>`,
       `<h3>Palier 3 : avec le lac de Constance</h3><p>En plus, 50 cm sur le lac de Constance, la plus grande surface avec ${zahl(fb)} km². Le lac de Constance n’est pas régulé. Depuis une votation populaire du 26 août 1973, la constitution thurgovienne oblige le canton et les communes à s’opposer aux mesures qui portent atteinte aux conditions naturelles du paysage lacustre et fluvial du lac de Constance, de l’Untersee et du Rhin (aujourd’hui § 76, al. 3). Le Bade-Wurtemberg a refusé en 1995 de l’utiliser comme bassin de rétention. La CHR (2018) juge une régulation difficilement réalisable dans les conditions politiques et juridiques actuelles. L’IGKB (2024) la juge très critique sur le plan écologique.</p>`) + ergebnis(d, d.st['3']) +
       LL(`<p class="hinweis">Zum Vergleich: Das Regulierreglement von 1973 rechnete mit 90 m³/s Zuschuss von Oktober bis Dezember, 15 cm mehr Fahrwassertiefe und 8 % mehr Ladung (IGKB, 2024). Die Abflusskurve dieser Seite ergibt für 90 m³/s beim GlW ${zahl(hub(90))} cm.</p>`,
         `<p class="hinweis">À titre de comparaison : le règlement de régulation de 1973 prévoyait un apport de 90 m³/s d’octobre à décembre, 15 cm de profondeur en plus et 8 % de chargement en plus (IGKB, 2024). La courbe de tarage de cette page donne ${zahl(hub(90))} cm pour 90 m³/s au GlW.</p>`));
     const urteil = STUFEN.map(st => { const z = d.st[st], ok = z.r.k.u1 === 0 || z.v.k.u1 === 0;
       return `<tr><td>${T['st' + st]}</td><td>${!d.k.u0 ? T.unnoetig : ok ? T.ja : T.nein}</td><td class="z blau">${zahl(z.v.k.u1)}</td><td class="z blau">${zahl(z.r.k.u1)}</td><td class="z${z.r.ueber ? ' hw' : ''}">${zahl(z.r.ueber)}</td></tr>`; }).join('');
-    sc3.fuelle(5, LL(`<h3>GlW an allen Tagen</h3><p>${j} hätte es dafür <b>${zahl(d.bed)} Mio. m³</b> gebraucht. Die Tabelle zeigt, wie viele Tage unter dem GlW je Stufe bleiben.</p>`, `<h3>Le GlW tous les jours</h3><p>En ${j}, il aurait fallu <b>${zahl(d.bed)} mio m³</b>. Le tableau indique combien de jours restent sous le GlW à chaque palier.</p>`) +
+    f3(6, LL(`<h3>GlW an allen Tagen</h3><p>${j} hätte es dafür <b>${zahl(d.bed)} Mio. m³</b> gebraucht. Die Tabelle zeigt, wie viele Tage unter dem GlW je Stufe bleiben.</p>`, `<h3>Le GlW tous les jours</h3><p>En ${j}, il aurait fallu <b>${zahl(d.bed)} mio m³</b>. Le tableau indique combien de jours restent sous le GlW à chaque palier.</p>`) +
       `<div class="rollen"><table class="erg"><thead><tr><th>${T.stufe}</th><th>${T.glwImmer}</th><th class="z">${T.eBest}</th><th class="z">${T.eRegel}</th><th class="z">${T.hwT}</th></tr></thead><tbody>${urteil}</tbody></table></div>` +
-      LL(`<p>Der Speicher füllt sich nicht ganz, wenn im Frühsommer wenig Wasser kommt. Gestaut wird nur, wenn Kaub über dem GlW liegt, und nie mehr als 10 % des Abflusses in Kaub. Der Simulator unten rechnet jede Stufe für jedes Jahr.</p>`,
-        `<p>Le réservoir ne se remplit pas entièrement quand il arrive peu d’eau au début de l’été. On ne retient que si Kaub est au-dessus du GlW, et jamais plus de 10 % du débit à Kaub. Le simulateur ci-dessous calcule chaque palier pour chaque année.</p>`));
+      LL(`<p>Der Speicher füllt sich nicht ganz, wenn im Frühsommer wenig Wasser kommt. Gestaut wird nur, wenn Kaub über dem GlW liegt, und nie mehr als 10 % des Abflusses in Kaub. Die Liste darunter zeigt das für alle Jahre seit 2008. Der Simulator rechnet jede Stufe für jedes Jahr.</p>`,
+        `<p>Le réservoir ne se remplit pas entièrement quand il arrive peu d’eau au début de l’été. On ne retient que si Kaub est au-dessus du GlW, et jamais plus de 10 % du débit à Kaub. La liste ci-dessous le montre pour toutes les années depuis 2008. Le simulateur calcule chaque palier pour chaque année.</p>`));
     zeige3(sc3.jetzt()); typoFr($('k3'));
   }
   let breite = innerWidth;

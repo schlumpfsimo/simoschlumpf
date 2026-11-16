@@ -69,9 +69,9 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 `index.html`, `rhin.css`, `rhin.js` (Leaflet). Die Seite ist zweisprachig (`?l=fr`) und in Kapitel gegliedert. In den Kapiteln 1 bis 3 bleibt die Grafik stehen, der Text läuft in Schritten daran vorbei und verändert sie.
 
-1. Der Rhein bis Kaub: Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
-2. Die Jahre: Abfluss in Kaub für 2019, 2018, 2022 und das laufende Jahr, Tage unter dem GlW schraffiert; für das laufende Jahr die Herkunft in den sieben trockensten Tagen gegen das mittlere Niedrigwasser. Darunter die Liste «Nötige Speicherkapazität pro Jahr».
-3. Rückhalt in den Seen: wählbares Jahr, sechs Schritte (ein Zentimeter, zwei Rechenweisen, Stufen 1 bis 3, GlW an allen Tagen).
+1. Der Rhein bis Kaub (nur gemessene Werte): Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
+2. Die Jahre: Abfluss in Kaub für 2019, 2018, 2022 und das laufende Jahr, Tage unter dem GlW schraffiert; für das laufende Jahr die Herkunft in den sieben trockensten Tagen gegen das mittlere Niedrigwasser. Nur gemessene Werte.
+3. Rückhalt in den Seen: wählbares Jahr, sieben Schritte (ein Zentimeter, wie der Rückhalt wirkt, zwei Rechenweisen, Stufen 1, 2, 3, GlW an allen Tagen), danach die Liste «Nötige Speicherkapazität pro Jahr». Die gerechnete Linie erscheint erst im Schritt, der sie einführt.
 4. Simulator: Jahr, Stufe, Rechenweise und Zusatzstau je See; Verlauf, Speicher, Abgabe, Fahrbarkeit im Jahr, Nutzen nach Staukapazität, Seestand je See.
 5. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
 6. Datensatz.
@@ -83,6 +83,10 @@ Stufen (`stufeCM`, `stufeZiel`, `szenario` in `rhin.js`):
 - Stufe 1c: dazu Neuenburger- und Murtensee bis 20 cm unter den Beginn der Gefahrenstufe 4.
 - Stufe 2, über der Hochwassergrenze: dazu 50 cm über der Grenze (im Simulator einstellbar).
 - Stufe 3, mit Bodensee: dazu derselbe Zusatzstau auf Ober- und Untersee.
+
+Stufe «Unbegrenzt» (`UNB`, `unbAnwenden`, `noetigZeichnen`): Die Staukapazität ist frei in Mio. m³ einstellbar, ohne Obergrenze und ohne Hochwassergrenze, und wird im Verhältnis der Fläche auf die regulierten Seen (wahlweise mit Bodensee) verteilt. Die Seite sucht durch Halbieren die kleinste Kapazität, mit der Kaub im gewählten Jahr an keinem Tag unter dem GlW liegt, für die gewählte Rechenweise, bis höchstens 10'000 Mio. m³. Wahlweise ohne Schranken: Dann dürfen die Seen ihren ganzen Abfluss zurückhalten und es gilt keine 10-%-Grenze in Kaub. Das ist die physikalische Obergrenze, nicht zulässig.
+
+Füllen je See (`becken.fuellen`): Der Rückhalt aller Seen oberhalb einer Messstelle bleibt unter deren Grenze (20 % des Abflusses, nie unter den Tiefstwert im Fenster). Was ein See deshalb nicht aufnehmen kann, geht an die übrigen Seen. Vorher bestimmte die engste Messstelle den Rückhalt aller Seen.
 
 Hochwasserschutz: Als Hochwassertag zählt jeder Tag, an dem ein See mit Zusatzstau über seiner heutigen Hochwassergrenze steht (`O.ueber`, je See `O.hwSee`). Die Seite markiert diese Tage schwarz in den Grafiken, umrandet die Zahl in den Tabellen und zeigt im Simulator einen umrandeten Hinweis mit den Tagen je See.
 

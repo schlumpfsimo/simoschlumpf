@@ -113,3 +113,19 @@ Verbleibende Tage unter GlW mit der Betriebsregel, Stufen 1a / 1b / 1c / 2 / 3, 
 | 2026 | 125 | 110 (0) | 107 (0) | 106 (0) | 106 (0) | 103 (0) |
 
 2026 bringt keine Stufe viel, weil der Rhein von April bis September kaum über 1'000 m³/s führte und der Speicher sich nicht füllte.
+
+## 8 Nachtrag: Stufe «Unbegrenzt» und Füllen je See
+
+- Der Simulator hat eine Stufe «Unbegrenzt»: Kapazität ohne Obergrenze, und die Seite rechnet die nötige Staukapazität für den GlW an allen Tagen aus.
+- Das Füllen beachtet jetzt die Grenze jeder Messstelle unterhalb der Seen einzeln. Vorher deckelte die engste Messstelle alle Seen. Die Zahlen der Stufen ändern sich dadurch leicht (2018, Betriebsregel, Stufe 3: 2 statt 6 Tage unter GlW).
+
+Nötige Staukapazität auf den regulierten Seen, mit Schranken:
+
+| Jahr | Summe der Fehlbeträge | mit Voraussicht | Betriebsregel |
+|---|---|---|---|
+| 2011 | 181 | 170 | 334 |
+| 2018 | 967 | 978 | 1'379 |
+| 2022 | 288 | 270 | 516 |
+| 2026 | 2'324 | nicht erreichbar | nicht erreichbar |
+
+2026 reicht auch eine unbegrenzte Kapazität nicht, weil das Wasser zum Füllen fehlt. Mit der Betriebsregel bleiben bei 10'000 Mio. m³ 101 von 125 Tagen unter dem GlW, ohne Schranken 91.

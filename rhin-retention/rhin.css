@@ -246,3 +246,13 @@ span.hw{padding:1px 5px;margin-left:4px}
 tr.hw td:first-child{font-weight:700}
 .karton table{width:100%}.karton th{white-space:normal;letter-spacing:.04em;font-size:10px;vertical-align:bottom}.karton td,.karton th{padding-left:6px;padding-right:6px}
 #fehlend{margin:0 0 40px}#fehlend td{vertical-align:top;font-size:15px}#fehlend td:first-child{font-weight:700;width:2em}
+.noetig{border-left:6px solid var(--blau);padding:10px 16px;margin:0 0 30px;max-width:60em;font-size:16px}.noetig b:first-child{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}.noetig .textknopf{margin-left:8px}
+/* Jahr der Rechnung: gross und immer sichtbar */
+.jahrkopf{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 28px;margin:0 0 14px}
+.jahrzahl span{display:block;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.jahrzahl b{display:block;font-size:clamp(40px,4.6vw,76px);line-height:1;color:var(--blau)}
+.jahrkopf.gross{margin:0 0 22px;padding:16px 0;border-top:2px solid var(--tinte);border-bottom:2px solid var(--tinte)}
+.jahrkopf.gross .klein{flex:1 1 280px;margin:0 0 4px}
+.jahrmarke{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blau);margin:0 0 6px!important}
+@media (max-width:979px){.buehne .jahrkopf{margin-bottom:6px;gap:6px 14px}.buehne .jahrzahl b{font-size:34px}.buehne .knoepfe button{padding:.7em .9em}}
+@media (min-width:980px){#simkopf{position:sticky;top:0;z-index:4;background:var(--papier);padding:10px 0}#simkopf .jahrzahl b{font-size:52px}}
