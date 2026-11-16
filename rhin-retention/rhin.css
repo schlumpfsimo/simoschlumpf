@@ -298,3 +298,8 @@ h3.unter{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppe
 #jahre table{font-size:14px}#jahre td{padding-right:8px}#jahre th{font-size:10px;padding-right:8px}
 #jahre td.blau{white-space:normal}
 @media (max-width:700px){span.hw{white-space:normal}.bedarf table.erg td:first-child{width:38%}.bedarf td{overflow-wrap:anywhere}}
+/* Messstellen-Baum und Rechenweg */
+.netzbild{margin:0;align-self:stretch}
+.netzbild svg{max-height:calc(100vh - 90px);width:100%}
+.grafik .nb{font-size:10px;font-weight:500}
+@media (max-width:979px){#sc1 .buehne{height:74vh}.netzbild svg{max-height:none}#netzlegende{display:none}}
