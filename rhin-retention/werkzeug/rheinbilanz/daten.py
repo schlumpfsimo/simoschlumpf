@@ -166,7 +166,7 @@ def _richtpegel(b: Bestand, versuch, heute: dt.date) -> None:
         b.richt[p.id] = eintrag
 
 
-KAUB, BASEL = "25700100", "2289"
+KAUB, BASEL, BINGEN = "25700100", "2289", "25300200"
 
 
 def _kaub(b: Bestand, versuch, heute: dt.date) -> None:
@@ -181,6 +181,26 @@ def _kaub(b: Bestand, versuch, heute: dt.date) -> None:
     q, w = b.q.get(KAUB, {}), b.w_kaub
     if not q:
         return
+    # Tage ohne Wasserstand Kaub, aber mit Wert am Pegel Bingen (18 km oberhalb): Das HLNUG liefert für Kaub keine Tagesmittel
+    # um und unter 0 cm, also gerade die tiefsten Tage. Kaub = Bingen + mittlerer Abstand beider Pegel an den
+    # Niedrigwassertagen desselben Jahres (Kaub unter 60 cm). Diese Tage sind eigens bezeichnet (Status 9).
+    bingen, ersatz_tage = b.wp.get(BINGEN, {}), []
+    for jahr in sorted({t.year for t in bingen}):
+        paare = [w[t] - bingen[t] for t in w if t.year == jahr and t in bingen and w[t] < 60]
+        fehlend = [t for t in bingen if t.year == jahr and t not in w and t <= heute]
+        if len(paare) < 20 or not fehlend:
+            continue
+        versatz = sum(paare) / len(paare)
+        streuung = (sum((x - versatz) ** 2 for x in paare) / len(paare)) ** 0.5
+        for t in fehlend:
+            if bingen[t] + versatz < 60:                 # nur im Niedrigwasser, wo der Abstand bestimmt ist
+                w[t] = round(bingen[t] + versatz, 1)
+                b.wp.setdefault(KAUB, {})[t] = w[t]
+                ersatz_tage.append(t)
+        if any(t.year == jahr for t in ersatz_tage):
+            b.kaub.setdefault("ersatz", []).append({"jahr": jahr, "pegel": "Bingen", "versatz_cm": round(versatz, 1), "streuung_cm": round(streuung, 1),
+                                                    "paare": len(paare), "tage": [t.isoformat() for t in sorted(ersatz_tage) if t.year == jahr]})
+    ersatz_tage = set(ersatz_tage)
     # Abflusskurve: Wertepaare des jüngsten Jahrbuchjahres und die Rohwerte danach (aktuelle Kurve der WSV)
     letztes_dgj = max((t.year for t, c in b.status[KAUB].items() if c == 4), default=None)
     paare = [(q[t], w[t]) for t in q if t in w and letztes_dgj and t.year >= letztes_dgj and b.status[KAUB][t] in (0, 4)]
@@ -190,11 +210,11 @@ def _kaub(b: Bestand, versuch, heute: dt.date) -> None:
     # Tage nach dem Jahrbuch mit Wasserstand, aber ohne Abfluss: Abfluss aus dem Wasserstand über die Kurve
     aus_w, verlaengert, ohne = 0, 0, 0
     for tag in sorted(t for t in w if letztes_dgj and t.year > letztes_dgj and t not in q):
-        wert = schifffahrt.abfluss_aus_wasserstand(kurve, w[tag])
+        wert = schifffahrt.abfluss_aus_wasserstand(kurve, w[tag], 20.0 if tag in ersatz_tage else 12.0)
         if wert is None:
             ohne += 1
             continue
-        b.setze(KAUB, {tag: (wert[0], 8 if wert[1] else 7)})
+        b.setze(KAUB, {tag: (wert[0], 9 if tag in ersatz_tage else 8 if wert[1] else 7)})
         aus_w += 1
         verlaengert += wert[1]
     b.kaub["abfluss_aus_w"] = {"ab": f"{letztes_dgj + 1}-01-01", "tage": aus_w, "davon_verlaengert": verlaengert, "ohne_wert": ohne,

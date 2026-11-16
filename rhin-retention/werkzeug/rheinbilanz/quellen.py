@@ -28,7 +28,7 @@ DGJ = "https://dgj-daten.bafg.de/Rhein"
 HLNUG = "https://www.hlnug.de/static/pegel/wiskiweb3/data/internet/stations/0"
 
 STATUS = {0: "roh", 1: "provisorisch", 2: "validiert", 3: "definitiv", 4: "geprüft (DGJ)", 6: "Tagesmittel WSV über HLNUG",
-          7: "aus Wasserstand (Abflusskurve)", 8: "aus Wasserstand (Kurve verlängert)"}
+          7: "aus Wasserstand (Abflusskurve)", 8: "aus Wasserstand (Kurve verlängert)", 9: "aus Pegel Bingen abgeleitet (kein Wert für Kaub)"}
 
 Reihe = dict  # {datetime.date: (float, int)}
 
@@ -140,7 +140,8 @@ def hlnug_tagesmittel(nummer: str, parameter: str) -> Reihe:
     daten = json.loads(roh)
     if not daten or daten[0].get("ts_name") != "TagMittel":
         raise QuelleNichtErreichbar(f"HLNUG {nummer} {parameter}: keine Tagesmittel")
-    return {dt.date.fromisoformat(t[:10]): (float(v), 6) for t, v in daten[0]["data"] if v is not None}
+    # Füllwerte der Quelle (z. B. −32763) sind keine Messwerte
+    return {dt.date.fromisoformat(t[:10]): (float(v), 6) for t, v in daten[0]["data"] if v is not None and -500 < float(v) < 50000}
 
 
 # ---------------------------------------------------------------- DGJ (PDF)

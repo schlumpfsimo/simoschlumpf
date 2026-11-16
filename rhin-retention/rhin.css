@@ -234,3 +234,5 @@ table.erg td.blau,td.blau{color:var(--blau);font-weight:700}
 @media (min-width:980px){.buehne.frei{height:calc(100vh - 24px)}}
 @media (max-width:979px){.schritt{align-items:flex-start;padding-top:26px}.karton table{font-size:13px}.karton th{letter-spacing:.04em}.buehne .legende{font-size:12px;gap:2px 14px;margin-bottom:4px}.buehne .herunter{margin:0}}
 .karton .marke{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 4px}
+/* Schmale Bildschirme: ältere Grafiken behalten eine lesbare Schrift und lassen sich seitlich schieben */
+@media (max-width:700px){figure.grafik:not(#jahrfig):not(#szenfig),figure.verlauf{overflow-x:auto}figure.grafik:not(#jahrfig):not(#szenfig)>svg,figure.verlauf svg{min-width:760px}}

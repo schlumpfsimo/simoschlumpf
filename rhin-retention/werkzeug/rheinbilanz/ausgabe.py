@@ -44,7 +44,7 @@ def jahresdatei(b: Bestand, jahr: int, alt: dict | None = None) -> dict:
             alte_codes = _entfalten(alt["s"][sid], len(tage))
             for i, w in enumerate(alt["q"][sid][: len(tage)]):
                 # früher gespeicherte Messwerte bleiben; gerechnete Werte (5 alt, 7, 8) werden nie zurückgeholt und weichen einem Messwert
-                if w is not None and alte_codes[i] not in (5, 7, 8) and (werte[i] is None or codes[i] in (7, 8)):
+                if w is not None and alte_codes[i] not in (5, 7, 8, 9) and (werte[i] is None or codes[i] in (7, 8, 9)):
                     werte[i], codes[i] = w, alte_codes[i]
         if any(w is not None for w in werte):
             q[sid], s[sid] = werte, _laeufe(codes)
