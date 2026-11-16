@@ -245,3 +245,4 @@ td.hw,span.hw{outline:2px solid var(--tinte);outline-offset:-3px}
 span.hw{padding:1px 5px;margin-left:4px}
 tr.hw td:first-child{font-weight:700}
 .karton table{width:100%}.karton th{white-space:normal;letter-spacing:.04em;font-size:10px;vertical-align:bottom}.karton td,.karton th{padding-left:6px;padding-right:6px}
+#fehlend{margin:0 0 40px}#fehlend td{vertical-align:top;font-size:15px}#fehlend td:first-child{font-weight:700;width:2em}

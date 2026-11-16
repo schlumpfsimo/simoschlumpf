@@ -86,7 +86,7 @@
     k2Titel: '2 Les années', k2Lead: 'Le débit à Kaub en moyennes journalières, année après année. Les jours sous le GlW sont hachurés.',
     k3Titel: '3 La retenue dans les lacs', k3Lead: 'Les lacs retiennent de l’eau au début de l’été et la restituent à l’étiage. Ce chapitre fait le calcul avec les débits mesurés de l’année choisie, en trois paliers.',
     simTitel: '4 Simulateur', simLead: 'Chaque palier peut être recalculé ici pour chaque année et modifié librement. La référence est le GlW à l’échelle de Kaub.',
-    herTitel: '5 Méthode de calcul', datTitel: '6 Jeu de données',
+    herTitel: '5 Méthode de calcul', datTitel: '6 Jeu de données', fehlTitel: 'Données manquantes', fehlLead: 'Ces données manquent encore à la page. La liste est classée selon l’effet sur le résultat.', fWas: 'Ce qui manque', fWozu: 'Ce que cela change', fWer: 'Source possible',
     csv: 'Télécharger le CSV', csvQuelle: 'Sources : OFEV (data.bafu.admin.ch) ; WSV, données mises à disposition par la BfG ; HLNUG. Calculs : simoschlumpf.ch/rhin-retention',
     gTitel: 'Débit à Kaub', g40: 'en dessous, pratiquement pas de navigation', gBest: 'avec retenue, avec prévision', gRegel: 'avec retenue, règle d’exploitation', gUnter: 'sous le GlW', gHub: 'relèvement', gSchnitt: 'Axe coupé à 2 000 m³/s.',
     fTitel2: 'Débit à Kaub selon l’origine',
@@ -103,7 +103,7 @@
     k2Titel: '2 Die Jahre', k2Lead: 'Der Abfluss in Kaub als Tagesmittel, Jahr für Jahr. Schraffiert sind die Tage unter dem GlW.',
     k3Titel: '3 Rückhalt in den Seen', k3Lead: 'Die Seen halten im Frühsommer Wasser zurück und geben es bei Niedrigwasser ab. Dieses Kapitel rechnet das mit den gemessenen Abflüssen des gewählten Jahres durch, in drei Stufen.',
     simTitel: '4 Simulator', simLead: 'Hier lässt sich jede Stufe für jedes Jahr nachrechnen und frei verändern. Bezugswert ist der GlW am Pegel Kaub.',
-    herTitel: '5 Herleitung', datTitel: '6 Datensatz',
+    herTitel: '5 Herleitung', datTitel: '6 Datensatz', fehlTitel: 'Fehlende Daten', fehlLead: 'Diese Angaben fehlen der Seite noch. Die Liste ist nach der Wirkung auf das Ergebnis geordnet.', fWas: 'Was fehlt', fWozu: 'Was es ändert', fWer: 'Mögliche Quelle',
     csv: 'CSV herunterladen', csvQuelle: 'Quellen: BAFU (data.bafu.admin.ch); WSV, bereitgestellt durch die BfG; HLNUG. Rechnung: simoschlumpf.ch/rhin-retention',
     gTitel: 'Abfluss in Kaub', g40: 'darunter praktisch keine Schifffahrt', gBest: 'mit Rückhalt, mit Voraussicht', gRegel: 'mit Rückhalt, Betriebsregel', gUnter: 'unter dem GlW', gHub: 'Anhebung', gSchnitt: 'Achse bei 2’000 m³/s abgeschnitten.',
     fTitel2: 'Abfluss in Kaub nach Herkunft',
@@ -120,7 +120,7 @@
   document.querySelectorAll('[data-t]').forEach(e => { e.textContent = T[e.dataset.t]; });
   document.title = T.titel.replace(' · ', ' – ');
   if (FR) document.querySelector('meta[name=description]').content = 'De quoi dépend la navigabilité du Rhin jusqu’à Kaub et ce qu’apporterait une retenue dans les lacs : débits mesurés, échelle de Kaub, origine de l’eau et simulation.';
-  $('inhalt').innerHTML = [['k1', 'k1Titel'], ['k2', 'k2Titel'], ['k3', 'k3Titel'], ['simulator', 'simTitel'], ['herleitung', 'herTitel'], ['daten', 'datTitel']].map(([id, k]) => `<a href="#${id}">${T[k]}</a>`).join('');
+  $('inhalt').innerHTML = [['k1', 'k1Titel'], ['k2', 'k2Titel'], ['k3', 'k3Titel'], ['simulator', 'simTitel'], ['herleitung', 'herTitel'], ['daten', 'datTitel'], ['fehlt', 'fehlTitel']].map(([id, k]) => `<a href="#${id}">${T[k]}</a>`).join('');
   $('sprache').innerHTML = FR ? '<a href="./" hreflang="de" lang="de">DE</a> · <span aria-current="page">FR</span>'
     : '<span aria-current="page">DE</span> · <a href="?l=fr" hreflang="fr" lang="fr">FR</a>';
   const zahl = (x, n = 0) => x == null || !isFinite(x) ? '–'
@@ -1156,6 +1156,30 @@
   }
 
   // ------------------------------------------------------------ Fuss
+  const FEHLEND = FR ? [
+    ['Kaub et Worms 2026 : moyennes journalières contrôlées du niveau et du débit, y compris les jours sous 0 cm', 'Remplace les jours de Kaub déduits de l’échelle de Bingen et comble les jours manquants à Worms.', 'WSV, BfG'],
+    ['Règlements de régulation des lacs avec les lignes de régulation (niveau de consigne par jour de l’année) : lacs du pied du Jura, lacs de Thoune et de Brienz, lac des Quatre-Cantons, lac de Zurich', 'Remplace l’hypothèse du palier 1a et montre ce qui est admis aujourd’hui.', 'Cantons de Berne, de Lucerne et de Zurich, OFEV'],
+    ['Limite officielle de hautes eaux des lacs de Neuchâtel et de Morat', 'Remplace le début du degré de danger 4 aux paliers 1c, 2 et 3.', 'Cantons de Berne, de Neuchâtel, de Vaud et de Fribourg'],
+    ['Capacité d’évacuation des barrages et débits minimaux (Port, Thoune, Interlaken, Lucerne, Zurich)', 'Remplace la limite forfaitaire de 20 % pour la retenue et le délestage.', 'Cantons, exploitants des barrages'],
+    ['Maxau, Spire, Mannheim et Oestrich : moyennes journalières 2026 ; Neckar à Rockenau dès 2021', 'Ferme le bilan entre Bâle et Kaub et précise l’origine de l’eau en aval de Bâle.', 'WSV, BfG, LUBW'],
+    ['Tables de tarage officielles de Spire et de Mannheim', 'Les courbes de la page s’écartent de 17 et 39 cm en basses eaux ; le relèvement simulé n’y est pas fiable.', 'WSV'],
+    ['Chargement par centimètre d’enfoncement pour des bateaux types (tonnes ou EVP)', 'Remplace la courbe linéaire entre les quatre valeurs de la CCNR.', 'CCNR, armateurs, Ports rhénans suisses'],
+    ['Règlement de régulation du lac de Constance de 1973, texte complet', 'Permet la comparaison directe avec le palier 3.', 'CHR, OFEV'],
+    ['Niveaux des lacs : état de validation des valeurs journalières', 'Les niveaux des lacs n’ont pas d’état ; ceux de 2026 sont bruts.', 'OFEV'],
+    ['Résultat officiel de la votation thurgovienne du 26 août 1973', 'Seule la date est attestée.', 'Archives d’État de Thurgovie'],
+  ] : [
+    ['Kaub und Worms 2026: geprüfte Tagesmittel von Wasserstand und Abfluss, auch für die Tage unter 0 cm', 'Ersetzt die aus dem Pegel Bingen abgeleiteten Tage in Kaub und schliesst die fehlenden Tage in Worms.', 'WSV, BfG'],
+    ['Regulierreglemente der Seen mit den Regulierlinien (Soll-Seestand je Kalendertag): Jurarandseen, Thuner- und Brienzersee, Vierwaldstättersee, Zürichsee', 'Ersetzt die Annahme der Stufe 1a und zeigt, was heute zulässig ist.', 'Kantone Bern, Luzern und Zürich, BAFU'],
+    ['Amtliche Hochwassergrenze für Neuenburger- und Murtensee', 'Ersetzt den Beginn der Gefahrenstufe 4 in den Stufen 1c, 2 und 3.', 'Kantone Bern, Neuenburg, Waadt und Freiburg'],
+    ['Abflusskapazität der Wehre und Mindestabflüsse (Port, Thun, Interlaken, Luzern, Zürich)', 'Ersetzt die pauschale Grenze von 20 % für Rückhalt und Entlastung.', 'Kantone, Betreiber der Wehre'],
+    ['Maxau, Speyer, Mannheim und Oestrich: Tagesmittel 2026; Neckar in Rockenau ab 2021', 'Schliesst die Bilanz zwischen Basel und Kaub und klärt die Herkunft des Wassers unterhalb von Basel.', 'WSV, BfG, LUBW'],
+    ['Amtliche Abflusstafeln für Speyer und Mannheim', 'Die Kurven der Seite liegen bei Niedrigwasser 17 und 39 cm daneben; die simulierte Hebung ist dort nicht belastbar.', 'WSV'],
+    ['Ladung je Zentimeter Abladetiefe für typische Schiffe (Tonnen oder TEU)', 'Ersetzt die lineare Kurve zwischen den vier Werten der ZKR.', 'ZKR, Reedereien, Schweizerische Rheinhäfen'],
+    ['Regulierreglement für den Bodensee von 1973 im Wortlaut', 'Erlaubt den direkten Vergleich mit Stufe 3.', 'KHR, BAFU'],
+    ['Seestände: Freigabestatus der Tageswerte', 'Die Seestände tragen keinen Status; die Werte von 2026 sind roh.', 'BAFU'],
+    ['Amtliches Ergebnis der Thurgauer Abstimmung vom 26. August 1973', 'Belegt ist nur das Datum.', 'Staatsarchiv Thurgau'],
+  ];
+  $('fehlend').innerHTML = `<table><thead><tr><th></th><th>${T.fWas}</th><th>${T.fWozu}</th><th>${T.fWer}</th></tr></thead><tbody>${FEHLEND.map((z, i) => `<tr><td>${i + 1}</td>${z.map(x => `<td>${h(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   $('methodentext').innerHTML = '<ul>' + T.meth.map(m => `<li>${h(m)}</li>`).join('') + '</ul>';
   $('quellen').innerHTML = '<ul>' + meta.quellen.map(q => `<li>${h(FR ? (QUELLEN_FR[q.kurz] || q.text) : q.text)} – <a href="${q.url}">${h(q.url.replace('https://', ''))}</a></li>`).join('') +
     `<li>${FR ? 'Lacs : OFEV, fiches « Seeregulierung » (2020)' : 'Seen: BAFU, Faktenblätter «Seeregulierung» (2020)'} – <a href="https://www.bafu.admin.ch/de/wichtige-seeregulierungen">bafu.admin.ch/de/wichtige-seeregulierungen</a>; IGKB</li>` +
