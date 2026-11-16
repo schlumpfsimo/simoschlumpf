@@ -96,3 +96,20 @@ Tage mit einem See über der Grenze (Betriebsregel, Stufe 1): 2011: 51, 2018: 30
 ## 6 Berichte der Prüfläufe
 
 Die vollständigen Berichte mit allen Zahlen lagen während der Sitzung unter `scratchpad/pruef/` (bafu.md, wsv.md, bilanz.md, sim.md, seite.md, quellen.md). Sie sind nicht Teil des Repos.
+
+## 7 Nachtrag vom 16.11.2026: Stufen, Hochwasserschutz, Betriebsregel
+
+- Stufe 1 ist unterteilt in 1a (genutztes Band), 1b (bis zur amtlichen Hochwassergrenze) und 1c (Jurarandseen bis Gefahrenstufe 4).
+- Hochwassertage sind neu definiert: Tage, an denen ein See mit Zusatzstau über seiner heutigen Hochwassergrenze steht. Sie sind in Grafiken, Tabellen und im Simulator markiert.
+- Die Betriebsregel staut nur noch von April bis September und leert den Speicher ab 1. November. Die Zahlen in Abschnitt 4 zur Betriebsregel gelten damit nicht mehr.
+
+Verbleibende Tage unter GlW mit der Betriebsregel, Stufen 1a / 1b / 1c / 2 / 3, dahinter in Klammern die Hochwassertage:
+
+| Jahr | gemessen | 1a | 1b | 1c | 2 | 3 |
+|---|---|---|---|---|---|---|
+| 2011 | 28 | 16 (2) | 12 (3) | 1 (3) | 0 (82) | 0 (71) |
+| 2018 | 102 | 50 (0) | 47 (0) | 39 (0) | 17 (142) | 6 (140) |
+| 2022 | 40 | 15 (0) | 10 (2) | 0 (0) | 0 (32) | 0 (13) |
+| 2026 | 125 | 110 (0) | 107 (0) | 106 (0) | 106 (0) | 103 (0) |
+
+2026 bringt keine Stufe viel, weil der Rhein von April bis September kaum über 1'000 m³/s führte und der Speicher sich nicht füllte.

@@ -76,11 +76,17 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 5. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
 6. Datensatz.
 
-Drei Stufen (`stufeCM`, `szenario` in `rhin.js`):
+Stufen (`stufeCM`, `stufeZiel`, `szenario` in `rhin.js`):
 
-- Stufe 1, heutiger Rahmen: Die regulierten Seen stauen bis zur Hochwassergrenze. Die Kapazität je See ist der Abstand des tiefsten Seestands im Jahr zur Grenze; die Grenze selbst gilt Tag für Tag. Das ist eine Obergrenze.
-- Stufe 2, neue Staukapazität: dazu 50 cm über der Hochwassergrenze (im Simulator einstellbar).
-- Stufe 3, mit Bodensee: dazu derselbe Zusatzstau auf Ober- und Untersee. Der Bodensee ist nicht reguliert (Kantonsverfassung Thurgau § 76 Abs. 3; IGKB 2024; KHR 2018).
+- Stufe 1a, im genutzten Band: bis zum 99. Perzentil des Seestands 1991–2020 (`band.hoch`), ohne Reserve.
+- Stufe 1b, bis zur Hochwassergrenze: bis 20 cm unter die amtliche Hochwassergrenze; Neuenburger- und Murtensee (ohne amtliche Grenze) bleiben im Band.
+- Stufe 1c: dazu Neuenburger- und Murtensee bis 20 cm unter den Beginn der Gefahrenstufe 4.
+- Stufe 2, über der Hochwassergrenze: dazu 50 cm über der Grenze (im Simulator einstellbar).
+- Stufe 3, mit Bodensee: dazu derselbe Zusatzstau auf Ober- und Untersee.
+
+Hochwasserschutz: Als Hochwassertag zählt jeder Tag, an dem ein See mit Zusatzstau über seiner heutigen Hochwassergrenze steht (`O.ueber`, je See `O.hwSee`). Die Seite markiert diese Tage schwarz in den Grafiken, umrandet die Zahl in den Tabellen und zeigt im Simulator einen umrandeten Hinweis mit den Tagen je See.
+
+Betriebsregel (`regel`, `REGEL`): stauen nur in den Staumonaten (Standard April bis September) und nur über einem Abfluss in Kaub (Standard 1'000 m³/s); abgeben unter dem GlW, höchstens so viel, dass ein voller Speicher 30 Tage reicht; Winterleerung ab 1. November über 30 Tage (bis Ende Februar wird nicht gestaut). Reserve zur Grenze 20 cm. Alle Werte sind im Simulator einstellbar.
 
 Speicher je See (nur `rhin.js`, Funktion `becken`): Jeder See führt seinen eigenen Inhalt. Gefüllt wird im Verhältnis des freien Platzes bis 20 cm unter die Hochwassergrenze (`RESERVE`), geleert im Verhältnis des Inhalts. Steigt ein See über die Grenze, gibt er den Überschuss ab, höchstens mit 20 % des Abflusses unterhalb. Reicht das nicht, zählt der Tag als «Tag mit einem See über der Grenze». `simulation.py` rechnet weiterhin mit einem gemeinsamen Speicher und dient nur noch den Tests der Grundregeln.
 

@@ -236,3 +236,12 @@ table.erg td.blau,td.blau{color:var(--blau);font-weight:700}
 .karton .marke{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 4px}
 /* Schmale Bildschirme: ältere Grafiken behalten eine lesbare Schrift und lassen sich seitlich schieben */
 @media (max-width:700px){figure.grafik:not(#jahrfig):not(#szenfig),figure.verlauf{overflow-x:auto}figure.grafik:not(#jahrfig):not(#szenfig)>svg,figure.verlauf svg{min-width:760px}}
+/* Hochwasserschutz: schwarz umrandet, damit es nicht übersehen wird */
+.warnung{border:3px solid var(--tinte);padding:14px 18px;margin:0 0 30px;max-width:60em;font-size:16px}
+.warnung b:first-child{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+.warnung.ok{border-width:1px}
+td.hw,span.hw,tr.hw td:not(:first-child){font-weight:700;color:var(--tinte)}
+td.hw,span.hw{outline:2px solid var(--tinte);outline-offset:-3px}
+span.hw{padding:1px 5px;margin-left:4px}
+tr.hw td:first-child{font-weight:700}
+.karton table{width:100%}.karton th{white-space:normal;letter-spacing:.04em;font-size:10px;vertical-align:bottom}.karton td,.karton th{padding-left:6px;padding-right:6px}
