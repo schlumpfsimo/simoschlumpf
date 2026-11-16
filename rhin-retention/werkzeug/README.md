@@ -69,9 +69,9 @@ Jede Ausgabe nennt BAFU und WSV/BfG als Quelle.
 
 `index.html`, `rhin.css`, `rhin.js` (Leaflet). Die Seite ist zweisprachig (`?l=fr`) und in Kapitel gegliedert. In den Kapiteln 1 bis 3 bleibt die Grafik stehen, der Text läuft in Schritten daran vorbei und verändert sie.
 
-1. Der Rhein bis Kaub: Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
-2. Die Jahre: Abfluss in Kaub für 2019, 2018, 2022 und das laufende Jahr, Tage unter dem GlW schraffiert; für das laufende Jahr die Herkunft in den sieben trockensten Tagen gegen das mittlere Niedrigwasser. Darunter die Liste «Nötige Speicherkapazität pro Jahr».
-3. Rückhalt in den Seen: wählbares Jahr, sechs Schritte (ein Zentimeter, zwei Rechenweisen, Stufen 1 bis 3, GlW an allen Tagen).
+1. Der Rhein bis Kaub (nur gemessene Werte): Kennzahlen des gewählten Tages, Karte in sechs Schritten (Pegel Kaub, GlW, Abschnitte, Staustufen, Seen, Herkunft), danach Fahrbarkeit je Abschnitt, Längsschnitt, Herkunft, Bilanz und Seen.
+2. Die Jahre: Abfluss in Kaub für 2019, 2018, 2022 und das laufende Jahr, Tage unter dem GlW schraffiert; für das laufende Jahr die Herkunft in den sieben trockensten Tagen gegen das mittlere Niedrigwasser. Nur gemessene Werte.
+3. Rückhalt in den Seen: wählbares Jahr, sieben Schritte (ein Zentimeter, wie der Rückhalt wirkt, zwei Rechenweisen, Stufen 1, 2, 3, GlW an allen Tagen), danach die Liste «Nötige Speicherkapazität pro Jahr». Die gerechnete Linie erscheint erst im Schritt, der sie einführt.
 4. Simulator: Jahr, Stufe, Rechenweise und Zusatzstau je See; Verlauf, Speicher, Abgabe, Fahrbarkeit im Jahr, Nutzen nach Staukapazität, Seestand je See.
 5. Herleitung: jede Formel mit den Zahlen des angezeigten Tages.
 6. Datensatz.
