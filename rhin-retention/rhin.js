@@ -462,7 +462,7 @@
   function feld(titel, html) { const g = document.createElement('label'); g.className = 'gruppe'; g.innerHTML = `<span>${h(titel)}</span>${html}`; return g; }
   function wahlZeichnen(Y) {
     const w = $('wahl'); w.textContent = '';
-    w.append(knoepfe(T.ziel, meta.ziele.map(z => [z, nm(kurz(ST[z]))]), Z.ziel, v => { Z.ziel = v; Z.extrem = 0; if (Z.ansicht === 'heute') Z.tag = null; alles(); }));
+    Z.ziel = KAUB;                               // die Seite erzählt immer an Kaub
     w.append(knoepfe(T.ansicht, [['heute', T.heute], ['extrem', T.extrem], ['tag', T.tag], ['mq', T.mq], ['nw', T.nw]], Z.ansicht, v => {
       if (v === 'tag' && Z.ansicht === 'extrem' && Z.i0 != null) Z.tag = Z.i0;
       Z.ansicht = v; if (v === 'heute') { Z.jahr = LETZTES; Z.tag = null; } alles();
@@ -893,10 +893,10 @@
   function simWahl(R) {
     const w = $('simwahl'); w.textContent = '';
     const sj = $('simjahr'); sj.textContent = '';
-    $('simkopf').innerHTML = `<div class="jahrzahl"><span>${T.skJahr}</span><b>${Z.jahr}</b></div><p class="klein">${T.skText}</p>`;
-    const jw = feld(T.simJahr, `<select>${meta.jahre.slice().reverse().map(x => `<option${x === Z.jahr ? ' selected' : ''}>${x}</option>`).join('')}</select>`);
-    jw.querySelector('select').addEventListener('change', e => { Z.jahr = +e.target.value; Z.tag = null; Z.ansicht = Z.jahr === LETZTES ? 'heute' : 'tag'; alles(); });
-    sj.append(jw, knoepfe(T.stufe, [...STUFEN.map(s => [s, T['st' + s].split(/ ?:/)[0]]), ['frei', T.stFrei], ['unb', T.stUnb]], Z.stufe, v => { Z.stufe = v; if (v === 'frei') UEBER = 0; alles(); }));
+    const jahrSel = (liste, aktiv, label) => `<label class="jahrzahl"><span>${label}</span><select class="jahrwahl" aria-label="${h(label)}">${liste.map(x => `<option${x === aktiv ? ' selected' : ''}>${x}</option>`).join('')}</select></label>`;
+    $('simkopf').innerHTML = jahrSel(meta.jahre.slice().reverse(), Z.jahr, T.skJahr);
+    $('simkopf').querySelector('select').addEventListener('change', e => { Z.jahr = +e.target.value; Z.tag = null; Z.ansicht = Z.jahr === LETZTES ? 'heute' : 'tag'; alles(); });
+    sj.append(knoepfe(T.stufe, [...STUFEN.map(s => [s, T['st' + s].split(/ ?:/)[0]]), ['frei', T.stFrei], ['unb', T.stUnb]], Z.stufe, v => { Z.stufe = v; if (v === 'frei') UEBER = 0; alles(); }));
     if (Z.stufe === 'unb') {
       const m = feld(T.uMio, `<input type="number" min="0" step="50" value="${Math.round(UNB.mio)}">`);
       m.querySelector('input').addEventListener('change', e => { UNB.mio = Math.max(0, +e.target.value || 0); alles(); });
@@ -1424,8 +1424,8 @@
       d = D3[j] = { Y, k: kaubJahr(Y, OHNE), bed: bedarfGlw(Y), st: {} };
       for (const st of STUFEN) d.st[st] = { v: szenario(Y, st, 'glw'), r: szenario(Y, st, 'regel') }; }
     if (j !== jahr3) return;
-    const kk = $('k3kopf'); kk.innerHTML = `<div class="jahrzahl"><span>${T.jkRechnet}</span><b>${j}</b></div>`;
-    kk.append(knoepfe(T.jkAnderes, K3.map(x => [String(x), String(x)]), String(j), v => { jahr3 = +v; kapitel3(); }));
+    const kk = $('k3kopf'); kk.innerHTML = `<label class="jahrzahl"><span>${T.jkRechnet}</span><select class="jahrwahl" aria-label="${h(T.jkRechnet)}">${meta.jahre.filter(x => x >= 2008).reverse().map(x => `<option${x === j ? ' selected' : ''}>${x}</option>`).join('')}</select></label>`;
+    kk.querySelector('select').addEventListener('change', e => { jahr3 = +e.target.value; kapitel3(); });
     const f3 = (i, html) => sc3.fuelle(i, `<p class="jahrmarke">${T.jahr} ${j}</p>` + html);
     const reg = meta.seen.filter(s => s.reguliert), fr = reg.reduce((s, x) => s + x.flaeche_km2, 0), fb = meta.seen.filter(s => !s.reguliert).reduce((s, x) => s + x.flaeche_km2, 0), cm1 = fr / 100;
     const q30 = 100e6 / (30 * SEK), hub = q => wAusQ(Q_GLW) - wAusQ(Q_GLW - q), frei = stufeCM(d.Y, '1b', 0), v1 = reg.reduce((s, x) => s + frei[x.id] * x.flaeche_km2 / 100, 0);
