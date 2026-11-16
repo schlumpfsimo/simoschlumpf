@@ -305,7 +305,7 @@
   let UEBER = 0;                                // Zusatzstau über der heutigen Hochwassergrenze (cm): verschiebt die Grenze nach oben
   const BODENSEE = '2288', BODENSEE_TAGE = 0;   // keine zusätzliche Fliesszeit: Eine Änderung in Neuhausen erscheint nach den Messreihen am selben Tag in Basel
   const CM = Object.fromEntries(meta.seen.map(s => [s.id, s.reguliert ? 10 : 0]));
-  const REGEL = { stauAb: 1000, tage: 30, von: 4, bis: 9, winter: true, leeren: 30 };   // dazu: Staumonate von–bis, Winterleerung ab 1. November in so vielen Tagen   // Betriebsregel: stauen ab diesem Abfluss in Kaub (m³/s); voller Speicher reicht so viele Tage
+  const REGEL_STD = { stauAb: 1000, tage: 30, von: 4, bis: 9, winter: true, leeren: 30 }, REGEL = { ...REGEL_STD };   // dazu: Staumonate von–bis, Winterleerung ab 1. November in so vielen Tagen   // Betriebsregel: stauen ab diesem Abfluss in Kaub (m³/s); voller Speicher reicht so viele Tage
   const tagAnsicht = () => ['heute', 'extrem', 'tag'].includes(Z.ansicht);
   // Seegruppen: Name, Seen, erste Messstelle unterhalb
   const SEEGRUPPEN = [['gBodensee', ['obersee', 'untersee'], '2288'], ['gAareO', ['brienz', 'thun'], '2135'], ['gAareJ', ['murten', 'neuenburg', 'biel'], '2029'], ['gReussL', ['vws'], '2018'], ['gLimmatL', ['zuerich'], '2243']];
@@ -339,13 +339,14 @@
   }
   // Rechnet ein Jahr mit einer Stufe (oder mit festen cm auf den regulierten Seen ohne Hochwassergrenze), ohne den Zustand der Seite zu ändern
   function szenario(Y, stufe, modus = 'glw', cmFrei = null) {
-    const altCM = { ...CM }, altU = UEBER, altM = Z.modus, altN = NETZ, altZ = ZIEL, altR = MIT_RESERVE;
+    const altCM = { ...CM }, altU = UEBER, altM = Z.modus, altN = NETZ, altZ = ZIEL, altR = MIT_RESERVE, altRegel = { ...REGEL }, altRes = RESERVE;
+    Object.assign(REGEL, REGEL_STD); RESERVE = 0.20;     // Kapitel 2 und 3 rechnen immer mit den Standardwerten, unabhängig vom Simulator
     if (cmFrei != null) { for (const s of meta.seen) CM[s.id] = s.reguliert ? cmFrei : 0; UEBER = Infinity; ZIEL = { ...HW }; }
     else if (!stufe) { for (const s of meta.seen) CM[s.id] = 0; UEBER = 0; }
     else { Object.assign(CM, stufeCM(Y, String(stufe), 50)); UEBER = stufeNr(stufe) >= 2 ? 50 : 0; ZIEL = stufeZiel(String(stufe)); MIT_RESERVE = String(stufe) !== '1a'; }
     Z.modus = modus; NETZ = VOLL;
     try { const S = simulieren(Y); return { S, k: kaubJahr(Y, S), v: S.V / 1e6, genutzt: S.O ? Math.max(...S.O.speicher) / 1e6 : 0, ueber: S.O ? S.O.ueber.reduce((a, b) => a + b, 0) : 0 }; }
-    finally { Object.assign(CM, altCM); UEBER = altU; Z.modus = altM; NETZ = altN; ZIEL = altZ; MIT_RESERVE = altR; }
+    finally { Object.assign(CM, altCM); UEBER = altU; Z.modus = altM; NETZ = altN; ZIEL = altZ; MIT_RESERVE = altR; Object.assign(REGEL, altRegel); RESERVE = altRes; }
   }
   const bedarfGlw = Y => Y.q[KAUB] && Q_GLW != null ? Y.q[KAUB].reduce((s, x) => s + (x == null ? 0 : Math.max(0, Q_GLW - x)), 0) * SEK / 1e6 : null;
 
