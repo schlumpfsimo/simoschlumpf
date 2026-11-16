@@ -255,4 +255,8 @@ tr.hw td:first-child{font-weight:700}
 .jahrkopf.gross .klein{flex:1 1 280px;margin:0 0 4px}
 .jahrmarke{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blau);margin:0 0 6px!important}
 @media (max-width:979px){.buehne .jahrkopf{margin-bottom:6px;gap:6px 14px}.buehne .jahrzahl b{font-size:34px}.buehne .knoepfe button{padding:.7em .9em}}
-@media (min-width:980px){#simkopf{position:sticky;top:0;z-index:4;background:var(--papier);padding:10px 0}#simkopf .jahrzahl b{font-size:52px}}
+@media (min-width:980px){#simkopf{position:sticky;top:0;z-index:4;background:var(--papier);padding:10px 0}#simkopf select.jahrwahl{font-size:52px}}
+select.jahrwahl{display:block;font:700 clamp(40px,4.6vw,76px)/1 "Plex",Arial,sans-serif;color:var(--blau);background:var(--papier);border:0;border-bottom:3px solid var(--blau);border-radius:0;padding:0 .1em 2px 0;min-height:0;cursor:pointer}
+select.jahrwahl:hover{background:#eef1f8}
+label.jahrzahl{display:block}
+@media (max-width:979px){.buehne select.jahrwahl{font-size:34px}}
