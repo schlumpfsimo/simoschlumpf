@@ -13,8 +13,6 @@ b,strong{font-weight:700}
 .blatt{padding:clamp(28px,2.4vw,60px) var(--rand) 80px;max-width:1800px}
 .sprache{font-size:13px;font-weight:700;letter-spacing:.14em;margin-bottom:clamp(28px,4vw,72px)}
 .name{margin:0;font-size:clamp(26px,3.05vw,64px);font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.15}
-.sterne{display:flex;gap:12px;margin:18px 0 26px}
-.sterne svg{width:18px;height:18px;fill:var(--tinte)}
 .lead{max-width:44em;margin:0 0 28px}
 h2{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px}
 .klein{font-size:14px;max-width:52em}
@@ -200,3 +198,51 @@ h2.frage{font-size:clamp(20px,2vw,30px);letter-spacing:.12em;line-height:1.2;mar
 @media (min-width:760px){#bandlegende span,#laengslegende span{white-space:nowrap}}
 .grafik .legende svg{display:inline-block;width:24px;height:12px;flex:none}
 #bandlegende{margin-bottom:14px}
+.fuss a,.fuss li{overflow-wrap:anywhere}
+
+/* Kapitel und Erzählung: Die Grafik bleibt stehen, die Schritte laufen daran vorbei */
+.lead.kopf{font-size:clamp(18px,1.45vw,24px);max-width:36em;margin:26px 0 30px}
+.inhalt{display:flex;flex-wrap:wrap;gap:8px 28px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.kapitel{margin-top:clamp(56px,6vw,110px);padding-top:44px;border-top:2px solid var(--tinte)}
+.scrolly{display:grid;grid-template-columns:minmax(0,1fr);margin:0 0 34px}
+.buehne{position:sticky;top:0;z-index:3;background:var(--papier);height:56vh;min-height:300px;padding:8px 0;display:flex;flex-direction:column;justify-content:center;border-bottom:2px solid var(--tinte)}
+.buehne .karte{position:static;height:100%;align-self:stretch}
+.buehne #karte{height:100%;min-height:0}
+.buehne .grafik{margin:0}
+.schritt{min-height:58vh;padding:30px 0;display:flex;align-items:center;opacity:.3;transition:opacity .25s}
+.schritt.aktiv{opacity:1}
+.karton{max-width:34em;width:100%}
+.karton h3{font-size:clamp(20px,1.7vw,28px);line-height:1.2;margin:0 0 12px}
+.karton p{margin:0 0 12px}
+.karton .formel{border-left:2px solid var(--tinte);padding:4px 0 4px 14px;font-weight:700}
+.karton .herk{font-size:14px}
+.karton table{font-size:14px;margin:6px 0 12px}
+table.erg td.blau,td.blau{color:var(--blau);font-weight:700}
+.herunter{margin:6px 0 0}
+.tafel.zwei{display:grid;grid-template-columns:minmax(0,1fr);gap:0 clamp(36px,4vw,90px)}
+#stufentext{margin:-10px 0 24px}
+#simjahr{margin-bottom:18px}
+@media (min-width:980px){
+  .scrolly{grid-template-columns:minmax(0,7fr) minmax(300px,4fr);gap:clamp(36px,4vw,90px)}
+  .buehne{top:12px;height:calc(100vh - 24px);border-bottom:0;padding:0}
+  .schritt{min-height:86vh}
+  .tafel.zwei{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.schritt{transition:none}}
+.grafik text.halo{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.buehne.frei{height:auto;min-height:0}
+@media (min-width:980px){.buehne.frei{height:calc(100vh - 24px)}}
+@media (max-width:979px){.schritt{align-items:flex-start;padding-top:26px}.karton table{font-size:13px}.karton th{letter-spacing:.04em}.buehne .legende{font-size:12px;gap:2px 14px;margin-bottom:4px}.buehne .herunter{margin:0}}
+.karton .marke{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 4px}
+/* Schmale Bildschirme: ältere Grafiken behalten eine lesbare Schrift und lassen sich seitlich schieben */
+@media (max-width:700px){figure.grafik:not(#jahrfig):not(#szenfig),figure.verlauf{overflow-x:auto}figure.grafik:not(#jahrfig):not(#szenfig)>svg,figure.verlauf svg{min-width:760px}}
+/* Hochwasserschutz: schwarz umrandet, damit es nicht übersehen wird */
+.warnung{border:3px solid var(--tinte);padding:14px 18px;margin:0 0 30px;max-width:60em;font-size:16px}
+.warnung b:first-child{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+.warnung.ok{border-width:1px}
+td.hw,span.hw,tr.hw td:not(:first-child){font-weight:700;color:var(--tinte)}
+td.hw,span.hw{outline:2px solid var(--tinte);outline-offset:-3px}
+span.hw{padding:1px 5px;margin-left:4px}
+tr.hw td:first-child{font-weight:700}
+.karton table{width:100%}.karton th{white-space:normal;letter-spacing:.04em;font-size:10px;vertical-align:bottom}.karton td,.karton th{padding-left:6px;padding-right:6px}
+#fehlend{margin:0 0 40px}#fehlend td{vertical-align:top;font-size:15px}#fehlend td:first-child{font-weight:700;width:2em}

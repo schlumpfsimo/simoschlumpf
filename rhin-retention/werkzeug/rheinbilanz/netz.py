@@ -96,8 +96,10 @@ SEEN = [
         "Grosse und Kleine Staatsschleuse in Unterseen/Interlaken (seit 1854/1855); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern", grenzen=(562.80, 565.30)),
     See("thun", "Thunersee", "2093", 47.7, _BAFU % "Thunersee", "2135", True,
         "Mühleschleuse (seit 1724) und Scherzligschleuse (seit 1726) in Thun; Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern", grenzen=(557.00, 558.30)),
-    See("murten", "Murtensee", "2004", 23.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern"),
-    See("neuenburg", "Neuenburgersee", "2642", 217.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern"),
+    See("murten", "Murtensee", "2004", 23.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern",
+        grenzen=(None, 430.85), grenzen_art="nur Hochwassergrenze: Beginn der Gefahrenstufe 4 des BAFU (hydrodaten.admin.ch); beim Bielersee stimmt dieser Wert mit der Hochwassergrenze des Faktenblatts überein"),
+    See("neuenburg", "Neuenburgersee", "2642", 217.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern",
+        grenzen=(None, 430.50), grenzen_art="nur Hochwassergrenze: Beginn der Gefahrenstufe 4 des BAFU (hydrodaten.admin.ch); beim Bielersee stimmt dieser Wert mit der Hochwassergrenze des Faktenblatts überein"),
     See("biel", "Bielersee", "2208", 39.0, _BAFU % "Jurarandseen", "2029", True, "Jurarandseen: Regulierwehr Port (seit 1939); Regulierbehörde: Amt für Wasser und Abfall (AWA) des Kantons Bern", grenzen=(428.60, 430.35)),
     See("vws", "Vierwaldstättersee", "2207", 114.0, _BAFU % "Vierwaldstättersee", "2018", True, "Reusswehr Luzern (seit 1861, Komplettsanierung 2008–2011)", grenzen=(433.25, 434.25),
         grenzen_art="minimal einzuhaltender Wasserstand / Schadengrenze Stansstad"),
@@ -148,6 +150,11 @@ STAUSTUFEN = [
     ("Rhinau", 48.2840, 7.6774, "Q1786190"), ("Gerstheim", 48.4038, 7.7279, "Q1261916"), ("Strasbourg", 48.5256, 7.7966, "Q1786206"),
     ("Gambsheim", 48.6847, 7.9150, "Q15130268"), ("Iffezheim", 48.8321, 8.1131, "Q872835"),
 ]
+
+
+# WSV-Pegel, für die das Pegelportal des HLNUG Tagesmittel bis zum Vortag führt (schliesst die Lücke nach dem Jahrbuch)
+HLNUG_Q = {"23900200", "25100100", "24700404"}                 # Worms, Mainz, Frankfurt Osthafen
+HLNUG_W = {"23900200", "25100100", "25300200", "25700100"}     # Worms, Mainz, Bingen, Kaub
 
 
 @dataclass

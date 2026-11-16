@@ -54,31 +54,34 @@ class Fahrbarkeit(unittest.TestCase):
         self.assertTrue(all(von < p.km < bis for p, (_, von, bis) in zip(netz.RICHTPEGEL, a)))
 
 
-class Schaetzung(unittest.TestCase):
-    def daten(self):
-        tage = [T0 + dt.timedelta(days=i) for i in range(900)]
-        basel = {t: 500 + 600 * ((i * 37) % 11) / 10 + (i % 90) for i, t in enumerate(tage)}
-        thur = {t: 10 + 40 * ((i * 13) % 7) / 6 + (i % 50) / 5 for i, t in enumerate(tage)}
-        kaub = {}
-        for t in tage[130:]:
-            x = schifffahrt.merkmale(basel, thur, t)
-            kaub[t] = (100 + 1.1 * x[1] + 2 * x[2] + 3 * x[3]) if x[1] <= schifffahrt.GRENZE else (300 + 0.9 * x[1] + 4 * x[2] + 1 * x[3])
-        return basel, thur, kaub
+class Auslastung(unittest.TestCase):
+    def test_stuetzpunkte_der_zkr(self):
+        f = schifffahrt.auslastung
+        self.assertEqual([f(44), f(72), f(134), f(250), f(400)], [15.0, 25.0, 50.0, 100.0, 100.0])
 
-    def test_findet_die_koeffizienten_beider_bereiche(self):
-        basel, thur, kaub = self.daten()
-        m = schifffahrt.anpassen(basel, thur, kaub, sorted(kaub))
-        for ist, soll in zip(m["niedrig"]["k"], (100, 1.1, 2, 3)):
-            self.assertAlmostEqual(ist, soll, delta=1e-4)
-        for ist, soll in zip(m["sonst"]["k"], (300, 0.9, 4, 1)):
-            self.assertAlmostEqual(ist, soll, delta=1e-4)
-        t = sorted(kaub)[400]
-        self.assertAlmostEqual(schifffahrt.schaetzen(m, basel, thur, t), kaub[t], delta=1e-4)
-        self.assertLess(schifffahrt.guete(m, basel, thur, kaub, sorted(kaub))["rmse"], 1e-4)
+    def test_unter_40_cm_keine_schifffahrt(self):
+        self.assertEqual(schifffahrt.auslastung(39.9), 0.0)
+        self.assertEqual(schifffahrt.auslastung(41), 15.0)
 
-    def test_ohne_vorlauf_kein_wert(self):
-        m = {"grenze": 800, "niedrig": {"k": [0, 1, 0, 0]}, "sonst": {"k": [0, 1, 0, 0]}}
-        self.assertIsNone(schifffahrt.schaetzen(m, {T0: 500.0}, {T0: 10.0}, T0 + dt.timedelta(days=2)))
+    def test_dazwischen_linear(self):
+        self.assertAlmostEqual(schifffahrt.auslastung(103), 37.5)      # Mitte zwischen 72 cm und 134 cm
+        self.assertIsNone(schifffahrt.auslastung(None))
+
+
+class AbflussAusWasserstand(unittest.TestCase):
+    KURVE = [(480.0, 10.0), (500.0, 14.0), (600.0, 30.0)]        # 5 m³/s je cm am unteren Ende
+
+    def test_innerhalb_der_kurve(self):
+        self.assertEqual(schifffahrt.abfluss_aus_wasserstand(self.KURVE, 14.0), (500.0, False))
+
+    def test_verlaengerung_ist_gekennzeichnet(self):
+        q, verlaengert = schifffahrt.abfluss_aus_wasserstand(self.KURVE, 2.0)
+        self.assertAlmostEqual(q, 440.0)
+        self.assertTrue(verlaengert)
+
+    def test_zu_weit_darunter_oder_darueber_kein_wert(self):
+        self.assertIsNone(schifffahrt.abfluss_aus_wasserstand(self.KURVE, -5.0))
+        self.assertIsNone(schifffahrt.abfluss_aus_wasserstand(self.KURVE, 99.0))
 
 
 class Optimierung(unittest.TestCase):

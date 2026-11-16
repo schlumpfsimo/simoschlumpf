@@ -81,7 +81,7 @@ def optimieren(q: list, volumen_m3: float, anteil: float = 0.10, grenze: list | 
 
 
 def heben(q: list, volumen_m3: float, deckel: float, anteil: float = 0.10, grenze: list | None = None,
-          start_m3: float = 0.0, kapazitaet: list | None = None) -> dict | None:
+          start_m3: float = 0.0, kapazitaet: list | None = None, stau_ab: float | None = None) -> dict | None:
     """Hebt die Tage unter dem Deckel (für Kaub: der Abfluss beim GlW), die tiefsten zuerst. Jede Anhebung zählt.
 
     Abgabe     a(t) = L − Q(t)                     wenn Q(t) < L,   mit L ≤ Deckel
@@ -93,18 +93,19 @@ def heben(q: list, volumen_m3: float, deckel: float, anteil: float = 0.10, grenz
     werte = [x for x in q if x is not None]
     if not werte or volumen_m3 <= 0:
         return None
+    stau_ab = max(deckel, stau_ab or deckel)        # gestaut wird frühestens ab hier (Abstand zum GlW möglich)
     unten, oben = min(min(werte), deckel), deckel
-    if _lauf(q, volumen_m3, deckel, deckel, anteil, grenze, start_m3, kapazitaet)[0]:
+    if _lauf(q, volumen_m3, deckel, stau_ab, anteil, grenze, start_m3, kapazitaet)[0]:
         unten = deckel
     else:
         for _ in range(50):
             mitte = (unten + oben) / 2
-            if _lauf(q, volumen_m3, mitte, deckel, anteil, grenze, start_m3, kapazitaet)[0]:
+            if _lauf(q, volumen_m3, mitte, stau_ab, anteil, grenze, start_m3, kapazitaet)[0]:
                 unten = mitte
             else:
                 oben = mitte
     tief = unten
-    a, b = deckel, max(max(werte), deckel)
+    a, b = stau_ab, max(max(werte), stau_ab)
     for _ in range(50):
         mitte = (a + b) / 2
         if _lauf(q, volumen_m3, tief, mitte, anteil, grenze, start_m3, kapazitaet)[0]:
