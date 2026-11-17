@@ -143,3 +143,39 @@ Nötige Speicherkapazität auf den regulierten Seen (mit Schranken, ausser wo ve
 | 2018 | 967 | 918 | 1'379 |
 | 2022 | 288 | 270 | 516 |
 | 2026 | 2'324 | nicht erreichbar; ohne Schranken 2'306 | nicht erreichbar |
+
+## 10 Nachtrag 17.11.2026: neue Erzählung, Zielwahl, Ladekapazität
+
+Klärung «mit Voraussicht» gegen Betriebsregel: kein Rechenfehler. `heben` hebt alle tiefen Tage auf ein gemeinsames Niveau L*; reicht der Speicher nicht bis zum GlW, bleiben alle diese Tage unter dem GlW. Die Betriebsregel senkt die Zahl der Tage unter dem GlW, ist aber leer, wenn der tiefste Tag kommt. Die Herleitung zeigt jetzt je eine Zahlenzeile für beide Rechenweisen; vorher war die Zeile der Betriebsregel mit L* und H* beschriftet.
+
+Kontrollwerte Kaub (Standardregeln, Daten bis 15.11.2026, Ziel A), nach allen Änderungen unverändert:
+
+| Jahr, Stufe, Rechenweise | Tage unter GlW | Tage unter 40 cm | kleinste Fahrrinnentiefe cm |
+|---|---|---|---|
+| 2026, 1b, mit Voraussicht | 125 | 89 | 136 |
+| 2026, 1b, Betriebsregel | 107 | 83 | 107 |
+| 2026, 3, mit Voraussicht | 125 | 0 | 158 |
+| 2026, 3, Betriebsregel | 96 | 73 | 107 |
+| 2018, 1b, mit Voraussicht | 102 | 0 | 165 |
+| 2018, 1b, Betriebsregel | 47 | 28 | 138 |
+| 2022, 1b, mit Voraussicht | 0 | 0 | 189 |
+| 2022, 1b, Betriebsregel | 10 | 1 | 149 |
+
+Abnahme Ziel C (mit Voraussicht, Näherung `hebenTage`) gegen Betriebsregel, Tage unter dem GlW, Stufen 1a, 1b, 1c, 2, 3:
+
+| Jahr | gemessen | Ziel C mit Voraussicht | Betriebsregel |
+|---|---|---|---|
+| 2011 | 28 | 0, 0, 0, 0, 0 | 16, 12, 1, 0, 0 |
+| 2018 | 102 | 43, 40, 28, 12, 0 | 50, 47, 39, 17, 2 |
+| 2022 | 40 | 4, 0, 0, 0, 0 | 15, 10, 0, 0, 0 |
+| 2026 | 125 | 96, 90, 82, 67, 55 | 110, 107, 104, 101, 96 |
+
+In allen Fällen höchstens so viele Tage wie die Betriebsregel.
+
+Ziel B (Deckel 40 cm, gestaut ab 50 cm): Ein auf 40 cm gehobener Tag blieb wegen der Abweichung zwischen gemessenem Pegel und Abflusskurve teils knapp darunter (2022: 1 von 7 Tagen auch mit 10'000 Mio. m³). Mit Rückhalt zählt ein Tag deshalb wie beim GlW erst ab 1 cm darunter als Tag unter 40 cm. Die Kontrollwerte oben bleiben gleich. Für 2026 ergibt Ziel B mit Voraussicht in den Stufen 1a bis 1c mehr Tage unter 40 cm als die Betriebsregel (Stufe 1b: 89 gegen 55), weil `heben` alle Tage unter 40 cm auf ein gemeinsames Niveau hebt und der Speicher nicht bis 40 cm reicht. Die Seite sagt das im Text zu Kapitel 6.
+
+Weitere Kontrollen (Kapitel 3 und 4, 2026): trockenste sieben Tage 26.9. bis 2.10.2026, 422 m³/s gegen 826 m³/s, aus der Schweiz 370 m³/s (88 % gegen 70 %), Lücke 404 m³/s, unterhalb Basel −199, Alpenrhein und Bodensee −141, Seen −60. Fehlmenge 2'324 Mio. m³ = 35 Tage beim GlW = 415 cm auf den regulierten Seen, Band 60 cm (Zürichsee) bis 160 cm (Brienzersee), 5,6 Mio. m³ je cm, 38,6 m³/s, 8 cm, zurückzuhalten von April bis September höchstens 436 Mio. m³ (19 %).
+
+Zählung Kaub 2026 aus den Statuscodes: 285 Tage aus dem Wasserstand gerechnet, davon 265 mit der Abflusskurve (Status 7), 10 mit verlängerter Kurve (8), 10 aus dem Pegel Bingen abgeleitet (9).
+
+Ladekapazität: unter 44 cm keine Schätzung mehr (vorher 0 % unter 40 cm). Tests in `test_schifffahrt.py` angepasst.

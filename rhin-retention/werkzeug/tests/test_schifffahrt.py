@@ -59,9 +59,10 @@ class Auslastung(unittest.TestCase):
         f = schifffahrt.auslastung
         self.assertEqual([f(44), f(72), f(134), f(250), f(400)], [15.0, 25.0, 50.0, 100.0, 100.0])
 
-    def test_unter_40_cm_keine_schifffahrt(self):
-        self.assertEqual(schifffahrt.auslastung(39.9), 0.0)
-        self.assertEqual(schifffahrt.auslastung(41), 15.0)
+    def test_unter_44_cm_keine_schaetzung(self):
+        self.assertIsNone(schifffahrt.auslastung(39.9))
+        self.assertIsNone(schifffahrt.auslastung(43.9))
+        self.assertEqual(schifffahrt.auslastung(44), 15.0)
 
     def test_dazwischen_linear(self):
         self.assertAlmostEqual(schifffahrt.auslastung(103), 37.5)      # Mitte zwischen 72 cm und 134 cm
