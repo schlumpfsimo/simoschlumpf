@@ -10,16 +10,16 @@
   <meta name="theme-color" content="#ffffff" />
   <link rel="preload" href="../karte/plex-500.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="../karte/plex-700.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="rhin.css" />
+  <link rel="stylesheet" href="rhin.css?v=20261117" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
-  <script src="rhin.js" defer></script>
+  <script src="rhin.js?v=20261117" defer></script>
 </head>
 <body>
   <main class="blatt">
     <nav class="sprache" id="sprache"></nav>
     <h1 class="name" data-t="titel"></h1>
-    <p class="lead kopf" data-t="lead"></p>
+    <p class="lead kopf" id="kopflead"></p>
     <nav class="inhalt" id="inhalt"></nav>
 
     <header class="teil" id="teil1">
@@ -28,15 +28,16 @@
       <p class="lead" data-t="teil1L"></p>
     </header>
 
-    <!-- 1 Heute -->
+    <!-- 1 Wo es eng wird -->
     <section class="kapitel" id="k1">
       <h2 class="frage" data-t="k1Titel"></h2>
-      <p class="lead" data-t="k1Lead"></p>
+      <p class="lead" id="k1lead"></p>
       <div class="wahl" id="wahl"></div>
       <section class="lage" id="lage"></section>
       <div class="scrolly" id="sc1">
         <div class="buehne">
-          <figure class="karte"><div id="karte"></div></figure>
+          <figure class="grafik" id="v1fig"><div class="legende" id="v1legende"></div><svg id="v1" role="img"></svg></figure>
+          <figure class="karte" hidden><div id="karte"></div></figure>
           <figure class="grafik netzbild" id="netzfig" hidden><div class="legende" id="netzlegende"></div><svg id="netz" role="img"></svg></figure>
         </div>
         <div class="schritte" id="st1"></div>
@@ -44,12 +45,16 @@
       <p class="klein" id="kartenlegende"></p>
       <section id="fahrbar"></section>
       <figure class="grafik" id="laengsfig"><div class="legende" id="laengslegende"></div><svg id="laengs" role="img"></svg></figure>
+      <h3 class="unter" id="laden" data-t="v2Titel"></h3>
+      <div id="v2text"></div>
+      <figure class="grafik" id="v2fig"><div class="legende" id="v2legende"></div><svg id="v2" role="img"></svg></figure>
     </section>
 
-    <!-- 2 Die Jahre -->
+    <!-- 2 Wie oft war es zu wenig? -->
     <section class="kapitel" id="k2">
       <h2 class="frage" data-t="k2Titel"></h2>
-      <p class="lead" data-t="k2Lead"></p>
+      <p class="lead" id="k2lead"></p>
+      <figure class="grafik" id="v4fig"><div class="legende" id="v4legende"></div><svg id="v4" role="img"></svg></figure>
       <div class="scrolly" id="sc2">
         <div class="buehne frei">
           <figure class="grafik" id="jahrfig"><div class="legende" id="jahrlegende"></div><svg id="jahrkaub" role="img"></svg></figure>
@@ -58,34 +63,72 @@
       </div>
     </section>
 
-    <header class="teil" id="teil2">
-      <p class="teilnr" data-t="teil2"></p>
-      <h2 class="teiltitel" data-t="teil2T"></h2>
-      <p class="lead" data-t="teil2L"></p>
-    </header>
-
-    <!-- 3 Rückhalt -->
+    <!-- 3 Woher kommt das Wasser bei Niedrigwasser? -->
     <section class="kapitel" id="k3">
       <h2 class="frage" data-t="k3Titel"></h2>
       <p class="lead" data-t="k3Lead"></p>
-      <p class="hinweis starthinweis" id="k3hinweis"></p>
+      <div class="jahrkopf" id="k3kopf"></div>
+      <div class="zweispaltig">
+        <figure class="grafik" id="v5fig"><div class="legende" id="v5legende"></div><svg id="v5" role="img"></svg></figure>
+        <figure class="grafik" id="v6fig"><div class="legende" id="v6legende"></div><svg id="v6" role="img"></svg></figure>
+      </div>
+      <div class="text" id="k3text"></div>
+    </section>
+
+    <header class="teil" id="teil2">
+      <p class="teilnr" data-t="teil2"></p>
+      <h2 class="teiltitel" data-t="teil2T"></h2>
+      <div class="lead" id="teil2lead"></div>
+    </header>
+
+    <!-- 4 Wie viel Wasser fehlt? -->
+    <section class="kapitel" id="k4">
+      <h2 class="frage" data-t="k4Titel"></h2>
+      <div class="jahrkopf" id="k4kopf"></div>
+      <figure class="grafik" id="v8fig"><div class="legende" id="v8legende"></div><svg id="v8a" role="img"></svg><svg id="v8b" role="img"></svg></figure>
+      <div class="text" id="k4text"></div>
+      <figure class="grafik" id="v7fig"><div class="legende" id="v7legende"></div><svg id="v7" role="img"></svg></figure>
+    </section>
+
+    <!-- 5 Wie hoch dürften die Seen steigen? -->
+    <section class="kapitel" id="k5">
+      <h2 class="frage" data-t="k5Titel"></h2>
+      <figure class="grafik" id="v9fig"><div class="legende" id="v9legende"></div><svg id="v9" role="img"></svg></figure>
+      <div class="text" id="k5text"></div>
+    </section>
+
+    <!-- 6 Was hätte es gebracht? -->
+    <section class="kapitel" id="k6">
+      <h2 class="frage" data-t="k6Titel"></h2>
+      <p class="lead" data-t="k6Lead"></p>
+      <div class="jahrkopf" id="k6kopf"></div>
+      <div class="wahl zielwahl" id="k6ziel"></div>
+      <p class="hinweis starthinweis" id="k6hinweis"></p>
       <div class="scrolly" id="sc3">
         <div class="buehne frei">
-          <div class="jahrkopf" id="k3kopf"></div>
           <figure class="grafik" id="kettefig" hidden><svg id="kette" role="img"></svg></figure>
           <figure class="grafik" id="szenfig"><div class="legende" id="szenlegende"></div><svg id="szen" role="img"></svg></figure>
         </div>
         <div class="schritte" id="st3"></div>
       </div>
+      <figure class="grafik" id="v10fig"><div class="wahl" id="v10wahl"></div><div class="legende" id="v10legende"></div><svg id="v10" role="img"></svg></figure>
       <div id="jahre"></div>
       <figure class="grafik" id="jahrefig"><svg id="jahregrafik" role="img"></svg></figure>
     </section>
 
-    <!-- 4 Simulator -->
+    <!-- 7 Was die Rechnung zeigt -->
+    <section class="kapitel" id="k7">
+      <h2 class="frage" data-t="k7Titel"></h2>
+      <p class="lead" data-t="k7Lead"></p>
+      <div id="k7inhalt"></div>
+    </section>
+
+    <!-- 8 Rückhalterechner -->
     <section class="kapitel" id="simulator">
       <h2 class="frage" data-t="simTitel"></h2>
       <p class="lead" data-t="simLead"></p>
       <div class="jahrkopf gross" id="simkopf"></div>
+      <div class="wahl zielwahl" id="simziel"></div>
       <p class="hinweis starthinweis" id="simhinweis"></p>
 
       <h3 class="rkfrage" data-t="rk1"></h3>
@@ -136,12 +179,20 @@
       <p class="lead" data-t="anhangL"></p>
     </header>
 
-    <!-- 5 Herleitung, 6 Datensatz -->
+    <!-- Anhang: Herleitung, Begriffe, Bilanz des Tages, Datensatz -->
     <section class="kapitel" id="herleitung">
       <h2 class="frage" data-t="herTitel"></h2>
       <p class="lead" data-t="herLead"></p>
       <div id="hertext"></div>
-      <h3 class="unter" data-t="bilTitel"></h3>
+    </section>
+
+    <section class="kapitel" id="begriffe">
+      <h2 class="frage" data-t="begTitel"></h2>
+      <dl class="begriffe" id="begriffliste"></dl>
+    </section>
+
+    <section class="kapitel" id="bilanztag">
+      <h2 class="frage" data-t="bilTitel"></h2>
       <p class="klein" data-t="bilLead"></p>
       <div class="tafel zwei">
         <section id="herkunft"></section>
@@ -162,9 +213,9 @@
       <h2 id="fehlt" data-t="fehlTitel"></h2>
       <p class="klein" data-t="fehlLead"></p>
       <div class="rollen" id="fehlend"></div>
-      <h2 data-t="methode"></h2>
+      <h2 id="methode" data-t="methode"></h2>
       <div id="methodentext"></div>
-      <h2 data-t="quellen"></h2>
+      <h2 id="quellenT" data-t="quellen"></h2>
       <div id="quellen"></div>
       <p class="klein" id="stand"></p>
       <p class="klein"><a href="/">simoschlumpf.ch</a></p>

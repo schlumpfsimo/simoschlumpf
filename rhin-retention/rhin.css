@@ -332,3 +332,18 @@ details.mehr[open]{padding-bottom:10px}
 .rkzahlen b i{font-style:normal;color:var(--blau)}
 .rknoetig{margin:4px 0 0;font-size:14px;font-weight:700;color:var(--blau)}
 .starthinweis{flex:1 1 300px;max-width:44em;margin:4px 0 0}
+
+/* 17.11.2026: neue Kapitel 3 bis 7, Begriffe */
+.zweispaltig { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+@media (max-width: 979px) { .zweispaltig { grid-template-columns: 1fr; } }
+.kapitel > .text, .kapitel > #k4text, .kapitel > #k5text, #v2text { max-width: 760px; }
+.kapitel > .text p, #v2text p { margin: 0 0 12px; }
+#v8fig svg + svg { margin-top: 18px; }
+.k7saetze { max-width: 760px; margin-top: 18px; }
+.k7saetze p { margin: 0 0 10px; }
+dl.begriffe { display: grid; grid-template-columns: minmax(160px, 260px) 1fr; gap: 6px 24px; max-width: 980px; margin: 0; }
+dl.begriffe dt { font-weight: 700; }
+dl.begriffe dd { margin: 0; }
+@media (max-width: 759px) { dl.begriffe { grid-template-columns: 1fr; gap: 0; } dl.begriffe dd { margin-bottom: 10px; } }
+.zielwahl { margin-top: 8px; }
+.teil .lead p { margin: 0 0 12px; }
