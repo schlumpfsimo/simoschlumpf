@@ -1327,14 +1327,27 @@
   // ------------------------------------------------------------ Erzählung: Schritte neben einer stehenden Grafik
   const SCHMAL = () => innerWidth < 760;
   const LL = (de, fr) => FR ? fr : de;
+  // Erzählung. Desktop: Die Grafik steht, die Schritte laufen daneben vorbei.
+  // Handy: Jeder Schritt ist eine feste Kachel aus Grafik und Text; die eine Grafik wandert in die Kachel, die gerade im Bild ist.
+  const MOBIL = () => innerWidth < 980, SCROLLYS = [];
   function scrolly(id, n, aktiv) {
-    const el = $(id), ks = []; let jetzt = -1;
-    for (let i = 0; i < n; i++) { const d = document.createElement('div'); d.className = 'schritt'; d.innerHTML = '<div class="karton"></div>'; el.append(d); ks.push(d); }
-    const setze = i => { if (i === jetzt || i < 0) return; jetzt = i; ks.forEach((k, j) => k.classList.toggle('aktiv', j === i)); aktiv(i); };
+    const el = $(id), ks = [], buehne = el.parentNode.querySelector('.buehne'); let jetzt = -1;
+    for (let i = 0; i < n; i++) { const d = document.createElement('div'); d.className = 'schritt'; d.innerHTML = '<div class="platz"></div><div class="karton"></div>'; el.append(d); ks.push(d); }
+    // Die Kachel, die die Grafik abgibt, behält deren Höhe, damit nichts darüber verrutscht
+    const platziere = i => {
+      if (!MOBIL()) { if (buehne.parentNode !== el.parentNode) el.parentNode.insertBefore(buehne, el); ks.forEach(k => { k.firstChild.style.height = ''; }); return; }
+      const ziel = ks[Math.max(0, i)].firstChild, alt = buehne.parentNode;
+      if (alt === ziel) return;
+      if (alt && alt.classList.contains('platz')) alt.style.height = `${buehne.offsetHeight}px`;
+      ziel.style.height = ''; ziel.append(buehne);
+    };
+    const setze = i => { if (i === jetzt || i < 0) return; jetzt = i; ks.forEach((k, j) => k.classList.toggle('aktiv', j === i)); platziere(i); aktiv(i); };
     const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) setze(ks.indexOf(e.target)); }, { rootMargin: '-45% 0px -45% 0px' });
-    ks.forEach(k => io.observe(k)); ks[0].classList.add('aktiv');
-    return { fuelle: (i, html) => { ks[i].firstChild.innerHTML = html; }, jetzt: () => Math.max(0, jetzt) };
+    ks.forEach(k => io.observe(k)); ks[0].classList.add('aktiv'); platziere(0);
+    const s = { fuelle: (i, html) => { ks[i].lastChild.innerHTML = html; }, jetzt: () => Math.max(0, jetzt), neu: () => platziere(Math.max(0, jetzt)) };
+    SCROLLYS.push(s); return s;
   }
+
   // CSV zu jeder Grafik: fn liefert { titel, kopf, zeilen }
   function herunter(name, kopf, zeilen) {
     const l = document.createElement('a'); l.href = URL.createObjectURL(new Blob(['﻿' + kopf.concat(zeilen).join('\n')], { type: 'text/csv' })); l.download = name; l.click(); URL.revokeObjectURL(l.href);
@@ -1617,7 +1630,7 @@
     zeige3(sc3.jetzt()); typoFr($('k3')); stapeln($('k3'));
   }
   let breite = innerWidth;
-  addEventListener('resize', () => { if (Math.abs(innerWidth - breite) < 40) return; breite = innerWidth; map.invalidateSize(); alles(true); if (jetzt2 != null) zeige2(jetzt2); zeige3(sc3.jetzt()); });
+  addEventListener('resize', () => { if (Math.abs(innerWidth - breite) < 40) return; breite = innerWidth; SCROLLYS.forEach(s => s.neu()); map.invalidateSize(); alles(true); if (jetzt2 != null) zeige2(jetzt2); zeige3(sc3.jetzt()); });
 
   function csvBestehend(R) {
     const Y = R.Y, S = R.S, tag = Y && R.i1 != null ? isoTag(Z.jahr, R.i1) : '';

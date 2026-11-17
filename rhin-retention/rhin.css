@@ -262,13 +262,17 @@ label.jahrzahl{display:block}
 .bedarf{margin:0 0 34px;padding:0 0 10px;border-bottom:2px solid var(--tinte)}.bedarf table.erg td:first-child{width:40%}
 span.hw{white-space:nowrap}
 @media (max-width:600px){#bedarffig text{font-size:11px}}
-/* Handy: Die Textkarten laufen über die stehende Grafik, statt darunter zu verschwinden.
-   Zwischen zwei Karten ist die Grafik frei sichtbar. */
+/* Handy: Jeder Schritt ist eine feste Kachel aus Grafik (oben) und Text (unten); man springt von Kachel zu Kachel. */
+.platz{display:none}
 @media (max-width:979px){
-  .schritte{position:relative;z-index:5;pointer-events:none}
-  .schritt{opacity:1;min-height:0;align-items:flex-start;padding:0 0 70vh}     /* 70vh Abstand gehört zum Schritt: dazwischen ist die Grafik frei und zeigt diesen Schritt */
-  .schritt:first-child{margin-top:20vh}
-  .karton{pointer-events:auto;background:var(--papier);border:2px solid var(--tinte);padding:14px 16px 4px;box-shadow:0 0 0 6px rgba(255,255,255,.85)}
+  html{scroll-snap-type:y proximity}
+  .scrolly{margin-bottom:10px}
+  .schritt{display:block;opacity:1;min-height:100svh;padding:14px 0 28px;scroll-snap-align:start;border-top:2px solid var(--tinte)}
+  .schritt:first-child{border-top:0}
+  .platz{display:block;margin-bottom:12px;min-height:50svh}
+  .platz .buehne{position:static;height:auto;min-height:0;padding:0;border:0;display:block}
+  .platz .karte,.platz #karte{height:52svh}
+  .karton{background:none;border:0;padding:0;box-shadow:none}
 }
 /* Zwei Teile und Anhang */
 .teil{margin-top:clamp(70px,8vw,150px);padding-top:26px;border-top:6px solid var(--tinte)}
@@ -302,7 +306,7 @@ h3.unter{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppe
 .netzbild{margin:0;align-self:stretch}
 .netzbild svg{max-height:calc(100vh - 90px);width:100%}
 .grafik .nb{font-size:10px;font-weight:500}
-@media (max-width:979px){#sc1 .buehne{height:74vh}.netzbild svg{max-height:none}#netzlegende{display:none}}
+@media (max-width:979px){.netzbild svg{max-height:none}#netzlegende{display:none}}
 /* Rückhalterechner */
 h3.rkfrage{font-size:clamp(18px,1.6vw,24px);font-weight:700;margin:46px 0 14px;padding-top:18px;border-top:2px solid var(--tinte)}
 details.mehr{margin:6px 0 26px;border-left:2px solid var(--tinte);padding:2px 0 2px 14px}
