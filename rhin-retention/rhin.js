@@ -1460,6 +1460,9 @@
     let s = `<text class="fett" x="${L}" y="14">${T.aaTitel} ${erst}–${LETZTES}</text><text x="${L - 6}" y="${O - 10}" text-anchor="end">m³/s</text><text x="${B - RR + 6}" y="${O - 10}">cm</text>`;
     for (let v = 0; v <= ymax; v += 500) { const w = v ? wAusQ(v) : null; s += `<line class="gitter" x1="${L}" x2="${B - RR}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${zahl(v)}</text>` + (w != null ? `<text x="${B - RR + 6}" y="${y(v) + 4}">${zahl(w)}</text>` : ''); }
     for (let m = 0; m < 12; m++) { const i = tagNr(`2001-${String(m + 1).padStart(2, '0')}-01`); s += `<line class="achse" x1="${x(i)}" x2="${x(i)}" y1="${H - U}" y2="${H - U + 5}"/>` + (!schmal || m % 2 === 0 ? `<text x="${x(i) + 3}" y="${H - U + 18}">${T.monate[m]}</text>` : ''); }
+    // Tage unter dem GlW schraffiert: schwarz 2018, blau das laufende Jahr
+    const schraffur = (q, f) => q.forEach((v, i) => { if (v != null && v < Q_GLW) s += `<rect x="${x(i).toFixed(1)}" y="${y(Q_GLW).toFixed(1)}" width="${(x(i + 1) - x(i) + .3).toFixed(1)}" height="${(y(v) - y(Q_GLW)).toFixed(1)}" fill="${f}"/>`; });
+    { const a18 = ALLE.jahre.find(a => a[0] === 2018), aL = ALLE.jahre.find(a => a[0] === LETZTES); if (a18) schraffur(a18[1], 'url(#g_e1)'); if (aL) schraffur(aL[1], 'url(#s_e1)'); }
     for (const [j, q] of ALLE.jahre) if (j !== LETZTES && j !== 2018) s += `<path d="${pfad(q)}" fill="none" stroke="#a8a8a8" stroke-width="1"><title>${j}</title></path>`;
     const q18 = ALLE.jahre.find(a => a[0] === 2018), qL = ALLE.jahre.find(a => a[0] === LETZTES);
     if (q18) s += `<path d="${pfad(q18[1])}" fill="none" stroke="#000" stroke-width="2"/>`;
@@ -1471,7 +1474,7 @@
   function zeige2(i) {
     const fig = $('jahrfig'), svg = $('jahrkaub');
     if (i === 0) { if (!ALLE) return; jetzt2 = 0; alleGrafik(svg);
-      $('jahrlegende').innerHTML = `<span><i style="border-color:#a8a8a8"></i>${T.aaAndere}</span><span><i></i>2018</span><span><i class="blau"></i>${LETZTES}</span><span>${T.gSchnitt}</span>`;
+      $('jahrlegende').innerHTML = `<span><i style="border-color:#a8a8a8"></i>${T.aaAndere}</span><span><i></i>2018</span><span><i class="blau"></i>${LETZTES}</span><span><svg width="24" height="12" aria-hidden="true"><rect width="24" height="12" fill="url(#g_e1)" stroke="#000"/></svg>${T.gUnter} 2018</span><span><svg width="24" height="12" aria-hidden="true"><rect width="24" height="12" fill="url(#s_e1)" stroke="#003399"/></svg>${T.gUnter} ${LETZTES}</span><span>${T.gSchnitt}</span>`;
       csvKnopf(fig, () => 'rhein-kaub-alle-jahre', () => ({ titel: `${T.aaTitel} ${ALLE.jahre[0][0]}–${LETZTES}`, kopf: ['tag_im_jahr', ...ALLE.jahre.map(a => `Q_Kaub_${a[0]}_m3s`)], zeilen: Array.from({ length: 366 }, (_, k) => [k + 1, ...ALLE.jahre.map(a => a[1][k] == null ? null : a[1][k])]) }));
       return; }
     i -= 1;
