@@ -321,7 +321,9 @@
   }
 
   // ------------------------------------------------------------ Zustand
-  const Z = { ziel: KAUB, ansicht: 'heute', jahr: LETZTES, tag: null, extrem: 0, sim: false, zoom: false, modus: 'regel', verlauf: null, see: null, stufe: '1b', zusatz: 50, bodensee: false };
+  const Z = { ziel: KAUB, ansicht: 'heute', jahr: LETZTES, tag: null, extrem: 0, sim: false, zoom: false, modus: 'regel', verlauf: null, see: null, stufe: '1b', zusatz: 50, bodensee: false, simjahr: null };
+  const STARTJAHR = meta.jahre.includes(2022) ? 2022 : LETZTES;   // Teil 2 beginnt mit 2022: Niedrigwasserjahr, in dem Rückhalt viel bewirkt; 2026 ist ein Extremjahr
+  Z.simjahr = STARTJAHR;
   let UEBER = 0;                                // Zusatzstau über der heutigen Hochwassergrenze (cm): verschiebt die Grenze nach oben
   const BODENSEE = '2288', BODENSEE_TAGE = 0;   // keine zusätzliche Fliesszeit: Eine Änderung in Neuhausen erscheint nach den Messreihen am selben Tag in Basel
   const CM = Object.fromEntries(meta.seen.map(s => [s.id, s.reguliert ? 10 : 0]));
@@ -907,8 +909,9 @@
     const w = $('simwahl'); w.textContent = '';
     const sj = $('simjahr'); sj.textContent = '';
     const jahrSel = (liste, aktiv, label) => `<label class="jahrzahl"><span>${label}</span><select class="jahrwahl" aria-label="${h(label)}">${liste.map(x => `<option${x === aktiv ? ' selected' : ''}>${x}</option>`).join('')}</select></label>`;
-    $('simkopf').innerHTML = jahrSel(meta.jahre.slice().reverse(), Z.jahr, T.skJahr);
-    $('simkopf').querySelector('select').addEventListener('change', e => { Z.jahr = +e.target.value; Z.tag = null; Z.ansicht = Z.jahr === LETZTES ? 'heute' : 'tag'; alles(); });
+    $('simkopf').innerHTML = jahrSel(meta.jahre.slice().reverse(), Z.simjahr, T.skJahr);
+    $('simhinweis').textContent = startHinweis();
+    $('simkopf').querySelector('select').addEventListener('change', e => { Z.simjahr = +e.target.value; alles(); });
     sj.append(knoepfe(T.rkEigen, [['frei', T.stFrei], ['unb', T.stUnb]], Z.stufe, v => { Z.stufe = v; if (v === 'frei') UEBER = 0; alles(); }));
     $('rkmethode').innerHTML = `<p>${T.rText.regel}</p><p>${T.rText.glw}</p><p>${T.uOhneText}</p>`;
     if (Z.stufe === 'unb') {
@@ -998,7 +1001,7 @@
       html += `<figure class="grafik" id="bedarffig"><svg viewBox="0 0 ${B} ${H}" role="img">${s}</svg><p class="hinweis">${T.bdHinweis}</p></figure>`;
       el.innerHTML = html;
       csvKnopf($('bedarffig'), () => `rhein-noetige-kapazitaet-${Y.jahr}`, () => ({ titel: `${T.bdTitel} ${Y.jahr}`, kopf: ['reihe', 'Mio_m3', 'cm_auf_regulierten_Seen'], zeilen: reihen.map(([n, m]) => [n, m, m == null ? null : m / fl * 100]) }));
-      typoFr(el); if (Z.jahr === Y.jahr) reglerZeichnen({ Y });
+      typoFr(el); if (Z.simjahr === Y.jahr) reglerZeichnen({ Y });
     }, 30);
   }
   function noetigZeichnen(R) {
@@ -1212,7 +1215,7 @@
       : `<p>${t('Zwei Schwellen am Ziel steuern den Speicher. Unter L wird abgegeben, über H wird gestaut, höchstens 10 % des Abflusses und nur, solange noch ein Tag unter L folgt.', 'Deux seuils à la station du bilan commandent le réservoir. Sous L on restitue, au-dessus de H on retient, au plus 10 % du débit et seulement tant qu’un jour sous L suit encore.')}</p>` +
         f(`${t('Abgabe', 'Restitution')} a(t) = L − Q(t), ${t('wenn', 'si')} Q(t) &lt; L<br>${t('Rückhalt', 'Retenue')} r(t) = min(Q(t) − H, 0,10 · Q(t)), ${t('wenn', 'si')} Q(t) &gt; H<br>S(t + 1) = S(t) + 86 400 · (r(t) − a(t)), &nbsp; 0 ≤ S(t) ≤ V, &nbsp; S(1.4.) = ${t('Rest des Vorjahrs', 'reste de l’année précédente')}`) +
         `<p>${t('L* ist das grösste L, bei dem der Speicher nie leer läuft. H* ist das grösste H, mit dem L* noch hält. Beide werden durch Halbieren des Intervalls gesucht.', 'L* est le plus grand L pour lequel le réservoir ne se vide jamais. H* est le plus grand H qui tient encore L*. Tous deux sont cherchés par dichotomie.')}</p>`);
-    if (O && R.sz) html += r(`${h(kurz(ST[R.S.zid]))} ${Z.jahr}: ${glw ? `Q<sub>GlW</sub> = ${zahl(O.deckel)} m³/s, ` : ''}L* = <b>${zahl(O.tief, 1)} m³/s</b>, H* = <b>${zahl(O.hoch, 1)} m³/s</b>. ${t('Abgabe an', 'Restitution sur')} ${R.sz.tA} ${T.tageW}, ${t('Rückhalt an', 'retenue sur')} ${R.sz.tR} ${T.tageW}. ${t('Kleinster Tagesabfluss', 'Plus faible débit journalier')}: ${zahl(R.sz.min0, 1)} → <b>${zahl(R.sz.min1, 1)} m³/s</b>.` +
+    if (O && R.sz) html += r(`${h(kurz(ST[R.S.zid]))} ${R.simJahr || Z.jahr}: ${glw ? `Q<sub>GlW</sub> = ${zahl(O.deckel)} m³/s, ` : ''}L* = <b>${zahl(O.tief, 1)} m³/s</b>, H* = <b>${zahl(O.hoch, 1)} m³/s</b>. ${t('Abgabe an', 'Restitution sur')} ${R.sz.tA} ${T.tageW}, ${t('Rückhalt an', 'retenue sur')} ${R.sz.tR} ${T.tageW}. ${t('Kleinster Tagesabfluss', 'Plus faible débit journalier')}: ${zahl(R.sz.min0, 1)} → <b>${zahl(R.sz.min1, 1)} m³/s</b>.` +
       (glw ? ` ${t('Bedarf für alle Tage', 'Besoin pour tous les jours')}: <b>${zahl(O.bedarf / 1e6)} ${T.mio}</b>, ${t('vorhanden', 'disponible')}: ${zahl(V, 1)} ${T.mio}.` : ''));
     html += `<p>${t('Die Seen teilen sich Abgabe und Rückhalt im Verhältnis ihrer zusätzlichen Kapazität; die Aktion am See liegt um die Fliesszeit τ vor der Wirkung am Ziel.', 'Les lacs se partagent restitution et retenue au prorata de leur capacité supplémentaire ; l’action au lac précède l’effet à la station du bilan du temps de parcours τ.')}</p>` +
       f(`a<sub>s</sub>(t) = (V<sub>s</sub> / V) · a(t + τ) &nbsp;&nbsp; r<sub>s</sub>(t) = (V<sub>s</sub> / V) · r(t + τ)`) +
@@ -1544,7 +1547,7 @@
 
   // ---- Kapitel 3: Rückhalt in drei Stufen
   const K3 = [2011, 2015, 2018, 2022, LETZTES].filter((j, i, a) => meta.jahre.includes(j) && a.indexOf(j) === i), D3 = {};
-  let jahr3 = K3[K3.length - 1];
+  let jahr3 = STARTJAHR;
   const sc3 = scrolly('st3', 8, i => zeige3(i));
   function zeige3(i) {
     const d = D3[jahr3]; if (!d) return;
@@ -1595,6 +1598,7 @@
     if (j !== jahr3) return;
     const kk = $('k3kopf'); kk.innerHTML = `<label class="jahrzahl"><span>${T.jkRechnet}</span><select class="jahrwahl" aria-label="${h(T.jkRechnet)}">${meta.jahre.filter(x => x >= 2008).reverse().map(x => `<option${x === j ? ' selected' : ''}>${x}</option>`).join('')}</select></label>`;
     kk.querySelector('select').addEventListener('change', e => { jahr3 = +e.target.value; kapitel3(); });
+    $('k3hinweis').textContent = startHinweis();
     const f3 = (i, html) => sc3.fuelle(i, `<p class="jahrmarke">${T.jahr} ${j}</p>` + html);
     const reg = meta.seen.filter(s => s.reguliert), fr = reg.reduce((s, x) => s + x.flaeche_km2, 0), fb = meta.seen.filter(s => !s.reguliert).reduce((s, x) => s + x.flaeche_km2, 0), cm1 = fr / 100;
     const q30 = 100e6 / (30 * SEK), hub = q => wAusQ(Q_GLW) - wAusQ(Q_GLW - q), frei = stufeCM(d.Y, '1b', 0), v1 = reg.reduce((s, x) => s + frei[x.id] * x.flaeche_km2 / 100, 0);
@@ -1632,8 +1636,8 @@
   let breite = innerWidth;
   addEventListener('resize', () => { if (Math.abs(innerWidth - breite) < 40) return; breite = innerWidth; SCROLLYS.forEach(s => s.neu()); map.invalidateSize(); alles(true); if (jetzt2 != null) zeige2(jetzt2); zeige3(sc3.jetzt()); });
 
-  function csvBestehend(R) {
-    const Y = R.Y, S = R.S, tag = Y && R.i1 != null ? isoTag(Z.jahr, R.i1) : '';
+  function csvBestehend(R, R2) {
+    const tag = R.Y && R.i1 != null ? isoTag(Z.jahr, R.i1) : '', Y = R2.Y, S = R2.S;
     if ($('herkunft').innerHTML && R.zeige) csvKnopf($('herkunft'), () => `rhein-herkunft-${kurz(ST[Z.ziel]).toLowerCase()}`, () => ({ titel: `${T.herkunft}, ${R.datumText}`, kopf: ['herkunft', 'm3s', 'prozent'], zeilen: gruppenWerte(R.zeige).filter(x => x.da).map(x => [x.n, x.v, 100 * x.v / R.zeige.ziel_mittel]) }));
     csvKnopf($('laengsfig'), () => `rhein-laengsschnitt-${tag}`, () => ({ titel: `${T.lTitel}, ${tag}`, kopf: ['km_von', 'km_bis', 'richtpegel', 'pegel_cm', 'GlW_cm', 'fahrrinnentiefe_cm', 'fahrrinnentiefe_simuliert_cm', 'soll_bei_GlW_cm'],
       zeilen: abschnitte(R).map(({ p, m, zm, zs }) => [p.von, p.bis, p.name, m ? m.w : null, p.glw, zm ? zm.tiefe : null, zs ? zs.tiefe : null, p.tugl]) }));
@@ -1713,6 +1717,13 @@
     nt.textContent = nb ? `${nb} ${T.mio}` : '';
     const stx = $('stufentext'); if (k < 0 && !stx.textContent.startsWith(T.rkEigenAktiv)) stx.textContent = `${T.rkEigenAktiv} ${stx.textContent}`;
   }
+  // Warum 2022 voreingestellt ist, mit den Zahlen von 2022 und dem laufenden Jahr
+  function startHinweis() {
+    const a = GELADEN[STARTJAHR], b = GELADEN[LETZTES]; if (!a || !b || !PK || STARTJAHR === LETZTES) return '';
+    const ka = kaubJahr(a, OHNE), kb = kaubJahr(b, OHNE);
+    return LL(`Voreingestellt ist ${STARTJAHR}, ein Niedrigwasserjahr mit ${ka.u0} Tagen unter dem GlW. Daran lässt sich zeigen, was Rückhalt bewirkt. ${LETZTES} ist ein Extremjahr mit ${kb.u0} Tagen unter dem GlW und ${kb.k0} Tagen unter 40 cm; dort hält auch ein sehr grosser Speicher den GlW nicht an allen Tagen, weil das Wasser zum Füllen fehlt. Andere Jahre lassen sich in der Jahreszahl wählen.`,
+      `L’année ${STARTJAHR} est préréglée : une année d’étiage avec ${ka.u0} jours sous le GlW. Elle permet de montrer ce qu’apporte la retenue. ${LETZTES} est une année extrême avec ${kb.u0} jours sous le GlW et ${kb.k0} jours sous 40 cm ; même un très grand réservoir n’y tient pas le GlW tous les jours, faute d’eau pour le remplir. D’autres années se choisissent dans le chiffre de l’année.`);
+  }
   function zweiRechnungen(Y) {
     const altM = Z.modus, altN = NETZ; NETZ = VOLL;
     try { Z.modus = 'regel'; const r = simulieren(Y); Z.modus = 'glw'; const v = simulieren(Y); return { r, v }; } finally { Z.modus = altM; NETZ = altN; }
@@ -1757,13 +1768,27 @@
   }
   // ------------------------------------------------------------ Ablauf
   let lauf_ = 0;
+  function simRechnen(Y) {
+    if (!Y) return { Y: null, S: null };
+    const alt = NETZ; NETZ = VOLL; stufeAnwenden(Y); const S = simulieren(Y); NETZ = alt;
+    return { Y, S, i0: null, i1: null };
+  }
   async function alles(nurWerte) {
     const nr = ++lauf_, R = await rechnen();
     if (nr !== lauf_) return;
-    if (!nurWerte) { wahlZeichnen(R.Y); simWahl(R); }
+    const Y2 = await jahr(Z.simjahr); await nachbarn(Z.simjahr);
+    if (nr !== lauf_) return;
+    if (!nurWerte) wahlZeichnen(R.Y);
     else { const d = $('wahl').querySelector('input[type=date]'); if (d && Z.tag != null) d.value = isoTag(Z.jahr, Z.tag); }
-    datenZeichnen(R); lageZeichnen(R); fahrbarZeichnen(R); laengsschnitt(R); jahresband(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); simZeichnen(R); herleitung(R); kapitel1(R); reglerZeichnen(R); ergebnisZeichnen(R); csvBestehend(R); typoFr(document.body); stapeln();
+    datenZeichnen(R); lageZeichnen(R); fahrbarZeichnen(R); laengsschnitt(R); karteZeichnen(R); herkunftZeichnen(R); bilanzZeichnen(R); seenZeichnen(R); kapitel1(R);
+    // Teil 2 rechnet mit seinem eigenen Jahr; Z.jahr gilt dafür nur während dieses Blocks
+    const altJ = Z.jahr; let R2;
+    Z.jahr = Z.simjahr;
+    try { R2 = simRechnen(Y2); if (!nurWerte) simWahl(R2); jahresband(R2); simZeichnen(R2); reglerZeichnen(R2); ergebnisZeichnen(R2); }
+    finally { Z.jahr = altJ; }
+    herleitung({ ...R, S: R2.S, sz: R2.sz, simJahr: Z.simjahr }); csvBestehend(R, R2); typoFr(document.body); stapeln();
   }
+
   window.rhin = { szenario, jahr, nachbarn, bedarfGlw };     // für Prüfungen in der Konsole
   simSeen(); alles(); kapitel2(); kapitel3(); jahresvergleich();
 })();

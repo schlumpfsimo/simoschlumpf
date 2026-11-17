@@ -331,3 +331,4 @@ details.mehr[open]{padding-bottom:10px}
 .rksee text{font:500 10px "Plex",Arial,sans-serif;fill:var(--tinte)}
 .rkzahlen b i{font-style:normal;color:var(--blau)}
 .rknoetig{margin:4px 0 0;font-size:14px;font-weight:700;color:var(--blau)}
+.starthinweis{flex:1 1 300px;max-width:44em;margin:4px 0 0}
