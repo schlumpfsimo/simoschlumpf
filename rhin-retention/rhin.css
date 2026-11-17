@@ -301,7 +301,7 @@ h3.unter{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppe
 #k3 th.z,#simulator th.z,#k1 th.z{white-space:normal;hyphens:auto;overflow-wrap:anywhere;letter-spacing:.06em}
 #jahre table{font-size:14px}#jahre td{padding-right:8px}#jahre th{font-size:10px;padding-right:8px}
 #jahre td.blau{white-space:normal}
-@media (max-width:700px){span.hw{white-space:normal}.bedarf table.erg td:first-child{width:38%}.bedarf td{overflow-wrap:anywhere}}
+@media (max-width:700px){span.hw{white-space:normal;display:inline-block;margin:4px 0 0}.bedarf table.erg td:first-child{width:38%}.bedarf td{overflow-wrap:anywhere}}
 /* Messstellen-Baum und Rechenweg */
 .netzbild{margin:0;align-self:stretch}
 .netzbild svg{max-height:calc(100vh - 90px);width:100%}
