@@ -1584,7 +1584,7 @@
   }
   function v1Zeichnen(hervor) {
     const svg = $('v1'), D = v1Daten(); if (!D) { svg.innerHTML = ''; return; }
-    const { m, t, sohle } = D, B = breiteVon(svg.parentNode), schmal = B < 560, H = schmal ? 380 : 440, O = 34, U = 26;
+    const { m, t, sohle } = D, B = breiteVon(svg.parentNode), schmal = B < 560, H = schmal ? 400 : 460, O = 34, U = 46;
     const top = Math.max(GLW + 150, (m ? m.w : 0) + 60), bot = sohle - 30, y = v => O + (H - O - U) * (top - v) / (top - bot);
     const xl = schmal ? 40 : 62, p0 = xl + (schmal ? 40 : 70), p1 = B - 6, fa = p0 + (p1 - p0) * .34, fb = p0 + (p1 - p0) * .78, bett = sohle + 55, ufer = top - 20;
     // Gelände: links und rechts Böschung, Flussbett, Fahrrinne als Rinne in der Mitte (schematisch)
@@ -1597,27 +1597,28 @@
     for (let v = Math.ceil((bot + 10) / 50) * 50; v <= top - 10; v += 50) s += `<line x1="${xl - 6}" x2="${xl + 6}" y1="${y(v)}" y2="${y(v)}" stroke="#000" stroke-width="${v ? 1 : 3}"/><text x="${xl - 10}" y="${y(v) + 4}" text-anchor="end">${zahl(v)}</text>`;
     s += `<text class="nb" x="${xl - 10}" y="${y(top - 10) - 6}" text-anchor="end">cm</text><text class="fett" x="${xl + 10}" y="${y(0) + 4}">${LL('Nullpunkt', 'zéro')}</text>`;   // FR provisorisch
     // GlW und Sollmass der Fahrrinne
-    s += `<line x1="${xl - 6}" x2="${p1}" y1="${y(GLW)}" y2="${y(GLW)}" stroke="#000" stroke-width="${hervor ? 2.5 : 1}" stroke-dasharray="6 4"/><text class="${hervor ? 'fett ' : ''}halo" x="${p1 - 4}" y="${y(GLW) - 6}" text-anchor="end">GlW ${zahl(GLW)} cm</text>`;
+    s += `<line x1="${xl - 6}" x2="${p1}" y1="${y(GLW)}" y2="${y(GLW)}" stroke="#000" stroke-width="${hervor ? 2.5 : 1}" stroke-dasharray="6 4"/><text class="${hervor ? 'fett ' : ''}halo" x="${xl + 10}" y="${y(GLW) - 6}">GlW ${zahl(GLW)} cm</text>`;
     s += `<line x1="${fa}" x2="${fb}" y1="${y(sohle)}" y2="${y(sohle)}" stroke="#000" stroke-width="3"/><text class="halo" x="${(fa + fb) / 2}" y="${y(sohle) + 16}" text-anchor="middle">${LL('Sohle der Fahrrinne', 'fond du chenal')}</text>`;   // FR provisorisch
-    const xs = fb - 18;
-    s += `<line x1="${xs}" x2="${xs}" y1="${y(GLW)}" y2="${y(sohle)}" stroke="#000" stroke-width="${hervor ? 2 : 1}" stroke-dasharray="2 3"/><text class="${hervor ? 'fett ' : ''}halo" x="${xs + 6}" y="${y(GLW) + 18}">${zahl(TUG)} cm</text><text class="${hervor ? 'fett ' : ''}halo" x="${xs + 6}" y="${y(GLW) + 34}">${LL('beim GlW', 'au GlW')}</text>`;
+    // Sollmass: Sohle der Fahrrinne liegt TUG unter dem GlW
+    s += `<text class="${hervor ? 'fett ' : ''}halo" x="${(fa + fb) / 2}" y="${y(sohle) + 32}" text-anchor="middle">${LL(`${zahl(TUG)} cm unter dem GlW`, `${zahl(TUG)} cm sous le GlW`)}</text>`;   // FR provisorisch
     // Wasserspiegel und Tiefe an den beiden Tagen
-    const tag = (w, farbe, x, text, unten) => { if (w == null) return '';
-      const xa = xbei(w, true), xb = xbei(w, false);
+    const tag = (w, farbe, x, text) => { if (w == null) return '';
+      const xa = xbei(w, true), xb = xbei(w, false), ym = y((w + sohle) / 2);
       return `<line x1="${xa}" x2="${xb}" y1="${y(w)}" y2="${y(w)}" stroke="${farbe}" stroke-width="2.5"/><line x1="${xl - 9}" x2="${xl + 9}" y1="${y(w)}" y2="${y(w)}" stroke="${farbe}" stroke-width="3"/>` +
         `<line x1="${x}" x2="${x}" y1="${y(w) + 3}" y2="${y(sohle) - 3}" stroke="${farbe}" stroke-width="1.5"/><path d="M${x - 4},${y(sohle) - 9} L${x},${y(sohle) - 2} L${x + 4},${y(sohle) - 9}" fill="none" stroke="${farbe}" stroke-width="1.5"/>` +
-        `<text class="halo" fill="${farbe}" x="${x + 6}" y="${y((w + sohle) / 2) + 4}">${zahl(w - sohle)} cm</text>` +
-        `<text class="fett halo" fill="${farbe}" x="${xa + 4}" y="${y(w) + (unten ? 16 : -6)}">${text}</text>`; };
-    const unten = m && t && m.w > t.w;
-    if (t) s += tag(t.w, '#003399', fa + (fb - fa) * .62, `${D.tagT}: ${zahl(t.w)} cm${D.bing ? '*' : ''}`, !unten);
-    if (m) s += tag(m.w, '#000', fa + (fb - fa) * .12, `${D.tag}: ${zahl(m.w)} cm`, false);
-    // Schiff am Wasserspiegel des gewählten Tages (schematisch)
-    if (m) { const sw = (fb - fa) * .38, sx = fa + (fb - fa) * .2, sy = y(m.w), tg = Math.min(18, (y(sohle) - sy) * .5);
-      s += `<path d="M${sx},${sy - 10} L${sx + sw},${sy - 10} L${sx + sw - 10},${sy + tg} L${sx + 8},${sy + tg}Z" fill="#fff" stroke="#000" stroke-width="1.5"/><rect x="${sx + sw - 30}" y="${sy - 22}" width="20" height="12" fill="#fff" stroke="#000" stroke-width="1.5"/>`; }
+        `<text class="halo" fill="${farbe}" transform="translate(${x + 14},${ym}) rotate(-90)" text-anchor="middle">${zahl(w - sohle)} cm</text>` +
+        `<text class="fett halo" fill="${farbe}" x="${xa + 4}" y="${y(w) - 6}">${text}</text>`; };
+    if (t) s += tag(t.w, '#003399', fa + (fb - fa) * .24, `${zahl(t.w)} cm${D.bing ? '*' : ''}`);
+    if (m) s += tag(m.w, '#000', fa + (fb - fa) * .07, `${zahl(m.w)} cm`);
+    // Schiff am Wasserspiegel des gewählten Tages, Höhen im Massstab der Pegelskala (schematisch): Abladetiefe bis 30 cm über der Sohle, Freibord 30 cm, Steuerhaus 50 cm
+    if (m) { const sx = fa + (fb - fa) * .42, sw = (fb - fa) * .55, sy = y(m.w), tief = y(Math.min(m.w - 20, sohle + 30)), dk = y(m.w + 30), hh = y(m.w + 80);
+      s += `<path d="M${sx},${dk} L${sx + sw},${dk} L${sx + sw},${tief} L${sx + 12},${tief} Q${sx},${tief} ${sx},${tief - 12}Z" fill="#fff" stroke="#000" stroke-width="2"/>` +
+        `<rect x="${sx + sw - Math.min(30, sw * .22)}" y="${hh}" width="${Math.min(30, sw * .22) - 4}" height="${dk - hh}" fill="#fff" stroke="#000" stroke-width="2"/><line x1="${sx}" x2="${sx + sw}" y1="${sy}" y2="${sy}" stroke="#000" stroke-width="2.5"/>` +
+        `<text class="nb halo" x="${sx + sw / 2}" y="${(sy + tief) / 2 + 4}" text-anchor="middle">${LL('Schiff', 'bateau')}</text>`; }
     svg.setAttribute('viewBox', `0 0 ${B} ${H}`); svg.innerHTML = s;
     // FR provisorisch
-    $('v1legende').innerHTML = (m ? `<span><i></i>${LL('Pegel am gewählten Tag', 'niveau le jour choisi')}</span>` : '') + (t ? `<span><i class="blau"></i>${LL(`tiefster Pegel ${LETZTES}`, `niveau le plus bas ${LETZTES}`)}${D.bing ? LL(' (* aus dem Pegel Bingen abgeleitet)', ' (* déduit de l’échelle de Bingen)') : ''}</span>` : '') +
-      `<span><i class="strich"></i>GlW</span><span>${LL('Schematisch, nicht massstäblich in der Breite. Die Höhen sind Zentimeter am Pegel.', 'Schématique, pas à l’échelle en largeur. Les hauteurs sont des centimètres à l’échelle.')}</span>`;
+    $('v1legende').innerHTML = (m ? `<span><i></i>${LL(`Pegel am gewählten Tag, ${D.tag}: ${zahl(m.w)} cm, Fahrrinne ${zahl(m.w - sohle)} cm tief`, `niveau le jour choisi, ${D.tag} : ${zahl(m.w)} cm, chenal de ${zahl(m.w - sohle)} cm`)}</span>` : '') + (t ? `<span><i class="blau"></i>${LL(`tiefster Pegel ${LETZTES}, ${D.tagT}: ${zahl(t.w)} cm, Fahrrinne ${zahl(t.w - sohle)} cm tief`, `niveau le plus bas ${LETZTES}, ${D.tagT} : ${zahl(t.w)} cm, chenal de ${zahl(t.w - sohle)} cm`)}${D.bing ? LL(' (* aus dem Pegel Bingen abgeleitet)', ' (* déduit de l’échelle de Bingen)') : ''}</span>` : '') +
+      `<span><i class="strich"></i>GlW</span><span>${LL('Schematisch, nicht massstäblich in der Breite. Die Höhen sind Zentimeter am Pegel. Schiff schematisch, Abladetiefe angenommen bis 30 cm über der Sohle.', 'Schématique, pas à l’échelle en largeur. Les hauteurs sont des centimètres à l’échelle. Bateau schématique, enfoncement supposé jusqu’à 30 cm au-dessus du fond.')}</span>`;
     csvKnopf($('v1fig'), () => 'rhein-kaub-querschnitt', () => ({ titel: LL('Querschnitt bei Kaub: Pegel und Fahrrinnentiefe', 'Coupe à Kaub : niveau et profondeur du chenal'), kopf: ['element', 'datum', 'hoehe_am_pegel_cm', 'fahrrinnentiefe_cm'],
       zeilen: [['Pegelnullpunkt', '', 0, null], ['GlW', '', GLW, TUG], ['Sohle der Fahrrinne (GlW minus Tiefe beim GlW)', '', sohle, 0],
         ...(m ? [['Pegel am gewaehlten Tag', isoTag(Z.jahr, R1.i1), m.w, m.w - sohle]] : []), ...(t ? [[`tiefster Pegel ${LETZTES}${D.bing ? ' (aus Pegel Bingen abgeleitet)' : ''}`, isoTag(LETZTES, t.i), t.w, t.w - sohle]] : [])] }));
