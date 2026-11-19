@@ -2,7 +2,7 @@
 //   Advent.api(aktion, daten)   Anfrage an Apps Script, liefert die Antwort oder wirft einen Fehler
 //   Advent.token(art)           Token aus ?t=… lesen und merken ('spieler' oder 'admin')
 //   Advent.datum('2026-12-01')  → «Di 1.12.2026»
-//   Advent.theme()              lädt theme/theme.json, danach Advent.t('schluessel', {platzhalter})
+//   Advent.theme()              lädt texte.json, danach Advent.t('schluessel', {platzhalter})
 (function () {
   'use strict';
 
@@ -94,10 +94,11 @@
 
   async function theme(pfad) {
     try {
-      const r = await fetch((pfad || 'theme/') + 'theme.json', { cache: 'no-cache' });
+      const r = await fetch((pfad || '') + 'texte.json', { cache: 'no-cache' });
       THEME = await r.json();
       THEME.texte = THEME.texte || {};
-    } catch (e) { console.warn('theme.json nicht geladen', e); }
+    } catch (e) { console.warn('texte.json nicht geladen', e); }
+    THEME.simo = THEME.simo || {};
     if (THEME.name) document.title = document.title.replace('{name}', THEME.name);
     return THEME;
   }
@@ -139,5 +140,19 @@
     return e;
   }
 
-  window.Advent = { api, token, datum, zeit, zahl, theme, t, el, ApiFehler, get THEME() { return THEME; } };
+  /** Rohwert aus texte.json (z. B. eine Liste), ohne Auswahl und Ersetzung. */
+  function roh(schluessel) { return THEME.texte[schluessel]; }
+
+  /** Ersetzt Platzhalter in einem beliebigen Text (wie t, aber für Texte, die nicht unter «texte» stehen). */
+  function fuellen(text, vars) {
+    vars = Object.assign({ name: THEME.name || '' }, vars);
+    return String(text).replace(/\{(\w+)\}/g, (_, k) => {
+      if (vars[k] == null) return '';
+      if (/^datum|datum$/i.test(k)) return datum(vars[k]);
+      if (/punkte|saldo|preis|fehlend|betrag/i.test(k) && typeof vars[k] === 'number') return zahl(vars[k]);
+      return vars[k];
+    });
+  }
+
+  window.Advent = { api, token, datum, zeit, zahl, theme, t, roh, fuellen, el, ApiFehler, get THEME() { return THEME; } };
 })();

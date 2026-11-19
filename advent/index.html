@@ -5,31 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#ffffff">
-<title>{name}</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23111'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='19' fill='%23fff' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="theme/theme.css">
-<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#F2542D">
+<meta name="apple-mobile-web-app-title" content="SimOil">
+<title>SimOil</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 48'%3E%3Cpath d='M20 3 C26 14 36 22 36 31 A16 16 0 0 1 4 31 C4 22 14 14 20 3 Z' fill='%23FFD23F' stroke='%234A3226' stroke-width='3.5' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/fredoka-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="farben.css">
+<link rel="stylesheet" href="simoil.css">
 </head>
 <body>
-<div id="testband" class="testband" hidden></div>
-<header class="kopf">
-  <a href="#/start" class="kopf-name" id="kopf-name"></a>
-  <span class="kopf-saldo" id="kopf-saldo" hidden></span>
-</header>
-<main id="inhalt" class="inhalt" tabindex="-1"></main>
-<nav class="navi" id="navi" hidden>
-  <a href="#/start" data-ziel="start"><span class="navi-zeichen">⌂</span><span data-t="nav.start"></span></a>
-  <a href="#/einlesen" data-ziel="einlesen"><span class="navi-zeichen">◎</span><span data-t="nav.einlesen"></span></a>
-  <a href="#/katalog" data-ziel="katalog"><span class="navi-zeichen">☰</span><span data-t="nav.katalog"></span></a>
-  <a href="#/geschenke" data-ziel="geschenke"><span class="navi-zeichen">✦</span><span data-t="nav.geschenke"></span></a>
-  <a href="#/verlauf" data-ziel="verlauf"><span class="navi-zeichen">≡</span><span data-t="nav.verlauf"></span></a>
-</nav>
-<div id="dialog" class="dialog" hidden></div>
+<!-- Die Bühne ist der Handybildschirm. Inhalt: Tankstelle, Terminal oder Regal (siehe app.js). -->
+<main class="buehne" id="buehne"></main>
 
 <script src="config.js"></script>
 <script src="kern.js"></script>
+<script src="grafik.js"></script>
+<script src="ware.js"></script>
+<script src="klang.js"></script>
+<script src="simo.js"></script>
+<script src="konfetti.js"></script>
+<script src="klappziffern.js"></script>
 <script src="erkennung.js"></script>
 <script src="app.js"></script>
+<script src="tankstelle.js"></script>
+<script src="terminal.js"></script>
+<script src="regal.js"></script>
+<script>App.starten();</script>
 </body>
 </html>

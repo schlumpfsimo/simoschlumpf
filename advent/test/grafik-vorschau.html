@@ -1,0 +1,13 @@
+<!doctype html><html lang="de-CH"><head><meta charset="utf-8"><link rel="stylesheet" href="../farben.css">
+<style>body{background:var(--creme);font-family:var(--schrift);color:var(--braun);margin:16px}
+.g{display:flex;flex-wrap:wrap;gap:14px}.z{width:120px;text-align:center;font-size:13px}.z svg{width:110px;height:110px}
+.gr svg{width:220px;height:230px}</style></head><body>
+<div class="g gr" id="simo"></div><div class="g" id="w" style="margin-top:10px"></div><div class="g" id="ware"></div>
+<script src="../grafik.js"></script><script src="../ware.js"></script>
+<script>
+document.fonts.load('700 20px Fredoka').then(()=>{
+simo.innerHTML=['normal','freude','staunen'].map(a=>Grafik.simo(a)).join('')+'<div style="width:200px">'+Grafik.stern(['NEU:','ADVENTSRUBBEL'])+'</div>';
+w.innerHTML='<div style="width:400px">'+Grafik.wimpel()+'</div>'+['kamera','ton-an','ton-aus','zurueck','tropfen','regal','los'].map(n=>'<div style="width:48px">'+Grafik.symbol(n)+'</div>').join('');
+ware.innerHTML=Ware.namen().map(n=>'<div class="z">'+Ware.svg(n)+'<br>'+n+'</div>').join('');
+document.body.dataset.fertig=1;});
+</script></body></html>
