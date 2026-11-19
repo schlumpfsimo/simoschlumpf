@@ -30,7 +30,7 @@
 
   function wareKnopf(w, i, offen) {
     const b = el('button', { class: 'ware' + (w.ausverkauft && !w.gehoert ? ' ausverkauft' : '') + (w.neu ? ' neu-rein' : ''),
-      style: '--n:' + i, 'aria-label': (w.titel || t('regal.eingeschweisst')) + ', ' + zahl(w.preis) + ' Punkte' + (w.gehoert ? ', ' + t('regal.gehoert') : '') });
+      style: '--n:' + Math.min(i, 6), 'aria-label': (w.titel || t('regal.eingeschweisst')) + ', ' + zahl(w.preis) + ' Punkte' + (w.gehoert ? ', ' + t('regal.gehoert') : '') });
     const bild = bildEl(w);
     if (w.aktionBis && !w.gehoert) {
       const s = el('div', { class: 'aktion-stern' });

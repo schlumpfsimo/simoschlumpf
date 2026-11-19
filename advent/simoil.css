@@ -456,5 +456,5 @@ img, svg { display: block; }
 @keyframes neonPuls { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
