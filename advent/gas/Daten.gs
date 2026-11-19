@@ -68,11 +68,18 @@ function zeileAus_(name, obj) {
   return BLAETTER[name].map(function (k) { return obj[k] == null ? '' : String(obj[k]); });
 }
 
+/** Sorgt dafür, dass das Blatt mindestens bis Zeile «bis» reicht (Google Sheets wächst nicht von selbst). */
+function platz_(sh, bis) {
+  var max = sh.getMaxRows();
+  if (bis > max) sh.insertRowsAfter(max, bis - max + 50);
+}
+
 /** Hängt eine Zeile an. */
 function anhaengen_(name, obj) {
   var sh = blatt_(name);
   var zeile = zeileAus_(name, obj);
   var nr = sh.getLastRow() + 1;
+  platz_(sh, nr);
   var r = sh.getRange(nr, 1, 1, zeile.length);
   r.setNumberFormat('@');
   r.setValues([zeile]);
@@ -86,7 +93,9 @@ function anhaengenViele_(name, objs) {
   if (!objs.length) return;
   var sh = blatt_(name);
   var zeilen = objs.map(function (o) { return zeileAus_(name, o); });
-  var r = sh.getRange(sh.getLastRow() + 1, 1, zeilen.length, zeilen[0].length);
+  var start = sh.getLastRow() + 1;
+  platz_(sh, start + zeilen.length - 1);
+  var r = sh.getRange(start, 1, zeilen.length, zeilen[0].length);
   r.setNumberFormat('@');
   r.setValues(zeilen);
   delete _cache[name];
@@ -101,21 +110,25 @@ function aktualisieren_(name, obj) {
   delete _cache[name];
 }
 
-/** Löscht alle Zeilen, auf die die Bedingung zutrifft. Gibt die Anzahl zurück. */
+/**
+ * Entfernt alle Zeilen, auf die die Bedingung zutrifft. Gibt die Anzahl zurück.
+ * Die übrigen Zeilen werden in einem Schritt neu geschrieben (schnell, und das Blatt schrumpft nicht).
+ */
 function loeschenWo_(name, bedingung) {
-  var sh = blatt_(name);
-  var treffer = lesen_(name).filter(bedingung).map(function (o) { return o._zeile; });
-  treffer.sort(function (a, b) { return b - a; }); // von unten nach oben löschen
-  treffer.forEach(function (nr) { sh.deleteRows(nr, 1); });
-  delete _cache[name];
-  return treffer.length;
+  var alle = lesen_(name);
+  var weg = alle.filter(bedingung).length;
+  if (!weg) return 0;
+  var bleiben = alle.filter(function (o) { return !bedingung(o); });
+  leeren_(name);
+  anhaengenViele_(name, bleiben);
+  return weg;
 }
 
-/** Löscht alle Datenzeilen eines Blatts (Kopfzeile bleibt). */
+/** Leert alle Datenzeilen eines Blatts (Kopfzeile bleibt, die Zeilen selbst bleiben bestehen). */
 function leeren_(name) {
   var sh = blatt_(name);
   var n = sh.getLastRow();
-  if (n > 1) sh.deleteRows(2, n - 1);
+  if (n > 1) sh.getRange(2, 1, n - 1, Math.max(sh.getLastColumn(), BLAETTER[name].length)).clearContent();
   delete _cache[name];
 }
 

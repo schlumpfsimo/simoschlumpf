@@ -469,3 +469,43 @@ test('Jackpot und Serienbonus aus', () => {
     assert.equal(r.ergebnis.jackpot, tag !== 3);
   }
 });
+
+// ------------------------------------------------------------------ Befunde der Code-Prüfung
+
+test('Blätter schrumpfen nicht: 15-mal Lose erzeugen und Testdaten löschen', () => {
+  const u = bereit();
+  for (let i = 0; i < 15; i++) {
+    u.jetzt('2026-12-01T09:00:00');
+    const f = u.felder(1);
+    assert.equal(u.als('test', 'einreichen', { codes: [f[0].qrId, f[1].qrId] }).ok, true);
+    const r = u.als('admin', 'admin_generieren', { konfiguration: BEISPIEL });
+    assert.equal(r.ok, true, 'Durchlauf ' + i + ': ' + r.text);
+    assert.equal(u.tabelle('Felder').length, 96);
+  }
+  assert.ok(u.sheets['Felder'].getMaxRows() >= 1000);
+  assert.equal(u.tabelle('Einsendungen').length, 0);
+});
+
+test('Eingeschweisste Ware als Sofortgewinn verrät ihren Titel nicht', () => {
+  const u = bereit(fest([{ tag: 1, felder: ['S:W90', 'P5', 'x3', '-'] }]));
+  const w = u.sheets['Ware'];
+  const kopf = w.rows[0];
+  const z = w.rows.find(r => r[0] === 'W90');
+  z[kopf.indexOf('Zustand')] = 'eingeschweisst';
+  u.jetzt('2026-12-01T09:00:00');
+  const f = u.felder(1);
+  const r = einreichen(u, 'spieler', [f[1].qrId, f[2].qrId]);   // Sofortgewinn nicht gerubbelt
+  assert.doesNotMatch(JSON.stringify(r), /Kinogutschein/);
+  assert.equal(r.ergebnis.felder[0].geschenk, 'Eingeschweisste Ware');
+});
+
+test('Serie zeigt 0, wenn das heutige Los ungültig war', () => {
+  const u = bereit(fest([1, 2].map(tag => ({ tag, felder: ['P10', 'P10', '-', '-'] }))));
+  u.jetzt('2026-12-01T09:00:00');
+  let f = u.felder(1);
+  einreichen(u, 'spieler', [f[0].qrId, f[1].qrId]);
+  u.jetzt('2026-12-02T09:00:00');
+  f = u.felder(2);
+  einreichen(u, 'spieler', [f[0].qrId, f[1].qrId, f[2].qrId]);
+  assert.equal(u.als('spieler', 'start').serie, 0);
+});

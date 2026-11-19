@@ -38,7 +38,10 @@
     opt = opt || {};
     const ziffern = [...k.children];
     const n = ziffern.length;
-    const text = wert == null ? '-'.repeat(n) : String(Math.max(0, Math.round(wert))).padStart(n, opt.fuellen != null ? opt.fuellen : ' ');
+    const f = opt.fuellen != null ? opt.fuellen : ' ';
+    const text = wert == null ? '-'.repeat(n)
+      : wert < 0 ? '-' + String(Math.abs(Math.round(wert))).padStart(n - 1, f)     // negativer Stand (nach Korrekturen)
+      : String(Math.round(wert)).padStart(n, f);
     const ziel = text.slice(-n);
     k.setAttribute('aria-label', String(wert == null ? '' : wert));
     k._wert = wert;

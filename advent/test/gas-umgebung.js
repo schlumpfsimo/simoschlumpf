@@ -14,6 +14,7 @@ const GAS = path.join(__dirname, '..', 'gas');
 
 function blattMock(name) {
   const rows = [];
+  let maxRows = 1000;          // wie ein neues Google-Sheet; deleteRows verkleinert, insertRowsAfter vergrössert
   const breite = () => rows.reduce((m, r) => Math.max(m, r.length), 0);
   const sh = {
     rows,
@@ -22,7 +23,9 @@ function blattMock(name) {
       for (let i = rows.length - 1; i >= 0; i--) if (rows[i] && rows[i].some(v => v !== '')) return i + 1;
       return 0;
     },
-    getMaxRows: () => Math.max(1000, rows.length),
+    getMaxRows: () => maxRows,
+    getLastColumn: () => breite(),
+    insertRowsAfter(nach, n) { maxRows += n; },
     getDataRange() {
       const n = sh.getLastRow(), b = breite();
       return {
@@ -37,7 +40,12 @@ function blattMock(name) {
       };
     },
     getRange(r, c, nr = 1, nc = 1) {
+      if (r + nr - 1 > maxRows) throw new Error('Mock: Bereich ausserhalb des Blatts (' + (r + nr - 1) + ' > ' + maxRows + ')');
       const range = {
+        clearContent() {
+          for (let i = 0; i < nr; i++) if (rows[r - 1 + i]) for (let j = 0; j < nc; j++) rows[r - 1 + i][c - 1 + j] = '';
+          return range;
+        },
         setValues(vals) {
           if (vals.length !== nr || vals.some(v => v.length !== nc)) throw new Error('Mock: falsche Grösse in setValues');
           for (let i = 0; i < nr; i++) {
@@ -53,7 +61,10 @@ function blattMock(name) {
       };
       return range;
     },
-    deleteRows(start, n) { rows.splice(start - 1, n); },
+    deleteRows(start, n) {
+      if (maxRows - n < 2) throw new Error('Mock: Es können nicht alle Zeilen gelöscht werden');
+      rows.splice(start - 1, n); maxRows -= n;
+    },
     setFrozenRows() {}
   };
   return sh;

@@ -124,8 +124,8 @@ function aktuelleSerie_(ctx, proTag) {
   var lose = lose_();
   var heuteLos = lose.filter(function (l) { return l.datum === ctx.heute; })[0];
   if (heuteLos) {
-    var n = serieBis_(heuteLos.tag, proTag);
-    if (n > 0) return n;
+    // Heute schon eingereicht: dann zählt genau die Serie bis heute (auch 0, wenn ungültig)
+    if (proTag[heuteLos.tag]) return serieBis_(heuteLos.tag, proTag);
   }
   var gestern = lose.filter(function (l) { return l.datum === tageAddieren_(ctx.heute, -1); })[0];
   return gestern ? serieBis_(gestern.tag, proTag) : 0;
@@ -193,6 +193,14 @@ function berechnen_(los, gerubbelt) {
 /** Ergebnis so, wie es die Seite anzeigt (inkl. aller Felder: «Das hättest du bekommen»). */
 function ergebnisFuerSeite_(e, los) {
   var erg = e.ergebnis || {};
+  // Titel eingeschweisster Ware nur zeigen, wenn sie ihr schon gehört (sonst verrät das Los, was in der Folie steckt)
+  var besitz = besitz_(e.modus);
+  var verborgen = {};
+  ware_().forEach(function (w) { if (w.zustand === 'eingeschweisst' && !besitz[w.id]) verborgen[w.id] = true; });
+  var kurz = function (id) {
+    var k = wareKurz_(id);
+    return k && verborgen[id] ? { id: id, titel: 'Eingeschweisste Ware', illustration: k.illustration } : k;
+  };
   var gerubbelt = erg.gerubbelt || [];
   var quiz = los.typ === 'quiz';
   return {
@@ -200,7 +208,7 @@ function ergebnisFuerSeite_(e, los) {
     status: e.status, zeit: e.zeit, spieldatum: e.spieldatum, nachgeholt: e.spieldatum !== los.datum,
     manuell: e.manuell, hatFoto: !!e.fotoId,
     felder: felderVon_(los.tag).map(function (f) {
-      var g = f.effekt === 'sofortgewinn' ? wareKurz_(f.wareId) : null;
+      var g = f.effekt === 'sofortgewinn' ? kurz(f.wareId) : null;
       return {
         feld: f.feld, kuerzel: f.kuerzel, beschriftung: f.beschriftung, effekt: f.effekt, wert: f.wert,
         geschenk: g ? g.titel : null, richtig: quiz ? f.richtig : null,
@@ -214,7 +222,7 @@ function ergebnisFuerSeite_(e, los) {
     adminPunkte: erg.adminPunkte == null ? null : erg.adminPunkte,
     total: e.punkte,
     jackpot: !erg.ungueltig && e.punkte >= zahl_(einstellung_('Jackpot ab'), 100),
-    gewinne: (erg.gewinne || []).map(wareKurz_)
+    gewinne: (erg.gewinne || []).map(kurz)
   };
 }
 

@@ -122,10 +122,13 @@
       versuch = 3;
       const gross = aufLeinwand(img, 3000);
       treffer = await lesenAus(gross.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, gross.width, gross.height));
+      gross.width = 0; gross.height = 0;
     }
     const erg = auswerten(treffer);
     const hoch = aufLeinwand(img, UPLOAD_PX);
     erg.jpeg = hoch.toDataURL('image/jpeg', UPLOAD_QUALITAET);
+    // Leinwände sofort freigeben: iOS Safari erlaubt nur wenig Leinwand-Speicher
+    [c, hoch].forEach(x => { x.width = 0; x.height = 0; });
     erg.vorschau = erg.jpeg;
     erg.versuch = versuch;
     erg.groesse = [c.width, c.height];

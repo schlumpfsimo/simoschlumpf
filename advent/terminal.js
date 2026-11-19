@@ -186,9 +186,17 @@
       } catch (e) {
         await mindestens;
         animation.stopp();
+        App.start = e.code === 'schon_eingereicht' ? null : App.start;
+        // Schon eingereicht (z. B. Verbindung brach ab, der Server war aber fertig): Ergebnis zeigen statt Fehler
+        if (e.code === 'schon_eingereicht' && e.daten.tag) {
+          try {
+            const v = await Advent.api('verlauf');
+            const l = v.lose.find(x => x.tag === e.daten.tag);
+            if (l && l.ergebnis) { z.fertig = true; ergebnisZeigen(l.ergebnis, (await App.startDaten(true)).saldo, false); return; }
+          } catch (x) { /* dann eben die Fehlermeldung */ }
+        }
         fehlerLcd(e.message);
         Klang.spielen('fehler');
-        if (e.code === 'schon_eingereicht') App.start = null;
       } finally {
         z.sendet = false;
         codesZeichnen();
