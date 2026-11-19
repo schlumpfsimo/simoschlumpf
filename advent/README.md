@@ -95,6 +95,12 @@ Folge, nur für Lose, die am eigenen Tag eingereicht wurden.
 
 ## Tests
 ```
-node --test advent/test/*.test.js
+node --test advent/test/*.test.js          # Backend-Regeln, Katalog, 24-Tage-Simulation (10 Durchläufe)
+node advent/test/e2e-druck.js <ordner>     # Druckvorlage → PDF
+node advent/test/e2e-spielerin.js <ordner> # Foto → Erkennung → Einreichen → Kauf (iPhone- und Android-Emulation)
+node advent/test/e2e-admin.js <ordner>     # Admin-Seite
+node advent/test/e2e-24tage.js <ordner>    # alle 24 Tage im Browser mit Fotos und Testdatum
+node advent/test/server.js                 # lokaler Testserver zum Ausprobieren
 ```
-Die Tests bauen Sheet, Drive und Mail im Speicher nach (`test/gas-umgebung.js`) und spielen die Regeln durch.
+Die Tests bauen Sheet, Drive und Mail im Speicher nach (`test/gas-umgebung.js`). Die Browsertests brauchen
+Playwright mit Chromium. Echte Geräte (iPhone, Android) und das echte Apps Script testen sie nicht.
