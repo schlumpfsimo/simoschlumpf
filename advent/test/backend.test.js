@@ -347,3 +347,73 @@ test('Start und Verlauf verraten keine Felder künftiger Lose', () => {
   const text = JSON.stringify(v);
   assert.doesNotMatch(text, /effekt|qrId|kuerzel/);
 });
+
+// ------------------------------------------------------------------ Katalog und Kauf
+
+function mitKatalog() {
+  const u = bereit(fest([{ tag: 1, felder: ['P10', 'P5', 'x3', '-'] }]));
+  u.zeilen('Katalog', [
+    { 'ID': 'K1', 'Titel': 'Sichtbar', 'Beschreibung': 'Text', 'Bild': 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view', 'Preis': '40', 'Sichtbarkeit': 'sichtbar', 'Bestand': '1' },
+    { 'ID': 'K2', 'Titel': 'Geheimer Titel', 'Beschreibung': 'Geheim', 'Preis': '90', 'Sichtbarkeit': 'verdeckt mit Preis', 'Geschenk-ID': 'G01' },
+    { 'ID': 'K3', 'Titel': 'Ganz geheim', 'Preis': '200', 'Sichtbarkeit': 'ganz verdeckt', 'Bild': '1ZzZzZzZzZzZzZzZzZzZzZzZzZzZz' },
+    { 'ID': 'K4', 'Titel': 'Später', 'Preis': '10', 'Sichtbarkeit': 'sichtbar', 'Sichtbar ab': '10.12.2026' },
+    { 'ID': 'K5', 'Titel': 'Befristet', 'Preis': '10', 'Sichtbarkeit': 'sichtbar', 'Verfügbar bis': '2026-12-03' }
+  ]);
+  return u;
+}
+
+test('Katalog: Sichtbarkeit, Daten, nichts Verdecktes im JSON', () => {
+  const u = mitKatalog();
+  u.jetzt('2026-12-01T09:00:00');
+  assert.equal(u.als('spieler', 'start').neueKatalog, 4);
+  const k = u.als('spieler', 'katalog');
+  assert.deepEqual(k.eintraege.map(e => e.id), ['K1', 'K2', 'K3', 'K5']);
+  const json = JSON.stringify(k);
+  assert.doesNotMatch(json, /Geheimer Titel|Ganz geheim|Geheim"|G01|"200"|:200/);
+  const k2 = k.eintraege.find(e => e.id === 'K2'), k3 = k.eintraege.find(e => e.id === 'K3');
+  assert.equal(k2.preis, 90);
+  assert.equal(k2.titel, undefined);
+  assert.equal(k3.preis, undefined);
+  assert.equal(k3.hatBild, undefined);
+  assert.equal(k.eintraege[0].fehlend, 40);
+  assert.equal(u.als('spieler', 'start').neueKatalog, 0);   // jetzt gesehen
+  u.jetzt('2026-12-10T09:00:00');
+  assert.equal(u.als('spieler', 'start').neueKatalog, 1);   // K4 neu
+  assert.deepEqual(u.als('spieler', 'katalog').eintraege.map(e => e.id), ['K1', 'K2', 'K3', 'K4']); // K5 abgelaufen
+  // Bild nur, wenn sichtbar
+  assert.equal(u.als('spieler', 'bild', { art: 'katalog', id: 'K3' }).fehler, 'kein_bild');
+});
+
+test('Kauf: Bestätigung, Preisprüfung, Saldo, Bestand pro Zugang, Mail, Storno', () => {
+  const u = mitKatalog();
+  u.jetzt('2026-12-01T09:00:00');
+  assert.equal(u.als('spieler', 'kaufen', { id: 'K1', preis: 40 }).fehler, 'zu_wenig_punkte');
+  u.als('admin', 'admin_buchen', { betrag: 300 });
+  u.als('admin', 'admin_buchen', { betrag: 300, modus: 'test' });
+  // ganz verdeckt: erst Preis erfragen
+  let r = u.als('spieler', 'kaufen', { id: 'K3' });
+  assert.equal(r.fehler, 'bestaetigen');
+  assert.equal(r.daten.preis, 200);
+  assert.equal(u.als('spieler', 'kaufen', { id: 'K3', preis: 150 }).fehler, 'preis_geaendert');
+  r = u.als('spieler', 'kaufen', { id: 'K1', preis: 40 });
+  assert.equal(r.ok, true);
+  assert.equal(r.saldo, 260);
+  assert.equal(u.als('spieler', 'kaufen', { id: 'K1', preis: 40 }).fehler, 'ausverkauft');
+  assert.equal(u.als('test', 'kaufen', { id: 'K1', preis: 40 }).ok, true);   // Testzugang hat eigenen Bestand
+  assert.equal(u.mails.length, 2);
+  assert.match(u.mails[1].betreff, /^\[Test\]/);
+  r = u.als('spieler', 'kaufen', { id: 'K2', preis: 90 });
+  assert.equal(r.geschenk.inhalt, 'KINO-1234');
+  const g = u.als('spieler', 'geschenke').geschenke;
+  assert.equal(g.length, 2);
+  assert.ok(g.some(x => x.titel === 'Geheimer Titel'));
+  const kat = u.als('spieler', 'katalog').eintraege.find(e => e.id === 'K2');
+  assert.equal(kat.titel, 'Geheimer Titel');   // nach dem Kauf aufgedeckt
+  // Admin: erledigt und Storno
+  const best = u.als('admin', 'admin_uebersicht').bestellungen;
+  assert.equal(best.length, 2);
+  assert.equal(u.als('admin', 'admin_bestellung', { id: best[1].id, status: 'erledigt' }).ok, true);
+  const s = u.als('admin', 'admin_bestellung', { id: best[0].id, status: 'storniert' });
+  assert.equal(s.saldo, 260);
+  assert.equal(u.als('admin', 'admin_bestellung', { id: best[0].id, status: 'storniert' }).fehler, 'eingabe');
+});
