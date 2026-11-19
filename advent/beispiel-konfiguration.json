@@ -1,0 +1,191 @@
+{
+  "_hinweis": "BEISPIEL. Deine echte Konfiguration nur auf der Admin-Seite einfügen, nie ins Repo. P10 = 10 Punkte, x2 = Multiplikator, S:G01 = Sofortgewinn (ID aus Blatt «Geschenke»), - = Niete.",
+  "start": "2026-12-01",
+  "mischen": true,
+  "typen": {
+    "normal": {
+      "felderzahl": 2,
+      "regel": "Rubble genau 2 der 4 Felder frei."
+    },
+    "quiz": {
+      "felderzahl": 1,
+      "regel": "Sonntagsquiz: Rubble nur das Feld mit der richtigen Antwort frei."
+    }
+  },
+  "lose": [
+    {
+      "tag": 1,
+      "typ": "normal",
+      "felder": ["P10", "P5", "x2", "-"]
+    },
+    {
+      "tag": 2,
+      "typ": "normal",
+      "felder": ["P20", "P5", "-", "-"]
+    },
+    {
+      "tag": 3,
+      "typ": "normal",
+      "felder": ["P10", "P10", "P5", "x2"]
+    },
+    {
+      "tag": 4,
+      "typ": "normal",
+      "felder": ["P15", "-", "-", "x3"]
+    },
+    {
+      "tag": 5,
+      "typ": "normal",
+      "felder": ["P5", "P5", "P10", "S:G01"]
+    },
+    {
+      "tag": 6,
+      "typ": "quiz",
+      "frage": "Welcher Fluss fliesst durch Basel?",
+      "felder": [
+        {
+          "antwort": "Rhein",
+          "richtig": true,
+          "effekt": "punkte",
+          "wert": 50
+        },
+        {
+          "antwort": "Aare"
+        },
+        {
+          "antwort": "Limmat"
+        },
+        {
+          "antwort": "Reuss"
+        }
+      ],
+      "mischen": false
+    },
+    {
+      "tag": 7,
+      "typ": "normal",
+      "felder": ["P25", "-", "P5", "-"]
+    },
+    {
+      "tag": 8,
+      "typ": "normal",
+      "felder": ["P10", "x2", "P5", "-"]
+    },
+    {
+      "tag": 9,
+      "typ": "normal",
+      "felder": ["P10", "P5", "x2", "-"]
+    },
+    {
+      "tag": 10,
+      "typ": "normal",
+      "felder": ["P20", "P5", "-", "-"]
+    },
+    {
+      "tag": 11,
+      "typ": "normal",
+      "felder": ["P10", "P10", "P5", "x2"]
+    },
+    {
+      "tag": 12,
+      "typ": "normal",
+      "felder": ["P15", "-", "-", "x3"]
+    },
+    {
+      "tag": 13,
+      "typ": "quiz",
+      "frage": "Wie viele Kantone hat die Schweiz?",
+      "felder": [
+        {
+          "antwort": "24"
+        },
+        {
+          "antwort": "25"
+        },
+        {
+          "antwort": "26",
+          "richtig": true,
+          "effekt": "punkte",
+          "wert": 50
+        },
+        {
+          "antwort": "27"
+        }
+      ],
+      "mischen": false
+    },
+    {
+      "tag": 14,
+      "typ": "normal",
+      "felder": ["P5", "P5", "P10", "S:G01"]
+    },
+    {
+      "tag": 15,
+      "typ": "normal",
+      "felder": ["P25", "-", "P5", "-"]
+    },
+    {
+      "tag": 16,
+      "typ": "normal",
+      "felder": ["P10", "x2", "P5", "-"]
+    },
+    {
+      "tag": 17,
+      "typ": "normal",
+      "felder": ["P10", "P5", "x2", "-"]
+    },
+    {
+      "tag": 18,
+      "typ": "normal",
+      "felder": ["P20", "P5", "-", "-"]
+    },
+    {
+      "tag": 19,
+      "typ": "normal",
+      "felder": ["P10", "P10", "P5", "x2"]
+    },
+    {
+      "tag": 20,
+      "typ": "quiz",
+      "frage": "In welcher Stadt steht das Strassburger Münster?",
+      "felder": [
+        {
+          "antwort": "Kehl"
+        },
+        {
+          "antwort": "Strassburg",
+          "richtig": true,
+          "effekt": "punkte",
+          "wert": 50
+        },
+        {
+          "antwort": "Colmar"
+        },
+        {
+          "antwort": "Mulhouse"
+        }
+      ],
+      "mischen": false
+    },
+    {
+      "tag": 21,
+      "typ": "normal",
+      "felder": ["P15", "-", "-", "x3"]
+    },
+    {
+      "tag": 22,
+      "typ": "normal",
+      "felder": ["P5", "P5", "P10", "S:G01"]
+    },
+    {
+      "tag": 23,
+      "typ": "normal",
+      "felder": ["P25", "-", "P5", "-"]
+    },
+    {
+      "tag": 24,
+      "typ": "normal",
+      "felder": ["P50", "x2", "S:G02", "P20"]
+    }
+  ]
+}
