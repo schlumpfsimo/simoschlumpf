@@ -177,6 +177,24 @@ if (require.main === module) (async () => {
   await p.screenshot({ path: path.join(AUS, 'simoil-8-regal-nachher.png'), fullPage: true });
   assert.deepEqual(r.fehler, [], 'Browserfehler Regal');
 
+  // Ton-Schalter: an, Zustand bleibt nach dem Neuladen, wieder aus
+  await p.click('.leiste button[aria-pressed]');
+  assert.equal(await p.getAttribute('.leiste button[aria-pressed]', 'aria-pressed'), 'true');
+  await p.reload();
+  await p.waitForSelector('.regal');
+  assert.equal(await p.getAttribute('.leiste button[aria-pressed]', 'aria-pressed'), 'true');
+  await p.click('.leiste button[aria-pressed]');
+  assert.deepEqual(r.fehler, [], 'Browserfehler Ton');
+  await r.ctx.close();
+
+  // Keine Verbindung: verständliche Meldung mit «Nochmals versuchen»
+  const n = await oeffnen(browser, port, u, 'iPhone 13', 'spieler', '#/');
+  await n.page.evaluate(() => localStorage.setItem('advent.api', 'http://127.0.0.1:9/api'));
+  await n.page.reload();
+  await n.page.waitForSelector('.meldung.fehler');
+  assert.match(await n.page.textContent('.meldung.fehler'), /Keine Verbindung/);
+  assert.equal(await n.page.locator('button:has-text("Nochmals versuchen")').count(), 1);
+
   console.log('E2E SimOil: in Ordnung');
   await browser.close();
   server.close();

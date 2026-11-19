@@ -135,5 +135,23 @@
     return S[name] || '';
   }
 
-  window.Grafik = { simo, stern, wimpel, logo, symbol, farben };
+  // ---------------------------------------------------------------- Zapfsäule (Benzin leider leer)
+  function zapfsaeule(zettel) {
+    const c = farben();
+    const k = `stroke="${c.braun}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"`;
+    return `<svg viewBox="0 0 110 150" class="zapf-svg" aria-hidden="true">
+      <path d="M78 52 C102 52 102 70 98 96 C96 108 92 114 86 114" fill="none" ${k} stroke-width="5"/>
+      <path d="M80 110 l10 0 l6 14 l-10 4 z" fill="${c.braun}"/>
+      <rect x="14" y="10" width="64" height="128" rx="16" fill="${c.rot}" ${k}/>
+      <rect x="10" y="130" width="72" height="14" rx="6" fill="${c['creme-tief']}" ${k}/>
+      <rect x="24" y="24" width="44" height="30" rx="7" fill="${c.weiss}" ${k}/>
+      <text x="46" y="45" text-anchor="middle" font-family="VT323, monospace" font-size="17" fill="${c.braun}">0.00</text>
+      <circle cx="46" cy="76" r="10" fill="${c.gelb}" ${k}/>
+      <ellipse cx="26" cy="22" rx="5" ry="2.5" fill="#fff" opacity=".5" transform="rotate(-30 26 22)"/>
+      <g transform="rotate(-9 46 104)"><rect x="18" y="92" width="56" height="22" rx="4" fill="${c.gelb}" ${k} stroke-width="2.6"/>
+      <text x="46" y="108" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="12" fill="${c.braun}">${zettel || 'LEER'}</text></g>
+    </svg>`;
+  }
+
+  window.Grafik = { simo, stern, wimpel, logo, symbol, farben, zapfsaeule };
 })();

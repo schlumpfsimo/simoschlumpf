@@ -180,11 +180,14 @@ img, svg { display: block; }
 }
 .tankstelle .knopfreihe { margin-top: 26px; }
 
-.asphalt { position: relative; margin-top: 30px; height: calc(130px + 170px + env(safe-area-inset-bottom)); margin-bottom: calc(-170px - env(safe-area-inset-bottom)); background: var(--asphalt); border-top: var(--kontur) solid var(--braun); }
+.asphalt { position: relative; margin-top: 82px; height: calc(130px + 170px + env(safe-area-inset-bottom)); margin-bottom: calc(-170px - env(safe-area-inset-bottom)); background: var(--asphalt); border-top: var(--kontur) solid var(--braun); }
 .asphalt::before { /* Randstein */
   content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; background: repeating-linear-gradient(90deg, var(--creme-tief) 0 30px, #E3D2AE 30px 60px);
   border-bottom: 3px solid var(--braun);
 }
+.zapfsaeule { position: absolute; right: 26px; top: -70px; width: 76px; z-index: 1; transform: rotate(2deg); }
+.zapfsaeule svg { width: 100%; height: auto; }
+.tankstelle .knopfreihe { position: relative; z-index: 2; }
 .markierung { position: absolute; left: -10px; right: -10px; top: 58px; display: flex; gap: 30px; }
 .markierung span { flex: none; width: 54px; height: 11px; border-radius: 99px; background: var(--gelb); border: 2.5px solid var(--braun); }
 

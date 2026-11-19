@@ -63,7 +63,9 @@
     // Asphalt mit Fahrbahnmarkierung
     const markierung = el('div', { class: 'markierung' });
     for (let i = 0; i < 8; i++) markierung.append(el('span'));
-    const asphalt = el('div', { class: 'asphalt', 'aria-hidden': 'true' }, markierung);
+    const zapf = el('div', { class: 'zapfsaeule' });
+    zapf.innerHTML = Grafik.zapfsaeule(t('schild.zapfsaeule'));
+    const asphalt = el('div', { class: 'asphalt', 'aria-hidden': 'true' }, zapf, markierung);
 
     App.zeigen(el('div', { class: 'tankstelle' }, dach, wimpel, brett,
       el('div', { class: 'platz' }, laden, tafel), notiz, knoepfe, asphalt));

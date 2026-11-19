@@ -24,7 +24,7 @@ Kassierer, spricht über Sprechblasen mit ihr.
 
 Simos Sprechblasen: Jede Situation ist eine Liste von Sätzen, die nacheinander erscheinen. Mehrere
 Varianten als Liste von Listen; dann wählt die Seite zufällig eine. Situationen: `begruessung`,
-`begruessung_erledigt`, `vor_start`, `ende`, `sonntag`, `los_pruefen`, `erkannt`, `nichts_erkannt`, `gewinn`,
+`begruessung_erledigt`, `vor_start`, `ende`, `sonntag`, `los_pruefen`, `nichts_erkannt`, `gewinn`,
 `niete`, `ungueltig`, `jackpot`, `sofortgewinn`, `regal`, `neue_ware`, `kauf`, `zu_wenig`, `oeffnen`, `fehler`.
 Platzhalter: `{punkte}`, `{saldo}`, `{tag}`, `{ware}`, `{fehlend}`, `{datum}`.
 

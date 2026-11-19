@@ -44,12 +44,6 @@
         "Alle freigerubbelten Felder müssen drauf sein."
       ]
     ],
-    "erkannt": [
-      [
-        "Ich sehe {anzahl} Feld(er).",
-        "Stimmt das? Dann drück auf Einreichen."
-      ]
-    ],
     "nichts_erkannt": [
       [
         "Hmm, ich sehe nichts.",
@@ -242,6 +236,7 @@
     "druck.typ_normal": "RUBBELLOS",
     "druck.typ_quiz": "QUIZ-LOS",
     "druck.typ_sonntag": "SONNTAGSVERKAUF",
-    "druck.kleingedrucktes": "Gültig ab {datum}. Nur mit Foto an der SimOil-Kasse einlösbar. Keine Barauszahlung. Wer mehr rubbelt als erlaubt, verliert. Benzin leider ausverkauft."
+    "druck.kleingedrucktes": "Gültig ab {datum}. Nur mit Foto an der SimOil-Kasse einlösbar. Keine Barauszahlung. Wer mehr rubbelt als erlaubt, verliert. Benzin leider ausverkauft.",
+    "schild.zapfsaeule": "LEER"
   }
 }
