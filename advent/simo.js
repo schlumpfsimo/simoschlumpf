@@ -12,7 +12,8 @@
   };
 
   let platz = null, blase = null, textEl = null, gesicht = null;
-  let saetze = [], index = 0, uhr = null, laeuft = false, ausdruck = 'normal', letzte = null;
+  const ZU_NACH = 8000;                 // ms: so lange bleibt der letzte Satz stehen, dann schliesst die Blase
+  let saetze = [], index = 0, uhr = null, laeuft = false, ausdruck = 'normal', letzte = null, zuUhr = null;
   const ruhig = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function bauen() {
@@ -71,13 +72,22 @@
     textEl.textContent = saetze[index] || '';
     blase.classList.remove('spricht');
     blase.classList.toggle('mehr', index < saetze.length - 1);
+    clearTimeout(zuUhr);
+    if (index >= saetze.length - 1) zuUhr = setTimeout(schliessen, ZU_NACH);
+  }
+
+  function schliessen() {
+    clearTimeout(zuUhr);
+    if (!blase || !blase.isConnected) return;
+    const b = blase;
+    b.classList.add('weg');
+    setTimeout(() => { if (b === blase) zeigenKnopf(); }, 230);
   }
 
   function weiter() {
     if (laeuft) { fertig(); return; }
     if (index < saetze.length - 1) { index++; tippen(); return; }
-    blase.classList.add('weg');
-    setTimeout(zeigenKnopf, 230);
+    schliessen();
   }
 
   /** Zeigt Sätze an. */
@@ -86,6 +96,7 @@
     saetze = (liste || []).filter(Boolean);
     if (!saetze.length) return;
     index = 0;
+    clearTimeout(zuUhr);
     ausdruck = ausdr || 'normal';
     letzte = { saetze, ausdruck };
     zeigenBlase();

@@ -6,7 +6,7 @@
   const { el, datum } = Advent;
 
   // Standardmasse. Werden im Browser gespeichert, sobald du sie änderst.
-  const STANDARD = { feldB: 26, feldH: 24, abstand: 7, qr: 12, kuerzelPt: 8, rand: 9, anordnung: '2x2', rahmen: true };
+  const STANDARD = { feldB: 27, feldH: 26, abstand: 6, qr: 12, kuerzelPt: 9, rand: 4, anordnung: '2x2', stern: true };
   const SPEICHER = 'advent.druck';
   let masse = Object.assign({}, STANDARD, lesen());
   let lose = null;
@@ -42,29 +42,42 @@
   }
 
   // ---------------------------------------------------------------- ein Los
-  function losElement(los) {
-    const T = Advent.THEME;
+  function losElement(los, anzahl) {
+    const t = Advent.t;
+    const name = Advent.THEME.name || 'SimOil';
     const [spalten, zeilen] = { '2x2': [2, 2], '4x1': [4, 1], '1x4': [1, 4] }[masse.anordnung];
-    const felder = el('div', { class: 'los-felder', style:
-      `grid-template-columns: repeat(${spalten}, auto); grid-template-rows: repeat(${zeilen}, auto); gap: ${masse.abstand}mm;` });
+    const felder = el('div', { class: 'felder', style:
+      `grid-template-columns: repeat(${spalten}, auto); grid-template-rows: repeat(${zeilen}, auto); gap: ${masse.abstand}mm ${masse.abstand + 2}mm;` });
     los.felder.forEach(f => {
-      const flaeche = el('div', { class: 'feld-flaeche' + (masse.rahmen ? ' rahmen' : ''),
-        style: `width:${masse.feldB}mm;height:${masse.feldH}mm` },
+      const flaeche = el('div', { class: 'feld-flaeche', style: `width:${masse.feldB}mm;height:${masse.feldH}mm` },
         qrSvg(f.qrId, masse.qr),
         el('div', { class: 'kuerzel', style: `font-size:${masse.kuerzelPt}pt` }, f.kuerzel));
-      felder.append(el('div', { class: 'feld', style: `width:${Math.max(masse.feldB, 18)}mm` },
-        el('div', { class: 'feld-kopf' }, el('b', {}, f.feld), f.beschriftung || ''),
+      felder.append(el('div', { class: 'feld', style: `width:${Math.max(masse.feldB + 3, 20)}mm` },
+        el('div', { class: 'feld-kopf' }, el('span', { class: 'feld-nr' }, f.feld), f.beschriftung || ''),
         flaeche));
     });
-    const titel = (T.texte && T.texte['druck.titel']) || T.name || 'Rubbellos';
-    return el('div', { class: 'los-innen', style: `--rand:${masse.rand}mm` },
-      el('div', { class: 'los-kopf' },
-        el('div', { class: 'los-tag' }, los.tag),
-        el('div', { class: 'los-titel' }, el('b', {}, titel), datum(los.datum))),
-      los.regel ? el('p', { class: 'los-regel' }, los.regel) : null,
-      los.frage ? el('p', { class: 'los-frage' }, los.frage) : null,
+    const schild = el('div', { class: 'schild-klein' });
+    schild.innerHTML = Grafik.symbol('tropfen');
+    schild.append(el('span', {}, name));
+    const nr = el('div', { class: 'nr' },
+      el('b', {}, 'Nr. ' + String(los.tag).padStart(2, '0'), el('small', {}, ' / ' + (anzahl || 24))),
+      el('span', {}, datum(los.datum)));
+    const unter = { quiz: t('druck.typ_quiz'), sonntag: t('druck.typ_sonntag') }[los.typ] || t('druck.typ_normal');
+    const karte = el('div', { class: 'karte', style: `--rand:${masse.rand}mm` },
+      el('div', { class: 'kopf' }, schild, nr),
+      el('div', { class: 'unterzeile' }, unter),
+      los.regel ? el('p', { class: 'regel' }, los.regel) : null,
+      los.frage ? el('p', { class: 'frage' }, los.frage) : null,
       felder,
-      beispiel ? el('div', { class: 'beispiel' }, 'Beispiel, Codes ungültig') : null);
+      el('div', { class: 'klein' }, t('druck.kleingedrucktes', { datum: los.datum })),
+      beispiel ? el('div', { class: 'beispiel' }, 'BEISPIEL · Codes ungültig') : null);
+    if (masse.stern) {
+      const st = el('div', { class: 'stern' });
+      const zeilenStern = Advent.roh('schild.stern');
+      st.innerHTML = Grafik.stern(Array.isArray(zeilenStern) ? zeilenStern : ['NEU:', 'ADVENTSRUBBEL'], { seed: los.tag * 7 + 3 });
+      karte.append(st);
+    }
+    return karte;
   }
 
   // ---------------------------------------------------------------- Blatt mit Schnittmarken
@@ -81,7 +94,7 @@
     ];
     striche.forEach(([x1, y1, x2, y2]) => {
       const l = document.createElementNS(ns, 'line');
-      Object.entries({ x1, y1, x2, y2, stroke: '#000', 'stroke-width': 0.2 }).forEach(([k, v]) => l.setAttribute(k, v));
+      Object.entries({ x1, y1, x2, y2, stroke: '#4A3226', 'stroke-width': 0.25 }).forEach(([k, v]) => l.setAttribute(k, v));
       svg.append(l);
     });
     return svg;
@@ -104,7 +117,7 @@
       el('h2', {}, 'Testblatt'),
       el('p', {}, 'Die Linie unten muss genau 50 mm lang sein. Sonst im Druckdialog die Skalierung auf 100 % stellen.'),
       el('div', { class: 'massstab' }, el('div'), el('small', {}, '50 mm')),
-      el('p', {}, `Felder ${masse.feldB} × ${masse.feldH} mm, Abstand ${masse.abstand} mm, QR ${masse.qr} mm.`),
+      el('p', {}, `Felder ${masse.feldB} × ${masse.feldH} mm, Abstand ${masse.abstand} mm, QR ${masse.qr} mm, Rand ${masse.rand} mm.`),
       el('p', {}, 'Kleber aufkleben, ein Feld freirubbeln, mit dem Testzugang fotografieren und prüfen, ob der Code erkannt wird.'));
   }
 
@@ -120,11 +133,11 @@
     let liste = lose;
     if (art === 'test') {
       const l = lose.find(x => x.tag === Number($('tag').value)) || lose[0];
-      v.append(blatt([losElement(l), testHinweis()]));
+      v.append(blatt([losElement(l, lose.length), testHinweis()]));
       return;
     }
     if (art === 'bereich') liste = lose.filter(l => l.tag >= Number($('tag').value) && l.tag <= Number($('bis').value));
-    for (let i = 0; i < liste.length; i += 4) v.append(blatt(liste.slice(i, i + 4).map(losElement)));
+    for (let i = 0; i < liste.length; i += 4) v.append(blatt(liste.slice(i, i + 4).map(l => losElement(l, lose.length))));
   }
 
   function meldung(text, fehler) {
@@ -138,11 +151,11 @@
     const z = n => Array.from({ length: n }, () => A[Math.floor(Math.random() * A.length)]).join('');
     return Array.from({ length: 24 }, (_, i) => {
       const tag = i + 1;
-      const quiz = [6, 13, 20].includes(tag);
+      const quiz = [3, 10, 17].includes(tag);
       const antworten = ['Rhein', 'Aare', 'Limmat', 'Reuss'];
       return {
-        tag, datum: `2026-12-${String(tag).padStart(2, '0')}`, typ: quiz ? 'quiz' : 'normal',
-        regel: quiz ? 'Sonntagsquiz: Rubble nur das Feld mit der richtigen Antwort frei.' : 'Rubble genau 2 der 4 Felder frei.',
+        tag, datum: `2026-12-${String(tag).padStart(2, '0')}`, typ: quiz ? 'quiz' : ([6, 13, 20].includes(tag) ? 'sonntag' : 'normal'),
+        regel: quiz ? 'Quiz: Rubble nur das Feld mit der richtigen Antwort frei.' : 'Rubble genau 2 der 4 Felder frei.',
         frage: quiz ? 'Welcher Fluss fliesst durch Basel?' : '',
         felder: [1, 2, 3, 4].map(feld => { const k = z(4); return { feld, kuerzel: k, qrId: k + '-' + z(8), beschriftung: quiz ? antworten[feld - 1] : '' }; })
       };
@@ -156,14 +169,14 @@
       $(k).value = masse[k];
       $(k).addEventListener('input', () => { masse[k] = k === 'anordnung' ? $(k).value : Number($(k).value) || STANDARD[k]; merken(); zeichnen(); });
     });
-    $('rahmen').checked = masse.rahmen;
-    $('rahmen').addEventListener('change', () => { masse.rahmen = $('rahmen').checked; merken(); zeichnen(); });
+    $('stern').checked = masse.stern;
+    $('stern').addEventListener('change', () => { masse.stern = $('stern').checked; merken(); zeichnen(); });
     ['auswahl', 'tag', 'bis'].forEach(k => $(k).addEventListener('input', zeichnen));
     $('drucken').addEventListener('click', () => window.print());
     $('zuruecksetzen').addEventListener('click', () => {
       masse = Object.assign({}, STANDARD); merken();
       ['feldB', 'feldH', 'abstand', 'qr', 'kuerzelPt', 'rand', 'anordnung'].forEach(k => { $(k).value = masse[k]; });
-      $('rahmen').checked = masse.rahmen;
+      $('stern').checked = masse.stern;
       zeichnen();
     });
     $('beispiel').addEventListener('click', () => {

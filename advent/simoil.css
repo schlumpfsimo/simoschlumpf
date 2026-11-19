@@ -253,6 +253,9 @@ img, svg { display: block; }
 .lcd-felder { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; font-size: 22px; }
 .lcd-felder .an { font-weight: 400; }
 .lcd-felder .aus { opacity: .55; }
+.ladebalken { display: flex; gap: 4px; margin-top: 16px; padding: 4px; border: 3px solid var(--lcd-text); border-radius: 6px; }
+.ladebalken span { flex: 1; height: 24px; border-radius: 2px; }
+.ladebalken span.voll { background: var(--lcd-text); }
 .lautsprecher { display: flex; justify-content: center; gap: 7px; margin: 14px 0 4px; }
 .lautsprecher span { width: 9px; height: 9px; border-radius: 50%; background: var(--mint-tief); border: 2px solid var(--braun); }
 .terminal-knoepfe { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin-top: 14px; }
