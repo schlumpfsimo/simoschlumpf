@@ -112,7 +112,72 @@ if (require.main === module) (async () => {
   assert.equal(u.tabelle('Einsendungen')[1]['Manuell'], 'ja');
   assert.deepEqual(a.fehler, [], 'Browserfehler Android');
 
-  console.log('E2E SimOil Terminal: in Ordnung');
+  await a.page.context().close();
+
+  // ---------- Regal: Punkte gutschreiben, kaufen (sichtbar und eingeschweisst), öffnen, Sofortgewinn
+  u.jetzt('2026-12-06T09:00:00');
+  u.als('admin', 'admin_buchen', { betrag: 400, grund: 'Test' });
+  const r = await oeffnen(browser, port, u, 'iPhone 13', 'spieler', '#/regal');
+  const p = r.page;
+  await p.waitForSelector('.regal .ware');
+  await simoWeg(p);
+  const titel = await p.$$eval('.ware .ware-titel', n => n.map(x => x.textContent));
+  assert.ok(titel.includes('Kaffee to go'));
+  assert.ok(titel.includes('Zimmerpflanze'), 'ab 6.12. sichtbar');
+  assert.ok(!titel.includes('Schlittschuhlaufen'), 'erst ab 13.12.');
+  assert.ok(!titel.includes('Konzertkarten'), 'eingeschweisst bleibt verborgen');
+  assert.ok(titel.includes('???'));
+  assert.ok(!titel.includes('Duftbaum Vanille'), 'versteckte Ware nicht im Regal');
+  assert.equal(await p.locator('.ware .stempel').count(), 1);
+  assert.equal(await p.locator('.ware .aktion-stern').count(), 1);
+  assert.equal(await p.locator('.ware .folie').count(), 1);
+  await sauber(p, 'Regal');
+  await p.screenshot({ path: path.join(AUS, 'simoil-5-regal.png'), fullPage: true });
+  // Kaffee kaufen
+  await p.locator('.ware', { hasText: 'Kaffee to go' }).click();
+  await p.waitForSelector('.dialog-blatt');
+  await p.click('.dialog-blatt .pille.rot');
+  assert.match(await p.textContent('.dialog-blatt'), /für 30 Punkte kaufen/);
+  await p.screenshot({ path: path.join(AUS, 'simoil-6-bestaetigen.png') });
+  await p.click('.dialog-blatt .pille.rot');
+  await p.waitForSelector('.dialog-blatt .inhalt-box');
+  assert.match(await p.textContent('.dialog-blatt'), /Gutschein für einen Kaffee/);
+  await p.waitForTimeout(800);
+  await p.screenshot({ path: path.join(AUS, 'simoil-7-gekauft.png') });
+  await p.click('.dialog-blatt .pille.creme');
+  await p.waitForSelector('.band-gehoert');
+  // Eingeschweisstes kaufen: Titel erst danach
+  await p.locator('.ware', { hasText: '???' }).click();
+  await p.waitForSelector('.dialog-blatt');
+  assert.match(await p.textContent('.dialog-blatt'), /Eingeschweisst/);
+  await p.click('.dialog-blatt .pille.rot');
+  await p.click('.dialog-blatt .pille.rot');
+  await p.waitForSelector('.dialog-blatt .inhalt-box');
+  assert.match(await p.textContent('.dialog-blatt h2'), /Konzertkarten/);
+  await p.click('.dialog-blatt .pille.creme');
+  await p.waitForSelector('.ware >> text=Konzertkarten');
+  // Zu teuer: Knopf gesperrt
+  const stand = u.als('spieler', 'start').saldo;
+  u.als('admin', 'admin_buchen', { betrag: 10 - stand, grund: 'Test' });
+  await p.reload();
+  await p.waitForSelector('.regal .ware');
+  await simoWeg(p);
+  assert.ok(await p.locator('.ware-noch').count() > 0, '«Noch X Pkt» sichtbar');
+  await p.locator('.ware', { hasText: 'Massage' }).click();
+  await p.waitForSelector('.dialog-blatt');
+  assert.equal(await p.locator('.dialog-blatt .pille:disabled').count(), 1);
+  await p.keyboard.press('Escape');
+  assert.equal(u.tabelle('Bestellungen').length, 2);
+  assert.equal(u.mails.length, 2);
+  // Gekauftes nochmals öffnen
+  await p.locator('.ware', { hasText: 'Kaffee to go' }).click();
+  await p.click('.dialog-blatt .pille.mint');
+  await p.waitForSelector('.dialog-blatt .inhalt-box');
+  await p.keyboard.press('Escape');
+  await p.screenshot({ path: path.join(AUS, 'simoil-8-regal-nachher.png'), fullPage: true });
+  assert.deepEqual(r.fehler, [], 'Browserfehler Regal');
+
+  console.log('E2E SimOil: in Ordnung');
   await browser.close();
   server.close();
 })().catch(e => { console.error(e); process.exit(1); });

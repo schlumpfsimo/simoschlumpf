@@ -329,7 +329,7 @@ img, svg { display: block; }
 .ware-bild .ware-svg { width: 100%; height: 100%; }
 .ware-titel { font-weight: 700; font-size: 15px; line-height: 1.15; margin-top: 2px; min-height: 2.3em; display: flex; align-items: center; }
 .preisschild {
-  position: relative; margin-top: 4px; padding: 0 10px 0 18px; background: var(--gelb); border: 3px solid var(--braun); border-radius: 10px;
+  position: relative; margin-top: 4px; padding: 0 10px 0 23px; background: var(--gelb); border: 3px solid var(--braun); border-radius: 10px;
   transform: rotate(-4deg); box-shadow: 0 4px 0 var(--braun); display: inline-flex; align-items: baseline; gap: 3px;
 }
 .ware:nth-child(even) .preisschild { transform: rotate(3deg); }
@@ -388,6 +388,8 @@ img, svg { display: block; }
 .dialog-bild { position: relative; width: 170px; height: 170px; margin: 4px auto 8px; }
 .dialog-bild .ware-svg { width: 100%; height: 100%; }
 .dialog-knoepfe { display: grid; gap: 14px; margin-top: 18px; }
+.dialog-bild.ausgepackt { animation: auspacken .7s var(--feder) both; }
+@keyframes auspacken { 0% { transform: scale(.5) rotate(-10deg); opacity: 0; } 60% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: none; } }
 .inhalt-box { margin: 14px 0 4px; padding: 14px; background: var(--weiss); border: 3px solid var(--braun); border-radius: 18px; text-align: left; white-space: pre-wrap; }
 .inhalt-code { font-family: var(--pixel); font-size: 32px; letter-spacing: 2px; text-align: center; word-break: break-all; }
 .inhalt-box img { width: 100%; border-radius: 12px; }

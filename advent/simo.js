@@ -103,13 +103,20 @@
     tippen();
   }
 
-  /** Situation aus texte.json. Varianten (Liste von Listen) werden zufällig gewählt. */
-  function sagen(situation, vars) {
+  /** Sätze einer Situation aus texte.json. Varianten (Liste von Listen) werden zufällig gewählt. */
+  function saetzeVon(situation, vars) {
     let s = Advent.THEME.simo[situation];
-    if (!s || !s.length) return;
+    if (!s || !s.length) return [];
     if (Array.isArray(s[0])) s = s[Math.floor(Math.random() * s.length)];
-    sagenText(s.map(x => Advent.fuellen(x, vars)), AUSDRUCK[situation] || 'normal');
+    return s.map(x => Advent.fuellen(x, vars));
   }
 
-  window.Simo = { sagen, sagenText };
+  /** Spricht eine oder mehrere Situationen nacheinander: Simo.sagen('begruessung', vars) oder (['sonntag', 'neue_ware'], vars). */
+  function sagen(situation, vars) {
+    const liste = [].concat(situation);
+    const s = liste.reduce((alle, x) => alle.concat(saetzeVon(x, vars)), []);
+    sagenText(s, AUSDRUCK[liste[0]] || 'normal');
+  }
+
+  window.Simo = { sagen, sagenText, saetzeVon };
 })();

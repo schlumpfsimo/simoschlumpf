@@ -78,10 +78,13 @@
     const vars = { tag: s.los ? s.los.tag : '', saldo: s.saldo, datum: s.erstes };
     if (!s.los && s.erstes && s.heute < s.erstes) App.simoEinmal('vor_start', { datum: s.erstes, saldo: s.saldo });
     else if (!s.los && !s.naechstes) App.simoEinmal('ende', vars);
-    else if (s.sonntag) App.simoEinmal('sonntag', vars);
-    else if (s.neueWare) App.simoEinmal('neue_ware', vars);
-    else if (s.los && s.los.status !== 'offen') App.simoEinmal('begruessung_erledigt', vars);
-    else App.simoEinmal('begruessung', vars);
+    else {
+      // Hauptsatz je nach Lage, danach Sonntag und neue Ware als weitere Sätze
+      const folge = [s.los && s.los.status !== 'offen' ? 'begruessung_erledigt' : 'begruessung'];
+      if (s.sonntag) folge.unshift('sonntag');
+      if (s.neueWare) folge.push('neue_ware');
+      App.simoEinmal(folge, vars, folge.join('+'));
+    }
   }
 
   App.ansichten.tankstelle = tankstelle;
