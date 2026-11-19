@@ -372,7 +372,7 @@ img, svg { display: block; }
   background: var(--weiss); color: var(--mint-tief); border: 3px solid var(--braun); border-radius: 99px; padding: 0 9px 1px;
   font-weight: 700; font-size: 13px; box-shadow: 0 3px 0 var(--braun);
 }
-.ware .marke-neu { top: -2px; right: 4px; font-size: 13px; }
+.ware .marke-neu { top: -2px; left: 2px; right: auto; font-size: 13px; transform: rotate(-8deg); }
 .ware.neu-rein { animation: reinspringen .9s var(--feder) both; animation-delay: calc(var(--n, 0) * .12s); }
 .regal-leer { position: relative; z-index: 1; padding: 30px 20px 40px; text-align: center; font-weight: 600; }
 
