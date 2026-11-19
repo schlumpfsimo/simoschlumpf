@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Druckvorlage · {name}</title>
+<link rel="stylesheet" href="theme/theme.css">
+<style>
+  /* Bildschirm: Einstellungen oben, darunter Vorschau der Blätter. Druck: nur die Blätter. */
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--schrift); color: #111; background: #e9e9e6; }
+  .steuerung { background: #fff; padding: 16px; border-bottom: 1px solid #ccc; }
+  .steuerung h1 { font-size: 20px; margin: 0 0 4px; }
+  .steuerung p { margin: 4px 0 12px; color: #555; font-size: 14px; max-width: 70ch; }
+  .reihe { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; margin-bottom: 12px; }
+  .reihe label { display: flex; flex-direction: column; font-size: 13px; color: #444; gap: 4px; }
+  .reihe label.haken { flex-direction: row; align-items: center; gap: 8px; font-size: 15px; color: #111; }
+  .reihe input[type=number], .reihe select { font-size: 16px; padding: 6px 8px; width: 7em; border: 1px solid #999; border-radius: 4px; }
+  .reihe select { width: auto; }
+  button { font: inherit; font-size: 16px; padding: 10px 18px; border: 1px solid #111; background: #111; color: #fff; border-radius: 6px; cursor: pointer; }
+  button.zweit { background: #fff; color: #111; }
+  .meldung { padding: 10px 12px; border-radius: 6px; background: #fff4d6; margin: 8px 0; font-size: 14px; }
+  .meldung.fehler { background: #fde3e1; }
+  .vorschau { padding: 10mm 0; overflow-x: auto; }
+
+  /* ----- Blatt A4 mit 4 Losen (alles in mm, damit der Druck masshaltig ist) ----- */
+  .blatt { position: relative; width: 210mm; height: 297mm; background: #fff; overflow: hidden;
+           margin: 0 auto 10mm; box-shadow: 0 1px 6px rgba(0,0,0,.25); font-family: var(--druck-schrift); color: #000; }
+  .marken { position: absolute; inset: 0; width: 210mm; height: 297mm; pointer-events: none; }
+  .los { position: absolute; width: 105mm; height: 148.5mm; }
+  .los-innen { position: absolute; inset: var(--rand, 9mm); display: flex; flex-direction: column; }
+  .los-kopf { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 0.4mm solid #000; padding-bottom: 1.5mm; }
+  .los-tag { font-size: 22mm; font-weight: 800; line-height: .85; letter-spacing: -0.5mm; }
+  .los-titel { text-align: right; font-size: 3.4mm; line-height: 1.3; }
+  .los-titel b { display: block; font-size: 4.2mm; }
+  .los-regel { font-size: 3.4mm; line-height: 1.35; margin: 2.5mm 0 0; }
+  .los-frage { font-size: 3.8mm; line-height: 1.35; margin: 2mm 0 0; font-weight: 700; }
+  .los-felder { flex: 1; display: grid; justify-content: center; align-content: center; }
+  .feld { display: flex; flex-direction: column; align-items: center; }
+  .feld-kopf { font-size: 3.2mm; line-height: 1.2; margin-bottom: 1mm; text-align: center; min-height: 3.9mm; max-width: 100%; }
+  .feld-kopf b { display: inline-block; min-width: 4.4mm; height: 4.4mm; line-height: 4.4mm; border-radius: 50%; background: #000; color: #fff; font-size: 2.9mm; margin-right: 1mm; text-align: center; }
+  .feld-flaeche { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .feld-flaeche.rahmen { outline: 0.25mm dashed #888; outline-offset: 0; }
+  .feld-flaeche svg { display: block; }
+  .kuerzel { font-family: var(--schrift-zahl); font-weight: 700; letter-spacing: 0.4mm; line-height: 1; margin-top: 0.8mm; }
+  .beispiel { position: absolute; right: 0; bottom: 0; font-size: 2.6mm; color: #888; }
+  .hinweis-los { position: absolute; inset: 12mm; font-size: 3.6mm; line-height: 1.45; }
+  .hinweis-los h2 { font-size: 5mm; margin: 0 0 3mm; }
+  .massstab { margin-top: 6mm; }
+  .massstab div { width: 50mm; height: 3mm; border: 0.3mm solid #000; border-top: 0; }
+
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .steuerung { display: none; }
+    .vorschau { padding: 0; }
+    .blatt { margin: 0; box-shadow: none; break-after: page; page-break-after: always; }
+    .blatt:last-child { break-after: auto; page-break-after: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="steuerung">
+  <h1>Druckvorlage</h1>
+  <p>A4 hochformatig, 4 Lose pro Blatt, Schnittmarken an den Schnittkanten. Im Druckdialog Skalierung
+    <b>100 %</b> wählen (nicht «An Seite anpassen»). Zuerst das Testblatt drucken und die Linie
+    von 50 mm nachmessen.</p>
+  <div id="meldung"></div>
+  <div class="reihe">
+    <label>Was drucken
+      <select id="auswahl">
+        <option value="alle">Alle Lose</option>
+        <option value="test">Testblatt (1 Los)</option>
+        <option value="bereich">Tage von–bis</option>
+      </select>
+    </label>
+    <label id="l-tag">Tag <input type="number" id="tag" min="1" max="31" value="1"></label>
+    <label id="l-bis">bis <input type="number" id="bis" min="1" max="31" value="24"></label>
+  </div>
+  <div class="reihe">
+    <label>Feldbreite mm <input type="number" id="feldB" step="0.5" min="10" max="45"></label>
+    <label>Feldhöhe mm <input type="number" id="feldH" step="0.5" min="10" max="45"></label>
+    <label>Abstand mm <input type="number" id="abstand" step="0.5" min="0" max="30"></label>
+    <label>QR-Grösse mm <input type="number" id="qr" step="0.5" min="8" max="30"></label>
+    <label>Kürzel pt <input type="number" id="kuerzelPt" step="0.5" min="5" max="16"></label>
+    <label>Rand mm <input type="number" id="rand" step="0.5" min="4" max="20"></label>
+    <label>Anordnung
+      <select id="anordnung">
+        <option value="2x2">2 × 2</option>
+        <option value="4x1">4 nebeneinander</option>
+        <option value="1x4">4 untereinander</option>
+      </select>
+    </label>
+    <label class="haken"><input type="checkbox" id="rahmen"> Umriss der Kleber (gestrichelt)</label>
+  </div>
+  <div class="reihe">
+    <button id="drucken">Drucken</button>
+    <button class="zweit" id="zuruecksetzen">Masse zurücksetzen</button>
+    <button class="zweit" id="beispiel" hidden>Beispieldaten zeigen</button>
+  </div>
+</div>
+<div class="vorschau" id="vorschau"></div>
+
+<script src="config.js"></script>
+<script src="kern.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="druck.js"></script>
+</body>
+</html>
