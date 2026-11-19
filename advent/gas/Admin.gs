@@ -26,7 +26,7 @@ function adminUebersicht_(ctx) {
     serie: aktuelleSerie_(ctx, proTag),
     einsendungen: einsendungen,
     bestellungen: bestellungen_(ctx.modus).map(function (o) {
-      return { id: o['ID'], zeit: o['Zeitstempel'], katalogId: o['Katalog-ID'], titel: o['Titel'],
+      return { id: o['ID'], zeit: o['Zeitstempel'], wareId: o['Ware-ID'], titel: o['Titel'],
                preis: zahl_(o['Preis']), status: o['Status'] };
     }).reverse(),
     buchungen: lesen_('Buchungen').filter(function (o) { return o['Modus'] === ctx.modus; }).slice(-100).reverse()
@@ -44,7 +44,7 @@ function adminLose_(ctx) {
         tag: l.tag, datum: l.datum, typ: l.typ, regel: l.regel, felderzahl: l.felderzahl, frage: l.frage,
         status: losStatus_(l, ctx, proTag),
         felder: felderVon_(l.tag).map(function (f) {
-          var g = f.effekt === 'sofortgewinn' ? geschenk_(f.geschenkId) : null;
+          var g = f.effekt === 'sofortgewinn' ? wareKurz_(f.wareId) : null;
           return { feld: f.feld, kuerzel: f.kuerzel, beschriftung: f.beschriftung, effekt: f.effekt, wert: f.wert,
                    geschenk: g ? g.titel : null, richtig: f.richtig };
         })
@@ -103,6 +103,7 @@ function adminBestellung_(ctx, a) {
     if (status === 'storniert') buchen_(ctx.modus, 'Storno: ' + o['Titel'], zahl_(o['Preis']), 'B:' + o['ID']);
     o['Status'] = status;
     aktualisieren_('Bestellungen', o);
+    if (ctx.modus === 'echt' && status === 'storniert') besitzEintragen_();
     return { saldo: saldo_(ctx.modus) };
   });
 }
@@ -134,6 +135,7 @@ function adminZuruecksetzen_(ctx, a) {
     var z = e._roh;
     z['Status'] = STATUS.ZURUECK;
     aktualisieren_('Einsendungen', z);
+    if (ctx.modus === 'echt') besitzEintragen_();
     return { saldo: saldo_(ctx.modus) };
   });
 }
@@ -157,7 +159,7 @@ function testdatenLoeschen_() {
     fotos.forEach(function (id) {
       try { DriveApp.getFileById(id).setTrashed(true); n.fotos++; } catch (x) { /* schon weg */ }
     });
-    PropertiesService.getScriptProperties().deleteProperty('KATALOG_GESEHEN_test');
+    PropertiesService.getScriptProperties().deleteProperty('WARE_GESEHEN_test');
     return { geloescht: n };
   }
 }

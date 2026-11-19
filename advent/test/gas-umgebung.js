@@ -159,7 +159,7 @@ function neueUmgebung({ einrichten = true } = {}) {
     felder(tag) {
       return u.tabelle('Felder').filter(f => Number(f['Tag']) === tag).map(f => ({
         feld: Number(f['Feld']), qrId: f['QR-ID'], kuerzel: f['Kürzel'], effekt: f['Effekt'],
-        wert: Number(f['Wert'] || 0), geschenk: f['Geschenk-ID'], richtig: f['Richtig'] === 'ja'
+        wert: Number(f['Wert'] || 0), geschenk: f['Ware-ID'], richtig: f['Richtig'] === 'ja'
       }));
     }
   };

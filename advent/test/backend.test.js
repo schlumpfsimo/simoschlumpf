@@ -8,13 +8,16 @@ const { neueUmgebung } = require('./gas-umgebung');
 
 const BEISPIEL = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'beispiel-konfiguration.json'), 'utf8'));
 
+/** Ware, die nur als Sofortgewinn vorkommt (Zustand «versteckt»). */
+const WARE_GEWINNE = ['W90', 'W91', 'W92', 'W93'].map((id, i) => ({
+  'ID': id, 'Titel': ['Kinogutschein', 'Brief', 'Glühwein', 'Reise'][i], 'Illustration': 'kino', 'Preis': '0',
+  'Zustand': 'versteckt', 'Inhalt-Art': i === 0 ? 'code' : 'text', 'Inhalt': i === 0 ? 'KINO-1234' : 'Ein langer Brief.'
+}));
+
 /** Umgebung mit Geschenken und den Losen aus einer Konfiguration. */
 function bereit(konfiguration = BEISPIEL) {
   const u = neueUmgebung();
-  u.zeilen('Geschenke', [
-    { 'ID': 'G01', 'Titel': 'Kinogutschein', 'Art': 'code', 'Inhalt': 'KINO-1234' },
-    { 'ID': 'G02', 'Titel': 'Brief', 'Art': 'text', 'Inhalt': 'Ein langer Brief.' }
-  ]);
+  u.zeilen('Ware', WARE_GEWINNE);
   const r = u.als('admin', 'admin_generieren', { konfiguration: JSON.stringify(konfiguration) });
   assert.equal(r.ok, true, r.text);
   return u;
@@ -32,17 +35,17 @@ const einreichen = (u, wer, codes, rest = {}) => u.als(wer, 'einreichen', Object
 
 test('einrichten legt Blätter, Einstellungen und Zugänge an', () => {
   const u = neueUmgebung();
-  for (const n of ['Lose', 'Felder', 'Einsendungen', 'Buchungen', 'Katalog', 'Geschenke', 'Erhalten', 'Bestellungen', 'Einstellungen', 'Konfiguration']) {
+  for (const n of ['Lose', 'Felder', 'Einsendungen', 'Buchungen', 'Ware', 'Erhalten', 'Bestellungen', 'Einstellungen', 'Konfiguration']) {
     assert.ok(u.sheets[n], n);
   }
-  assert.equal(u.tabelle('Einstellungen').length, 6);
+  assert.equal(u.tabelle('Einstellungen').length, 8);
   assert.match(u.token('spieler'), /^[2-9A-HJKMNP-Z]{24}$/);
   assert.notEqual(u.token('spieler'), u.token('admin'));
   // nochmals ausführen ändert nichts
   const vorher = u.token('spieler');
   u.kontext.einrichten();
   assert.equal(u.token('spieler'), vorher);
-  assert.equal(u.tabelle('Einstellungen').length, 6);
+  assert.equal(u.tabelle('Einstellungen').length, 8);
 });
 
 test('ohne gültigen Token keine Daten', () => {
@@ -62,7 +65,8 @@ test('Generator: 24 Lose, eindeutige Kürzel, Alphabet ohne 0 O 1 I L', () => {
   assert.equal(felder.length, 96);
   assert.equal(lose[0]['Datum'], '2026-12-01');
   assert.equal(lose[23]['Datum'], '2026-12-24');
-  assert.equal(lose[5]['Typ'], 'quiz');
+  assert.equal(lose[5]['Typ'], 'sonntag');
+  assert.equal(lose[2]['Typ'], 'quiz');
   const kz = felder.map(f => f['Kürzel']);
   assert.equal(new Set(kz).size, 96);
   for (const f of felder) {
@@ -76,7 +80,7 @@ test('Generator: Fehler werden verständlich gemeldet und nichts wird geschriebe
   const u = neueUmgebung();
   const r = u.als('admin', 'admin_generieren', { konfiguration: fest([
     { tag: 1, felder: ['P10', 'P5', '-'] },
-    { tag: 2, felder: ['P10', 'Q5', '-', 'S:G99'] },
+    { tag: 2, felder: ['P10', 'Q5', '-', 'S:W99'] },
     { tag: 3, typ: 'quiz', felder: ['P1', '-', '-', '-'] }
   ]) });
   assert.equal(r.ok, false);
@@ -84,7 +88,7 @@ test('Generator: Fehler werden verständlich gemeldet und nichts wird geschriebe
   const t = r.daten.fehler.join('\n');
   assert.match(t, /Los 1: braucht genau 4 Felder/);
   assert.match(t, /«Q5» verstehe ich nicht/);
-  assert.match(t, /Geschenk «G99» fehlt/);
+  assert.match(t, /Ware «W99» fehlt/);
   assert.match(t, /Quiz braucht mindestens eine Antwort/);
   assert.equal(u.tabelle('Lose').length, 0);
   assert.equal(u.als('admin', 'admin_generieren', { konfiguration: '{kaputt' }).fehler, 'konfiguration');
@@ -234,18 +238,23 @@ test('Quiz: nur die richtige Antwort zählt', () => {
   assert.equal(einreichen(u2, 'spieler', [u2.felder(1)[0].qrId, u2.felder(1)[1].qrId]).ergebnis.ungueltig, true);
 });
 
-test('Sofortgewinn landet bei «Meine Geschenke»', () => {
-  const u = bereit(fest([{ tag: 1, felder: ['S:G01', 'P5', 'x3', '-'] }]));
+test('Sofortgewinn: Ware gehört ihr sofort und steht im Regal', () => {
+  const u = bereit(fest([{ tag: 1, felder: ['S:W90', 'P5', 'x3', '-'] }]));
   u.jetzt('2026-12-01T09:00:00');
+  assert.equal(u.als('spieler', 'regal').ware.length, 0);   // versteckt, solange nicht gewonnen
   const f = u.felder(1);
   const r = einreichen(u, 'spieler', [f[0].qrId, f[1].qrId]);
-  assert.equal(r.ergebnis.gewinne[0].inhalt, 'KINO-1234');
+  assert.equal(r.ergebnis.gewinne[0].titel, 'Kinogutschein');
+  assert.equal(r.ergebnis.gewinne[0].inhalt, undefined);    // Inhalt erst beim Öffnen
   assert.equal(r.ergebnis.felder[0].geschenk, 'Kinogutschein');
-  const g = u.als('spieler', 'geschenke').geschenke;
-  assert.equal(g.length, 1);
-  assert.equal(g[0].quelle, 'los');
-  assert.equal(g[0].tag, 1);
-  assert.equal(g[0].geschenk.titel, 'Kinogutschein');
+  const regal = u.als('spieler', 'regal').ware;
+  assert.equal(regal.length, 1);
+  assert.equal(regal[0].gehoert, true);
+  assert.equal(regal[0].gewonnen, true);
+  assert.equal(regal[0].kaufbar, false);
+  assert.equal(u.als('spieler', 'oeffnen', { id: 'W90' }).ware.inhalt, 'KINO-1234');
+  assert.equal(u.als('test', 'oeffnen', { id: 'W90' }).fehler, 'nicht_deins');
+  assert.equal(u.tabelle('Ware').find(w => w['ID'] === 'W90')['Gehört ihr'], 'ja');
 });
 
 test('Serie und Serienbonus (ab 3 Tagen, nur am eigenen Tag)', () => {
@@ -302,7 +311,7 @@ test('Testzugang: eigenes Testdatum und getrennte Daten', () => {
 // ------------------------------------------------------------------ Admin
 
 test('Admin: Ergebnis ändern, zurücksetzen, Punkte buchen', () => {
-  const u = bereit(fest([{ tag: 1, felder: ['S:G01', 'P5', 'x3', '-'] }]));
+  const u = bereit(fest([{ tag: 1, felder: ['S:W90', 'P5', 'x3', '-'] }]));
   u.jetzt('2026-12-01T09:00:00');
   const f = u.felder(1);
   const r = einreichen(u, 'spieler', [f[0].qrId, f[1].qrId]);
@@ -314,7 +323,8 @@ test('Admin: Ergebnis ändern, zurücksetzen, Punkte buchen', () => {
   assert.equal(a.saldo, 10);
   a = u.als('admin', 'admin_zuruecksetzen', { tag: 1 });
   assert.equal(a.saldo, -2);                              // nur die Admin-Buchung bleibt
-  assert.equal(u.als('spieler', 'geschenke').geschenke.length, 0);  // Sofortgewinn weg
+  assert.equal(u.als('spieler', 'regal').ware.length, 0);  // Sofortgewinn weg
+  assert.equal(u.tabelle('Ware').find(w => w['ID'] === 'W90')['Gehört ihr'], '');
   assert.equal(u.als('spieler', 'verlauf').lose[0].status, 'offen');
   assert.equal(einreichen(u, 'spieler', [f[0].qrId, f[2].qrId]).ok, true);  // wieder einreichbar
   assert.equal(u.als('admin', 'admin_zuruecksetzen', { tag: 3 }).fehler, 'nicht_gefunden');
@@ -324,7 +334,7 @@ test('Admin: Druckdaten enthalten keine Effekte', () => {
   const u = bereit();
   const d = u.als('admin', 'admin_druck');
   assert.equal(d.lose.length, 24);
-  assert.equal(d.lose[5].frage, 'Welcher Fluss fliesst durch Basel?');
+  assert.equal(d.lose[9].frage, 'Welcher Fluss fliesst durch Basel?');
   assert.deepEqual(Object.keys(d.lose[0].felder[0]).sort(), ['beschriftung', 'feld', 'kuerzel', 'qrId']);
   assert.equal(u.als('spieler', 'admin_druck').ok, false);
 });
@@ -333,87 +343,125 @@ test('Admin: Druckdaten enthalten keine Effekte', () => {
 
 test('Start und Verlauf verraten keine Felder künftiger Lose', () => {
   const u = bereit();
-  u.jetzt('2026-12-03T09:00:00');
+  u.jetzt('2026-12-04T09:00:00');
   const s = u.als('spieler', 'start');
-  assert.equal(s.los.tag, 3);
+  assert.equal(s.los.tag, 4);
   assert.equal(s.los.status, 'offen');
   assert.equal(s.los.felderzahl, 2);
-  assert.equal(s.naechstes.tag, 4);
+  assert.equal(s.naechstes.tag, 5);
   const v = u.als('spieler', 'verlauf').lose;
   assert.equal(v.length, 24);
-  assert.equal(v[3].status, 'gesperrt');
-  assert.equal(v[3].regel, undefined);
-  assert.equal(v[5].frage, undefined);   // Quizfrage vom 6.12. noch verborgen
+  assert.equal(v[4].status, 'gesperrt');
+  assert.equal(v[4].regel, undefined);
+  assert.equal(v[9].frage, undefined);   // Quizfrage vom 10.12. noch verborgen
   const text = JSON.stringify(v);
   assert.doesNotMatch(text, /effekt|qrId|kuerzel/);
 });
 
-// ------------------------------------------------------------------ Katalog und Kauf
+// ------------------------------------------------------------------ Regal und Kauf
 
-function mitKatalog() {
+function mitWare() {
   const u = bereit(fest([{ tag: 1, felder: ['P10', 'P5', 'x3', '-'] }]));
-  u.zeilen('Katalog', [
-    { 'ID': 'K1', 'Titel': 'Sichtbar', 'Beschreibung': 'Text', 'Bild': 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view', 'Preis': '40', 'Sichtbarkeit': 'sichtbar', 'Bestand': '1' },
-    { 'ID': 'K2', 'Titel': 'Geheimer Titel', 'Beschreibung': 'Geheim', 'Preis': '90', 'Sichtbarkeit': 'verdeckt mit Preis', 'Geschenk-ID': 'G01' },
-    { 'ID': 'K3', 'Titel': 'Ganz geheim', 'Preis': '200', 'Sichtbarkeit': 'ganz verdeckt', 'Bild': '1ZzZzZzZzZzZzZzZzZzZzZzZzZzZz' },
-    { 'ID': 'K4', 'Titel': 'Später', 'Preis': '10', 'Sichtbarkeit': 'sichtbar', 'Sichtbar ab': '10.12.2026' },
-    { 'ID': 'K5', 'Titel': 'Befristet', 'Preis': '10', 'Sichtbarkeit': 'sichtbar', 'Verfügbar bis': '2026-12-03' }
+  u.zeilen('Ware', [
+    { 'ID': 'W01', 'Titel': 'Kaffee', 'Beschreibung': 'Heiss', 'Illustration': 'kaffee', 'Preis': '40', 'Zustand': 'sichtbar', 'Bestand': '1', 'Inhalt-Art': 'text', 'Inhalt': 'Gutschein für einen Kaffee' },
+    { 'ID': 'W02', 'Titel': 'Geheimer Titel', 'Beschreibung': 'Geheim', 'Illustration': 'konzert', 'Preis': '90', 'Zustand': 'eingeschweisst', 'Inhalt-Art': 'link', 'Inhalt': 'https://example.org/karten' },
+    { 'ID': 'W03', 'Titel': 'Später', 'Preis': '10', 'Zustand': 'sichtbar', 'Sichtbar ab': '10.12.2026' },
+    { 'ID': 'W04', 'Titel': 'Aktion', 'Preis': '10', 'Zustand': 'sichtbar', 'Aktion bis': '2026-12-03' },
+    { 'ID': 'W05', 'Titel': 'Weg', 'Preis': '10', 'Zustand': 'ausverkauft' },
+    { 'ID': 'W06', 'Titel': 'Bild', 'Preis': '5', 'Zustand': 'sichtbar', 'Inhalt-Art': 'bild', 'Inhalt': 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view' }
   ]);
   return u;
 }
 
-test('Katalog: Sichtbarkeit, Daten, nichts Verdecktes im JSON', () => {
-  const u = mitKatalog();
+test('Regal: Zustände, Daten, nichts Verborgenes im JSON', () => {
+  const u = mitWare();
   u.jetzt('2026-12-01T09:00:00');
-  assert.equal(u.als('spieler', 'start').neueKatalog, 4);
-  const k = u.als('spieler', 'katalog');
-  assert.deepEqual(k.eintraege.map(e => e.id), ['K1', 'K2', 'K3', 'K5']);
-  const json = JSON.stringify(k);
-  assert.doesNotMatch(json, /Geheimer Titel|Ganz geheim|Geheim"|G01|"200"|:200/);
-  const k2 = k.eintraege.find(e => e.id === 'K2'), k3 = k.eintraege.find(e => e.id === 'K3');
-  assert.equal(k2.preis, 90);
-  assert.equal(k2.titel, undefined);
-  assert.equal(k3.preis, undefined);
-  assert.equal(k3.hatBild, undefined);
-  assert.equal(k.eintraege[0].fehlend, 40);
-  assert.equal(u.als('spieler', 'start').neueKatalog, 0);   // jetzt gesehen
+  assert.equal(u.als('spieler', 'start').neueWare, 5);
+  const r = u.als('spieler', 'regal');
+  assert.deepEqual(r.ware.map(w => w.id), ['W01', 'W02', 'W04', 'W05', 'W06']);
+  const json = JSON.stringify(r);
+  assert.doesNotMatch(json, /Geheimer Titel|Geheim"|example\.org|Gutschein|KINO/);
+  const w2 = r.ware.find(w => w.id === 'W02');
+  assert.equal(w2.eingeschweisst, true);
+  assert.equal(w2.titel, undefined);
+  assert.equal(w2.illustration, 'konzert');   // Form in der Folie erkennbar
+  assert.equal(w2.preis, 90);
+  assert.equal(r.ware.find(w => w.id === 'W04').aktionBis, '2026-12-03');
+  assert.equal(r.ware.find(w => w.id === 'W05').ausverkauft, true);
+  assert.equal(r.ware.find(w => w.id === 'W05').kaufbar, false);
+  assert.equal(r.ware[0].fehlend, 40);
+  assert.equal(u.als('spieler', 'start').neueWare, 0);
   u.jetzt('2026-12-10T09:00:00');
-  assert.equal(u.als('spieler', 'start').neueKatalog, 1);   // K4 neu
-  assert.deepEqual(u.als('spieler', 'katalog').eintraege.map(e => e.id), ['K1', 'K2', 'K3', 'K4']); // K5 abgelaufen
-  // Bild nur, wenn sichtbar
-  assert.equal(u.als('spieler', 'bild', { art: 'katalog', id: 'K3' }).fehler, 'kein_bild');
+  assert.equal(u.als('spieler', 'start').neueWare, 1);
+  assert.equal(u.als('spieler', 'start').sonntag, false);
+  assert.deepEqual(u.als('spieler', 'regal').ware.map(w => w.id), ['W01', 'W02', 'W03', 'W05', 'W06']); // Aktion W04 vorbei
+  u.jetzt('2026-12-13T09:00:00');
+  assert.equal(u.als('spieler', 'start').sonntag, true);
+  assert.equal(u.als('spieler', 'oeffnen', { id: 'W01' }).fehler, 'nicht_deins');
+  assert.equal(u.als('spieler', 'bild', { id: 'W06' }).fehler, 'kein_bild');
 });
 
-test('Kauf: Bestätigung, Preisprüfung, Saldo, Bestand pro Zugang, Mail, Storno', () => {
-  const u = mitKatalog();
+test('Kauf: Bestätigung, Preisprüfung, Saldo, Bestand pro Zugang, Mail, Öffnen, Storno', () => {
+  const u = mitWare();
   u.jetzt('2026-12-01T09:00:00');
-  assert.equal(u.als('spieler', 'kaufen', { id: 'K1', preis: 40 }).fehler, 'zu_wenig_punkte');
+  assert.equal(u.als('spieler', 'kaufen', { id: 'W01', preis: 40 }).fehler, 'zu_wenig_punkte');
   u.als('admin', 'admin_buchen', { betrag: 300 });
   u.als('admin', 'admin_buchen', { betrag: 300, modus: 'test' });
-  // ganz verdeckt: erst Preis erfragen
-  let r = u.als('spieler', 'kaufen', { id: 'K3' });
+  let r = u.als('spieler', 'kaufen', { id: 'W02' });
   assert.equal(r.fehler, 'bestaetigen');
-  assert.equal(r.daten.preis, 200);
-  assert.equal(u.als('spieler', 'kaufen', { id: 'K3', preis: 150 }).fehler, 'preis_geaendert');
-  r = u.als('spieler', 'kaufen', { id: 'K1', preis: 40 });
+  assert.equal(r.daten.preis, 90);
+  assert.equal(u.als('spieler', 'kaufen', { id: 'W02', preis: 50 }).fehler, 'preis_geaendert');
+  r = u.als('spieler', 'kaufen', { id: 'W01', preis: 40 });
   assert.equal(r.ok, true);
   assert.equal(r.saldo, 260);
-  assert.equal(u.als('spieler', 'kaufen', { id: 'K1', preis: 40 }).fehler, 'ausverkauft');
-  assert.equal(u.als('test', 'kaufen', { id: 'K1', preis: 40 }).ok, true);   // Testzugang hat eigenen Bestand
+  assert.equal(r.ware.inhalt, 'Gutschein für einen Kaffee');
+  assert.equal(u.als('spieler', 'kaufen', { id: 'W01', preis: 40 }).fehler, 'ausverkauft');
+  assert.equal(u.als('spieler', 'kaufen', { id: 'W05', preis: 10 }).fehler, 'ausverkauft');
+  assert.equal(u.als('test', 'kaufen', { id: 'W01', preis: 40 }).ok, true);   // Testzugang hat eigenen Bestand
   assert.equal(u.mails.length, 2);
+  assert.match(u.mails[0].betreff, /Kaffee/);
+  assert.match(u.mails[0].text, /Zeitpunkt: 2026-12-01 09:00/);
   assert.match(u.mails[1].betreff, /^\[Test\]/);
-  r = u.als('spieler', 'kaufen', { id: 'K2', preis: 90 });
-  assert.equal(r.geschenk.inhalt, 'KINO-1234');
-  const g = u.als('spieler', 'geschenke').geschenke;
-  assert.equal(g.length, 2);
-  assert.ok(g.some(x => x.titel === 'Geheimer Titel'));
-  const kat = u.als('spieler', 'katalog').eintraege.find(e => e.id === 'K2');
-  assert.equal(kat.titel, 'Geheimer Titel');   // nach dem Kauf aufgedeckt
+  r = u.als('spieler', 'kaufen', { id: 'W02', preis: 90 });
+  assert.equal(r.ware.titel, 'Geheimer Titel');
+  const w2 = u.als('spieler', 'regal').ware.find(w => w.id === 'W02');
+  assert.equal(w2.titel, 'Geheimer Titel');    // nach dem Kauf ausgepackt
+  assert.equal(w2.eingeschweisst, false);
+  assert.equal(w2.gehoert, true);
+  assert.equal(u.als('spieler', 'oeffnen', { id: 'W02' }).ware.inhalt, 'https://example.org/karten');
+  assert.equal(u.tabelle('Ware').find(w => w['ID'] === 'W02')['Gehört ihr'], 'ja');
   // Admin: erledigt und Storno
   const best = u.als('admin', 'admin_uebersicht').bestellungen;
   assert.equal(best.length, 2);
   assert.equal(u.als('admin', 'admin_bestellung', { id: best[1].id, status: 'erledigt' }).ok, true);
   const s = u.als('admin', 'admin_bestellung', { id: best[0].id, status: 'storniert' });
   assert.equal(s.saldo, 260);
+  assert.equal(u.tabelle('Ware').find(w => w['ID'] === 'W02')['Gehört ihr'], '');
   assert.equal(u.als('admin', 'admin_bestellung', { id: best[0].id, status: 'storniert' }).fehler, 'eingabe');
+});
+
+test('Admin: Ware anlegen, ändern, löschen', () => {
+  const u = mitWare();
+  let r = u.als('admin', 'admin_ware_speichern', { ware: { titel: 'Neu', preis: '25', zustand: 'sichtbar', illustration: 'pflanze', ab: '6.12.2026' } });
+  assert.equal(r.id, 'W94');
+  assert.equal(u.tabelle('Ware').find(w => w['ID'] === 'W94')['Sichtbar ab'], '2026-12-06');
+  r = u.als('admin', 'admin_ware_speichern', { ware: { id: 'W94', titel: 'Neu 2', preis: 30, zustand: 'eingeschweisst' } });
+  assert.equal(u.tabelle('Ware').find(w => w['ID'] === 'W94')['Titel'], 'Neu 2');
+  assert.equal(u.als('admin', 'admin_ware_speichern', { ware: { titel: 'x', preis: 'viel' } }).fehler, 'eingabe');
+  assert.equal(u.als('admin', 'admin_ware_speichern', { ware: { titel: 'x', preis: 1, zustand: 'kaputt' } }).fehler, 'eingabe');
+  assert.equal(u.als('admin', 'admin_ware').ware.length, 11);
+  assert.equal(u.als('admin', 'admin_ware_loeschen', { id: 'W94' }).ok, true);
+  assert.equal(u.tabelle('Ware').length, 10);
+});
+
+test('Jackpot und Serienbonus aus', () => {
+  const u = bereit(fest([1, 2, 3].map(tag => ({ tag, felder: ['P100', 'P10', '-', '-'] }))));
+  u.als('admin', 'admin_einstellungen', { werte: { 'Serienbonus an': 'nein', 'Jackpot ab': '105' } });
+  for (const tag of [1, 2, 3]) {
+    u.jetzt(`2026-12-0${tag}T09:00:00`);
+    const f = u.felder(tag);
+    const r = einreichen(u, 'spieler', tag === 3 ? [f[1].qrId, f[2].qrId] : [f[0].qrId, f[1].qrId]);
+    assert.equal(r.ergebnis.serienbonus, 0);
+    assert.equal(r.ergebnis.jackpot, tag !== 3);
+  }
 });

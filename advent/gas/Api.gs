@@ -17,9 +17,9 @@ var AKTIONEN = {
   verlauf: aktionVerlauf_,
   einreichen: aktionEinreichen_,
   foto: aktionFoto_,
-  katalog: aktionKatalog_,
+  regal: aktionRegal_,
   kaufen: aktionKaufen_,
-  geschenke: aktionGeschenke_,
+  oeffnen: aktionOeffnen_,
   bild: aktionBild_
 };
 
@@ -36,7 +36,10 @@ var ADMIN_AKTIONEN = {
   admin_testdaten_loeschen: adminTestdatenLoeschen_,
   admin_generieren: adminGenerieren_,
   admin_konfiguration: adminKonfiguration_,
-  admin_druck: adminDruck_
+  admin_druck: adminDruck_,
+  admin_ware: adminWare_,
+  admin_ware_speichern: adminWareSpeichern_,
+  admin_ware_loeschen: adminWareLoeschen_
 };
 
 function doGet() {

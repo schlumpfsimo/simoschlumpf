@@ -25,13 +25,14 @@ function erwartetePunkte(typ, gerubbelt) {
 
 function simulieren(seed, wer) {
   const u = neueUmgebung();
-  u.zeilen('Katalog', [{ 'ID': 'K1', 'Titel': 'Kaffee', 'Preis': '40', 'Sichtbarkeit': 'sichtbar' }]);
-  u.zeilen('Geschenke', [{ 'ID': 'G01', 'Titel': 'A', 'Art': 'text', 'Inhalt': 'a' }, { 'ID': 'G02', 'Titel': 'B', 'Art': 'text', 'Inhalt': 'b' }]);
+  u.zeilen('Ware', [{ 'ID': 'W01', 'Titel': 'Kaffee', 'Preis': '40', 'Zustand': 'sichtbar' }].concat(
+    ['W90', 'W91', 'W92', 'W93'].map(id => ({ 'ID': id, 'Titel': id, 'Preis': '0', 'Zustand': 'versteckt' }))));
   assert.equal(u.als('admin', 'admin_generieren', { konfiguration: BEISPIEL }).ok, true);
   const lose = u.tabelle('Lose');
   const R = zufall(seed);
   const BONUS = 5, AB = 3;
-  let saldo = 0, gewinne = 0, serie;
+  let saldo = 0, serie;
+  const gewonnen = new Set();
   const pünktlich = {};          // Tag → gültig am eigenen Tag eingereicht
   const erledigt = {};
   const offen = [];              // ausgelassene Tage zum Nachholen
@@ -73,7 +74,7 @@ function simulieren(seed, wer) {
       assert.equal(r.ergebnis.serie, 0);
       assert.equal(r.ergebnis.nachgeholt, true);
     }
-    gewinne += gemischt.filter(f => f.effekt === 'sofortgewinn' && (los['Typ'] !== 'quiz' || f.richtig)).length;
+    gemischt.filter(f => f.effekt === 'sofortgewinn' && (los['Typ'] !== 'quiz' || f.richtig)).forEach(f => gewonnen.add(f.geschenk));
     saldo += p;
     assert.equal(r.ergebnis.total, p, `Punkte an Tag ${tag}`);
     assert.equal(r.saldo, saldo, `Saldo an Tag ${tag}`);
@@ -99,7 +100,7 @@ function simulieren(seed, wer) {
     if (offen.length && R() < 0.5) spielen(offen.shift(), tag);
     // Manchmal etwas kaufen
     if (saldo >= 40 && R() < 0.2) {
-      const k = u.als(wer, 'kaufen', { id: 'K1', preis: 40 });
+      const k = u.als(wer, 'kaufen', { id: 'W01', preis: 40 });
       assert.equal(k.ok, true, k.text);
       saldo -= 40;
       assert.equal(k.saldo, saldo);
@@ -116,11 +117,12 @@ function simulieren(seed, wer) {
   const buchungen = u.tabelle('Buchungen').filter(b => b['Modus'] === modus);
   assert.equal(buchungen.reduce((s, b) => s + Number(b['Betrag']), 0), saldo);
   assert.equal(Number(buchungen.at(-1)['Saldo']), saldo);
-  assert.equal(u.als(wer, 'geschenke').geschenke.filter(g => g.quelle === 'los').length, gewinne);
+  const regal = u.als(wer, 'regal').ware;
+  assert.deepEqual(regal.filter(w => w.gewonnen).map(w => w.id).sort(), [...gewonnen].sort());
   // Die jeweils andere Seite ist unberührt
   const andere = wer === 'test' ? 'spieler' : 'test';
   assert.equal(u.als(andere, 'start').saldo, 0);
-  return { saldo, gewinne };
+  return { saldo, gewonnen };
 }
 
 for (const seed of [1, 7, 42, 99, 2026]) {

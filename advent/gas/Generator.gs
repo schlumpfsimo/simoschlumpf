@@ -21,8 +21,8 @@
  * }
  *
  * Kurzschreibweise für Felder:  "P10" = 10 Punkte,  "x2" = Multiplikator 2,
- *   "S:G01" = Sofortgewinn mit Geschenk-ID G01 (muss im Blatt «Geschenke» stehen),  "-" = Niete.
- * Langform: { "effekt": "punkte"|"multiplikator"|"sofortgewinn"|"niete", "wert": 10, "geschenk": "G01",
+ *   "S:W01" = Sofortgewinn: Ware W01 (muss im Blatt «Ware» stehen),  "-" = Niete.
+ * Langform: { "effekt": "punkte"|"multiplikator"|"sofortgewinn"|"niete", "wert": 10, "ware": "W01",
  *             "antwort": "Text neben dem Feld (Quiz)", "richtig": true }
  * Pro Los sind auch "regel" und "felderzahl" möglich; sie überschreiben den Standard des Typs.
  */
@@ -36,8 +36,8 @@ function feldLesen_(f, wo, fehlerliste) {
     if (s === '-' || s === '' || /^niete$/i.test(s)) return { effekt: 'niete', wert: 0 };
     if ((m = s.match(/^P\s*(-?\d+)$/i))) return { effekt: 'punkte', wert: Number(m[1]) };
     if ((m = s.match(/^[x×]\s*(\d+(?:[.,]\d+)?)$/i))) return { effekt: 'multiplikator', wert: Number(m[1].replace(',', '.')) };
-    if ((m = s.match(/^S\s*:\s*(.+)$/i))) return { effekt: 'sofortgewinn', wert: 0, geschenk: m[1].trim() };
-    fehlerliste.push(wo + ': «' + s + '» verstehe ich nicht (erlaubt: P10, x2, S:G01, -).');
+    if ((m = s.match(/^S\s*:\s*(.+)$/i))) return { effekt: 'sofortgewinn', wert: 0, ware: m[1].trim() };
+    fehlerliste.push(wo + ': «' + s + '» verstehe ich nicht (erlaubt: P10, x2, S:W01, -).');
     return { effekt: 'niete', wert: 0 };
   }
   f = f || {};
@@ -46,8 +46,9 @@ function feldLesen_(f, wo, fehlerliste) {
   var wert = f.wert == null ? 0 : Number(f.wert);
   if (isNaN(wert)) { fehlerliste.push(wo + ': Wert ist keine Zahl.'); wert = 0; }
   if (effekt === 'multiplikator' && !(wert > 0)) fehlerliste.push(wo + ': Multiplikator braucht einen Wert > 0.');
-  if (effekt === 'sofortgewinn' && !f.geschenk) fehlerliste.push(wo + ': Sofortgewinn braucht "geschenk".');
-  return { effekt: effekt, wert: wert, geschenk: f.geschenk || '', antwort: f.antwort || '', richtig: !!f.richtig };
+  var ware = f.ware || f.geschenk || '';
+  if (effekt === 'sofortgewinn' && !ware) fehlerliste.push(wo + ': Sofortgewinn braucht "ware" (ID aus dem Blatt «Ware»).');
+  return { effekt: effekt, wert: wert, ware: ware, antwort: f.antwort || '', richtig: !!f.richtig };
 }
 
 /** Prüft die Konfiguration und baut daraus Lose und Felder (noch ohne zu schreiben). */
@@ -56,7 +57,7 @@ function konfigurationVerarbeiten_(k) {
   if (!k || !Array.isArray(k.lose) || !k.lose.length) throw fehler_('konfiguration', 'Die Konfiguration braucht eine Liste "lose".');
   var start = datumLesen_(k.start || '');
   var typen = k.typen || {};
-  var geschenkIds = lesen_('Geschenke').map(function (o) { return o['ID']; });
+  var wareIds = lesen_('Ware').map(function (o) { return o['ID']; });
   var tageGesehen = {};
   var lose = [], felder = [];
   var kuerzelGesehen = {};
@@ -81,8 +82,8 @@ function konfigurationVerarbeiten_(k) {
     }
     var fs = l.felder.map(function (f, j) { return feldLesen_(f, wo + ', Feld ' + (j + 1), fehlerliste); });
     fs.forEach(function (f, j) {
-      if (f.effekt === 'sofortgewinn' && geschenkIds.indexOf(f.geschenk) < 0) {
-        fehlerliste.push(wo + ', Feld ' + (j + 1) + ': Geschenk «' + f.geschenk + '» fehlt im Blatt «Geschenke».');
+      if (f.effekt === 'sofortgewinn' && wareIds.indexOf(f.ware) < 0) {
+        fehlerliste.push(wo + ', Feld ' + (j + 1) + ': Ware «' + f.ware + '» fehlt im Blatt «Ware».');
       }
     });
     if (typ === 'quiz') {
@@ -101,7 +102,7 @@ function konfigurationVerarbeiten_(k) {
       kuerzelGesehen[kz] = true;
       felder.push({
         'Tag': tag, 'Feld': j + 1, 'QR-ID': kz + '-' + zufall_(8), 'Kürzel': kz, 'Beschriftung': f.antwort || '',
-        'Effekt': f.effekt, 'Wert': f.wert || '', 'Geschenk-ID': f.geschenk || '', 'Richtig': f.richtig ? 'ja' : ''
+        'Effekt': f.effekt, 'Wert': f.wert || '', 'Ware-ID': f.ware || '', 'Richtig': f.richtig ? 'ja' : ''
       });
     });
   });
@@ -129,7 +130,7 @@ function zusammenfassung_(lose, felder) {
   var summe = { minimal: 0, maximal: 0, sofortgewinne: 0 };
   var proLos = lose.map(function (l) {
     var fs = felder.filter(function (f) { return f['Tag'] === l['Tag']; }).map(function (f) {
-      return { feld: f['Feld'], effekt: f['Effekt'], wert: zahl_(f['Wert']), geschenkId: f['Geschenk-ID'], richtig: f['Richtig'] === 'ja' };
+      return { feld: f['Feld'], effekt: f['Effekt'], wert: zahl_(f['Wert']), wareId: f['Ware-ID'], richtig: f['Richtig'] === 'ja' };
     });
     // alle Kombinationen mit genau «Felderzahl» Feldern durchrechnen
     var los = { typ: l['Typ'], felderzahl: zahl_(l['Felderzahl']) };
@@ -142,7 +143,7 @@ function zusammenfassung_(lose, felder) {
     summe.minimal += min; summe.maximal += max; summe.sofortgewinne += sg;
     return { tag: l['Tag'], datum: l['Datum'], typ: l['Typ'], felderzahl: los.felderzahl,
              felder: fs.map(function (f) { return f.effekt === 'punkte' ? 'P' + f.wert : f.effekt === 'multiplikator' ? 'x' + f.wert :
-               f.effekt === 'sofortgewinn' ? 'S:' + f.geschenkId : '-'; }),
+               f.effekt === 'sofortgewinn' ? 'S:' + f.wareId : '-'; }),
              minimal: min, maximal: max, sofortgewinne: sg };
   });
   return { lose: proLos, summe: summe };

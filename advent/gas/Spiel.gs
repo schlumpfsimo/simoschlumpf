@@ -51,7 +51,7 @@ function felder_() {
     return {
       tag: zahl_(o['Tag']), feld: zahl_(o['Feld']), qrId: o['QR-ID'].toUpperCase(),
       kuerzel: o['Kürzel'].toUpperCase(), beschriftung: o['Beschriftung'], effekt: (o['Effekt'] || 'niete').toLowerCase(),
-      wert: zahl_(o['Wert']), geschenkId: o['Geschenk-ID'], richtig: jaNein_(o['Richtig'])
+      wert: zahl_(o['Wert']), wareId: o['Ware-ID'], richtig: jaNein_(o['Richtig'])
     };
   });
 }
@@ -155,11 +155,12 @@ function losInfo_(los, ctx, proTag) {
 
 // ------------------------------------------------------------------ Geschenke
 
-function geschenk_(id) {
+/** Kurzangaben zu einer Ware (für Sofortgewinne im Ergebnis). Inhalt nur über «oeffnen». */
+function wareKurz_(id) {
   if (!id) return null;
-  var g = lesen_('Geschenke').filter(function (o) { return o['ID'] === id; })[0];
-  if (!g) return { id: id, titel: id, art: 'text', inhalt: '', beschreibung: '' };
-  return { id: g['ID'], titel: g['Titel'], art: (g['Art'] || 'text').toLowerCase(), inhalt: g['Inhalt'], beschreibung: g['Beschreibung'] };
+  var w = ware_().filter(function (x) { return x.id === id; })[0];
+  if (!w) return { id: id, titel: id, illustration: 'paket' };
+  return { id: w.id, titel: w.titel, illustration: w.illustration };
 }
 
 // ------------------------------------------------------------------ Ergebnis
@@ -183,7 +184,7 @@ function berechnen_(los, gerubbelt) {
     if (quiz && !f.richtig) return; // beim Quiz zählt nur die richtige Antwort
     if (f.effekt === 'punkte') erg.punkte += f.wert;
     else if (f.effekt === 'multiplikator') erg.multiplikator *= (f.wert || 1);
-    else if (f.effekt === 'sofortgewinn' && f.geschenkId) erg.gewinne.push(f.geschenkId);
+    else if (f.effekt === 'sofortgewinn' && f.wareId) erg.gewinne.push(f.wareId);
   });
   erg.losPunkte = Math.round(erg.punkte * erg.multiplikator);
   return erg;
@@ -199,7 +200,7 @@ function ergebnisFuerSeite_(e, los) {
     status: e.status, zeit: e.zeit, spieldatum: e.spieldatum, nachgeholt: e.spieldatum !== los.datum,
     manuell: e.manuell, hatFoto: !!e.fotoId,
     felder: felderVon_(los.tag).map(function (f) {
-      var g = f.effekt === 'sofortgewinn' ? geschenk_(f.geschenkId) : null;
+      var g = f.effekt === 'sofortgewinn' ? wareKurz_(f.wareId) : null;
       return {
         feld: f.feld, kuerzel: f.kuerzel, beschriftung: f.beschriftung, effekt: f.effekt, wert: f.wert,
         geschenk: g ? g.titel : null, richtig: quiz ? f.richtig : null,
@@ -212,7 +213,8 @@ function ergebnisFuerSeite_(e, los) {
     serie: erg.serie || 0, serienbonus: erg.serienbonus || 0,
     adminPunkte: erg.adminPunkte == null ? null : erg.adminPunkte,
     total: e.punkte,
-    gewinne: (erg.gewinne || []).map(geschenk_)
+    jackpot: !erg.ungueltig && e.punkte >= zahl_(einstellung_('Jackpot ab'), 100),
+    gewinne: (erg.gewinne || []).map(wareKurz_)
   };
 }
 
@@ -236,7 +238,8 @@ function aktionStart_(ctx) {
     naechstes: naechstes ? { tag: naechstes.tag, datum: naechstes.datum } : null,
     anzahlLose: lose.length,
     erstes: lose.length ? lose[0].datum : null,
-    neueKatalog: neueKatalogEintraege_(ctx)
+    sonntag: wochentag_(ctx.heute) === 0,
+    neueWare: neueWare_(ctx)
   };
 }
 
@@ -330,7 +333,7 @@ function aktionEinreichen_(ctx, a) {
       var proTag = aktiveProTag_(ctx.modus);
       proTag[los.tag] = { status: status, spieldatum: ctx.heute };
       erg.serie = los.datum === ctx.heute ? serieBis_(los.tag, proTag) : 0;
-      var bonus = zahl_(einstellung_('Serienbonus'));
+      var bonus = jaNein_(einstellung_('Serienbonus an')) ? zahl_(einstellung_('Serienbonus')) : 0;
       if (bonus && erg.serie >= zahl_(einstellung_('Serienbonus ab'), 3)) {
         erg.serienbonus = bonus;
         buchen_(ctx.modus, 'Serienbonus (' + erg.serie + ' Tage)', bonus, bezug);
@@ -338,7 +341,7 @@ function aktionEinreichen_(ctx, a) {
       }
       erg.gewinne.forEach(function (gid) {
         anhaengen_('Erhalten', { 'ID': neueId_(), 'Zeitstempel': e.zeit, 'Modus': ctx.modus,
-          'Quelle': 'los', 'Bezug': bezug, 'Geschenk-ID': gid });
+          'Quelle': 'los', 'Bezug': bezug, 'Ware-ID': gid });
       });
     }
     e.punkte = total;
@@ -347,11 +350,18 @@ function aktionEinreichen_(ctx, a) {
       'Codes': e.codes, 'Manuell': e.manuell ? 'ja' : 'nein', 'Foto-ID': e.fotoId, 'Punkte': total,
       'Ergebnis': JSON.stringify(erg), 'Status': status, 'Notiz': notiz
     });
+    if (erg.gewinne.length && ctx.modus === 'echt') besitzEintragen_();
     return { ergebnis: ergebnisFuerSeite_(e, los), saldo: saldo_(ctx.modus) };
   });
 }
 
 /** Kürzel aus einer QR-ID (K7QX-9F3HZP2W → K7QX), damit Fehlermeldungen nichts Geheimes zeigen. */
+/** 0 = Sonntag … 6 = Samstag, für ein Datum yyyy-MM-dd. */
+function wochentag_(iso) {
+  var p = iso.split('-').map(Number);
+  return new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay();
+}
+
 function kurz_(c) { return String(c).split('-')[0]; }
 
 function vorEinreichenPruefen_(ctx, los) {

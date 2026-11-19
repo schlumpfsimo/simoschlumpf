@@ -13,22 +13,10 @@ const WURZEL = path.join(__dirname, '..');
 const TYPEN = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.wasm': 'application/wasm', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg' };
 
-/** Umgebung mit Beispiel-Losen, Geschenken und Katalog. */
+/** Umgebung mit Beispiel-Losen und Beispielware. */
 function beispielUmgebung() {
   const u = neueUmgebung();
-  u.zeilen('Geschenke', [
-    { 'ID': 'G01', 'Titel': 'Kinogutschein', 'Art': 'code', 'Inhalt': 'KINO-2026-XY', 'Beschreibung': 'Einlösbar im Kult.kino' },
-    { 'ID': 'G02', 'Titel': 'Ein Brief', 'Art': 'text', 'Inhalt': 'Liebe … dies ist ein Beispielbrief.' },
-    { 'ID': 'G03', 'Titel': 'Playlist', 'Art': 'link', 'Inhalt': 'https://example.org/playlist' }
-  ]);
-  u.zeilen('Katalog', [
-    { 'ID': 'K01', 'Titel': 'Frühstück im Bett', 'Beschreibung': 'Mit frischen Gipfeli.', 'Preis': '40', 'Sichtbarkeit': 'sichtbar' },
-    { 'ID': 'K02', 'Titel': 'Ausflug nach Colmar', 'Beschreibung': 'Ein Tag auf dem Weihnachtsmarkt.', 'Preis': '150', 'Sichtbarkeit': 'sichtbar', 'Geschenk-ID': 'G03' },
-    { 'ID': 'K03', 'Titel': 'Konzertkarten', 'Preis': '90', 'Sichtbarkeit': 'verdeckt mit Preis' },
-    { 'ID': 'K04', 'Titel': 'Das grosse Geheimnis', 'Preis': '200', 'Sichtbarkeit': 'ganz verdeckt', 'Geschenk-ID': 'G02' },
-    { 'ID': 'K05', 'Titel': 'Massage', 'Preis': '30', 'Sichtbarkeit': 'sichtbar', 'Bestand': '1', 'Verfügbar bis': '2026-12-15' },
-    { 'ID': 'K06', 'Titel': 'Ab Mitte Dezember', 'Preis': '60', 'Sichtbarkeit': 'sichtbar', 'Sichtbar ab': '15.12.2026' }
-  ]);
+  u.zeilen('Ware', JSON.parse(fs.readFileSync(path.join(WURZEL, 'beispiel-ware.json'), 'utf8')));
   const k = JSON.parse(fs.readFileSync(path.join(WURZEL, 'beispiel-konfiguration.json'), 'utf8'));
   const r = u.als('admin', 'admin_generieren', { konfiguration: k });
   if (!r.ok) throw new Error(r.text);

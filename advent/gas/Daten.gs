@@ -12,15 +12,16 @@
 /** Spalten jedes Tabellenblatts. Reihenfolge = Reihenfolge im Blatt. */
 var BLAETTER = {
   Lose: ['Tag', 'Datum', 'Typ', 'Regeltext', 'Felderzahl', 'Quizfrage'],
-  Felder: ['Tag', 'Feld', 'QR-ID', 'Kürzel', 'Beschriftung', 'Effekt', 'Wert', 'Geschenk-ID', 'Richtig'],
+  Felder: ['Tag', 'Feld', 'QR-ID', 'Kürzel', 'Beschriftung', 'Effekt', 'Wert', 'Ware-ID', 'Richtig'],
   Einsendungen: ['ID', 'Zeitstempel', 'Modus', 'Spieldatum', 'Tag', 'Codes', 'Manuell', 'Foto-ID',
                  'Punkte', 'Ergebnis', 'Status', 'Notiz'],
   Buchungen: ['Zeitstempel', 'Modus', 'Grund', 'Betrag', 'Saldo', 'Bezug'],
-  Katalog: ['ID', 'Titel', 'Beschreibung', 'Bild', 'Preis', 'Sichtbarkeit', 'Sichtbar ab',
-            'Verfügbar bis', 'Bestand', 'Geschenk-ID'],
-  Geschenke: ['ID', 'Titel', 'Art', 'Inhalt', 'Beschreibung'],
-  Erhalten: ['ID', 'Zeitstempel', 'Modus', 'Quelle', 'Bezug', 'Geschenk-ID'],
-  Bestellungen: ['ID', 'Zeitstempel', 'Modus', 'Katalog-ID', 'Titel', 'Preis', 'Status'],
+  // Ware im Regal. Zustand: sichtbar, eingeschweisst, ausverkauft. Inhalt-Art: text, code, link, bild.
+  Ware: ['ID', 'Titel', 'Beschreibung', 'Illustration', 'Preis', 'Zustand', 'Sichtbar ab', 'Aktion bis',
+         'Bestand', 'Inhalt-Art', 'Inhalt', 'Gehört ihr'],
+  // Sofortgewinne aus Losen (wer welche Ware aus welchem Los bekommen hat)
+  Erhalten: ['ID', 'Zeitstempel', 'Modus', 'Quelle', 'Bezug', 'Ware-ID'],
+  Bestellungen: ['ID', 'Zeitstempel', 'Modus', 'Ware-ID', 'Titel', 'Preis', 'Status'],
   Einstellungen: ['Schlüssel', 'Wert', 'Erklärung'],
   Konfiguration: ['Los-Konfiguration (JSON, wird vom Admin gespeichert)']
 };
@@ -125,8 +126,10 @@ var EINSTELLUNGEN_STANDARD = [
   ['Zeitzone', 'Europe/Zurich', 'Zeitzone für das Tagesdatum.'],
   ['Testdatum', '', 'Simuliertes Datum (z. B. 2026-12-05). Gilt nur für den Testzugang, nie für die Spielerin.'],
   ['Nachholen erlaubt', 'ja', 'ja/nein: Dürfen frühere Lose nachgeholt werden?'],
-  ['Serienbonus', '5', 'Bonuspunkte pro Los, wenn die Serie lang genug ist (0 = aus).'],
+  ['Serienbonus an', 'ja', 'ja/nein: Serienbonus für aufeinanderfolgende Tage.'],
+  ['Serienbonus', '5', 'Bonuspunkte pro Los, wenn die Serie lang genug ist.'],
   ['Serienbonus ab', '3', 'Ab so vielen Tagen in Folge gibt es den Serienbonus.'],
+  ['Jackpot ab', '100', 'Ab so vielen Punkten aus einem Los zeigt das Terminal den Jackpot.'],
   ['E-Mail', '', 'Empfänger der Bestell-Mails. Leer = Konto, unter dem das Skript läuft.']
 ];
 
