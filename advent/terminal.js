@@ -2,7 +2,7 @@
 // Das Ergebnis kommt zusätzlich als Quittung aus dem Schlitz (mit allen Feldern, auch den nicht gerubbelten).
 (function () {
   'use strict';
-  const { el, t, zahl, datum, zeit } = Advent;
+  const { el, t, zahl, datum } = Advent;
   const warten = ms => new Promise(r => setTimeout(r, ms));
 
   /** Text eines Feldes (Punkte, Multiplikator, Sofortgewinn, Niete). */
@@ -221,7 +221,7 @@
       const q = el('div', { class: 'quittung', role: 'region', 'aria-label': t('quittung.titel') });
       const z2 = (links, rechts, klasse) => el('div', { class: 'q-zeile ' + (klasse || '') }, el('span', {}, links), el('span', {}, rechts == null ? '' : rechts));
       q.append(el('h3', {}, t('quittung.titel')),
-        el('div', { class: 'q-mitte' }, zeit(e.zeit) || datum(e.spieldatum)),
+        el('div', { class: 'q-mitte' }, datum(e.spieldatum) + (String(e.zeit).length > 15 ? ', ' + e.zeit.slice(11, 13) + '.' + e.zeit.slice(14, 16) + ' Uhr' : '')),
         el('div', { class: 'q-mitte' }, t('quittung.los', { tag: String(e.tag).padStart(2, '0') })),
         el('div', { class: 'q-trenn' }));
       e.felder.forEach(f => q.append(z2(t('quittung.feld', { feld: f.feld }) + (f.beschriftung ? ' ' + f.beschriftung : ''),
