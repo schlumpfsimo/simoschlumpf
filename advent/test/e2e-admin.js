@@ -16,7 +16,7 @@ const AUS = process.argv[2] || '.';
   assert.equal(u.als('spieler', 'einreichen', { codes: [f1[0].qrId, f1[1].qrId], foto: Buffer.from('jpeg').toString('base64') }).ok, true);
   assert.equal(u.als('spieler', 'einreichen', { codes: [f3[0].qrId, f3[1].qrId] }).ok, true);
   u.als('admin', 'admin_buchen', { betrag: 100 });
-  assert.equal(u.als('spieler', 'kaufen', { id: 'K01', preis: 40 }).ok, true);
+  assert.equal(u.als('spieler', 'kaufen', { id: 'W01', preis: 30 }).ok, true);
 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 900 } });
@@ -67,6 +67,21 @@ const AUS = process.argv[2] || '.';
   await page.click('button:has-text("Buchen")');
   await page.waitForSelector('.meldung.gut');
   assert.equal(u.tabelle('Buchungen').at(-1)['Betrag'], '-5');
+
+  // Ware anlegen
+  await page.click('#reiter button[data-reiter="ware"]');
+  await page.waitForSelector('.ware-zeile');
+  const vorher = await page.locator('.ware-zeile').count();
+  await page.click('button:text-is("Neue Ware")');
+  await page.fill('.formular label:has-text("Titel") input', 'Testware');
+  await page.fill('.formular label:has-text("Preis") input', '55');
+  await page.selectOption('.formular label:has-text("Illustration") select', 'kerze');
+  await page.click('.formular button:text-is("Speichern")');
+  await page.waitForSelector('.meldung.gut');
+  await page.waitForSelector('.ware-zeile');
+  assert.equal(await page.locator('.ware-zeile').count(), vorher + 1);
+  assert.ok(u.tabelle('Ware').some(w => w['Titel'] === 'Testware' && w['Preis'] === '55' && w['Illustration'] === 'kerze'));
+  await page.screenshot({ path: path.join(AUS, 'admin-5-ware.png'), fullPage: true });
 
   // Einstellungen: Testdatum
   await page.click('#reiter button[data-reiter="einstellungen"]');

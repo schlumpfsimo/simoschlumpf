@@ -1,0 +1,53 @@
+/* admin.css – schlichte Admin-Seite. Farben kommen aus farben.css. */
+:root {
+  --farbe-grund: var(--creme);
+  --farbe-flaeche: var(--weiss);
+  --farbe-text: var(--braun);
+  --farbe-leise: var(--leise);
+  --farbe-linie: #E3D2AE;
+  --farbe-akzent: var(--braun);
+  --farbe-akzent-text: var(--creme);
+  --farbe-gut: var(--mint-tief);
+  --farbe-schlecht: var(--rot-tief);
+  --farbe-test: var(--gelb);
+  --schrift-zahl: ui-monospace, Menlo, Consolas, monospace;
+  --radius: 14px;
+  --abstand: 16px;
+  --knopf-hoehe: 50px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--creme); color: var(--braun); font-family: var(--schrift); font-weight: 500; font-size: 16px; line-height: 1.4; }
+[hidden] { display: none !important; }
+h1, h2 { font-weight: 700; line-height: 1.2; margin: 0 0 .5em; }
+h2 { font-size: 20px; }
+p { margin: 0 0 .7em; }
+a { color: inherit; }
+.testband { background: var(--gelb); text-align: center; font-weight: 700; padding: 6px; border-bottom: 3px solid var(--braun); }
+.kopf { display: flex; justify-content: space-between; align-items: center; padding: 14px var(--abstand); margin: 0 auto; gap: 10px; flex-wrap: wrap; }
+.kopf-name { font-weight: 700; font-size: 20px; }
+.inhalt { margin: 0 auto; padding: 0 var(--abstand) 30px; }
+.karte { background: var(--weiss); border: 3px solid var(--braun); border-radius: var(--radius); padding: var(--abstand); margin-bottom: 14px; box-shadow: 0 4px 0 var(--braun); }
+.leise { color: var(--leise); font-size: 14px; }
+.zahl-gross { font-weight: 700; font-size: 44px; line-height: 1.05; }
+.zeile { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; min-height: var(--knopf-hoehe); padding: 8px 18px; margin: 0;
+  font: inherit; font-weight: 700; font-size: 16px; color: var(--braun); background: var(--gelb); text-decoration: none;
+  border: 3px solid var(--braun); border-radius: 99px; box-shadow: 0 4px 0 var(--braun); cursor: pointer;
+}
+.knopf.klein { min-height: 42px; padding: 4px 14px; font-size: 15px; }
+.knopf.zweit { background: var(--weiss); }
+.knopf:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--braun); }
+.knopf:disabled { opacity: .5; }
+.meldung { padding: 10px 14px; margin: 10px 0; border: 3px solid var(--braun); border-radius: 12px; background: var(--weiss); font-weight: 600; }
+.meldung.gut { background: var(--mint-hell); }
+.meldung.fehler { background: #FFD9CC; }
+.laden { padding: 30px 0; text-align: center; color: var(--leise); }
+.reiter button { border: 3px solid var(--braun) !important; border-radius: 99px !important; font-weight: 600; }
+.ware-liste { display: grid; gap: 10px; }
+.ware-zeile { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; margin: 0; padding: 10px 12px; }
+.ware-mini, .ware-gross { position: relative; }
+.ware-mini svg { width: 64px; height: 64px; }
+.ware-gross svg { width: 120px; height: 120px; }
+.folie svg { filter: blur(2.5px); opacity: .7; }
+textarea.kurz { min-height: 0; font-family: var(--schrift); font-size: 16px; }

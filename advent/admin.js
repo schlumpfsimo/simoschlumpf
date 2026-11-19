@@ -104,7 +104,7 @@
 
   function bestellungen() {
     const zeilen = daten.bestellungen.map(b => el('tr', {},
-      el('td', {}, zeit(b.zeit)), el('td', {}, b.titel, el('div', { class: 'leise' }, b.katalogId)),
+      el('td', {}, zeit(b.zeit)), el('td', {}, b.titel, el('div', { class: 'leise' }, b.wareId)),
       el('td', { class: 'z' }, zahl(b.preis)), el('td', {}, b.status),
       el('td', {}, el('div', { class: 'knoepfe' },
         b.status === 'neu' ? el('button', { class: 'knopf klein', onclick: () => ausfuehren(() => api('admin_bestellung', { id: b.id, status: 'erledigt' }), 'Als erledigt markiert.') }, 'Erledigt') : null,
@@ -144,14 +144,18 @@
     const felder = {
       'Testdatum': el('input', { type: 'date', value: e['Testdatum'] || '' }),
       'Nachholen erlaubt': el('select', {}, el('option', { value: 'ja' }, 'ja'), el('option', { value: 'nein' }, 'nein')),
+      'Serienbonus an': el('select', {}, el('option', { value: 'ja' }, 'ja'), el('option', { value: 'nein' }, 'nein')),
       'Serienbonus': el('input', { type: 'number', step: '1', value: e['Serienbonus'] || '0' }),
       'Serienbonus ab': el('input', { type: 'number', step: '1', min: '1', value: e['Serienbonus ab'] || '3' }),
+      'Jackpot ab': el('input', { type: 'number', step: '1', min: '1', value: e['Jackpot ab'] || '100' }),
       'E-Mail': el('input', { type: 'email', value: e['E-Mail'] || '', placeholder: 'leer = Skript-Konto' })
     };
+    felder['Serienbonus an'].value = /^(nein|n|false|0)$/i.test(e['Serienbonus an'] || 'ja') ? 'nein' : 'ja';
     felder['Nachholen erlaubt'].value = /^(ja|j|true|1)$/i.test(e['Nachholen erlaubt'] || 'ja') ? 'ja' : 'nein';
     const hilfe = {
       'Testdatum': 'Gilt nur für den Testzugang. Leer = echtes Datum.',
-      'Serienbonus': 'Punkte pro Los, sobald die Serie lang genug ist. 0 = aus.',
+      'Serienbonus': 'Punkte pro Los, sobald die Serie lang genug ist.',
+      'Jackpot ab': 'Ab so vielen Punkten aus einem Los zeigt das Terminal JACKPOT.',
       'Serienbonus ab': 'Ab so vielen Tagen in Folge.'
     };
     zeigen(el('div', { class: 'karte formular' },
@@ -210,7 +214,68 @@
     }
   }
 
-  const REITER = { uebersicht, einsendungen, bestellungen, punkte, lose, einstellungen, erzeugen };
+  // ---------------------------------------------------------------- Ware verwalten
+  async function ware() {
+    zeigen(el('div', { class: 'laden' }, 'Lade Ware …'));
+    let r;
+    try { r = await api('admin_ware'); } catch (e) { zeigen(el('div', { class: 'meldung fehler' }, e.message)); return; }
+    const liste = el('div', { class: 'ware-liste' });
+    r.ware.forEach(w => {
+      const bild = el('div', { class: 'ware-mini' + (w.zustand === 'eingeschweisst' ? ' folie' : '') });
+      bild.innerHTML = Ware.svg(w.illustration);
+      liste.append(el('div', { class: 'karte ware-zeile' }, bild,
+        el('div', { class: 'ware-info' },
+          el('strong', {}, w.id + ' · ' + w.titel),
+          el('div', { class: 'leise' }, zahl(w.preis) + ' Pkt · ' + w.zustand + (w.ab ? ' · ab ' + datum(w.ab) : '') + (w.bis ? ' · Aktion bis ' + datum(w.bis) : '') +
+            (w.bestand != null ? ' · Bestand ' + w.bestand : '')),
+          el('div', { class: 'leise' }, 'verkauft: ' + w.verkauftEcht + (w.verkauftTest ? ' (Test ' + w.verkauftTest + ')' : '') + (w.gehoertIhr ? ' · gehört ihr' : ''))),
+        el('button', { class: 'knopf klein zweit', onclick: () => formular(w) }, 'Bearbeiten')));
+    });
+    zeigen(el('div', { class: 'knoepfe', style: 'margin-bottom:14px' },
+      el('button', { class: 'knopf klein', onclick: () => formular({ zustand: 'sichtbar', illustration: 'paket', inhaltArt: 'text' }) }, 'Neue Ware')),
+      el('p', { class: 'leise' }, 'Zustand «versteckt»: nur als Sofortgewinn, erscheint erst im Regal, wenn sie es gewonnen hat. Die ID (z. B. W90) steht in der Los-Konfiguration als S:W90.'),
+      liste);
+  }
+
+  function formular(w) {
+    const f = {};
+    const feld = (name, input, hilfe) => { f[name] = input; return el('label', {}, name, input, hilfe ? el('span', { class: 'leise' }, hilfe) : null); };
+    const sel = (wert, optionen) => { const s = el('select', {}, ...optionen.map(o => el('option', { value: o }, o))); s.value = wert || optionen[0]; return s; };
+    const vorschau = el('div', { class: 'ware-gross' });
+    const illu = sel(w.illustration, Ware.namen());
+    const zeichnen = () => { vorschau.innerHTML = Ware.svg(illu.value); };
+    illu.addEventListener('change', zeichnen);
+    zeichnen();
+    zeigen(el('div', { class: 'karte formular' },
+      el('h2', {}, w.id ? 'Ware ' + w.id + ' bearbeiten' : 'Neue Ware'),
+      vorschau,
+      feld('Titel', el('input', { type: 'text', value: w.titel || '' })),
+      feld('Beschreibung', el('textarea', { rows: '2', class: 'kurz' }, w.beschreibung || '')),
+      feld('Illustration', illu),
+      feld('Preis', el('input', { type: 'number', min: '0', step: '1', value: w.preis != null ? w.preis : '' }), 'in Punkten; Sofortgewinne: 0'),
+      feld('Zustand', sel(w.zustand, ['sichtbar', 'eingeschweisst', 'ausverkauft', 'versteckt'])),
+      feld('Sichtbar ab', el('input', { type: 'date', value: w.ab || '' }), 'leer = sofort'),
+      feld('Aktion bis', el('input', { type: 'date', value: w.bis || '' }), 'Stern «AKTION!»; danach verschwindet die Ware'),
+      feld('Bestand', el('input', { type: 'number', min: '0', step: '1', value: w.bestand != null ? w.bestand : '' }), 'leer = unbegrenzt'),
+      feld('Inhalt-Art', sel(w.inhaltArt, ['text', 'code', 'link', 'bild'])),
+      feld('Inhalt', el('textarea', { rows: '3', class: 'kurz' }, w.inhalt || ''), 'was sie nach dem Kauf sieht; bei «bild» ein Drive-Link'),
+      el('div', { class: 'knoepfe' },
+        el('button', { class: 'knopf klein', onclick: async () => {
+          const daten2 = { id: w.id, titel: f['Titel'].value, beschreibung: f['Beschreibung'].value, illustration: f['Illustration'].value,
+            preis: f['Preis'].value, zustand: f['Zustand'].value, ab: f['Sichtbar ab'].value, bis: f['Aktion bis'].value,
+            bestand: f['Bestand'].value, inhaltArt: f['Inhalt-Art'].value, inhalt: f['Inhalt'].value };
+          try { await api('admin_ware_speichern', { ware: daten2 }); meldung('Gespeichert.', 'gut'); ware(); }
+          catch (e) { meldung(e.message, 'fehler'); }
+        } }, 'Speichern'),
+        el('button', { class: 'knopf klein zweit', onclick: ware }, 'Abbrechen'),
+        w.id ? el('button', { class: 'knopf klein zweit', onclick: async () => {
+          if (!confirm('«' + w.titel + '» löschen?')) return;
+          try { await api('admin_ware_loeschen', { id: w.id }); meldung('Gelöscht.', 'gut'); ware(); }
+          catch (e) { meldung(e.message, 'fehler'); }
+        } }, 'Löschen') : null)));
+  }
+
+  const REITER = { uebersicht, einsendungen, bestellungen, punkte, ware, lose, einstellungen, erzeugen };
 
   function anzeigen() {
     document.querySelectorAll('#reiter button').forEach(b => b.classList.toggle('aktiv', b.dataset.reiter === reiter));
@@ -218,7 +283,7 @@
     const band = $('testband');
     band.hidden = modus !== 'test';
     if (daten) band.textContent = 'Testzugang · Spieldatum ' + datum(daten.heuteTest);
-    if (daten || reiter === 'erzeugen' || reiter === 'lose') REITER[reiter]();
+    if (daten || reiter === 'erzeugen' || reiter === 'lose' || reiter === 'ware') REITER[reiter]();
   }
 
   async function laden() {
