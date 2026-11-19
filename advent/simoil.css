@@ -405,6 +405,26 @@ img, svg { display: block; }
 /* Konfetti */
 .konfetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
 
+/* Schmale Handys (iPhone SE, Mini): alles etwas enger */
+@media (max-width: 389px) {
+  .leiste { gap: 6px; padding: 12px 10px 4px; }
+  .pille.klein { padding: 6px 12px; font-size: 16px; }
+  .pille.klein .sym { width: 22px; height: 22px; }
+  .kontostand { padding: 4px 10px; font-size: 17px; }
+  .neon { font-size: 25px; }
+  .neon.sonntag { font-size: 26px; }
+  .platz { grid-template-columns: 1fr 116px; gap: 10px; padding: 26px 12px 0; }
+  .laden { grid-template-columns: 1fr .82fr; gap: 6px; padding: 32px 7px 0; }
+  .fenster .simo-svg { width: 84px; bottom: -2px; }
+  .tuerschild { font-size: 9.5px; padding: 2px 4px; }
+  .tuerschild b { font-size: 14px; }
+  .aufkleber { width: 100px; left: -12px; }
+  .klapp.gross .klapp-ziffer { width: 21px; height: 38px; line-height: 38px; font-size: 28px; }
+  .pille { font-size: 21px; }
+  .ware-bild { width: 92px; height: 92px; }
+  .preisschild b { font-size: 30px; }
+}
+
 /* ------------------------------------------------------------------ 9 Bewegung */
 @keyframes rein { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes einblenden { from { opacity: 0; } }

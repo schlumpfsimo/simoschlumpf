@@ -1,106 +1,125 @@
-# Rubbellos-Adventskalender 2026
+# ADVENTSRUBBEL bei SimOil
 
-Arbeitstitel. 24 gedruckte Lose mit je 4 Rubbelfeldern. Unter jedem Feld liegt ein QR-Code mit
-Kürzel. Die Spielerin rubbelt, fotografiert das Los, die Seite liest die Codes und zeigt das Ergebnis.
-Punkte tauscht sie im Katalog gegen Geschenke.
+Adventskalender als Tankstelle. 24 gedruckte Rubbellose (A6, 4 pro A4-Blatt) mit je 4 Feldern. Unter jedem
+Feld liegt ein QR-Code mit Kürzel. Sie rubbelt nach der Regel des Tages, fotografiert das Los im Terminal,
+die Seite liest die Codes und zeigt das Ergebnis. Punkte tauscht sie im Regal gegen Ware. Simo, der
+Kassierer, spricht über Sprechblasen mit ihr.
 
-- Seite: `https://www.simoschlumpf.ch/advent/?t=<Token>` (Token danach im Browser gespeichert)
+- Seite (nur Handy): `https://www.simoschlumpf.ch/advent/?t=<Spielerinnen-Token>` (Token danach im Browser gespeichert)
+- Testzugang: gleiche Adresse mit dem Test-Token (eigene Daten, eigenes Testdatum)
 - Admin: `https://www.simoschlumpf.ch/advent/admin.html?t=<Admin-Token>`
 - Druckvorlage: `https://www.simoschlumpf.ch/advent/druck.html` (Admin-Token nötig)
 
+## Was du selbst ändern kannst
+
+| Was | Wo |
+|---|---|
+| Alle Texte, auch Simos Sprechblasen | `texte.json` (Abschnitt `simo` = Sprechblasen, `texte` = alles andere) |
+| Farben, Schriften, Rundungen, Schatten | `farben.css` (nur die Variablen oben) |
+| Ware im Regal | Admin-Seite → Reiter «Ware» (oder direkt im Blatt «Ware») |
+| Zeichnungen der Ware | `ware.js` (Namen: kaffee, croissant, gluehwein, konzert, herz, pflanze, schlittschuh, zug, schokolade, duftbaum, kino, brief, koffer, paket, buch, kerze, blume, gutschein) |
+| Simo, Stern, Wimpel, Logo | `grafik.js` |
+| Lose (Verteilung der Effekte) | Admin-Seite → «Lose erzeugen» (Aufbau siehe `beispiel-konfiguration.json`) |
+| Einstellungen (Nachholen, Serienbonus, Jackpot, Testdatum, E-Mail) | Admin-Seite → «Einstellungen» |
+
+Simos Sprechblasen: Jede Situation ist eine Liste von Sätzen, die nacheinander erscheinen. Mehrere
+Varianten als Liste von Listen; dann wählt die Seite zufällig eine. Situationen: `begruessung`,
+`begruessung_erledigt`, `vor_start`, `ende`, `sonntag`, `los_pruefen`, `erkannt`, `nichts_erkannt`, `gewinn`,
+`niete`, `ungueltig`, `jackpot`, `sofortgewinn`, `regal`, `neue_ware`, `kauf`, `zu_wenig`, `oeffnen`, `fehler`.
+Platzhalter: `{punkte}`, `{saldo}`, `{tag}`, `{ware}`, `{fehlend}`, `{datum}`.
+
 ## Aufbau
 
-| Ordner / Datei | Inhalt |
+| Datei | Inhalt |
 |---|---|
-| `index.html`, `app.js` | Seite der Spielerin (Start, Los einlesen, Ergebnis, Katalog, Geschenke, Verlauf) |
-| `admin.html`, `admin.js` | Admin-Seite |
-| `druck.html`, `druck.js` | Druckvorlage A4 mit 4 Losen und Testblatt |
-| `config.js` | Adresse der Apps-Script-Web-App |
-| `theme/theme.json` | Alle Texte und der Name des Reveal-Moduls |
-| `theme/theme.css` | Farben, Schriften, Abstände als CSS-Variablen |
-| `theme/reveal/*.js` | Reveal-Animationen, austauschbar |
-| `lib/` | zxing-wasm 3.1.6 (QR lesen, MIT), qrcode-generator (QR erzeugen, MIT) |
+| `index.html` | die Seite (Tankstelle, Terminal, Regal) |
+| `app.js` | Gerüst: Wechsel zwischen den drei Ansichten, Knöpfe, Leiste |
+| `tankstelle.js` | Startseite mit Schild, Leuchtschrift, Preistafel, Sonntagsverkauf |
+| `terminal.js` | Lotto-Terminal: Foto, Erkennung, Korrektur, Einreichen, Ergebnis, Quittung |
+| `regal.js` | Regal: Ware, Zustände, Kauf, Öffnen |
+| `simo.js` | Sprechblase |
+| `grafik.js`, `ware.js` | alle Zeichnungen als SVG |
+| `klappziffern.js`, `konfetti.js`, `klang.js` | Klappziffern, Konfetti, Geräusche (standardmässig aus) |
+| `erkennung.js` | QR-Codes im Browser lesen (zxing-wasm) |
+| `kern.js`, `config.js` | Verbindung zum Server, Texte, Datum |
+| `farben.css`, `simoil.css` | Aussehen |
+| `admin.html`, `admin.js`, `admin.css` | Admin-Seite |
+| `druck.html`, `druck.js` | Druckvorlage mit Testblatt |
+| `fonts/` | Fredoka und VT323 (beide SIL Open Font License, Lizenztexte liegen bei) |
+| `lib/` | zxing-wasm 3.1.6 (MIT), qrcode-generator (MIT) |
 | `gas/*.gs` | Backend für Google Apps Script |
-| `beispiel-konfiguration.json` | Beispiel für den Los-Generator (nicht die echte!) |
-| `test/` | Tests (Node, ohne Google-Konto) |
+| `test/` | Tests |
 
-Geheim bleibt, was im Sheet steht: Feldinhalte, Gewinne, Katalog, Geschenke, Tokens. Das Repo ist
-öffentlich, darum gehört die echte Los-Konfiguration nie hierher, sondern nur auf die Admin-Seite.
+Geheim bleibt, was im Sheet steht: Feldinhalte, Gewinne, Ware-Inhalte, Tokens. Das Repo ist öffentlich,
+darum gehört die echte Los-Konfiguration nie hierher, sondern nur auf die Admin-Seite. Die Beispielware in
+`beispiel-ware.json` dient nur den Tests.
 
 ## Einrichtung (einmal, ca. 20 Minuten)
 
 ### 1. Google Sheet und Apps Script
-1. In Google Drive ein neues Google Sheet anlegen, z. B. «Rubbellos 2026».
+1. In Google Drive ein neues Google Sheet anlegen, z. B. «SimOil 2026».
 2. Im Sheet: Erweiterungen → Apps Script.
-3. Im Editor für jede Datei aus `advent/gas/` eine Skriptdatei mit gleichem Namen anlegen
-   (Plus-Zeichen neben «Dateien» → Skript): `Admin`, `Api`, `Daten`, `Einrichten`, `Generator`,
-   `Katalog`, `Spiel`. Den Inhalt jeweils ganz hineinkopieren. Die leere `Code.gs` löschen.
-4. Projekteinstellungen (Zahnrad) → «Manifestdatei appsscript.json im Editor anzeigen» einschalten,
-   dann `appsscript.json` mit dem Inhalt aus `advent/gas/appsscript.json` ersetzen.
-5. Speichern. Oben die Funktion `einrichten` wählen und ▶ Ausführen. Google fragt nach Berechtigungen
-   (Sheet, Drive, Mail): erlauben. Bei «Google hat diese App nicht überprüft»: Erweitert → Weiter.
-6. Unten im Ausführungsprotokoll stehen die drei Links (Spielerin, Testzugang, Admin).
-   Später nochmals anzeigen: Funktion `zugaengeAnzeigen` ausführen.
+3. Für jede Datei aus `advent/gas/` eine Skriptdatei mit gleichem Namen anlegen (Plus neben «Dateien» → Skript):
+   `Admin`, `Api`, `Daten`, `Einrichten`, `Generator`, `Spiel`, `Ware`. Inhalt jeweils ganz hineinkopieren.
+   Die leere `Code.gs` löschen.
+4. Projekteinstellungen (Zahnrad) → «Manifestdatei appsscript.json im Editor anzeigen» einschalten, dann
+   `appsscript.json` mit dem Inhalt aus `advent/gas/appsscript.json` ersetzen.
+5. Speichern. Oben die Funktion `einrichten` wählen und ▶ Ausführen. Berechtigungen erlauben (Sheet, Drive,
+   Mail). Bei «Google hat diese App nicht überprüft»: Erweitert → Weiter.
+6. Im Ausführungsprotokoll stehen die drei Links (Spielerin, Testzugang, Admin). Später nochmals:
+   Funktion `zugaengeAnzeigen` ausführen.
 
-Alternative mit clasp (wie bei der Bon-Post): `clasp create --type sheets --title "Rubbellos 2026"`
-im Ordner `advent/gas`, dann `clasp push`.
+Mit clasp geht es auch: im Ordner `advent/gas` `clasp create --type sheets --title "SimOil 2026"`, dann `clasp push`.
 
 ### 2. Als Web-App bereitstellen
-1. Bereitstellen → Neue Bereitstellung → Typ «Web-App».
-2. Ausführen als: «Ich». Zugriff: «Jeder».
-3. Bereitstellen, die URL (endet auf `/exec`) kopieren.
-4. In `advent/config.js` bei `window.ADVENT_API` eintragen, committen, pushen.
-
-Nach jeder Änderung am Skript: Bereitstellen → Bereitstellungen verwalten → Stift → Version «Neue Version»
-→ Bereitstellen. So bleibt die URL gleich. Ohne diesen Schritt läuft die alte Version weiter.
+1. Bereitstellen → Neue Bereitstellung → Typ «Web-App». Ausführen als «Ich», Zugriff «Jeder».
+2. Die URL (endet auf `/exec`) in `advent/config.js` bei `window.ADVENT_API` eintragen, committen, pushen.
+3. Nach jeder Änderung am Skript: Bereitstellen → Bereitstellungen verwalten → Stift → Version «Neue Version».
+   So bleibt die URL gleich.
 
 ### 3. GitHub Pages
-Die Website läuft schon über GitHub Pages (www.simoschlumpf.ch). Der Ordner `advent/` ist nach dem
-Merge auf `main` automatisch unter `/advent/` erreichbar. Die Seiten haben `noindex` und sind nirgends verlinkt.
+Die Website läuft schon über GitHub Pages (www.simoschlumpf.ch). Nach dem Merge auf `main` ist der Ordner
+unter `/advent/` erreichbar. Alle Seiten haben `noindex` und sind nirgends verlinkt.
 
-### 4. Inhalte im Sheet
-- **Geschenke**: ID (z. B. G01), Titel, Art (`text`, `code`, `link`, `bild`), Inhalt, Beschreibung.
-  Bei `bild` ist der Inhalt die Drive-Datei-ID oder der Drive-Link. Bilder höchstens etwa 800 px breit.
-- **Katalog**: ID, Titel, Beschreibung, Bild (Drive-Link, optional), Preis, Sichtbarkeit
-  (`sichtbar`, `verdeckt mit Preis`, `ganz verdeckt`), Sichtbar ab, Verfügbar bis (Datum als
-  `2026-12-05` oder `5.12.2026`, leer = immer), Bestand (leer = unbegrenzt), Geschenk-ID (optional).
-- **Einstellungen**: Nachholen erlaubt, Serienbonus, Serienbonus ab, E-Mail, Testdatum.
-  Alle Blätter sind als Text formatiert. So bleiben Kürzel und Daten, wie sie sind.
+### 4. Ware und Lose
+1. Admin → «Ware»: Ware anlegen. Sofortgewinne als Zustand «versteckt» mit Preis 0; sie erscheinen erst im
+   Regal, wenn sie gewonnen sind. Ihre ID (z. B. W90) kommt in die Los-Konfiguration als `S:W90`.
+2. Admin → «Lose erzeugen»: Konfiguration einfügen, «Prüfen» (zeigt min./max. Punkte pro Los), dann «Erzeugen».
+3. `druck.html`: Feldgrösse auf die Rubbelkleber einstellen, zuerst das Testblatt drucken (Skalierung 100 %,
+   Hintergrundgrafiken an), mit dem Testzugang einlesen, dann alles drucken.
+4. Nach dem Testen: Admin → Testzugang → «Testdaten löschen».
 
-### 5. Lose erzeugen und drucken
-1. Admin-Seite → «Lose erzeugen». Konfiguration einfügen (Aufbau siehe `beispiel-konfiguration.json`
-   und Kommentar oben in `gas/Generator.gs`). Zuerst «Prüfen», dann «Erzeugen».
-2. `druck.html` öffnen, Feldgrösse auf die Rubbelkleber einstellen, zuerst das Testblatt drucken,
-   mit dem Testzugang einlesen, dann alle Blätter drucken.
-3. Nach dem Testen: Admin → Testzugang → «Testdaten löschen».
+Neu erzeugen vergibt neue Codes. Gedruckte Lose werden dann ungültig.
 
-Wichtig: Wer die Lose neu erzeugt, macht gedruckte Lose ungültig (neue Codes).
+## Spielregeln (Kurzfassung, Details oben in `gas/Spiel.gs`)
+- Ein Los gilt ab seinem Datum (Europe/Zurich). Frühere Lose dürfen nachgeholt werden (einstellbar).
+- normal und sonntag: 2 Felder. quiz: 1 Feld, nur das richtige zählt. Pro Los einstellbar.
+- Zu wenige Codes: Meldung, nichts verbraucht. Zu viele: Los ungültig, 0 Punkte.
+- Multiplikator wirkt auf die Feldpunkte desselben Loses. Serienbonus (an/aus) für Lose am eigenen Tag.
+- Jackpot: ab «Jackpot ab» Punkten aus einem Los (Standard 100).
+- Sofortgewinn: Die Ware gehört ihr sofort und steht im Regal.
 
 ## Testzugang
-Der Testzugang hat eigene Einsendungen, Punkte und Bestellungen. Das Testdatum (Admin → Einstellungen)
-gilt nur für ihn. So kannst du im Dezember parallel testen, ohne den Spielstand der Spielerin zu berühren.
-Bestell-Mails aus dem Testzugang tragen «[Test]» im Betreff.
-
-## Spielregeln im Code
-Kommentar oben in `gas/Spiel.gs`. Kurz: Los ab seinem Datum (Europe/Zurich). Genau die verlangte
-Felderzahl rubbeln (normal 2, Quiz 1). Zu wenige erkannt: Meldung, nichts verbraucht. Zu viele: Los
-ungültig, 0 Punkte. Multiplikator wirkt auf die Feldpunkte desselben Loses. Serienbonus ab N Tagen in
-Folge, nur für Lose, die am eigenen Tag eingereicht wurden.
-
-## Theme ändern
-- Texte: `theme/theme.json`. Platzhalter in geschweiften Klammern, z. B. `{punkte}`.
-- Farben und Schriften: `theme/theme.css` (nur die Variablen oben ändern).
-- Reveal: neue Datei in `theme/reveal/` nach dem Muster von `schlicht.js`, dann in `theme.json` bei
-  `"reveal"` den Dateinamen eintragen.
+Eigene Einsendungen, Punkte und Käufe. Das Testdatum (Admin → Einstellungen) gilt nur für ihn. So kannst du
+im Dezember parallel testen. Bestell-Mails aus dem Testzugang tragen «[Test]» im Betreff.
 
 ## Tests
 ```
-node --test advent/test/*.test.js          # Backend-Regeln, Katalog, 24-Tage-Simulation (10 Durchläufe)
-node advent/test/e2e-druck.js <ordner>     # Druckvorlage → PDF
-node advent/test/e2e-spielerin.js <ordner> # Foto → Erkennung → Einreichen → Kauf (iPhone- und Android-Emulation)
-node advent/test/e2e-admin.js <ordner>     # Admin-Seite
-node advent/test/e2e-24tage.js <ordner>    # alle 24 Tage im Browser mit Fotos und Testdatum
-node advent/test/server.js                 # lokaler Testserver zum Ausprobieren
+node --test advent/test/*.test.js           # Regeln, Ware, Kauf, Admin, 24-Tage-Simulation (10 Durchläufe)
+node advent/test/e2e-druck.js <ordner>      # Druckvorlage → PDF
+node advent/test/e2e-simoil.js <ordner>     # Tankstelle, Terminal mit Foto, Regal mit Kauf (iPhone/Android)
+node advent/test/e2e-admin.js <ordner>      # Admin-Seite
+node advent/test/e2e-24tage.js <ordner>     # alle 24 Tage im Browser mit Fotos und Testdatum
+node advent/test/server.js                  # lokaler Testserver zum Ausprobieren
 ```
-Die Tests bauen Sheet, Drive und Mail im Speicher nach (`test/gas-umgebung.js`). Die Browsertests brauchen
-Playwright mit Chromium. Echte Geräte (iPhone, Android) und das echte Apps Script testen sie nicht.
+Die Tests bauen Sheet, Drive und Mail im Speicher nach (`test/gas-umgebung.js`). Die Browsertests laufen in
+Chromium mit iPhone- und Android-Emulation. Echte Geräte und das echte Apps Script prüfen sie nicht: dafür
+die Checkliste unten.
+
+## Checkliste vor dem 1.12. (echte Geräte)
+1. Testlink auf dem iPhone in Safari öffnen: Tankstelle erscheint, Simo spricht, Ton-Knopf schaltet.
+2. Testdatum auf den 1.12. setzen, Testblatt mit Kleber drucken, ein Feld rubbeln, im Terminal «Foto»:
+   Kamera öffnet, Code wird erkannt. Zweites Feld rubbeln, nochmals, einreichen.
+3. Dasselbe auf Android in Chrome.
+4. Regal: Ware kaufen, E-Mail kommt an, «gehört dir» erscheint, Öffnen zeigt den Inhalt.
+5. Admin: Einsendung mit Foto sichtbar, Testdaten löschen, Testdatum entfernen.
