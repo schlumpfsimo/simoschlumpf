@@ -238,7 +238,8 @@ function aktionStart_(ctx) {
     naechstes: naechstes ? { tag: naechstes.tag, datum: naechstes.datum } : null,
     anzahlLose: lose.length,
     erstes: lose.length ? lose[0].datum : null,
-    sonntag: wochentag_(ctx.heute) === 0,
+    // Sonntagsverkauf nur innerhalb der Adventszeit (zwischen erstem und letztem Los)
+    sonntag: wochentag_(ctx.heute) === 0 && lose.length > 0 && ctx.heute >= lose[0].datum && ctx.heute <= lose[lose.length - 1].datum,
     neueWare: neueWare_(ctx)
   };
 }

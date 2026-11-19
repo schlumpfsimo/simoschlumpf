@@ -354,6 +354,10 @@ test('Start und Verlauf verraten keine Felder künftiger Lose', () => {
   assert.equal(v[4].status, 'gesperrt');
   assert.equal(v[4].regel, undefined);
   assert.equal(v[9].frage, undefined);   // Quizfrage vom 10.12. noch verborgen
+  u.jetzt('2026-12-06T09:00:00');
+  assert.equal(u.als('spieler', 'start').sonntag, true);
+  u.jetzt('2026-12-27T09:00:00');
+  assert.equal(u.als('spieler', 'start').sonntag, false);
   const text = JSON.stringify(v);
   assert.doesNotMatch(text, /effekt|qrId|kuerzel/);
 });
@@ -396,7 +400,7 @@ test('Regal: Zustände, Daten, nichts Verborgenes im JSON', () => {
   assert.equal(u.als('spieler', 'start').sonntag, false);
   assert.deepEqual(u.als('spieler', 'regal').ware.map(w => w.id), ['W01', 'W02', 'W03', 'W05', 'W06']); // Aktion W04 vorbei
   u.jetzt('2026-12-13T09:00:00');
-  assert.equal(u.als('spieler', 'start').sonntag, true);
+  assert.equal(u.als('spieler', 'start').sonntag, false);   // Sonntag nach dem letzten Los: kein Sonntagsverkauf
   assert.equal(u.als('spieler', 'oeffnen', { id: 'W01' }).fehler, 'nicht_deins');
   assert.equal(u.als('spieler', 'bild', { id: 'W06' }).fehler, 'kein_bild');
 });

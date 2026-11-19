@@ -52,7 +52,7 @@
 
     // Nachholen
     const notiz = s.nachholbar && s.nachholbar.length
-      ? el('div', { class: 'notiz' }, t('nachholen', { liste: s.nachholbar.map(n => n.tag).join(', ') }))
+      ? el('div', { class: 'notiz' }, t('nachholen', { liste: App.kurzListe(s.nachholbar) }))
       : null;
 
     // Knöpfe

@@ -64,9 +64,14 @@
 
     function bereit() {
       const kopf = los ? t('terminal.heute', { tag: String(los.tag).padStart(2, '0'), regel: los.regel || '' }) : '';
+      let hinweis = null;
+      if (!los && s.erstes && s.heute < s.erstes) hinweis = t('terminal.vor_start', { datum: s.erstes });
+      else if (!los && s.nachholbar && s.nachholbar.length) hinweis = t('terminal.nachholen', { liste: App.kurzListe(s.nachholbar) });
+      else if (!los && !s.naechstes) hinweis = t('terminal.ende');
       lcd(zeile('SimOil · ' + datum(s.heute, true), 'lcd-klein'),
         zeile(t('terminal.bereit'), 'lcd-gross lcd-blink'),
         kopf ? zeile(kopf, 'lcd-klein') : null,
+        hinweis ? zeile(hinweis, 'lcd-klein') : null,
         los && los.frage ? zeile(los.frage, 'lcd-klein') : null,
         el('div', { class: 'lcd-trenn' }),
         zeile(t('terminal.los_einlegen'), 'lcd-cursor'));

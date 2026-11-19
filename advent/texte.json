@@ -27,7 +27,7 @@
     ],
     "ende": [
       [
-        "Alle 24 Lose sind gerubbelt.",
+        "Die 24 Tage sind vorbei.",
         "Das Regal hat aber weiter offen. Du hast {saldo} Punkte."
       ]
     ],
@@ -237,6 +237,9 @@
     "druck.typ_quiz": "QUIZ-LOS",
     "druck.typ_sonntag": "SONNTAGSVERKAUF",
     "druck.kleingedrucktes": "Gültig ab {datum}. Nur mit Foto an der SimOil-Kasse einlösbar. Keine Barauszahlung. Wer mehr rubbelt als erlaubt, verliert. Benzin leider ausverkauft.",
-    "schild.zapfsaeule": "LEER"
+    "schild.zapfsaeule": "LEER",
+    "terminal.vor_start": "ERSTES LOS AB {datum}",
+    "terminal.nachholen": "NOCH OFFEN: LOS {liste}",
+    "terminal.ende": "ALLE LOSE SIND VORBEI"
   }
 }

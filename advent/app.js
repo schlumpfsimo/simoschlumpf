@@ -66,6 +66,12 @@
       return b;
     },
 
+    /** Losnummern kurz: «1, 2, 3, 4 … (9)» statt einer langen Liste. */
+    kurzListe(liste) {
+      const nr = liste.map(n => n.tag);
+      return nr.length > 5 ? nr.slice(0, 4).join(', ') + ' … (' + nr.length + ')' : nr.join(', ');
+    },
+
     /** Simo nur einmal pro Situation und Tag ausführlich sprechen lassen, sonst als kleiner Knopf. */
     simoEinmal(situation, vars, schluessel) {
       const k = 'simoil.gesagt.' + (schluessel || situation) + '.' + (App.start ? App.start.heute : '');
