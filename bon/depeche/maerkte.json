@@ -1,16 +1,16 @@
 {
- "aktualisiert": "2026-11-19T20:57:58.153Z",
+ "aktualisiert": "2026-11-20T02:36:08.877Z",
  "quelle": "Yahoo Finance, Terminkontrakte",
  "brent": {
-  "preis": 89.91,
-  "vortag": 91.95,
-  "datum": "2026-11-19",
+  "preis": 89.79,
+  "vortag": 91.98,
+  "datum": "2026-11-20",
   "waehrung": "USD"
  },
  "wti": {
-  "preis": 83.02,
-  "vortag": 83.26,
-  "datum": "2026-11-19",
+  "preis": 82.79,
+  "vortag": 83.21,
+  "datum": "2026-11-20",
   "waehrung": "USD"
  }
 }
