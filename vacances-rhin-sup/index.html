@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Vacances Rhin supérieur 2027</title>
-<meta name="description" content="Vacances scolaires et jours fériés 2027 dans le Rhin supérieur – Schulferien und Feiertage 2027 am Oberrhein">
+<meta name="description" content="Vacances scolaires, jours fériés et dates de séances 2027 dans le Rhin supérieur – Schulferien, Feiertage und Sitzungstermine 2027 am Oberrhein">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
@@ -14,17 +14,20 @@
   --bg:#ffffff; --fg:#1b2333; --muted:#5d6678; --line:#d5dae3; --we:#e4e7ee; --cell:#ffffff; --panel:#f3f5f9;
   --head:#24438f; --flag:#c8102e; --ok:#d9f1e1; --okfg:#17663a; --sel:#24438f;
   --bw:#1f3f99; --rp:#1a9a4a; --als:#e8b400; --bas:#8a2a7a; --so:#e46f1b; --ju:#1aa6d9; --ag:#d7192b; --bl:#8c5a24;
+  --pl:#d6e4f5; --co:#fbe5cc; --orr:#0b6a80; --ork:#3b3f96;
   --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif; --f-disp:"Source Serif 4",Georgia,serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#141922; --fg:#e7eaf0; --muted:#9aa3b5; --line:#2e3646; --we:#232a37; --cell:#181e29; --panel:#1d2431;
   --head:#8fa8ec; --flag:#ff5a6e; --ok:#1d3a2a; --okfg:#7fdca4; --sel:#8fa8ec;
-  --bw:#5d7fe0; --rp:#3cc073; --als:#f2c933; --bas:#c45cb2; --so:#f08a3c; --ju:#3cc0ee; --ag:#ff4d5c; --bl:#c98b4a; color-scheme:dark}}
+  --bw:#5d7fe0; --rp:#3cc073; --als:#f2c933; --bas:#c45cb2; --so:#f08a3c; --ju:#3cc0ee; --ag:#ff4d5c; --bl:#c98b4a;
+  --pl:#1f3150; --co:#3a2c1c; --orr:#4cc3dc; --ork:#a3a8f5; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141922; --fg:#e7eaf0; --muted:#9aa3b5; --line:#2e3646; --we:#232a37; --cell:#181e29; --panel:#1d2431;
   --head:#8fa8ec; --flag:#ff5a6e; --ok:#1d3a2a; --okfg:#7fdca4; --sel:#8fa8ec;
-  --bw:#5d7fe0; --rp:#3cc073; --als:#f2c933; --bas:#c45cb2; --so:#f08a3c; --ju:#3cc0ee; --ag:#ff4d5c; --bl:#c98b4a; color-scheme:dark}
+  --bw:#5d7fe0; --rp:#3cc073; --als:#f2c933; --bas:#c45cb2; --so:#f08a3c; --ju:#3cc0ee; --ag:#ff4d5c; --bl:#c98b4a;
+  --pl:#1f3150; --co:#3a2c1c; --orr:#4cc3dc; --ork:#a3a8f5; color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 [hidden]{display:none!important}
@@ -64,6 +67,12 @@ h2{font-family:var(--f-disp);font-size:22px;margin:0;color:var(--head)}
 .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:4px;margin-right:4px}
 .tag.v{background:var(--we);color:var(--fg)}
 .tag.h{background:var(--flag);color:var(--bg)}
+.tag.p{background:var(--pl);color:var(--fg)}
+.tag.c{background:var(--co);color:var(--fg)}
+.tag.x{background:var(--c);color:var(--bg)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;margin-right:4px;border:1px solid var(--line)}
+details summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--head)}
+details table{margin-top:6px}
 @media (max-width:640px){.detail{grid-template-columns:1fr}.lbl{min-width:0;width:100%}}
 /* Kalender */
 .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--cell)}
@@ -71,10 +80,13 @@ h2{font-family:var(--f-disp);font-size:22px;margin:0;color:var(--head)}
 .month{border-left:1px solid var(--line);display:flex;flex-direction:column}
 .month:first-child{border-left:0}
 .mh{font-weight:700;font-size:13px;padding:8px 8px 7px;color:var(--head);border-bottom:2px solid var(--flag);white-space:nowrap;display:flex;justify-content:space-between;gap:4px}
+.mh>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .mh em{font-style:normal;font-weight:400;color:var(--muted)}
 .mh .cnt{color:var(--okfg);font-weight:700}
 .day{font:inherit;display:flex;align-items:stretch;height:24px;border:0;border-bottom:1px solid var(--line);background:transparent;color:inherit;padding:0;text-align:left;cursor:pointer;font-variant-numeric:tabular-nums;width:100%}
+.day.pl{background:var(--pl)}
 .day.we{background:var(--we)}
+.sq em{font-style:normal;font-size:8.5px;font-weight:700;line-height:1;padding:1px 2px;border-radius:2px;color:var(--bg);background:var(--c)}
 .day:hover{box-shadow:inset 0 0 0 1.5px var(--head)}
 .day.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .day.empty{cursor:default;border-bottom-color:transparent}
@@ -143,12 +155,13 @@ td .fr{display:block}
   </header>
 
   <div class="intro">
-    <p>Choisissez les collectivités, cliquez sur un jour pour voir le détail, ou activez le planificateur pour trouver les jours ouvrables sans vacances ni jours fériés. Les dates suivent les indications des autorités ; pour les cantons suisses et l’Alsace, les week-ends attenants sont inclus.</p>
-    <p class="fr">Gebiete auswählen, einen Tag anklicken für die Einzelheiten, oder den Sitzungsplaner einschalten, um Werktage ohne Ferien und Feiertage zu finden. Die Daten folgen den Angaben der Behörden; bei den Schweizer Kantonen und im Elsass sind die angrenzenden Wochenenden eingeschlossen.</p>
+    <p>Choisissez les collectivités, cliquez sur un jour pour voir le détail, ou activez le planificateur pour trouver les jours ouvrables sans vacances, jours fériés ni séances plénières. Le calendrier indique aussi les séances des parlements, du Conseil Rhénan et de la Conférence du Rhin supérieur. Les dates suivent les indications des autorités ; pour les cantons suisses et l’Alsace, les week-ends attenants sont inclus.</p>
+    <p class="fr">Gebiete auswählen, einen Tag anklicken für die Einzelheiten, oder den Sitzungsplaner einschalten, um Werktage ohne Ferien, Feiertage und Plenarsitzungen zu finden. Der Kalender zeigt auch die Sitzungen der Parlamente, des Oberrheinrats und der Oberrheinkonferenz. Die Daten folgen den Angaben der Behörden; bei den Schweizer Kantonen und im Elsass sind die angrenzenden Wochenenden eingeschlossen.</p>
   </div>
 
   <section class="controls" aria-label="Filtres / Filter">
     <div class="row"><span class="lbl">Collectivités <span class="fr">/ Gebiete</span></span><div class="row" id="chips"></div></div>
+    <div class="row"><span class="lbl">Transfrontalier <span class="fr">/ Grenzüberschreitend</span></span><div class="row" id="xchips"></div></div>
     <div class="row"><span class="lbl">Sélection <span class="fr">/ Auswahl</span></span>
       <button class="btn" type="button" data-preset="all">Toutes / Alle</button>
       <button class="btn" type="button" data-preset="ch">Suisse / Schweiz</button>
@@ -158,6 +171,7 @@ td .fr{display:block}
     <div class="row"><span class="lbl">Affichage <span class="fr">/ Anzeige</span></span>
       <button class="btn" type="button" id="tVac" aria-pressed="true">Vacances / Ferien</button>
       <button class="btn" type="button" id="tHol" aria-pressed="true">Jours fériés / Feiertage</button>
+      <button class="btn" type="button" id="tSit" aria-pressed="true">Séances des parlements / Parlamentssitzungen</button>
       <button class="btn" type="button" id="tPlan" aria-pressed="false">Planificateur de séances / Sitzungsplaner</button>
       <span class="planinfo" id="planinfo" hidden></span>
     </div>
@@ -183,12 +197,13 @@ td .fr{display:block}
   <div class="scroll"><div class="cal" id="cal"></div></div>
 
   <div class="foot">
-    <span>Etat au / Stand : 16.10.2026</span>
+    <span>Etat au / Stand : 16.10.2026 · ORK : 20.11.2026</span>
+    <span><i class="sw" style="background:var(--pl)"></i>Séance plénière d’un parlement / Plenarsitzung eines Parlaments (commissions et groupes : voir le détail du jour / Ausschüsse und Fraktionen: siehe Tagesdetail)</span>
     <span>Données sans garantie – font foi les autorités compétentes. / Angaben ohne Gewähr – massgebend sind die zuständigen Behörden.</span>
     <span>Carré vide : jour férié dans une partie des communes seulement ou demi-journée / Hohles Quadrat: Feiertag nur in einem Teil der Gemeinden oder halbtags</span>
   </div>
 
-  <h2>Liste par collectivité <span class="fr" style="font-weight:400">/ Liste nach Gebietskörperschaft</span></h2>
+  <h2>Liste par collectivité et instance <span class="fr" style="font-weight:400">/ Liste nach Gebietskörperschaft und Gremium</span></h2>
   <div class="list" id="list"></div>
 </div>
 
@@ -246,6 +261,36 @@ const R=[
   nfr:"Le canton indique les vacances du lundi au vendredi ; ici avec les week-ends attenants.",
   src:[["République et Canton du Jura, vacances scolaires","https://www.jura.ch/fr/Autorites/Administration/DFNS/Formation-postobligatoire-SFP/CEJEF/Vacances-scolaires/Vacances-scolaires.html"],SRC_EDK,["Office fédéral de la justice, jours fériés cantonaux","https://www.bj.admin.ch/dam/bj/de/data/publiservice/service/zivilprozessrecht/kant-feiertage.pdf"]]}
 ];
+
+// Sitzungen der Parlamente: "von[/bis][:Art]"  Art: p Plenum (Standard), c Ausschüsse/Fraktionen, x Plenum + Ausschüsse
+const PARL={
+ bw:{de:"Landtag Baden-Württemberg",fr:"Landtag de Bade-Wurtemberg",p:["Plenum","Séance plénière"],c:["Ausschüsse / Fraktionen","Commissions / groupes"],x:["Plenum + Ausschüsse","Séance plénière + commissions"],
+  s:["01-12/01-14:c","01-18/01-22:c","01-25/01-26:c","01-28","02-15/02-16:c","02-17/02-18","02-19:c","02-22/02-26:c","03-01/03-02:c","03-03","03-04/03-05:c","03-08/03-09:c","03-10/03-11","03-12:c","03-15/03-19:c","04-05/04-06:c","04-07","04-08/04-09:c","04-19/04-20:c","04-21/04-22","04-23:c","04-26/04-30:c","05-10/05-11:c","05-12","05-13/05-14:c","05-31/06-01:c","06-02","06-03:x","06-04:c","06-07/06-11:c","06-14/06-15:c","06-16","06-17/06-18:c","06-21/06-22:c","06-23/06-24","06-25:c","06-28/06-29:c","07-01/07-02:c","07-12/07-13:c","07-14","07-15/07-16:c","07-19/07-20:c","07-21/07-22","07-23:c","09-14/09-16:c","09-20/09-24:c","09-27/09-28:c","09-29","09-30/10-01:c","10-04/10-05:c","10-06/10-07","10-08:c","10-11/10-15:c","10-18/10-19:c","10-20","10-21/10-22:c","10-25/10-26:c","10-27/10-28","10-29:c","11-09:c","11-11/11-12:c","11-16:c","11-18/11-19:c","11-23:c","11-25/11-26:c","12-06/12-07:c","12-08/12-10","12-13/12-14:c","12-15"],src:[["Landtag Baden-Württemberg, Termine","https://www.landtag-bw.de/home/aktuelles/termine.html"]]},
+ rp:{de:"Landtag Rheinland-Pfalz",fr:"Landtag de Rhénanie-Palatinat",p:["Plenum","Séance plénière"],c:["Ausschüsse / Fraktionen","Commissions / groupes"],
+  s:["01-12/01-15:c","01-19/01-21:c","01-25/01-26:c","01-28:c","02-02/02-03","02-09:c","02-11/02-12:c","02-16/02-19:c","02-23/02-25:c","03-02/03-05:c","03-09/03-12:c","03-16/03-17","03-18:c","04-06/04-09:c","04-13/04-16:c","04-20:c","04-21/04-22","04-27/04-29:c","05-04/05-05:c","05-11/05-14:c","05-19/05-20","05-25/05-26:c","06-01/06-04:c","06-08/06-11:c","06-15/06-18:c","06-22:c","06-23/06-24","08-10/08-13:c","08-17/08-20:c","08-24:c","08-25/08-26","08-31/09-03:c","09-07/09-10:c","09-14/09-17:c","09-21:c","09-22/09-23","09-28/10-01:c","10-19/10-22:c","10-26:c","10-27/10-28","11-02/11-05:c","11-09/11-12:c","11-16/11-19:c","11-23:c","11-24/11-25","11-30/12-03:c","12-07/12-10:c","12-14:c","12-15/12-16"],src:[["Landtag Rheinland-Pfalz, Termine","https://www.landtag-rlp.de/de/aktuelles/termine.htm"]]},
+ als:{de:"Région Grand Est",fr:"Région Grand Est",p:["Plenarsitzung","Séance plénière"],c:["Ausschüsse / Ständige Kommission","Commissions / Commission permanente"],
+  s:["01-25/01-26:c","02-04","02-05:c","03-08/03-09:c","03-18","03-19:c","04-05/04-06:c","04-16:c","05-10/05-11:c","05-21:c","06-07/06-08:c","06-17","06-18:c","09-27/09-28:c","10-14","10-15:c","11-08/11-09:c","11-18","11-19:c","12-06/12-07:c","12-16/12-17"],
+  nde:"Collectivité européenne d’Alsace: Sitzungstermine 2027 noch nicht bestätigt.",nfr:"Collectivité européenne d’Alsace : dates de séance 2027 pas encore confirmées.",
+  src:[["Région Grand Est, calendrier","https://www.grandest.fr/calendrier/"],["Collectivité européenne d’Alsace, l’Assemblée et ses commissions","https://www.alsace.eu/la-collectivite/l-assemblee-et-ses-commissions/"]]},
+ bas:{de:"Grosser Rat Basel-Stadt",fr:"Grand Conseil de Bâle-Ville",p:["Grossratssitzung","Séance du Grand Conseil"],
+  s:["01-13","01-20","02-24/02-25","03-10","03-17","04-14","04-21","05-12","05-19","06-02","06-09","06-23/06-24","09-08","09-15","09-22","10-20/10-21","11-10","11-17","12-08"],src:[["Grosser Rat Basel-Stadt, Sitzungskalender","https://grosserrat.bs.ch/ratsbetrieb/sitzungskalender"]]},
+ bl:{de:"Landrat Basel-Landschaft",fr:"Landrat de Bâle-Campagne",p:["Landratssitzung","Séance du Landrat"],
+  s:["01-14","01-28","02-25","03-11","03-18","04-15","04-29","05-13","05-20","06-03","06-17","07-01","09-02","09-16","09-30","10-21","11-04","11-18","12-02","12-15/12-16"],src:[["Kanton Basel-Landschaft, Sitzungsdaten des Landrats","https://www.baselland.ch/politik-und-behorden/landrat-parlament/sitzungen/sitzungsdaten"]]},
+ so:{de:"Kantonsrat Solothurn",fr:"Kantonsrat de Soleure",p:["Kantonsratssitzung","Séance du Kantonsrat"],
+  s:["01-26/01-27","03-16/03-17","03-24","05-04/05-05","05-12","06-22/06-23","06-30","09-07/09-08","09-15","11-09/11-10","11-17","12-14/12-15","12-21"],src:[["Kanton Solothurn, Sessionen und Termine","https://so.ch/parlament/sessionen/termine/"]]},
+ ag:{de:"Grosser Rat Aargau",fr:"Grand Conseil d’Argovie",p:["Grossratssitzung","Séance du Grand Conseil"],
+  s:["01-05"],src:[["Grosser Rat Aargau, Sitzungen","https://www.ag.ch/grossrat/grweb/de/171/Sitzungen%20GR"]]},
+ ju:{de:"Parlament Jura",fr:"Parlement jurassien",p:["Parlamentssitzung","Séance du Parlement"],
+  s:["02-24","03-24","04-28","05-19","06-30","09-01","09-22","10-27","11-24","12-15","12-17"],src:[["Parlement jurassien, calendrier des séances plénières","https://www.jura.ch/PLT/Calendrier-des-seances-plenieres.html"]]}
+};
+Object.values(PARL).forEach(P=>{P.s=P.s.map(x=>{const[d,t]=x.split(":");const[a,b]=d.split("/");return [a,b||a,t||"p"];});});
+// Grenzüberschreitende Gremien: [Datum, DE, FR, Plenum?]
+const XB=[
+ {k:"orr",ab:"ORR",de:"Oberrheinrat",fr:"Conseil Rhénan",ev:[["05-14","Vorstandssitzung, Strasbourg","Réunion du Bureau, Strasbourg"],["06-11","1. Plenarversammlung, Strasbourg","1re séance plénière, Strasbourg",1],["11-05","Vorstandssitzung, Strasbourg","Réunion du Bureau, Strasbourg"],["12-03","2. Plenarversammlung, Strasbourg","2e séance plénière, Strasbourg",1]],
+  src:[["Oberrheinrat, Eventarchiv 2027","https://www.oberrheinrat.org/de/termine/eventarchiv.html?year=2027"]]},
+ {k:"ork",ab:"ORK",de:"Oberrheinkonferenz",fr:"Conférence du Rhin supérieur",ev:[["06-03","1. Präsidium","1re réunion du Comité directeur"],["10-08","2. Präsidium","2e réunion du Comité directeur"],["12-09","53. Plenum","53e séance plénière",1]],
+  src:[["Oberrheinkonferenz, Terminplanung 2027 (Stand 20.11.2026)",""]]}
+];
 const MDE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const MFR=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 const WD=["di","lu","ma","me","je","ve","sa"];
@@ -258,11 +303,14 @@ const short=s=>s.split(" (")[0];
 const GROUPS={all:R.map(r=>r.k),ch:["bas","bl","so","ag","ju"],de:["bw","rp"],fr:["als"]};
 
 // Zustand
-let st={on:R.map(r=>r.k),vac:true,hol:true,plan:false,sel:"02-15"};
-try{const v=JSON.parse(localStorage.getItem("ferien-2027")||"null");if(v&&Array.isArray(v.on))st={...st,...v};}catch(e){}
+let st={on:R.map(r=>r.k),vac:true,hol:true,sit:true,xb:XB.map(x=>x.k),plan:false,sel:"02-15"};
+try{const v=JSON.parse(localStorage.getItem("ferien-2027")||"null");if(v&&Array.isArray(v.on))st={...st,...v};if(!Array.isArray(st.xb))st.xb=XB.map(x=>x.k);}catch(e){}
 const save=()=>{try{localStorage.setItem("ferien-2027",JSON.stringify(st));}catch(e){}};
 const active=()=>R.filter(r=>st.on.includes(r.k));
-const status=(r,k)=>({f:r.fer.find(x=>k>=x[0]&&k<=x[1]),h:r.hol.find(x=>x[0]===k)});
+const status=(r,k)=>({f:r.fer.find(x=>k>=x[0]&&k<=x[1]),h:r.hol.find(x=>x[0]===k),s:PARL[r.k]?PARL[r.k].s.find(x=>k>=x[0]&&k<=x[1]):null});
+const sLab=(r,s)=>PARL[r.k][s[2]];
+const xbOn=k=>XB.filter(x=>st.xb.includes(x.k)).flatMap(x=>x.ev.filter(e=>e[0]===k).map(e=>({x,e})));
+const xbAll=k=>XB.flatMap(x=>x.ev.filter(e=>e[0]===k).map(e=>({x,e})));
 
 // Chips
 const chips=document.getElementById("chips");
@@ -273,8 +321,15 @@ R.forEach(r=>{
   chips.appendChild(b);
 });
 document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>{st.on=[...GROUPS[b.dataset.preset]];render();}));
+const xchips=document.getElementById("xchips");
+XB.forEach(x=>{
+  const b=document.createElement("button");b.type="button";b.className="chip xchip";b.dataset.x=x.k;b.style.setProperty("--c",`var(--${x.k})`);
+  b.innerHTML=`<i></i>${x.fr} <span class="fr">/ ${x.de}</span>`;
+  b.addEventListener("click",()=>{st.xb=st.xb.includes(x.k)?st.xb.filter(y=>y!==x.k):XB.map(y=>y.k).filter(y=>y===x.k||st.xb.includes(y));render();});
+  xchips.appendChild(b);
+});
 const tog=(id,p)=>document.getElementById(id).addEventListener("click",()=>{st[p]=!st[p];render();});
-tog("tVac","vac");tog("tHol","hol");tog("tPlan","plan");
+tog("tVac","vac");tog("tHol","hol");tog("tSit","sit");tog("tPlan","plan");
 
 // Kalender aufbauen (einmal), dann nur aktualisieren
 const cal=document.getElementById("cal");const cells={};const mcnt={};
@@ -297,7 +352,9 @@ for(let m=1;m<=12;m++){
 function render(){
   save();
   const A=active();
-  document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",st.on.includes(c.dataset.k)));
+  document.querySelectorAll(".chip:not(.xchip)").forEach(c=>c.setAttribute("aria-pressed",st.on.includes(c.dataset.k)));
+  document.querySelectorAll(".xchip").forEach(c=>c.setAttribute("aria-pressed",st.xb.includes(c.dataset.x)));
+  document.getElementById("tSit").setAttribute("aria-pressed",st.sit);
   document.getElementById("tVac").setAttribute("aria-pressed",st.vac);
   document.getElementById("tHol").setAttribute("aria-pressed",st.hol);
   document.getElementById("tPlan").setAttribute("aria-pressed",st.plan);
@@ -305,16 +362,18 @@ function render(){
   let freeTotal=0;const perM={};
   for(const k in cells){
     const b=cells[k],dow=+b.dataset.dow,m=+k.slice(0,2);
-    let sq="",lanes="",anyH=false,busy=false,tips=[];
+    let sq="",lanes="",anyH=false,busy=false,tips=[],pl=false,co=false;
+    const X=xbOn(k);X.forEach(({x,e})=>{sq+=`<em style="--c:var(--${x.k})">${x.ab}</em>`;tips.push(`${x.fr} : ${e[2]} / ${e[1]}`);if(st.sit&&e[3])busy=true;});
     A.forEach(r=>{
       const s=status(r,k);
       if(s.h){if(!s.h[3])busy=true;anyH=true;if(st.hol)sq+=`<b class="${s.h[3]?"reg":""}" style="--c:var(--${r.k})"></b>`;tips.push(`${short(r.fr)} : ${s.h[2]} / ${s.h[1]}`);}
       if(s.f){busy=true;tips.push(`${short(r.fr)} : ${s.f[3]} / ${s.f[2]}`);}
+      if(st.sit&&s.s){const L=sLab(r,s.s);if(s.s[2]==="c")co=true;else{pl=true;busy=true;}tips.push(`${PARL[r.k].fr} : ${L[1]} / ${L[0]}`);}
       if(st.vac)lanes+=`<s class="${s.f?"":"off"}" style="--c:var(--${r.k})"></s>`;
     });
     const free=A.length>0&&dow!==0&&dow!==6&&!busy;
     if(free){freeTotal++;perM[m]=(perM[m]||0)+1;}
-    b.className="day"+((dow===0||dow===6)?" we":"")+(anyH&&st.hol?" hol":"")+(free?" free":"")+(k===st.sel?" sel":"")+(aptDays.has(k)?" apt":"");
+    b.className="day"+((dow===0||dow===6)?" we":"")+(pl?" pl":"")+(anyH&&st.hol?" hol":"")+(free?" free":"")+(k===st.sel?" sel":"")+(aptDays.has(k)?" apt":"");
     b.querySelector(".sq").innerHTML=sq;b.querySelector(".lanes").innerHTML=lanes;
     const [mm,dd]=k.split("-");
     b.title=`${+dd}.${+mm}.2027`+(tips.length?"\n"+tips.join("\n"):"");
@@ -322,9 +381,10 @@ function render(){
   }
   for(let m=1;m<=12;m++){mcnt[m].hidden=!st.plan;mcnt[m].textContent=perM[m]||0;mcnt[m].title=`${perM[m]||0} jours ouvrables libres / freie Werktage`;}
   const pi=document.getElementById("planinfo");pi.hidden=!st.plan;
-  pi.textContent=A.length?`${freeTotal} jours ouvrables libres pour la sélection / ${freeTotal} freie Werktage für die Auswahl`:"Aucune collectivité sélectionnée / Kein Gebiet ausgewählt";
+  pi.textContent=A.length?`${freeTotal} jours ouvrables libres pour la sélection${st.sit?" (sans séances plénières)":""} / ${freeTotal} freie Werktage für die Auswahl${st.sit?" (ohne Plenarsitzungen)":""}`:"Aucune collectivité sélectionnée / Kein Gebiet ausgewählt";
   renderDetail(A);
-  document.querySelectorAll(".reg-card").forEach(c=>c.hidden=!st.on.includes(c.dataset.k));
+  document.querySelectorAll(".reg-card[data-k]").forEach(c=>c.hidden=!st.on.includes(c.dataset.k));
+  document.querySelectorAll(".reg-card[data-x]").forEach(c=>c.hidden=!st.xb.includes(c.dataset.x));
 }
 
 function renderDetail(A){
@@ -333,13 +393,25 @@ function renderDetail(A){
     const s=status(r,k);let t="";
     if(s.h)t+=`<span class="tag h">${s.h[3]?"Férié partiel":"Férié"}</span>${s.h[2]} <span class="fr">/ ${s.h[1]}</span><br>`;
     if(s.f)t+=`<span class="tag v">${s.f[0]===s.f[1]?"Congé":"Vacances"}</span>${s.f[3]} <span class="fr">/ ${s.f[2]}</span>`;
+    if(st.sit&&s.s){const L=sLab(r,s.s);t+=`${t?"<br>":""}<span class="tag ${s.s[2]==="c"?"c":"p"}">Parlement</span>${L[1]} <span class="fr">/ ${L[0]}</span>`;}
     if(!t)t=(dow===0||dow===6)?`Week-end <span class="fr">/ Wochenende</span>`:`Jour ouvrable <span class="fr">/ Werktag</span>`;
-    return `<div class="ditem${!s.h&&!s.f?" free":""}" style="--c:var(--${r.k})"><i></i><div><strong>${short(r.fr)}</strong> – ${t}</div></div>`;
+    return `<div class="ditem${!s.h&&!s.f&&!(st.sit&&s.s)?" free":""}" style="--c:var(--${r.k})"><i></i><div><strong>${short(r.fr)}</strong> – ${t}</div></div>`;
   }).join("");
-  document.getElementById("detail").innerHTML=`<h3>${WDFR[dow]} ${d} ${MFR[m-1]} 2027<small>${WDDE[dow]}, ${d}. ${MDE[m-1]} 2027</small></h3><div class="dlist">${items||'<span class="fr">Aucune collectivité sélectionnée / Kein Gebiet ausgewählt</span>'}</div>`;
+  const xi=xbOn(k).map(({x,e})=>`<div class="ditem" style="--c:var(--${x.k})"><i></i><div><strong>${x.fr}</strong> <span class="fr">/ ${x.de}</span> – <span class="tag x" style="--c:var(--${x.k})">${x.ab}</span>${e[2]} <span class="fr">/ ${e[1]}</span></div></div>`).join("");
+  document.getElementById("detail").innerHTML=`<h3>${WDFR[dow]} ${d} ${MFR[m-1]} 2027<small>${WDDE[dow]}, ${d}. ${MDE[m-1]} 2027</small></h3><div class="dlist">${xi}${items||'<span class="fr">Aucune collectivité sélectionnée / Kein Gebiet ausgewählt</span>'}</div>`;
 }
 
 // Liste
+function parlHtml(r){
+  const P=PARL[r.k];if(!P)return "";
+  const rows=P.s.map(s=>`<tr><td>${P[s[2]][1]}<span class="fr">${P[s[2]][0]}</span></td><td><a href="#d${s[0]}" class="jump" data-k="${s[0]}">${s[0]===s[1]?`${wdOf(s[0])} ${fmt(s[0])}2027`:`${wdOf(s[0])} ${fmt(s[0])} – ${wdOf(s[1])} ${fmt(s[1])}2027`}</a></td></tr>`).join("");
+  const src=P.src.map(s=>`<li><a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a></li>`).join("");
+  const np=P.s.filter(s=>s[2]!=="c").length;
+  return `<details><summary>Séances : ${P.fr} (${np} plénières${P.s.length>np?`, ${P.s.length-np} autres`:""}) <span class="fr">/ Sitzungen ${P.de}</span></summary>
+    <table><tbody>${rows}</tbody></table>
+    ${P.nfr?`<div class="small">${P.nfr}<br><span class="fr">${P.nde}</span></div>`:""}
+    <div class="src"><strong>Sources / Quellen :</strong><ul style="margin:4px 0 0;padding-left:18px">${src}</ul></div></details>`;
+}
 const list=document.getElementById("list");
 R.forEach(r=>{
   const ferRows=r.fer.map(f=>`<tr><td>${f[3]}<span class="fr">${f[2]}</span></td><td><a href="#d${f[0]}" class="jump" data-k="${f[0]}">${wdOf(f[0])} ${fmt(f[0])} – ${wdOf(f[1])} ${fmt(f[1])}2027</a></td></tr>`).join("");
@@ -354,6 +426,16 @@ R.forEach(r=>{
     <div class="small fr"><strong>Feiertage:</strong> ${holDe}${part?" (* nur in einem Teil der Gemeinden bzw. halbtags)":""}</div>
     <div class="small">${r.nfr}<br><span class="fr">${r.nde}</span></div>
     <div class="src"><strong>Sources / Quellen :</strong><ul style="margin:4px 0 0;padding-left:18px">${src}</ul></div>
+    ${parlHtml(r)}
+  </section>`);
+});
+XB.forEach(x=>{
+  const rows=x.ev.map(e=>`<tr><td>${e[2]}<span class="fr">${e[1]}</span></td><td><a href="#d${e[0]}" class="jump" data-k="${e[0]}">${wdOf(e[0])} ${fmt(e[0])}2027</a></td></tr>`).join("");
+  const src=x.src.map(s=>`<li>${s[1]?`<a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a>`:s[0]}</li>`).join("");
+  list.insertAdjacentHTML("beforeend",`<section class="reg-card" data-x="${x.k}" style="--c:var(--${x.k})">
+    <h3>${x.fr} <span>/ ${x.de}</span></h3>
+    <table><tbody>${rows}</tbody></table>
+    <div class="src"><strong>Source / Quelle :</strong><ul style="margin:4px 0 0;padding-left:18px">${src}</ul></div>
   </section>`);
 });
 list.addEventListener("click",e=>{const a=e.target.closest(".jump");if(!a)return;e.preventDefault();st.sel=a.dataset.k;render();
@@ -378,7 +460,9 @@ function check(a){
     if(dow===0||dow===6)soft.push({k,txt:`Week-end <span class="fr">/ Wochenende</span>`});
     regs.forEach(r=>{const s=status(r,k);
       if(s.h)(s.h[3]?soft:hard).push({k,r,txt:`${s.h[3]?"Férié partiel":"Férié"} : ${s.h[2]} <span class="fr">/ ${s.h[1]}</span>`});
-      if(s.f)hard.push({k,r,txt:`${s.f[0]===s.f[1]?"Congé scolaire":"Vacances"} : ${s.f[3]} <span class="fr">/ ${s.f[2]}</span>`});});
+      if(s.f)hard.push({k,r,txt:`${s.f[0]===s.f[1]?"Congé scolaire":"Vacances"} : ${s.f[3]} <span class="fr">/ ${s.f[2]}</span>`});
+      if(s.s&&s.s[2]!=="c"){const L=sLab(r,s.s);soft.push({k,r,txt:`${PARL[r.k].fr} : ${L[1]} <span class="fr">/ ${L[0]}</span>`});}});
+    xbAll(k).forEach(({x,e})=>soft.push({k,txt:`<strong>${x.ab}</strong> : ${e[2]} <span class="fr">/ ${e[1]}</span>`}));
   });
   return {hard,soft,state:hard.length?"bad":soft.length?"warn":"ok"};
 }
@@ -394,7 +478,7 @@ document.getElementById("aptForm").addEventListener("input",preview);
 function renderApts(){
   aptDays=new Set();apts.forEach(a=>daysBetween(a.start,a.end||a.start).forEach(k=>aptDays.add(k)));
   const L=document.getElementById("aList");
-  if(!apts.length){L.innerHTML=`<p class="empty-apt">Aucun rendez-vous enregistré. Saisissez une date ci-dessus ; chaque rendez-vous est vérifié contre les vacances et jours fériés des collectivités cochées.<br><span class="fr">Noch keine Termine erfasst. Datum oben eingeben; jeder Termin wird mit den Ferien und Feiertagen der angekreuzten Gebiete abgeglichen.</span></p>`;}
+  if(!apts.length){L.innerHTML=`<p class="empty-apt">Aucun rendez-vous enregistré. Saisissez une date ci-dessus ; chaque rendez-vous est vérifié contre les vacances, jours fériés et séances plénières des collectivités cochées ainsi que les séances du Conseil Rhénan et de la Conférence du Rhin supérieur.<br><span class="fr">Noch keine Termine erfasst. Datum oben eingeben; jeder Termin wird mit den Ferien, Feiertagen und Plenarsitzungen der angekreuzten Gebiete sowie den Sitzungen von Oberrheinrat und Oberrheinkonferenz abgeglichen.</span></p>`;}
   else L.innerHTML=[...apts].sort((x,y)=>x.start.localeCompare(y.start)).map(a=>{const c=check(a);
     const when=a.end?`${fmtK(a.start)} – ${fmtK(a.end)}`:fmtK(a.start);
     const regs=a.regions.length===R.length?"Toutes les collectivités / alle Gebiete":R.filter(r=>a.regions.includes(r.k)).map(r=>short(r.fr)).join(", ");
