@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Admin · SimOil</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23e8a400'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='19' fill='%23000' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="farben.css">
+<link rel="stylesheet" href="admin.css">
+<style>
+  body { padding-bottom: 40px; }
+  .inhalt { max-width: 1000px; }
+  .kopf { max-width: 1000px; }
+  .reiter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
+  .reiter button { font: inherit; font-size: 15px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--farbe-linie);
+                   background: var(--farbe-grund); color: var(--farbe-text); cursor: pointer; }
+  .reiter button.aktiv { background: var(--farbe-akzent); color: var(--farbe-akzent-text); border-color: transparent; }
+  .modus { display: inline-flex; border: 2px solid var(--farbe-text); border-radius: 8px; overflow: hidden; }
+  .modus button { font: inherit; font-size: 15px; border: 0; padding: 6px 14px; background: transparent; color: var(--farbe-text); cursor: pointer; }
+  .modus button.aktiv { background: var(--farbe-text); color: var(--farbe-grund); }
+  .modus button.aktiv.test { background: var(--farbe-test); color: #000; }
+  table.liste { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  table.liste th { text-align: left; font-weight: 600; color: var(--farbe-leise); border-bottom: 2px solid var(--farbe-linie); padding: 6px 8px 6px 0; }
+  table.liste td { border-bottom: 1px solid var(--farbe-linie); padding: 7px 8px 7px 0; vertical-align: top; }
+  table.liste td.z { font-family: var(--schrift-zahl); text-align: right; }
+  .tabelle-rahmen { overflow-x: auto; }
+  .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; }
+  .knoepfe .knopf { margin: 0; }
+  .formular { display: grid; gap: 12px; max-width: 520px; }
+  .formular label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--farbe-leise); }
+  .formular input, .formular select, textarea { font: inherit; font-size: 16px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--farbe-linie); background: var(--farbe-grund); color: var(--farbe-text); }
+  textarea { width: 100%; min-height: 360px; font-family: var(--schrift-zahl); font-size: 13px; }
+  .effekte { font-family: var(--schrift-zahl); font-size: 13px; }
+  .fotobox img { max-width: 100%; border-radius: 8px; margin-top: 8px; }
+  pre.fehlerliste { white-space: pre-wrap; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="testband" class="testband" hidden></div>
+<header class="kopf">
+  <span class="kopf-name">Admin · <span id="name"></span></span>
+  <span class="modus" id="modus">
+    <button data-modus="echt">Spielerin</button><button data-modus="test" class="test">Testzugang</button>
+  </span>
+</header>
+<main class="inhalt">
+  <div id="meldung"></div>
+  <div class="reiter" id="reiter">
+    <button data-reiter="uebersicht">Übersicht</button>
+    <button data-reiter="einsendungen">Einsendungen</button>
+    <button data-reiter="bestellungen">Bestellungen</button>
+    <button data-reiter="punkte">Punkte</button>
+    <button data-reiter="ware">Ware</button>
+    <button data-reiter="lose">Lose</button>
+    <button data-reiter="einstellungen">Einstellungen</button>
+    <button data-reiter="erzeugen">Lose erzeugen</button>
+  </div>
+  <div id="ansicht"></div>
+</main>
+<script src="config.js"></script>
+<script src="kern.js"></script>
+<script src="grafik.js"></script>
+<script src="ware.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

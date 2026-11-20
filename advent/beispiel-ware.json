@@ -1,0 +1,15 @@
+[
+  { "ID": "W01", "Titel": "Kaffee to go", "Beschreibung": "Ein Kaffee, irgendwo, irgendwann. Ich lade ein.", "Illustration": "kaffee", "Preis": "30", "Zustand": "sichtbar", "Inhalt-Art": "text", "Inhalt": "Gutschein für einen Kaffee mit Simo." },
+  { "ID": "W02", "Titel": "Frühstück im Bett", "Beschreibung": "Mit Gipfeli und frischem Orangensaft.", "Illustration": "croissant", "Preis": "60", "Zustand": "sichtbar" },
+  { "ID": "W03", "Titel": "Glühwein am Markt", "Beschreibung": "Zwei Tassen, eine Runde über den Weihnachtsmarkt.", "Illustration": "gluehwein", "Preis": "40", "Zustand": "sichtbar", "Aktion bis": "2026-12-13" },
+  { "ID": "W04", "Titel": "Konzertkarten", "Beschreibung": "Zwei Plätze, gute Sicht.", "Illustration": "konzert", "Preis": "200", "Zustand": "eingeschweisst", "Inhalt-Art": "link", "Inhalt": "https://example.org/tickets" },
+  { "ID": "W05", "Titel": "Massage", "Beschreibung": "30 Minuten, Hände warm.", "Illustration": "herz", "Preis": "80", "Zustand": "sichtbar", "Bestand": "1" },
+  { "ID": "W06", "Titel": "Zimmerpflanze", "Beschreibung": "Pflegeleicht. Fast unkaputtbar.", "Illustration": "pflanze", "Preis": "50", "Zustand": "sichtbar", "Sichtbar ab": "2026-12-06" },
+  { "ID": "W07", "Titel": "Schlittschuhlaufen", "Beschreibung": "Mit Punsch danach.", "Illustration": "schlittschuh", "Preis": "90", "Zustand": "sichtbar", "Sichtbar ab": "2026-12-13" },
+  { "ID": "W08", "Titel": "Ausflug mit dem Zug", "Beschreibung": "Ein Tag, ein Ziel, eine Überraschung.", "Illustration": "zug", "Preis": "300", "Zustand": "eingeschweisst", "Sichtbar ab": "2026-12-20" },
+  { "ID": "W09", "Titel": "Schoggi", "Beschreibung": "Die gute.", "Illustration": "schokolade", "Preis": "25", "Zustand": "ausverkauft" },
+  { "ID": "W90", "Titel": "Duftbaum Vanille", "Beschreibung": "Sofortgewinn. Riecht nach Tankstelle.", "Illustration": "duftbaum", "Preis": "0", "Zustand": "versteckt", "Inhalt-Art": "text", "Inhalt": "Hängt ab sofort in meinem Auto. Für dich." },
+  { "ID": "W91", "Titel": "Kinogutschein", "Beschreibung": "Sofortgewinn.", "Illustration": "kino", "Preis": "0", "Zustand": "versteckt", "Inhalt-Art": "code", "Inhalt": "KINO-2026-SIMOIL" },
+  { "ID": "W92", "Titel": "Ein Brief", "Beschreibung": "Sofortgewinn.", "Illustration": "brief", "Preis": "0", "Zustand": "versteckt", "Inhalt-Art": "text", "Inhalt": "Liebe …\n\nHier steht später ein Brief." },
+  { "ID": "W93", "Titel": "Wochenende weg", "Beschreibung": "Sofortgewinn an Heiligabend.", "Illustration": "koffer", "Preis": "0", "Zustand": "versteckt", "Inhalt-Art": "text", "Inhalt": "Pack die Tasche. Mehr verrate ich nicht." }
+]

@@ -1,0 +1,56 @@
+/* farben.css – alle Farben, Schriften und Grundmasse von SimOil.
+   Hier ändern, und die ganze Seite (und die Druckvorlage) folgt. */
+
+@font-face { font-family: "Fredoka"; font-weight: 500; font-display: swap; src: url("fonts/fredoka-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 600; font-display: swap; src: url("fonts/fredoka-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 700; font-display: swap; src: url("fonts/fredoka-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "VT323"; font-weight: 400; font-display: swap; src: url("fonts/vt323-latin-400-normal.woff2") format("woff2"); }
+
+:root {
+  /* Grundfarben */
+  --creme: #FFF6E0;          /* Grund */
+  --braun: #4A3226;          /* Konturen und Text */
+  --gelb: #FFD23F;           /* Preisschilder, Knöpfe */
+  --rot: #F2542D;            /* Schild, Sterne */
+  --mint: #5CC8A8;           /* Regal, Terminal-Rahmen */
+  --cyan: #3EC1F0;           /* Leuchtfarbe */
+  --magenta: #FF4FA3;        /* nur Leuchtschrift */
+
+  /* Abgeleitete Töne (dunkler/heller, für Schatten und Flächen) */
+  --creme-tief: #F6E7C3;     /* Desktop-Hintergrund, Regalrückwand */
+  --weiss: #FFFDF6;          /* Sprechblase, Quittung */
+  --gelb-tief: #E9B71F;
+  --rot-tief: #C9411F;
+  --mint-tief: #3DA587;
+  --mint-hell: #A9E6D3;
+  --cyan-tief: #1F9CCB;
+  --asphalt: #6F6058;        /* Strasse (warmes Grau statt Schwarz) */
+  --asphalt-tief: #5E5049;
+  --leise: #8B7364;          /* Nebentext */
+
+  /* Terminal */
+  --lcd-grund: #BCD98C;
+  --lcd-text: #2E4F27;
+  --lcd-schatten: #A6C576;
+
+  /* Simo */
+  --haut: #F6C9A6;
+  --haut-tief: #E7A985;
+  --haar: #8B5E3C;
+  --navy: #2F3F6E;
+  --wange: #F59A8B;
+
+  /* Schriften */
+  --schrift: "Fredoka", "Baloo 2", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --pixel: "VT323", ui-monospace, monospace;
+
+  /* Formen */
+  --kontur: 4px;             /* Dicke aller Umrisse */
+  --kontur-duenn: 3px;
+  --rund: 26px;              /* grosse Rundungen */
+  --rund-klein: 16px;
+  --schatten: 0 6px 0 var(--braun);        /* harter Schatten wie bei Plastiktasten */
+  --schatten-klein: 0 4px 0 var(--braun);
+  --feder: cubic-bezier(.34, 1.56, .64, 1); /* federnde Bewegung */
+  --breite: 440px;           /* Handybreite, auf dem Desktop zentriert */
+}

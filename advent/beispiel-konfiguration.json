@@ -1,0 +1,193 @@
+{
+  "_hinweis": "BEISPIEL. Die echte Konfiguration nur auf der Admin-Seite einfügen, nie ins Repo. P10 = 10 Punkte, x2 = Multiplikator, S:W90 = Sofortgewinn (Ware-ID aus dem Blatt «Ware»), - = Niete.",
+  "start": "2026-12-01",
+  "mischen": true,
+  "typen": {
+    "normal": {
+      "felderzahl": 2,
+      "regel": "Rubble genau 2 der 4 Felder frei."
+    },
+    "quiz": {
+      "felderzahl": 1,
+      "regel": "Quiz: Rubble nur das Feld mit der richtigen Antwort frei."
+    },
+    "sonntag": {
+      "felderzahl": 2,
+      "regel": "Sonntagsverkauf: Rubble 2 Felder. Hier warten Sofortgewinne und Multiplikatoren."
+    }
+  },
+  "lose": [
+    {
+      "tag": 1,
+      "typ": "normal",
+      "felder": ["P10", "P5", "x2", "-"]
+    },
+    {
+      "tag": 2,
+      "typ": "normal",
+      "felder": ["P20", "P5", "-", "-"]
+    },
+    {
+      "tag": 3,
+      "typ": "quiz",
+      "frage": "Wie viele Kantone hat die Schweiz?",
+      "felder": [
+        {
+          "antwort": "23"
+        },
+        {
+          "antwort": "26",
+          "richtig": true,
+          "effekt": "punkte",
+          "wert": 40
+        },
+        {
+          "antwort": "24"
+        },
+        {
+          "antwort": "25"
+        }
+      ]
+    },
+    {
+      "tag": 4,
+      "typ": "normal",
+      "felder": ["P10", "P10", "P5", "x2"]
+    },
+    {
+      "tag": 5,
+      "typ": "normal",
+      "felder": ["P15", "-", "-", "x3"]
+    },
+    {
+      "tag": 6,
+      "typ": "sonntag",
+      "felder": ["S:W90", "x2", "P10", "P5"]
+    },
+    {
+      "tag": 7,
+      "typ": "normal",
+      "felder": ["P5", "P5", "P10", "-"]
+    },
+    {
+      "tag": 8,
+      "typ": "normal",
+      "felder": ["P25", "-", "P5", "-"]
+    },
+    {
+      "tag": 9,
+      "typ": "normal",
+      "felder": ["P10", "x2", "P5", "-"]
+    },
+    {
+      "tag": 10,
+      "typ": "quiz",
+      "frage": "Welcher Fluss fliesst durch Basel?",
+      "felder": [
+        {
+          "antwort": "Aare"
+        },
+        {
+          "antwort": "Limmat"
+        },
+        {
+          "antwort": "Rhein",
+          "richtig": true,
+          "effekt": "punkte",
+          "wert": 40
+        },
+        {
+          "antwort": "Reuss"
+        }
+      ]
+    },
+    {
+      "tag": 11,
+      "typ": "normal",
+      "felder": ["P20", "P10", "-", "x2"]
+    },
+    {
+      "tag": 12,
+      "typ": "normal",
+      "felder": ["P10", "P5", "x2", "-"]
+    },
+    {
+      "tag": 13,
+      "typ": "sonntag",
+      "felder": ["x3", "P15", "S:W91", "-"]
+    },
+    {
+      "tag": 14,
+      "typ": "normal",
+      "felder": ["P20", "P5", "-", "-"]
+    },
+    {
+      "tag": 15,
+      "typ": "normal",
+      "felder": ["P10", "P10", "P5", "x2"]
+    },
+    {
+      "tag": 16,
+      "typ": "normal",
+      "felder": ["P15", "-", "-", "x3"]
+    },
+    {
+      "tag": 17,
+      "typ": "quiz",
+      "frage": "Wie viele Lose hat dieser Kalender?",
+      "felder": [
+        {
+          "antwort": "12"
+        },
+        {
+          "antwort": "20"
+        },
+        {
+          "antwort": "31"
+        },
+        {
+          "antwort": "24",
+          "richtig": true,
+          "effekt": "punkte",
+          "wert": 40
+        }
+      ]
+    },
+    {
+      "tag": 18,
+      "typ": "normal",
+      "felder": ["P5", "P5", "P10", "-"]
+    },
+    {
+      "tag": 19,
+      "typ": "normal",
+      "felder": ["P25", "-", "P5", "-"]
+    },
+    {
+      "tag": 20,
+      "typ": "sonntag",
+      "felder": ["S:W92", "x2", "P20", "P10"]
+    },
+    {
+      "tag": 21,
+      "typ": "normal",
+      "felder": ["P10", "x2", "P5", "-"]
+    },
+    {
+      "tag": 22,
+      "typ": "normal",
+      "felder": ["P20", "P10", "-", "x2"]
+    },
+    {
+      "tag": 23,
+      "typ": "normal",
+      "felder": ["P10", "P5", "x2", "-"]
+    },
+    {
+      "tag": 24,
+      "typ": "normal",
+      "regel": "Heiligabend: Rubble 2 Felder. Heute gibt es viel zu holen.",
+      "felder": ["P100", "x2", "P50", "S:W93"]
+    }
+  ]
+}

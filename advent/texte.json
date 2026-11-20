@@ -1,0 +1,245 @@
+{
+  "_hinweis": "Alle Texte von SimOil. «simo» enthält Simos Sprechblasen pro Situation: eine Liste von Sätzen, die nacheinander erscheinen (Antippen = nächster Satz). Mehrere Varianten: eine Liste von Listen, dann wird eine zufällig gewählt. Platzhalter: {punkte}, {saldo}, {tag}, {ware}, {fehlend}, {datum}. Daten erscheinen als «Di 1.12.2026», Punkte mit Apostroph (1’250).",
+  "name": "SimOil",
+  "simo": {
+    "begruessung": [
+      [
+        "Grüezi bei SimOil!",
+        "Benzin haben wir leider keins mehr. Aber Rubbellose.",
+        "Heute wartet Los Nr. {tag} auf dich."
+      ],
+      [
+        "Ah, Stammkundschaft!",
+        "Los Nr. {tag} liegt bereit. Rubbeln, fotografieren, ich prüfe."
+      ]
+    ],
+    "begruessung_erledigt": [
+      [
+        "Los Nr. {tag} hast du schon eingelöst.",
+        "Schau doch im Regal vorbei. Du hast {saldo} Punkte."
+      ]
+    ],
+    "vor_start": [
+      [
+        "Wir haben noch nicht offen.",
+        "Ab {datum} gibt es jeden Tag ein Los. Bis bald!"
+      ]
+    ],
+    "ende": [
+      [
+        "Die 24 Tage sind vorbei.",
+        "Das Regal hat aber weiter offen. Du hast {saldo} Punkte."
+      ]
+    ],
+    "sonntag": [
+      [
+        "Sonntagsverkauf!",
+        "Heute gibt es Sofortgewinne und Multiplikatoren.",
+        "Und neue Ware im Regal."
+      ]
+    ],
+    "los_pruefen": [
+      [
+        "Leg das Los flach hin und mach ein Foto von oben.",
+        "Alle freigerubbelten Felder müssen drauf sein."
+      ]
+    ],
+    "nichts_erkannt": [
+      [
+        "Hmm, ich sehe nichts.",
+        "Versuch es mit mehr Licht. Oder tipp die Kürzel unter den Feldern ab."
+      ]
+    ],
+    "gewinn": [
+      [
+        "Gewonnen! {punkte} Punkte.",
+        "Ich buche sie dir gleich gut."
+      ],
+      [
+        "Ka-tsching! {punkte} Punkte für dich."
+      ]
+    ],
+    "niete": [
+      [
+        "Oh nein, eine Niete.",
+        "Morgen gibt es ein neues Los."
+      ],
+      [
+        "Heute leider nichts.",
+        "Aber das Regal läuft dir nicht davon."
+      ]
+    ],
+    "ungueltig": [
+      [
+        "Da ist ein Feld zu viel frei.",
+        "Das Los ist leider ungültig. Morgen genau nach Regel rubbeln!"
+      ]
+    ],
+    "jackpot": [
+      [
+        "JACKPOT!!!",
+        "{punkte} Punkte! Ich muss mich kurz setzen.",
+        "Das Regal wartet auf dich."
+      ]
+    ],
+    "sofortgewinn": [
+      [
+        "Sofortgewinn: {ware}!",
+        "Liegt schon im Regal. Mit deinem Namen dran."
+      ]
+    ],
+    "regal": [
+      [
+        "Willkommen im Regal.",
+        "Tipp auf eine Ware, um sie anzuschauen."
+      ]
+    ],
+    "neue_ware": [
+      [
+        "Frisch eingetroffen!",
+        "Neue Ware im Regal."
+      ]
+    ],
+    "kauf": [
+      [
+        "Gute Wahl!",
+        "{ware} gehört jetzt dir. Ich packe es ein."
+      ]
+    ],
+    "zu_wenig": [
+      [
+        "Da fehlen noch {fehlend} Punkte.",
+        "Weiter rubbeln!"
+      ]
+    ],
+    "oeffnen": [
+      [
+        "Viel Freude damit!"
+      ]
+    ],
+    "fehler": [
+      [
+        "Huch, da klemmt etwas.",
+        "{fehler}"
+      ]
+    ]
+  },
+  "texte": {
+    "seite.titel": "SimOil",
+    "schild.leuchtschrift": "Benzin und Rubbellose",
+    "schild.sonntag": "SONNTAGSVERKAUF",
+    "schild.tuer": "24/7 every day",
+    "schild.stern": [
+      "NEU:",
+      "ADVENTSRUBBEL"
+    ],
+    "tafel.punkte": "PUNKTE",
+    "tafel.los": "LOS NR.",
+    "tafel.serie": "SERIE",
+    "knopf.los_pruefen": "Los prüfen",
+    "knopf.regal": "Zum Regal",
+    "knopf.tankstelle": "Tankstelle",
+    "knopf.ton": "Ton ein- oder ausschalten",
+    "knopf.weiter": "Weiter",
+    "nachholen": "Noch nicht eingelöst: Los {liste}",
+    "terminal.marke": "SimOil LOTTO",
+    "terminal.bereit": "BEREIT",
+    "terminal.los_einlegen": "LOS FOTOGRAFIEREN",
+    "terminal.heute": "LOS NR. {tag} · {regel}",
+    "terminal.lese": "LESE CODES",
+    "terminal.erkannt": "ERKANNT {anzahl}/{noetig}",
+    "terminal.erkannt_ohne": "ERKANNT {anzahl}",
+    "terminal.nichts": "KEIN CODE GEFUNDEN",
+    "terminal.zu_viele": "ACHTUNG: ZU VIELE FELDER",
+    "terminal.pruefe": "PRÜFE LOS",
+    "terminal.gewinn": "GEWINN",
+    "terminal.kein_gewinn": "KEIN GEWINN",
+    "terminal.ungueltig": "LOS UNGÜLTIG",
+    "terminal.jackpot": "JACKPOT",
+    "terminal.punkte": "+{punkte} PKT",
+    "terminal.null": "0 PKT",
+    "terminal.fehler": "FEHLER",
+    "terminal.foto": "Foto",
+    "terminal.galerie": "Galerie",
+    "terminal.kuerzel": "Kürzel",
+    "terminal.kuerzel_platzhalter": "K7QX",
+    "terminal.hinzufuegen": "Dazu",
+    "terminal.entfernen": "Entfernen",
+    "terminal.einreichen": "Einreichen",
+    "terminal.neues_los": "Nächstes Los",
+    "terminal.kuerzel_falsch": "Ein Kürzel hat 4 Zeichen aus A–Z und 2–9 (ohne O, I, L).",
+    "quittung.titel": "SimOil · Quittung",
+    "quittung.los": "Los Nr. {tag}",
+    "quittung.feld": "Feld {feld}",
+    "quittung.gerubbelt": "gerubbelt",
+    "quittung.verpasst": "nicht gerubbelt",
+    "quittung.multiplikator": "{punkte} Pkt × {faktor}",
+    "quittung.serienbonus": "Serienbonus ({serie} Tage)",
+    "quittung.sofortgewinn": "Sofortgewinn: {ware}",
+    "quittung.quiz_richtig": "Richtige Antwort!",
+    "quittung.quiz_falsch": "Richtig wäre «{antwort}» gewesen.",
+    "quittung.total": "Total",
+    "quittung.saldo": "Neuer Stand",
+    "quittung.admin": "Nachträglich angepasst",
+    "quittung.danke": "Danke für Ihren Einkauf",
+    "effekt.punkte": "{wert} Pkt",
+    "effekt.multiplikator": "× {wert}",
+    "effekt.sofortgewinn": "{geschenk}",
+    "effekt.niete": "Niete",
+    "regal.titel": "Regal",
+    "regal.leer": "Das Regal ist noch leer. Bald kommt Ware.",
+    "regal.punkte": "{saldo} Pkt",
+    "regal.noch": "Noch {fehlend} Pkt",
+    "regal.aktion": "AKTION!",
+    "regal.aktion_bis": "bis {datum}",
+    "regal.ausverkauft": "AUSVERKAUFT",
+    "regal.gehoert": "gehört dir",
+    "regal.gewonnen": "gewonnen",
+    "regal.neu": "NEU",
+    "regal.eingeschweisst": "Eingeschweisst",
+    "regal.eingeschweisst_text": "Was drin ist, siehst du nach dem Kauf.",
+    "regal.rest": "Noch {rest} Stück",
+    "regal.kaufen": "Kaufen für {preis} Pkt",
+    "regal.oeffnen": "Öffnen",
+    "regal.schliessen": "Schliessen",
+    "regal.bestaetigen": "«{titel}» für {preis} Punkte kaufen? Danach bleiben dir {rest} Punkte.",
+    "regal.bestaetigen_eingeschweisst": "Die eingeschweisste Ware für {preis} Punkte kaufen? Danach bleiben dir {rest} Punkte.",
+    "regal.ja": "Ja, kaufen",
+    "regal.nein": "Lieber nicht",
+    "regal.kopieren": "Kopieren",
+    "regal.kopiert": "Kopiert",
+    "regal.link": "Öffnen",
+    "regal.ohne_inhalt": "Das gibt es bei Simo persönlich.",
+    "regal.nochmals": "Nochmals kaufen",
+    "fehler.keine_api": "Die Seite ist noch nicht fertig eingerichtet.",
+    "fehler.netz": "Keine Verbindung. Ist das Handy online? Bitte nochmals versuchen.",
+    "fehler.zeit": "Der Server antwortet nicht. Bitte nochmals versuchen.",
+    "fehler.server": "Auf dem Server ist etwas schiefgegangen. Bitte später nochmals versuchen.",
+    "fehler.token": "Dieser Link ist ungültig. Bitte den Link nochmals öffnen, den du bekommen hast.",
+    "fehler.kein_zugang": "Bitte öffne die Seite über den Link, den du bekommen hast.",
+    "fehler.besetzt": "Der Server ist gerade beschäftigt. Bitte nochmals versuchen.",
+    "fehler.keine_codes": "Kein Code erkannt. Neues Foto machen oder Kürzel abtippen.",
+    "fehler.code_unbekannt": "Diese Kürzel kenne ich nicht: {codes}. Bitte prüfen.",
+    "fehler.codes_gemischt": "Die Codes stammen von verschiedenen Losen. Bitte nur ein Los aufs Foto.",
+    "fehler.falsches_los": "Das ist Los Nr. {gefunden}, nicht Nr. {erwartet}.",
+    "fehler.los_gesperrt": "Geduld! Los Nr. {tag} gilt erst ab {datum}.",
+    "fehler.nachholen_aus": "Los Nr. {tag} vom {datum} ist abgelaufen.",
+    "fehler.schon_eingereicht": "Los Nr. {tag} ist schon eingelöst.",
+    "fehler.zu_wenige": "Ich sehe erst {erkannt} Feld(er). Für dieses Los braucht es {noetig}. Fehlt ein Code, tipp das Kürzel ab.",
+    "fehler.nicht_verfuegbar": "Diese Ware gibt es nicht mehr.",
+    "fehler.ausverkauft": "Leider ausverkauft.",
+    "fehler.zu_wenig_punkte": "Dafür fehlen dir noch {fehlend} Punkte.",
+    "fehler.preis_geaendert": "Der Preis hat sich geändert: jetzt {preis} Punkte.",
+    "fehler.nicht_deins": "Das gehört dir noch nicht.",
+    "fehler.kein_bild": "Bild nicht verfügbar.",
+    "fehler.kamera": "Das Foto konnte nicht gelesen werden. Bitte nochmals versuchen.",
+    "druck.typ_normal": "RUBBELLOS",
+    "druck.typ_quiz": "QUIZ-LOS",
+    "druck.typ_sonntag": "SONNTAGSVERKAUF",
+    "druck.kleingedrucktes": "Gültig ab {datum}. Nur mit Foto an der SimOil-Kasse einlösbar. Keine Barauszahlung. Wer mehr rubbelt als erlaubt, verliert. Benzin leider ausverkauft.",
+    "schild.zapfsaeule": "LEER",
+    "terminal.vor_start": "ERSTES LOS AB {datum}",
+    "terminal.nachholen": "NOCH OFFEN: LOS {liste}",
+    "terminal.ende": "ALLE LOSE SIND VORBEI"
+  }
+}
