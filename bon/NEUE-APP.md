@@ -33,6 +33,11 @@ Startprompt für einen neuen Chat:
     Bild genau so hoch wie nötig statt ein Vielfaches von 36 (Chrome zeichnet dann höchstens eine Punktzeile
     doppelt, die Länge stimmt). QR-Code mit qrcode-generator (MIT, bon/visitenkarte/qrcode.js), ein Modul
     ganze 3–6 Punkte. `setzen()` verteilt Zeilen mit «Federn» in ein Feld und verkleinert, was nicht passt.
+  - bon/revolution/: ein Bon von mehreren Metern, quer gelesen. Alles quer gesetzt (Länge × 576), Linien als eigene
+    Pixel-Ebene ohne Kantenglättung, Text und Kästen Teil für Teil auf Leinwänden von 1980 Punkten, dann gedreht in
+    Druckrichtung (Bildpunkt x, y = Querpunkt y, 575 − x). Ein Bon mit mehreren PNG untereinander, jedes 1980 Punkte
+    hoch (Vielfaches von 36): In Chromium mit 272 px und Faktor 2.117647 nachgestellt ergibt ein 3-m-Streifen 0
+    abweichende Punkte. Ob der Mac so lange Bons druckt, ist noch nicht getestet.
   - bon/rezept/: eigene Datensammlung (200 Rezepte in rezepte.js), Filter, Mengen umrechnen, Liste
     mit Kästchen zum Abhaken. Bettet das PNG schon nach der Regel mit 272 px und H × 17/36 px ein.
 - Schriften (alle OFL) relativ einbinden statt kopieren: IBM Plex Sans (bon/text/), IBM Plex Serif
