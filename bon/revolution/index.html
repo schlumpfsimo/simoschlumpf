@@ -97,7 +97,7 @@ summary{cursor:pointer;font-size:.72rem;font-weight:700;text-transform:uppercase
     <p class="intro">Ein langer Bon, quer gelesen: von den ersten Steinwerkzeugen bis zur KI, 194 Knoten auf einer logarithmischen Zeitachse. Antippen zeigt alle Angaben. <a href="sources/">Quellen</a></p>
 
     <div class="ctrl">
-      <label class="feld"><span>Länge mm</span><input id="laenge" type="number" inputmode="numeric" min="1000" max="6000" step="50" value="3000"></label>
+      <label class="feld"><span>Länge mm</span><input id="laenge" type="number" inputmode="numeric" min="1000" max="6000" step="50" value="3500"></label>
       <label class="feld"><span>Schrift</span><input id="f1" class="klein" type="number" inputmode="numeric" min="12" max="22" value="15"></label>
       <div class="feld"><span id="zoomLabel">Zoom</span>
         <div class="seg" id="zoom" role="group" aria-labelledby="zoomLabel"><button type="button" data-z="1">1:1</button><button type="button" data-z="2">1:2</button><button type="button" data-z="4">1:4</button><button type="button" data-z="8">1:8</button></div>
@@ -769,7 +769,7 @@ async function laden(){
 }
 
 const params = () => ({
-  L: Math.round(Math.min(6000, Math.max(1000, Number($('laenge').value) || 3000))) * DPM,
+  L: Math.round(Math.min(6000, Math.max(1000, Number($('laenge').value) || 3500))) * DPM,
   F: (g => ({ l1: g, l2: g, l3: g }))(num('f1', 15)),   // alle Zeilen gleich gross
 });
 const num = (id, d) => Math.round(Math.min(26, Math.max(12, Number($(id).value) || d)));
