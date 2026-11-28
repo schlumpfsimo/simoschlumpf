@@ -470,6 +470,9 @@ $('los').addEventListener('click', () => {
   laufen();
 });
 
+// STOPP im Feld «Druckaufträge» (auch aus einem anderen Reiter): wie Anhalten
+window.addEventListener('bon-stopp', () => { if (lauf && !halt) { halt = true; say('Gestoppt. Hält nach der laufenden Zeile an …'); } });
+
 window.addEventListener('keydown', e => {
   if (e.code !== 'Space' || /INPUT|BUTTON/.test(document.activeElement?.tagName)) return;
   e.preventDefault(); $('los').click();

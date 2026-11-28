@@ -58,6 +58,11 @@ Startprompt für einen neuen Chat:
   `const e = window.bonProtokoll?.beginnen({ titel, weg: 'usb' })`, dann `e?.gedruckt()` oder
   `e?.fehler(text)`. Ob der Mac einen eingereichten Bon schon gedruckt hat, weiss die Website nicht
   (der Web-Schlüssel darf nicht abholen).
+- Im selben Feld steht rechts der Knopf «Stopp». Er hält alle laufenden Reihen in allen offenen Bon-Apps dieses
+  Geräts an: wartende Bons werden «abgebrochen», jede weitere Einreichung scheitert mit dem Fehler «Gestoppt», bis
+  man auf der Seite wieder selbst etwas antippt. Mehrere Bons darum immer mit `await` nacheinander senden und bei
+  einem Fehler abbrechen, dann wirkt Stopp ohne Zutun. USB-Apps hören auf `window.addEventListener('bon-stopp', …)`
+  und halten dort an (bon/namen/). Schon eingereichte Bons holt der Mac trotzdem ab; die Website kann sie nicht zurückholen.
 - Jede App hat oben links einen Knopf «← Zurück» zur Startseite (`href="../"`) und
   `<meta name="robots" content="noindex, nofollow">`.
   Das Tab-Icon (`<link rel="icon">`, SVG direkt in der Datei) zeigt den Anfangsbuchstaben der App; ist er
