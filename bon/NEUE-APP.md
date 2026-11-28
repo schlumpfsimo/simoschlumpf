@@ -13,7 +13,8 @@ Startprompt für einen neuen Chat:
   eigenen Ordner bon/<pfad>/index.html und damit eine eigene Adresse.
 - Neue Kachel: eine Zeile in der Liste `APPS` in bon/index.html (pfad, name), direkt vor
   «Namen», das immer zuletzt bleibt. Die Kacheln zeigen nur Nummer und Name, keine
-  Beschreibung. Sonst nichts an der Startseite ändern.
+  Beschreibung. Unter den Kacheln steht das Feld «Druckaufträge»
+  mit dem Stopp-Knopf (protokoll.js). Sonst nichts an der Startseite ändern.
 - Vorlagen:
   - bon/text/: Text in IBM Plex Sans auf einer Leinwand gesetzt und gerastert → 1-Bit-PNG →
     Bon-Post, HTML-Bon. Die Vorschau ist genau der Druck. Für schöne Schrift so vorgehen statt
