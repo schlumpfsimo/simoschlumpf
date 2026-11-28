@@ -98,9 +98,7 @@ summary{cursor:pointer;font-size:.72rem;font-weight:700;text-transform:uppercase
 
     <div class="ctrl">
       <label class="feld"><span>Länge mm</span><input id="laenge" type="number" inputmode="numeric" min="1000" max="6000" step="50" value="3000"></label>
-      <label class="feld"><span>Schrift Z1</span><input id="f1" class="klein" type="number" inputmode="numeric" min="12" max="24" value="16"></label>
-      <label class="feld"><span>Z2</span><input id="f2" class="klein" type="number" inputmode="numeric" min="12" max="26" value="19"></label>
-      <label class="feld"><span>Z3</span><input id="f3" class="klein" type="number" inputmode="numeric" min="12" max="24" value="16"></label>
+      <label class="feld"><span>Schrift</span><input id="f1" class="klein" type="number" inputmode="numeric" min="12" max="22" value="15"></label>
       <div class="feld"><span id="zoomLabel">Zoom</span>
         <div class="seg" id="zoom" role="group" aria-labelledby="zoomLabel"><button type="button" data-z="1">1:1</button><button type="button" data-z="2">1:2</button><button type="button" data-z="4">1:4</button><button type="button" data-z="8">1:8</button></div>
       </div>
@@ -167,6 +165,7 @@ const FOOT = 1580;          // Schluss ~200 mm: Legende, Zählung, Quellen
 const GAP = 14;             // Abstand zwischen zwei Knoten in einer Spur
 const POSMAX = 6.52;        // log10 der Jahre vor 2026 am linken Rand (3,3 Mio. Jahre)
 const TEST_MM = 300;
+const LW = 2, LW_HEAVY = 4;   // Linienstärke in Punkten: normal, kräftig (Führungslinien 1)
 
 const STRUCT = {
   enabled: 'solid', transfer: 'solid', adaptation: 'solid', invention: 'solid', '': 'solid',
@@ -264,6 +263,7 @@ function setzen(nodes, L, F){
     n.t3 = n.paid || n.change;   // betroffene Gruppen, sonst die Veränderung kursiv
     n.f3 = n.paid ? f3 : f3k;
     const w1 = breite(n.t1, f1), w2 = breite(n.t2, n.f2), w3 = breite(n.t3, n.f3);
+    n.b1 = w1; n.b2 = w2; n.b3 = w3;
     n.w2 = Math.ceil(11 + Math.max(w1, w2));
     n.w3 = Math.ceil(11 + Math.max(w1, w2, w3));
   }
@@ -340,7 +340,11 @@ function setzen(nodes, L, F){
     const th = n.band;
     const x = n.px, top = n.top;
     const w = n.lines === 3 ? n.w3 : n.w2, h = n.lines === 3 ? h3 : h2;
-    R(x - 2, top, w + 4, h, 1, ops.knock);
+    // Weiss nur hinter Marke und Text, Zeile für Zeile, damit die Linien sichtbar bleiben
+    R(x - 1, top + 1, 11, lh1 - 1, 1, ops.knock);
+    R(x + 10, top + 1, Math.ceil(n.b1) + 2, lh1 - 1, 1, ops.knock);
+    R(x + 10, top + lh1 + 1, Math.ceil(n.b2) + 2, lh2 - 1, 1, ops.knock);
+    if (n.lines === 3) R(x + 10, top + h2 + 1, Math.ceil(n.b3) + 2, lh3 - 1, 1, ops.knock);
     const my = top + Math.round(lh1 / 2);
     marke(R, x, my - 4, n.kind === 'idea', ops.top);   // Marke: voll = Technik, Material, Ereignis; leer = Idee
     T(n.t1, x + 11, top + Math.round(lh1 * 0.8), f1);
@@ -350,7 +354,7 @@ function setzen(nodes, L, F){
     if (n.shifted) {
       // Wahre Lage: Strich an der Bandkante, dünne Führungslinie zur Marke
       R(n.tx - 1, th.y + 1, 3, 7, 0, ops.top);
-      ops.lines.push({ from: [n.tx, th.y + 8], to: [n.mx, n.my], style: 'solid' });
+      ops.lines.push({ from: [n.tx, th.y + 8], to: [n.mx, n.my], style: 'leader' });
     }
     blocks.push({ n, x: x - 2, y: top, w: w + 4, h });
   }
@@ -547,7 +551,7 @@ function schluss(ops, R, T, X, nodes){
 function linienZeichnen(ops, L){
   const ebene = new Uint8Array(L * W);
   const set = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < L && y >= 0 && y < W) ebene[y * L + x] = 1; };
-  const brush = (x, y, d) => { if (d === 1) set(x, y); else for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) set(x + i, y + j); };
+  const brush = (x, y, d) => { const a = -Math.floor((d - 1) / 2); for (let i = a; i < a + d; i++) for (let j = a; j < a + d; j++) set(x + i, y + j); };
   for (const l of ops.lines) {
     if (l.dot) { set(l.dot[0], l.dot[1]); continue; }
     if (l.pattern === 'regime') { for (let y = l.y0; y < l.y1; y++) if (y % 6 < 2) set(l.x, y); continue; }
@@ -557,11 +561,12 @@ function linienZeichnen(ops, L){
     for (let s = 0; s <= len; s += 0.5) {
       const x = x1 + ux * s, y = y1 + uy * s;
       switch (l.style) {
-        case 'dashed': if (s % 10 < 6) set(x, y); break;
-        case 'dotted': if (s % 4 < 1) set(x, y); break;
-        case 'heavy': brush(x, y, 3); break;
-        case 'wavy': { const o = 2 * Math.sin(s * 2 * Math.PI / 12); set(x + nx * o, y + ny * o); break; }
-        default: set(x, y);
+        case 'dashed': if (s % 12 < 7) brush(x, y, LW); break;
+        case 'dotted': if (s % 6 < 2) brush(x, y, LW); break;
+        case 'heavy': brush(x, y, LW_HEAVY); break;
+        case 'wavy': { const o = 3 * Math.sin(s * 2 * Math.PI / 14); brush(x + nx * o, y + ny * o, LW); break; }
+        case 'leader': set(x, y); break;
+        default: brush(x, y, LW);
       }
     }
   }
@@ -663,7 +668,7 @@ async function laden(){
 
 const params = () => ({
   L: Math.round(Math.min(6000, Math.max(1000, Number($('laenge').value) || 3000))) * DPM,
-  F: { l1: num('f1', 16), l2: num('f2', 19), l3: num('f3', 16) },
+  F: (g => ({ l1: g, l2: g, l3: g }))(num('f1', 15)),   // alle Zeilen gleich gross
 });
 const num = (id, d) => Math.round(Math.min(26, Math.max(12, Number($(id).value) || d)));
 
@@ -752,7 +757,7 @@ $('zoom').addEventListener('click', e => {
   s.scrollLeft = mitte / zoom - s.clientWidth / 2;
 });
 zoomKnoepfe();
-for (const id of ['laenge', 'f1', 'f2', 'f3']) $(id).addEventListener('input', spaeter);
+for (const id of ['laenge', 'f1']) $(id).addEventListener('input', spaeter);
 
 // ================================================================ Prüfungen (Abschnitt 10 der Übergabe)
 function pruefen(){
