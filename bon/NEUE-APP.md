@@ -13,7 +13,8 @@ Startprompt für einen neuen Chat:
   eigenen Ordner bon/<pfad>/index.html und damit eine eigene Adresse.
 - Neue Kachel: eine Zeile in der Liste `APPS` in bon/index.html (pfad, name), direkt vor
   «Namen», das immer zuletzt bleibt. Die Kacheln zeigen nur Nummer und Name, keine
-  Beschreibung. Sonst nichts an der Startseite ändern.
+  Beschreibung. Unter den Kacheln steht das Feld «Druckaufträge»
+  mit dem Stopp-Knopf (protokoll.js). Sonst nichts an der Startseite ändern.
 - Vorlagen:
   - bon/text/: Text in IBM Plex Sans auf einer Leinwand gesetzt und gerastert → 1-Bit-PNG →
     Bon-Post, HTML-Bon. Die Vorschau ist genau der Druck. Für schöne Schrift so vorgehen statt
@@ -58,6 +59,11 @@ Startprompt für einen neuen Chat:
   `const e = window.bonProtokoll?.beginnen({ titel, weg: 'usb' })`, dann `e?.gedruckt()` oder
   `e?.fehler(text)`. Ob der Mac einen eingereichten Bon schon gedruckt hat, weiss die Website nicht
   (der Web-Schlüssel darf nicht abholen).
+- Im selben Feld steht rechts der Knopf «Stopp». Er hält alle laufenden Reihen in allen offenen Bon-Apps dieses
+  Geräts an: wartende Bons werden «abgebrochen», jede weitere Einreichung scheitert mit dem Fehler «Gestoppt», bis
+  man auf der Seite wieder selbst etwas antippt. Mehrere Bons darum immer mit `await` nacheinander senden und bei
+  einem Fehler abbrechen, dann wirkt Stopp ohne Zutun. USB-Apps hören auf `window.addEventListener('bon-stopp', …)`
+  und halten dort an (bon/namen/). Schon eingereichte Bons holt der Mac trotzdem ab; die Website kann sie nicht zurückholen.
 - Jede App hat oben links einen Knopf «← Zurück» zur Startseite (`href="../"`) und
   `<meta name="robots" content="noindex, nofollow">`.
   Das Tab-Icon (`<link rel="icon">`, SVG direkt in der Datei) zeigt den Anfangsbuchstaben der App; ist er
