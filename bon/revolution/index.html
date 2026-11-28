@@ -9,12 +9,15 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3ERv%3C/text%3E%3C/svg%3E">
 <link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 /* IBM Plex Sans (SIL Open Font License), aus bon/text/ */
 @font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-500-italic.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-italic-ext.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 /* Hausstil simoschlumpf.ch: schwarz auf weiss, Plex 500/700, eckig, Europablau nur für die Auswahl am Bildschirm */
 :root{ --sans:"Plex",Arial,sans-serif; --muted:#555; --blau:#003399; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
 *{box-sizing:border-box}
@@ -156,7 +159,7 @@ const THREADS = [
 const HEAD = 1200;          // Kopf ~150 mm
 const MARGIN_L = 60;        // Platz für die Bandbuchstaben vor der Zeitachse
 const EXC = 1600;           // KI-Exkurs ~200 mm
-const FOOT = 960;           // Schluss ~120 mm
+const FOOT = 1580;          // Schluss ~200 mm: Legende, Zählung, Quellen
 const GAP = 14;             // Abstand zwischen zwei Knoten in einer Spur
 const POSMAX = 6.52;        // log10 der Jahre vor 2026 am linken Rand (3,3 Mio. Jahre)
 const TEST_MM = 300;
@@ -173,7 +176,7 @@ const MECH = [
 ];
 
 const LEGEND = [
-  ['NODE', ['056 number (record pins by it) · date · origin>affected']],
+  ['NODE', ['056 number · date · origin>affected']],
   ['REGIME', ['P prologue · I muscle+fire · II organic · III fossil', 'IV electric · V digital']],
   ['', ['M1 extraction first', 'M2 hidden labour', 'M3 skill capture'], true],
   ['', ['M4 bottleneck=power', 'M5 cost shifting', 'M6 war as funder'], true],
@@ -205,7 +208,7 @@ const REGIMES = [
   { r: 'V', year: 1945, t: 'V 1945', bar: true },
 ];
 
-const FONT = (px, w = 500) => `${w} ${px}px "Plex", Arial, sans-serif`;
+const FONT = (px, w = 500, kursiv = false) => `${kursiv ? 'italic ' : ''}${w} ${px}px "Plex", Arial, sans-serif`;
 const $ = id => document.getElementById(id);
 const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
 const store = {
@@ -248,12 +251,13 @@ function umbrechen(t, font, max){
 // ops.lines: Linien hinter allem (Pixel in eine Ebene), ops.knock: weisse Kästen, ops.rects/ops.text/ops.top: darüber
 function setzen(nodes, L, F){
   const lh1 = F.l1, lh2 = F.l2, lh3 = F.l3, h2 = lh1 + lh2, h3 = h2 + lh3;
-  const f1 = FONT(lh1, 700), f2 = FONT(lh2, 500), f3 = FONT(lh3, 500);
+  const f1 = FONT(lh1, 700), f2 = FONT(lh2, 500), f3 = FONT(lh3, 500), f3k = FONT(lh3, 500, true);
   for (const n of nodes) {
     n.t1 = [n.id, n.date, n.place, ...n.mech, ...n.labour, n.evidence].filter(Boolean).join(' ');
     n.t2 = n.event;
-    n.t3 = n.paid ? 'PAID: ' + n.paid : n.change;
-    const w1 = breite(n.t1, f1), w2 = breite(n.t2, f2), w3 = breite(n.t3, f3);
+    n.t3 = n.paid || n.change;   // betroffene Gruppen, sonst die Veränderung kursiv
+    n.f3 = n.paid ? f3 : f3k;
+    const w1 = breite(n.t1, f1), w2 = breite(n.t2, f2), w3 = breite(n.t3, n.f3);
     n.w2 = Math.ceil(9 + Math.max(w1, w2));
     n.w3 = Math.ceil(9 + Math.max(w1, w2, w3));
   }
@@ -335,7 +339,7 @@ function setzen(nodes, L, F){
     R(x, my - 3, 6, 6, 0, ops.top);   // Marke
     T(n.t1, x + 9, top + Math.round(lh1 * 0.8), f1);
     T(n.t2, x + 9, top + lh1 + Math.round(lh2 * 0.8), f2);
-    if (n.lines === 3) T(n.t3, x + 9, top + h2 + Math.round(lh3 * 0.8), f3);
+    if (n.lines === 3) T(n.t3, x + 9, top + h2 + Math.round(lh3 * 0.8), n.f3);
     n.mx = x + 3; n.my = my;
     if (n.shifted) {
       // Wahre Lage: Strich an der Bandkante, dünne Führungslinie zur Marke
@@ -440,20 +444,21 @@ function kopf(ops, R, T){
   const ft = FONT(70, 700);
   T('RÉVOLUTION', x, 104, ft, Math.round(70 * 0.12));
   stern(R, x + 16, 142, 16); stern(R, x + 56, 142, 16); stern(R, x + 96, 142, 16);
-  let y = 200;
-  const fTh = FONT(26, 700);
-  for (const z of umbrechen('Every revolution has a bill. This is who paid it.', fTh, 520)) { T(z, x, y, fTh); y += 32; }
-  y += 14;
+  let y = 210;
   const fM = FONT(18, 500), fLab = FONT(14, 700);
   const label = (t, yy) => T(t, x, yy, fLab, Math.round(14 * 0.14));
   label('METHOD', y); y += 24;
   for (const z of umbrechen('Log scale: each factor of ten in years gets equal length. Read from 2026.', fM, 520)) { T(z, x, y, fM); y += 23; }
   y += 14;
-  label('NEEDLE', y); y += 24;
-  for (const z of umbrechen('Stick a needle into the strip where you think society took a wrong turn. Write down the node number next to it, or read the year off the scale.', fM, 520)) { T(z, x, y, fM); y += 23; }
+  label('STRUCTURE', y); y += 24;
+  for (const z of umbrechen('Seven bands, one per thread. Each node: number, date, place and codes; event; groups affected, or the change in italics. Lines connect a node with earlier nodes.', fM, 520)) { T(z, x, y, fM); y += 23; }
 
-  // Legende rechts
-  const lx = 600, tx = lx + 104, fl = FONT(16, 500), fk = FONT(15, 700);
+  legende(T, 600);
+}
+
+// Legende, am Anfang und am Ende gleich
+function legende(T, lx){
+  const tx = lx + 104, fl = FONT(16, 500), fk = FONT(15, 700), fLab = FONT(14, 700);
   let ly = 44;
   T('LEGEND', lx, ly, fLab, Math.round(14 * 0.14)); ly += 30;
   for (const [lab, zeilen, spalten] of LEGEND) {
@@ -486,6 +491,9 @@ function exkurs(ops, R, T, X){
 }
 
 function schluss(ops, R, T, X, nodes){
+  legende(T, X + 40);
+  R(X + 620, 0, 1, W);
+  X += 620;
   const x = X + 40, fLab = FONT(14, 700), f = FONT(18, 500), fk = FONT(18, 700);
   T('MECHANISMS', x, 44, fLab, 2);
   const zahl = Object.fromEntries(MECH.map(([k]) => [k, 0]));
@@ -514,7 +522,7 @@ function schluss(ops, R, T, X, nodes){
   if (window.qrcode) {
     qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
     const q = qrcode(0, 'M'); q.addData(SOURCES_URL, 'Byte'); q.make();
-    const n = q.getModuleCount(), mod = 5, qs = n * mod, ox = X + FOOT - 40 - qs - 4 * mod, oy = W - 40 - qs;
+    const n = q.getModuleCount(), mod = 5, qs = n * mod, ox = X + (FOOT - 620) - 40 - qs - 4 * mod, oy = W - 40 - qs;
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) R(ox + c * mod, oy + r * mod, mod, mod);
   }
 }
@@ -634,7 +642,7 @@ let NODES = null, satz = null, px = null, zoom = Number(store.get('zoom', '1')) 
 async function laden(){
   const r = await fetch('revolution-nodes.json', { cache: 'no-cache' });
   NODES = await r.json();
-  await Promise.all([document.fonts.load(FONT(20, 500), 'AÉ'), document.fonts.load(FONT(20, 700), 'AÉ')]);
+  await Promise.all([document.fonts.load(FONT(20, 500), 'AÉ'), document.fonts.load(FONT(20, 700), 'AÉ'), document.fonts.load(FONT(20, 500, true), 'AÉ')]);
 }
 
 const params = () => ({
