@@ -30,10 +30,16 @@ ul{padding-left:1.2em}
 .node .ev{font-weight:700}
 .node:target{outline:2px solid #003399;outline-offset:4px}
 .small{color:var(--muted);font-size:.88rem}
-.leg{border-collapse:collapse;width:100%}
-.leg th{text-align:left;vertical-align:top;font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:8px 14px 8px 0;white-space:nowrap}
-.leg td{padding:6px 0;border-top:1px solid #000}
-.leg th{border-top:1px solid #000}
+.leg{border-collapse:collapse;width:100%;margin-bottom:6px}
+.leg th{text-align:left;vertical-align:top;font-weight:700;padding:5px 14px 5px 0;white-space:nowrap;width:6.5em;border-top:1px solid #000}
+.leg td{padding:5px 0;border-top:1px solid #000}
+h3{font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:22px 0 6px}
+.mk{display:inline-block;width:.6em;height:.6em;background:#000;margin-right:.4em}
+.mk.leer{background:#fff;box-shadow:inset 0 0 0 2px #000}
+.ln{display:inline-block;width:3em;vertical-align:middle;border-top:2px solid #000}
+.ln.dashed{border-top-style:dashed}.ln.dotted{border-top-style:dotted}.ln.heavy{border-top-width:4px}
+.ln.wavy{border-top-style:double;border-top-width:4px}
+.bsp{padding:8px 0 10px}
 code{font-family:inherit;font-weight:700}
 .top{font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 </style>
@@ -47,17 +53,79 @@ code{font-family:inherit;font-weight:700}
 <p><a href="#legend">How to read the strip</a> · <a href="#nodes">Sources by node</a> · <a href="#bibliography">Bibliography</a> · <a href="#open">Open points</a></p>
 
 <h2 id="legend">How to read the strip</h2>
-<p>The strip runs from stone tools (left) to the present (right). Time is on a log scale: each factor of ten in years before 2026 gets the same length, so 10 to 100 years ago (1926–2016) is as long as 100,000 to 1 million years ago. Read the year off the scale at the top or bottom edge.</p>
-<p>Each node gives the event, the change and the groups affected. Where the strip is crowded, a node is printed further right; a short mark at the top of its band shows its true date, and a thin line leads to the text. The legend is printed at the start and at the end of the strip.</p>
+<p>The legend below is printed at the start and at the end of the strip.</p>
+<h3>READING A NODE</h3>
 <table class="leg">
-<tr><th>Node</th><td><code>056 1700/1721 GB&gt;IN M5 =</code><br>number · date · origin&gt;affected · mechanisms · labour · evidence<br>second line: event · third line: groups affected, or <i>the change in italics</i></td></tr>
-<tr><th>Threads</th><td>E energy · I information · F food · L labour · R reproduction · C cotton · S state and legibility</td></tr>
-<tr><th>Regime</th><td>P prologue · I muscle and fire · II organic (from c. 12,000 BCE) · III fossil (from 1700) · IV electric (from 1880) · V digital (from 1945)</td></tr>
-<tr><th>Mechanism</th><td>M1 extraction first · M2 hidden labour · M3 skill capture · M4 bottleneck = power · M5 cost shifting · M6 war as funder · M7 regulation lags · M8 legibility</td></tr>
-<tr><th>Labour</th><td>w wage · s enslaved · f forced · i indentured · u unpaid domestic · g gig</td></tr>
-<tr><th>Kind</th><td>filled marker: technology, material, events · open marker and serif type: ideas (texts, theories)</td></tr>
-<tr><th>Evidence</th><td>! documented · = consensus · ? contested or estimate</td></tr>
-<tr><th>Lines</th><td>solid: enabled · dashed: motivated · heavy: forced or extracted · wavy: resistance · dotted: replaced</td></tr>
+<tr><td colspan="2" class="bsp"><span class="mk"></span><b>056 1700/1721 GB&gt;IN M5 w =</b><br><b>Calico Acts curb Indian cloth</b><br>Indian weavers</td></tr>
+<tr><th><span class="mk"></span></th><td>Marker: exact date on the time axis. Filled: technology, material, event.</td></tr>
+<tr><th><span class="mk leer"></span></th><td>Open: idea (text, theory, concept).</td></tr>
+<tr><th>056</th><td>Node number. Sources are listed under this number.</td></tr>
+<tr><th>1700/1721</th><td>Date or period. c. = about, BCE = before year 1.</td></tr>
+<tr><th>GB&gt;IN</th><td>Where it started &gt; where it had effects (country codes).</td></tr>
+<tr><th>M5 w =</th><td>Mechanism, form of labour, evidence (see below).</td></tr>
+<tr><th>Line 2</th><td>What happened. Bold: technology, material, event. Light: idea.</td></tr>
+<tr><th>Line 3</th><td>Groups affected; if none are named, the change in italics. Where space is short, only two lines are printed.</td></tr>
+</table>
+<h3>TIME AXIS</h3>
+<table class="leg">
+<tr><td colspan="2">Time runs left to right on a log scale: each factor of ten in years before 2026 gets the same length. 1926–2016 takes as much space as 1 million to 100,000 years ago.</td></tr>
+<tr><td colspan="2">Year labels at top and bottom. Dotted vertical lines: 10, 100, 1000 ... years before 2026.</td></tr>
+<tr><td colspan="2">Where nodes crowd, a node moves right. A short mark at the top of its band shows its true date; a thin line leads to it.</td></tr>
+</table>
+<h3>REGIMES: THE MAIN ENERGY BASE</h3>
+<table class="leg">
+<tr><th>P</th><td>Prologue: stone tools, before regular fire (from 3.3 million years ago).</td></tr>
+<tr><th>I</th><td>Muscle and fire: human strength, fire for heat and cooking (from c. 1 million years ago).</td></tr>
+<tr><th>II</th><td>Organic: farming, animals, wood, water and wind (from c. 12,000 BCE).</td></tr>
+<tr><th>III</th><td>Fossil: coal and steam (from 1700).</td></tr>
+<tr><th>IV</th><td>Electric: electricity, oil, chemistry (from 1880).</td></tr>
+<tr><th>V</th><td>Digital: computers and networks (from 1945).</td></tr>
+<tr><td colspan="2">Heavy bars on the year scale and dotted lines through the bands mark where a regime begins.</td></tr>
+</table>
+<h3>THREADS: ONE BAND EACH</h3>
+<table class="leg">
+<tr><th>E</th><td>Energy: sources of energy and their use.</td></tr>
+<tr><th>I</th><td>Information: writing, numbers, printing, computing, networks.</td></tr>
+<tr><th>F</th><td>Food: farming, land, famine.</td></tr>
+<tr><th>L</th><td>Labour: work, workplaces, workers' organisations.</td></tr>
+<tr><th>R</th><td>Reproduction: bodies, birth, care and household work.</td></tr>
+<tr><th>C</th><td>Cotton: cotton and textiles as a global chain.</td></tr>
+<tr><th>S</th><td>State and legibility: states, money, trade rules, counting and identifying people.</td></tr>
+</table>
+<h3>MECHANISMS</h3>
+<table class="leg">
+<tr><th>M1</th><td>Extraction first: gains rest on raw materials or labour taken from elsewhere.</td></tr>
+<tr><th>M2</th><td>Hidden labour: work the technology needs is invisible or unpaid.</td></tr>
+<tr><th>M3</th><td>Skill capture: workers' knowledge moves into machines or management.</td></tr>
+<tr><th>M4</th><td>Bottleneck = power: whoever controls a scarce part controls the whole.</td></tr>
+<tr><th>M5</th><td>Cost shifting: costs fall on people other than those who gain.</td></tr>
+<tr><th>M6</th><td>War as funder: military demand pays for development.</td></tr>
+<tr><th>M7</th><td>Regulation lags: rules come after the harm.</td></tr>
+<tr><th>M8</th><td>Legibility: people and things made countable for state or market.</td></tr>
+</table>
+<h3>FORMS OF LABOUR</h3>
+<table class="leg">
+<tr><th>w</th><td>Wage labour.</td></tr>
+<tr><th>s</th><td>Enslaved.</td></tr>
+<tr><th>f</th><td>Forced labour, e.g. compulsory service (corvée, mita).</td></tr>
+<tr><th>i</th><td>Indentured: bound by contract for years.</td></tr>
+<tr><th>u</th><td>Unpaid domestic and care work.</td></tr>
+<tr><th>g</th><td>Gig work: paid per task through platforms.</td></tr>
+</table>
+<h3>EVIDENCE</h3>
+<table class="leg">
+<tr><th>!</th><td>Documented in the sources.</td></tr>
+<tr><th>=</th><td>Consensus among researchers.</td></tr>
+<tr><th>?</th><td>Contested or an estimate.</td></tr>
+</table>
+<h3>LINES BETWEEN NODES</h3>
+<table class="leg">
+<tr><td colspan="2">A line links a node with an earlier node it builds on. The style shows the kind of link:</td></tr>
+<tr><th><span class="ln solid"></span></th><td>enabled, transferred, adapted, invented</td></tr>
+<tr><th><span class="ln dashed"></span></th><td>motivated: gave the reason</td></tr>
+<tr><th><span class="ln heavy"></span></th><td>forced, extraction, suppression</td></tr>
+<tr><th><span class="ln wavy"></span></th><td>resistance against the earlier node</td></tr>
+<tr><th><span class="ln dotted"></span></th><td>replaced the earlier node</td></tr>
 </table>
 
 <h2 id="open">Open points from the fact check</h2>
