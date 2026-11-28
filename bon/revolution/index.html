@@ -173,7 +173,7 @@ const MECH = [
 ];
 
 const LEGEND = [
-  ['NODE', ['056 number (record pins by it) · date · origin>affected']],
+  ['NODE', ['056 number · date · origin>affected']],
   ['REGIME', ['P prologue · I muscle+fire · II organic · III fossil', 'IV electric · V digital']],
   ['', ['M1 extraction first', 'M2 hidden labour', 'M3 skill capture'], true],
   ['', ['M4 bottleneck=power', 'M5 cost shifting', 'M6 war as funder'], true],
@@ -252,7 +252,7 @@ function setzen(nodes, L, F){
   for (const n of nodes) {
     n.t1 = [n.id, n.date, n.place, ...n.mech, ...n.labour, n.evidence].filter(Boolean).join(' ');
     n.t2 = n.event;
-    n.t3 = n.paid ? 'PAID: ' + n.paid : n.change;
+    n.t3 = n.paid || n.change;   // betroffene Gruppen, sonst die Veränderung
     const w1 = breite(n.t1, f1), w2 = breite(n.t2, f2), w3 = breite(n.t3, f3);
     n.w2 = Math.ceil(9 + Math.max(w1, w2));
     n.w3 = Math.ceil(9 + Math.max(w1, w2, w3));
@@ -446,8 +446,8 @@ function kopf(ops, R, T){
   label('METHOD', y); y += 24;
   for (const z of umbrechen('Log scale: each factor of ten in years gets equal length. Read from 2026.', fM, 520)) { T(z, x, y, fM); y += 23; }
   y += 14;
-  label('NEEDLE', y); y += 24;
-  for (const z of umbrechen('Stick a needle into the strip where you think society took a wrong turn. Write down the node number next to it, or read the year off the scale.', fM, 520)) { T(z, x, y, fM); y += 23; }
+  label('STRUCTURE', y); y += 24;
+  for (const z of umbrechen('Seven bands, one per thread. Each node: number, date, place and codes; event; groups affected, otherwise the change. Lines connect a node with earlier nodes.', fM, 520)) { T(z, x, y, fM); y += 23; }
 
   legende(T, 600);
 }
