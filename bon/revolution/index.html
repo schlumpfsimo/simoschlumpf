@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BON · RÉVOLUTION</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 fill=%27%23fff%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27%23000%27 font-family=%27monospace%27 font-weight=%27700%27%3ERv%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* IBM Plex Sans (SIL Open Font License), aus bon/text/ */
+@font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-500-ext.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plex";src:url(../text/plex-700.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Hausstil simoschlumpf.ch: schwarz auf weiss, Plex 500/700, eckig, Europablau nur für die Auswahl am Bildschirm */
+:root{ --sans:"Plex",Arial,sans-serif; --muted:#555; --blau:#003399; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#000;font-family:var(--sans);font-weight:500;font-size:15px;line-height:1.45}
+header.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #000}
+.topbar,.wrap{max-width:1400px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:8px}
+.back{flex:none;border:1px solid #000;padding:5px 10px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#000;text-decoration:none;white-space:nowrap}
+.back:hover,.back:focus-visible{background:#000;color:#fff}
+.brand{color:#000;text-decoration:none;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.brand span{color:var(--muted);font-weight:500;letter-spacing:0;font-size:.75rem;display:block;text-transform:none}
+a{color:#000;text-decoration:none}
+a:hover,a:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+main{padding-top:14px;padding-bottom:40px}
+h2,.label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin:18px 0 6px}
+.stars{display:flex;gap:6px;margin:4px 0 10px}
+.stars svg{width:14px;height:14px}
+.intro{max-width:46em;margin:0}
+/* Bedienung */
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;margin-top:10px}
+.feld{display:flex;flex-direction:column;gap:4px}
+.feld span{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+input{font-family:var(--sans);font-weight:500;font-size:16px;color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px;width:7.5em}
+input.klein{width:4.5em}
+input:focus{outline:2px solid #000;outline-offset:-1px}
+.seg{display:flex;border:1px solid #000}
+.seg button{margin:0;padding:9px 12px;background:#fff;color:#000;border:0;border-left:1px solid #000;font-size:.78rem}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:#000;color:#fff}
+button{font-family:var(--sans);font-weight:700;font-size:.8rem;border:1px solid #000;border-radius:0;background:#000;color:#fff;text-transform:uppercase;letter-spacing:.12em;padding:.95em 1.4em;cursor:pointer}
+button:hover{background:#fff;color:#000}
+button:focus-visible{outline:3px solid var(--blau);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+button.hell{background:#fff;color:#000}
+button.hell:hover{background:#000;color:#fff}
+.knoepfe{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.msg{min-height:1.45em;margin:8px 0 0;font-size:.85rem}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+.stand{margin:6px 0 0;font-size:.82rem;color:var(--muted)}
+/* Vorschau: der Streifen quer, genau so, wie er gedruckt wird */
+.buehne{position:relative;margin-top:12px;border-top:1px solid #000;border-bottom:1px solid #000}
+.streifen{position:relative;overflow-x:auto;overflow-y:hidden;padding:10px 0;-webkit-overflow-scrolling:touch}
+.band{position:relative;display:flex;width:max-content}
+.band canvas{display:block;flex:none}
+.band.pix canvas{image-rendering:pixelated}
+.auswahl{position:absolute;border:2px solid var(--blau);pointer-events:none;display:none}
+.lade{padding:30px 0;color:var(--muted)}
+/* Seitenfeld mit allen Angaben zum Knoten */
+.panel{position:fixed;z-index:30;right:0;top:0;bottom:0;width:min(420px,100%);background:#fff;border-left:2px solid #000;padding:16px;overflow:auto;transform:translateX(105%);transition:transform .15s}
+.panel.offen{transform:none}
+.panel .zu{position:sticky;top:0;float:right;padding:.6em .9em}
+.panel h3{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin:4px 0 12px;padding-right:80px}
+.panel dl{margin:0;display:grid;grid-template-columns:7.5em 1fr;gap:6px 10px}
+.panel dt{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);padding-top:2px}
+.panel dd{margin:0;overflow-wrap:anywhere}
+.panel .src{font-size:.85rem}
+.pruef{margin:6px 0 0;padding:0;list-style:none;font-size:.82rem}
+.pruef li::before{content:"✓ ";font-weight:700}
+.pruef li.nein{color:var(--err)}
+.pruef li.nein::before{content:"✗ "}
+details{margin-top:18px;border-top:1px solid #000;padding-top:6px}
+summary{cursor:pointer;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar"><a class="back" href="../">← Zurück</a><a class="brand" href="../">BON<span>Révolution · Zeitstreifen über die Bon-Post</span></a></div>
+</header>
+<main>
+  <div class="wrap">
+    <h1 class="brand" style="font-size:1.6rem;margin:6px 0 0">Révolution</h1>
+    <div class="stars" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6.2 6.7.6-5.1 4.4 1.6 6.6L10 15.3 4.2 18.8l1.6-6.6L.7 7.8l6.7-.6z"/></svg><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6.2 6.7.6-5.1 4.4 1.6 6.6L10 15.3 4.2 18.8l1.6-6.6L.7 7.8l6.7-.6z"/></svg><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6.2 6.7.6-5.1 4.4 1.6 6.6L10 15.3 4.2 18.8l1.6-6.6L.7 7.8l6.7-.6z"/></svg></div>
+    <p class="intro">Ein langer Bon, quer gelesen: von den ersten Steinwerkzeugen bis zur KI, 194 Knoten auf einer logarithmischen Zeitachse. Antippen zeigt alle Angaben. <a href="sources/">Quellen</a></p>
+
+    <div class="ctrl">
+      <label class="feld"><span>Länge mm</span><input id="laenge" type="number" inputmode="numeric" min="1000" max="6000" step="50" value="3000"></label>
+      <label class="feld"><span>Schrift Z1</span><input id="f1" class="klein" type="number" inputmode="numeric" min="12" max="24" value="16"></label>
+      <label class="feld"><span>Z2</span><input id="f2" class="klein" type="number" inputmode="numeric" min="12" max="26" value="19"></label>
+      <label class="feld"><span>Z3</span><input id="f3" class="klein" type="number" inputmode="numeric" min="12" max="24" value="16"></label>
+      <div class="feld"><span id="zoomLabel">Zoom</span>
+        <div class="seg" id="zoom" role="group" aria-labelledby="zoomLabel"><button type="button" data-z="1">1:1</button><button type="button" data-z="2">1:2</button><button type="button" data-z="4">1:4</button><button type="button" data-z="8">1:8</button></div>
+      </div>
+    </div>
+    <p class="stand" id="stand">Wird gesetzt …</p>
+  </div>
+
+  <div class="buehne">
+    <div class="streifen" id="streifen"><div class="band" id="band"><div class="lade">Wird gesetzt …</div></div><div class="auswahl" id="auswahl"></div></div>
+  </div>
+
+  <div class="wrap">
+    <div class="knoepfe">
+      <button id="drucken">Drucken</button>
+      <button id="test" class="hell">Teststreifen 30 cm</button>
+      <button id="pngGanz" class="hell">PNG ganzer Streifen</button>
+      <button id="pngTeile" class="hell">PNG Teile</button>
+    </div>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <details>
+      <summary>Prüfungen</summary>
+      <ul class="pruef" id="pruef"></ul>
+    </details>
+  </div>
+</main>
+<script src="../protokoll.js"></script>
+
+<aside class="panel" id="panel" aria-live="polite"><button class="zu hell" id="zu">Schliessen</button><div id="panelInhalt"></div></aside>
+
+<script src="../visitenkarte/qrcode.js"></script>
+<script>
+'use strict';
+// ================================================================ Bon-Post
+// SCHLUESSEL_WEB darf nur Bons einreichen, nicht abholen. Er steht bewusst hier (bon/NEUE-APP.md).
+const BONPOST = 'https://script.google.com/macros/s/AKfycbybhUj3fPzuWVAq5YSFySGDCOMm71ju701daFsumULrEZquLH13QnX97s5kP8P5EDly/exec';
+const KEY = 'web_0513d4bd6bdab3921edc5a817f93029b';
+
+// ================================================================ Druck
+const W = 576;              // Breite quer zum Papier: 72 mm bei 203 dpi (Equip 351003)
+const DPM = 8;              // Punkte pro mm
+const SLICE = 1980;         // höchstens 2000 Punkte pro Teil; Vielfaches von 36, damit die Bon-Post punktgenau druckt
+const SCHWELLE = 128;       // 50 %
+const SOURCES_URL = 'https://www.simoschlumpf.ch/bon/revolution/sources/';
+const SOURCES_TEXT = 'simoschlumpf.ch/bon/revolution/sources';
+
+// ================================================================ Aufteilung quer (oben nach unten, wenn der Streifen liegt)
+const SCALE_TOP = 48, SCALE_BOT = 24;
+const THREADS = [
+  { k: 'E', name: 'Energy', h: 72 },
+  { k: 'I', name: 'Information', h: 106 },
+  { k: 'F', name: 'Food', h: 62 },
+  { k: 'L', name: 'Labour', h: 78 },
+  { k: 'R', name: 'Reproduction', h: 56 },
+  { k: 'C', name: 'Cotton', h: 56 },
+  { k: 'S', name: 'State and legibility', h: 74 },
+];
+{ let y = SCALE_TOP; for (const t of THREADS) { t.y = y; y += t.h; } if (y + SCALE_BOT !== W) throw new Error('Bänder ergeben nicht 576 Punkte'); }
+
+// Längs (links nach rechts)
+const HEAD = 1200;          // Kopf ~150 mm
+const MARGIN_L = 60;        // Platz für die Bandbuchstaben vor der Zeitachse
+const EXC = 1600;           // KI-Exkurs ~200 mm
+const FOOT = 960;           // Schluss ~120 mm
+const GAP = 14;             // Abstand zwischen zwei Knoten in einer Spur
+const POSMAX = 6.52;        // log10 der Jahre vor 2026 am linken Rand (3,3 Mio. Jahre)
+const TEST_MM = 300;
+
+const STRUCT = {
+  enabled: 'solid', transfer: 'solid', adaptation: 'solid', invention: 'solid', '': 'solid',
+  motivated: 'dashed', forced: 'heavy', extraction: 'heavy', suppression: 'heavy',
+  resistance: 'wavy', replaced: 'dotted',
+};
+
+const MECH = [
+  ['M1', 'extraction first'], ['M2', 'hidden labour'], ['M3', 'skill capture'], ['M4', 'bottleneck=power'],
+  ['M5', 'cost shifting'], ['M6', 'war as funder'], ['M7', 'regulation lags'], ['M8', 'legibility'],
+];
+
+const LEGEND = [
+  ['NODE', ['056 number (record pins by it) · date · origin>affected']],
+  ['REGIME', ['P prologue · I muscle+fire · II organic · III fossil', 'IV electric · V digital']],
+  ['', ['M1 extraction first', 'M2 hidden labour', 'M3 skill capture'], true],
+  ['', ['M4 bottleneck=power', 'M5 cost shifting', 'M6 war as funder'], true],
+  ['', ['M7 regulation lags', 'M8 legibility'], true],
+  ['LABOUR', ['w wage s enslaved f forced i indentured', 'u unpaid domestic g gig']],
+  ['EVIDENCE', ['! documented  = consensus  ? contested/estimate']],
+  ['LINES', ['solid enabled · dashed motivated · heavy forced/extracted', 'wavy resistance · dotted replaced']],
+  ['THREADS', ['E energy I information F food L labour', 'R reproduction C cotton S state/legibility']],
+];
+
+const STACK = [
+  ['MINERALS', 'copper, cobalt, lithium, gallium, rare earths: CD, CL, CN'],
+  ['CHIPS', 'EUV machines from one firm (NL), leading chips mostly TW'],
+  ['ENERGY', 'data centres ~415 TWh = ~1.5% of world electricity 2024 (IEA)'],
+  ['DATA', 'text, images, code written by millions, mostly unpaid'],
+  ['LABOUR', 'labelling, rating, filtering: KE, PH, VE, IN'],
+  ['CAPITAL', 'a handful of firms with cloud and cash'],
+  ['TRAINING', 'predict the next word, then tuned by human raters'],
+  ['USE', 'offices, schools, platforms, homes'],
+  ['WASTE', 'short hardware cycles, e-waste'],
+];
+
+const REGIMES = [
+  { r: 'P', ybp: 3302026, t: 'P' },
+  { r: 'I', ybp: 1000000, t: 'I' },
+  { r: 'II', year: -12000, t: 'II c. 12,000 BCE', bar: true },
+  { r: 'III', year: 1700, t: 'III 1700', bar: true },
+  { r: 'IV', year: 1880, t: 'IV 1880', bar: true },
+  { r: 'V', year: 1945, t: 'V 1945', bar: true },
+];
+
+const FONT = (px, w = 500) => `${w} ${px}px "Plex", Arial, sans-serif`;
+const $ = id => document.getElementById(id);
+const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
+const store = {
+  get(k, d){ try { return localStorage.getItem('bon.revolution.' + k) ?? d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('bon.revolution.' + k, v); } catch {} },
+};
+
+// ================================================================ Zeitachse
+const ybpOf = year => Math.max(1, 2026 - year);
+const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function yearLabel(ybp){
+  if (ybp >= 1e6) return (Math.round(ybp / 1e5) / 10) + 'M years ago';
+  if (ybp >= 1e5) return fmt(ybp) + ' years ago';
+  const year = 2026 - ybp;
+  if (ybp >= 1e4) return fmt(Math.round(-year / 1000) * 1000) + ' BCE';
+  if (year <= 0) return String(-year || 1) + ' BCE';
+  return String(year);
+}
+
+// ================================================================ Messen
+const mess = document.createElement('canvas').getContext('2d');
+function breite(t, font, sp = 0){
+  mess.font = font;
+  if (!sp) return mess.measureText(t).width;
+  let w = 0; for (const c of t) w += mess.measureText(c).width;
+  return w + sp * Math.max(0, [...t].length - 1);
+}
+// Zeilen umbrechen
+function umbrechen(t, font, max){
+  const out = []; let z = '';
+  for (const w of t.split(' ')) {
+    const p = z ? z + ' ' + w : w;
+    if (z && breite(p, font) > max) { out.push(z); z = w; } else z = p;
+  }
+  if (z) out.push(z);
+  return out;
+}
+
+// ================================================================ Satz: alles als Liste von Zeichenbefehlen in Querkoordinaten
+// ops.lines: Linien hinter allem (Pixel in eine Ebene), ops.knock: weisse Kästen, ops.rects/ops.text/ops.top: darüber
+function setzen(nodes, L, F){
+  const lh1 = F.l1, lh2 = F.l2, lh3 = F.l3, h2 = lh1 + lh2, h3 = h2 + lh3;
+  const f1 = FONT(lh1, 700), f2 = FONT(lh2, 500), f3 = FONT(lh3, 500);
+  for (const n of nodes) {
+    n.t1 = [n.id, n.date, n.place, ...n.mech, ...n.labour, n.evidence].filter(Boolean).join(' ');
+    n.t2 = n.event;
+    n.t3 = n.paid ? 'PAID: ' + n.paid : n.change;
+    const w1 = breite(n.t1, f1), w2 = breite(n.t2, f2), w3 = breite(n.t3, f3);
+    n.w2 = Math.ceil(9 + Math.max(w1, w2));
+    n.w3 = Math.ceil(9 + Math.max(w1, w2, w3));
+  }
+  const X0 = HEAD + MARGIN_L;
+  let pad = 240, lay = null;
+  for (let i = 0; i < 6; i++) {
+    const TL = L - X0 - pad - EXC - FOOT;
+    lay = platzieren(nodes, X0, TL, { lh1, lh2, lh3, h2, h3 });
+    const need = Math.max(0, lay.maxEnd - (X0 + TL)) + 60;
+    if (need <= pad) break;
+    pad = need;
+  }
+  const TL = lay.TL, XE = Math.max(X0 + TL + pad, lay.maxEnd + 60);
+  const XF = XE + EXC, LEND = Math.max(L, XF + FOOT);
+  const ops = { lines: [], knock: [], rects: [], text: [], top: [] };
+  const R = (x, y, w, h, c = 0, liste = ops.rects) => liste.push({ x, y, w, h, c });
+  const T = (t, x, y, font, sp = 0, c = 0, liste = ops.text) => liste.push({ t, x, y, font, sp, c });
+  const xOf = ybp => Math.round(X0 + (POSMAX - Math.log10(ybp)) / POSMAX * TL);
+
+  // ------------------------------------------------ Kopf
+  kopf(ops, R, T);
+  R(HEAD - 2, 0, 2, W);   // Trennlinie Kopf | Zeitachse
+
+  // ------------------------------------------------ Skala oben und unten
+  const tEnd = X0 + TL;
+  const ticks = [];
+  for (let k = 0; k <= 6; k++) for (let m = 1; m <= 9; m++) {
+    const ybp = m * 10 ** k; if (ybp > 3302026) continue;
+    ticks.push({ ybp, art: m === 1 ? 3 : (m === 2 || m === 5) ? 2 : 1 });
+  }
+  ticks.push({ ybp: 3302026, art: 3 });
+  const fL = FONT(17, 700), fB = FONT(14, 700);
+  // Beschriftungen nach Wichtigkeit setzen, Überlappungen auslassen
+  const belegtO = [], belegtU = [];
+  const frei = (liste, a, b) => !liste.some(([c, d]) => a < d + 18 && b + 18 > c);
+  for (const t of [...ticks].sort((a, b) => b.art - a.art || a.ybp - b.ybp)) {
+    const x = xOf(t.ybp), lab = yearLabel(t.ybp);
+    const wO = breite(lab, fL); let a = Math.round(x - wO / 2);
+    a = Math.max(X0 - 20, Math.min(a, tEnd - wO));
+    if (frei(belegtO, a, a + wO)) { belegtO.push([a, a + wO]); T(lab, a, 34, fL); }
+    if (t.art >= 2) {
+      const wU = breite(lab, fB); let b = Math.round(x - wU / 2);
+      b = Math.max(X0 - 20, Math.min(b, tEnd - wU));
+      if (frei(belegtU, b, b + wU)) { belegtU.push([b, b + wU]); T(lab, b, W - 4, fB); }
+    }
+  }
+  for (const t of ticks) {
+    const x = xOf(t.ybp), h = [0, 4, 7, 10][t.art];
+    R(x, SCALE_TOP - h, t.art === 3 ? 2 : 1, h);
+    R(x, W - SCALE_BOT + 1, t.art === 3 ? 2 : 1, Math.max(3, h - 2));
+    if (t.art === 3) for (let y = SCALE_TOP + 4; y < W - SCALE_BOT; y += 12) ops.lines.push({ dot: [x, y] });   // feines Raster durch die Bänder
+  }
+  // Regime: Buchstaben und Grenzen
+  const fR = FONT(16, 700);
+  for (const g of REGIMES) {
+    const x = xOf(g.ybp ?? ybpOf(g.year));
+    if (g.bar) {
+      R(x - 1, 0, 3, SCALE_TOP);
+      R(x - 1, W - SCALE_BOT, 3, SCALE_BOT);
+      ops.lines.push({ pattern: 'regime', x, y0: SCALE_TOP, y1: W - SCALE_BOT });
+      T(g.t, x + 6, 16, fR);
+    } else T(g.t, Math.max(X0 - 20, x + 6), 16, fR);
+  }
+  // Linie unter der oberen und über der unteren Skala
+  R(HEAD, SCALE_TOP, XE - 30 - HEAD, 1);
+  R(HEAD, W - SCALE_BOT, XE - 30 - HEAD, 1);
+
+  // ------------------------------------------------ Bänder
+  for (const th of THREADS) {
+    R(HEAD, th.y, XE - 30 - HEAD, 1);   // Haarlinie zwischen den Bändern
+  }
+  const blocks = [];
+  for (const n of nodes) {
+    const th = n.band;
+    const x = n.px, top = n.top;
+    const w = n.lines === 3 ? n.w3 : n.w2, h = n.lines === 3 ? h3 : h2;
+    R(x - 2, top, w + 4, h, 1, ops.knock);
+    const my = top + Math.round(lh1 / 2);
+    R(x, my - 3, 6, 6, 0, ops.top);   // Marke
+    T(n.t1, x + 9, top + Math.round(lh1 * 0.8), f1);
+    T(n.t2, x + 9, top + lh1 + Math.round(lh2 * 0.8), f2);
+    if (n.lines === 3) T(n.t3, x + 9, top + h2 + Math.round(lh3 * 0.8), f3);
+    n.mx = x + 3; n.my = my;
+    if (n.shifted) {
+      // Wahre Lage: Strich an der Bandkante, dünne Führungslinie zur Marke
+      R(n.tx - 1, th.y + 1, 3, 7, 0, ops.top);
+      ops.lines.push({ from: [n.tx, th.y + 8], to: [n.mx, n.my], style: 'solid' });
+    }
+    blocks.push({ n, x: x - 2, y: top, w: w + 4, h });
+  }
+  // Ursachen
+  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  for (const n of nodes) for (const c of n.causes) {
+    const a = byId[c];
+    ops.lines.push({ from: [a.mx, a.my], to: [n.mx, n.my], style: STRUCT[n.link] || 'solid' });
+  }
+  // Bandbuchstaben etwa alle 100 mm, wo Platz ist
+  const fBand = FONT(14, 700);
+  for (const th of THREADS) {
+    const eigene = blocks.filter(b => b.n.thread === th.k);
+    const box = x => { R(x, th.y + 3, 18, 18, 0, ops.top); const w = breite(th.k, fBand); T(th.k, Math.round(x + 9 - w / 2), th.y + 17, fBand, 0, 1, ops.top); R(x - 2, th.y + 1, 22, 22, 1, ops.knock); };
+    box(HEAD + 16);
+    for (let c = X0 + 800; c < X0 + TL + pad - 40; c += 800) {
+      for (const dx of [0, 40, -40, 80, -80, 120, -120, 160, -160, 200, -200, 260, -260, 320, -320, 400, -400]) {
+        const x = c + dx;
+        if (x < X0 || x > X0 + TL + pad - 40) continue;
+        const kollidiert = eigene.some(b => x - 4 < b.x + b.w && x + 22 > b.x && th.y + 1 < b.y + b.h && th.y + 24 > b.y)
+          || nodes.some(n => n.thread === th.k && n.shifted && Math.abs(n.tx - x - 9) < 16);
+        if (!kollidiert) { box(x); break; }
+      }
+    }
+  }
+
+  // ------------------------------------------------ KI-Exkurs und Schluss
+  R(XE - 2, 0, 2, W);
+  exkurs(ops, R, T, XE);
+  R(XF - 2, 0, 2, W);
+  schluss(ops, R, T, XF, nodes);
+
+  return { ops, L: LEND, X0, TL, XE, XF, blocks, xOf, lay };
+}
+
+// Greedy-Spuren je Band. Passt ein Knoten nicht an seine Stelle, rückt er nach rechts und bekommt eine Führungslinie.
+function platzieren(nodes, X0, TL, m){
+  let maxEnd = 0, shifted = 0, zwei = 0;
+  for (const th of THREADS) {
+    const inner = th.h - 1;
+    const lanes = Math.max(1, Math.floor(inner / m.h2));
+    const laneTop = i => th.y + 1 + i * m.h2;
+    const fits3 = i => (laneTop(i) - th.y - 1) + m.h3 <= inner;
+    const span3 = i => { const s = []; for (let j = i; j < lanes; j++) if (laneTop(j) < laneTop(i) + m.h3) s.push(j); return s; };
+    const ns = nodes.filter(n => n.thread === th.k);
+    for (const n of ns) { n.band = th; n.tx = Math.round(X0 + (POSMAX - Math.log10(ybpOf(n.year))) / POSMAX * TL); }
+    ns.sort((a, b) => a.tx - b.tx || a.id.localeCompare(b.id));
+    const ends = Array(lanes).fill(-Infinity);
+    ns.forEach((n, idx) => {
+      const tx = n.tx;
+      const free = [...ends.keys()].filter(i => ends[i] + GAP <= tx);
+      n.shifted = false;
+      if (free.length) {
+        let ahead = 0;
+        for (let k = idx + 1; k < ns.length && ns[k].tx < tx + n.w3 + GAP; k++) ahead++;
+        let done = false;
+        for (const i of free) {
+          if (!fits3(i)) continue;
+          const sp = span3(i);
+          if (sp.every(j => free.includes(j)) && ahead <= free.length - sp.length) {
+            n.lines = 3; n.lane = i; n.px = tx; n.top = laneTop(i);
+            for (const j of sp) ends[j] = tx + n.w3;
+            done = true; break;
+          }
+        }
+        if (!done) { const i = free[0]; n.lines = 2; n.lane = i; n.px = tx; n.top = laneTop(i); ends[i] = tx + n.w2; }
+      } else {
+        let i = 0; for (let j = 1; j < lanes; j++) if (ends[j] < ends[i]) i = j;
+        n.lines = 2; n.lane = i; n.px = Math.ceil(ends[i] + GAP); n.top = laneTop(i); ends[i] = n.px + n.w2;
+        n.shifted = true; shifted++;
+      }
+      if (n.lines === 2) zwei++;
+      maxEnd = Math.max(maxEnd, n.px + (n.lines === 3 ? n.w3 : n.w2));
+    });
+  }
+  return { maxEnd, shifted, zwei, TL };
+}
+
+function stern(R, cx, cy, r){
+  // Fünfzackiger Stern aus ganzen Punkten: Zeile für Zeile füllen
+  const pts = [];
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.40 : r; pts.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]); }
+  for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) {
+    const yy = y + 0.5, xs = [];
+    for (let i = 0; i < 10; i++) {
+      const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % 10];
+      if ((y1 <= yy && y2 > yy) || (y2 <= yy && y1 > yy)) xs.push(x1 + (yy - y1) / (y2 - y1) * (x2 - x1));
+    }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2) { const a = Math.round(xs[k]), b = Math.round(xs[k + 1]); if (b > a) R(a, y, b - a, 1); }
+  }
+}
+
+function kopf(ops, R, T){
+  const x = 32;
+  // Titel gesperrt 0,12 em, Zeichen für Zeichen
+  const ft = FONT(70, 700);
+  T('RÉVOLUTION', x, 104, ft, Math.round(70 * 0.12));
+  stern(R, x + 16, 142, 16); stern(R, x + 56, 142, 16); stern(R, x + 96, 142, 16);
+  let y = 200;
+  const fTh = FONT(26, 700);
+  for (const z of umbrechen('Every revolution has a bill. This is who paid it.', fTh, 520)) { T(z, x, y, fTh); y += 32; }
+  y += 14;
+  const fM = FONT(18, 500), fLab = FONT(14, 700);
+  const label = (t, yy) => T(t, x, yy, fLab, Math.round(14 * 0.14));
+  label('METHOD', y); y += 24;
+  for (const z of umbrechen('Log scale: each factor of ten in years gets equal length. Read from 2026.', fM, 520)) { T(z, x, y, fM); y += 23; }
+  y += 14;
+  label('NEEDLE', y); y += 24;
+  for (const z of umbrechen('Stick a needle into the strip where you think society took a wrong turn. Write down the node number next to it, or read the year off the scale.', fM, 520)) { T(z, x, y, fM); y += 23; }
+
+  // Legende rechts
+  const lx = 600, tx = lx + 104, fl = FONT(16, 500), fk = FONT(15, 700);
+  let ly = 44;
+  T('LEGEND', lx, ly, fLab, Math.round(14 * 0.14)); ly += 30;
+  for (const [lab, zeilen, spalten] of LEGEND) {
+    if (spalten) {
+      zeilen.forEach((z, i) => T(z, lx + i * 186, ly, fl));
+      ly += 22;
+    } else {
+      if (lab) T(lab, lx, ly, fk);
+      for (const z of zeilen) { T(z, tx, ly, fl); ly += 22; }
+    }
+    ly += 6;
+  }
+}
+
+function exkurs(ops, R, T, X){
+  const x = X + 40, fLab = FONT(14, 700);
+  T('AI EXCURSUS', x, 44, fLab, 2);
+  T('THE PRODUCTION STACK', x, 82, FONT(30, 700), Math.round(30 * 0.12));
+  const fK = FONT(19, 700), fT = FONT(20, 500);
+  const top = 110, h = Math.floor((W - 24 - top) / STACK.length);
+  STACK.forEach(([k, t], i) => {
+    const y = top + i * h;
+    R(x, y, 1100, 1);
+    T(k, x + 34, y + Math.round(h * 0.66), fK, 2);
+    T(t, x + 230, y + Math.round(h * 0.66), fT);
+    // kleiner Pfeil nach unten zur nächsten Schicht
+    if (i < STACK.length - 1) for (let r = 0; r < 7; r++) R(x + 8 + r, y + h - 10 + r, 14 - 2 * r, 1);
+  });
+  R(x, top + STACK.length * h, 1100, 1);
+}
+
+function schluss(ops, R, T, X, nodes){
+  const x = X + 40, fLab = FONT(14, 700), f = FONT(18, 500), fk = FONT(18, 700);
+  T('MECHANISMS', x, 44, fLab, 2);
+  const zahl = Object.fromEntries(MECH.map(([k]) => [k, 0]));
+  for (const n of nodes) for (const m of n.mech) if (m in zahl) zahl[m]++;
+  const max = Math.max(...Object.values(zahl));
+  let y = 80;
+  for (const [k, name] of MECH) {
+    T(k, x, y, fk); T(name, x + 44, y, f);
+    const n = zahl[k], bx = x + 230;
+    for (let i = 0; i < n; i++) R(bx + i * 8, y - 13, 6, 14);
+    T(String(n), bx + max * 8 + 10, y, fk);
+    y += 30;
+  }
+  const strittig = nodes.filter(n => n.evidence === '?').length;
+  y += 14;
+  T(`${nodes.length} nodes · ${strittig} marked ? (contested or estimate)`, x, y, f);
+
+  // Quellen mit QR-Code
+  const qx = X + 40, qy = 380;
+  T('SOURCES', qx, qy - 20, fLab, 2);
+  T(SOURCES_TEXT, qx, qy + 10, fk);
+  const datum = new Date();
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  T(`Printed ${datum.getDate()} ${MON[datum.getMonth()]} ${datum.getFullYear()}`, qx, qy + 40, f);
+  stern(R, qx + 12, qy + 100, 12); stern(R, qx + 42, qy + 100, 12); stern(R, qx + 72, qy + 100, 12);
+  if (window.qrcode) {
+    qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+    const q = qrcode(0, 'M'); q.addData(SOURCES_URL, 'Byte'); q.make();
+    const n = q.getModuleCount(), mod = 5, qs = n * mod, ox = X + FOOT - 40 - qs - 4 * mod, oy = W - 40 - qs;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) R(ox + c * mod, oy + r * mod, mod, mod);
+  }
+}
+
+// ================================================================ Linienebene (Pixel, ohne Kantenglättung)
+function linienZeichnen(ops, L){
+  const ebene = new Uint8Array(L * W);
+  const set = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < L && y >= 0 && y < W) ebene[y * L + x] = 1; };
+  const brush = (x, y, d) => { if (d === 1) set(x, y); else for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) set(x + i, y + j); };
+  for (const l of ops.lines) {
+    if (l.dot) { set(l.dot[0], l.dot[1]); continue; }
+    if (l.pattern === 'regime') { for (let y = l.y0; y < l.y1; y++) if (y % 6 < 2) set(l.x, y); continue; }
+    const [x1, y1] = l.from, [x2, y2] = l.to, dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+    if (!len) continue;
+    const ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+    for (let s = 0; s <= len; s += 0.5) {
+      const x = x1 + ux * s, y = y1 + uy * s;
+      switch (l.style) {
+        case 'dashed': if (s % 10 < 6) set(x, y); break;
+        case 'dotted': if (s % 4 < 1) set(x, y); break;
+        case 'heavy': brush(x, y, 3); break;
+        case 'wavy': { const o = 2 * Math.sin(s * 2 * Math.PI / 12); set(x + nx * o, y + ny * o); break; }
+        default: set(x, y);
+      }
+    }
+  }
+  return ebene;
+}
+
+// ================================================================ Rastern: Teil für Teil zeichnen, 1 Bit, Schwelle 50 %
+// Ergebnis quer: px[y * L + x] = 1 (schwarz) für x längs, y quer
+async function rastern(satz){
+  const { ops, L } = satz;
+  const ebene = linienZeichnen(ops, L);
+  const px = new Uint8Array(L * W);
+  const canvases = [];
+  const cv = document.createElement('canvas');
+  for (let x0 = 0; x0 < L; x0 += SLICE) {
+    const sw = Math.min(SLICE, L - x0);
+    cv.width = sw; cv.height = W;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    const img = g.createImageData(sw, W), d = img.data;
+    for (let y = 0; y < W; y++) for (let x = 0; x < sw; x++) { const v = ebene[y * L + x0 + x] ? 0 : 255, i = (y * sw + x) * 4; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    g.putImageData(img, 0, 0);
+    g.save(); g.translate(-x0, 0);
+    const sicht = o => o.x < x0 + sw + 20 && (o.w ? o.x + o.w > x0 - 20 : o.x > x0 - 2000);
+    for (const r of ops.knock) if (sicht(r)) { g.fillStyle = '#fff'; g.fillRect(r.x, r.y, r.w, r.h); }
+    for (const r of ops.rects) if (sicht(r)) { g.fillStyle = r.c ? '#fff' : '#000'; g.fillRect(r.x, r.y, r.w, r.h); }
+    g.textBaseline = 'alphabetic';
+    const text = o => {
+      g.fillStyle = o.c ? '#fff' : '#000'; g.font = o.font;
+      if (!o.sp) { g.fillText(o.t, o.x, o.y); return; }
+      let x = o.x; for (const c of o.t) { g.fillText(c, x, o.y); x += g.measureText(c).width + o.sp; }
+    };
+    for (const o of ops.text) if (sicht(o)) text(o);
+    for (const o of ops.top) { if (!sicht(o)) continue; if (o.t != null) text(o); else { g.fillStyle = o.c ? '#fff' : '#000'; g.fillRect(o.x, o.y, o.w, o.h); } }
+    g.restore();
+    const out = g.getImageData(0, 0, sw, W), od = out.data;
+    for (let y = 0; y < W; y++) for (let x = 0; x < sw; x++) {
+      const i = (y * sw + x) * 4;
+      const schwarz = 0.299 * od[i] + 0.587 * od[i + 1] + 0.114 * od[i + 2] < SCHWELLE;
+      px[y * L + x0 + x] = schwarz ? 1 : 0;
+    }
+    await new Promise(r => setTimeout(r));
+  }
+  return px;
+}
+
+// ================================================================ Bitfelder
+// Quer (zum Anschauen, PNG ganzer Streifen): Breite L, Höhe 576
+function querBits(px, L, xa = 0, xb = L){
+  const w = xb - xa, bpr = Math.ceil(w / 8), bits = new Uint8Array(bpr * W);
+  for (let y = 0; y < W; y++) for (let x = 0; x < w; x++) if (px[y * L + xa + x]) bits[y * bpr + (x >> 3)] |= 0x80 >> (x & 7);
+  return { w, h: W, bits };
+}
+// Druckrichtung: Breite 576, Höhe = Länge. Erste gedruckte Zeile = linkes Ende des liegenden Streifens.
+// Bildpunkt (x, y) = Querpunkt (X = y, Y = 575 - x): so liegt der Text richtig, wenn der Anfang links liegt.
+function druckTeile(px, L, xa = 0, xb = L){
+  const teile = [];
+  for (let s = xa; s < xb; s += SLICE) {
+    const len = Math.min(SLICE, xb - s), h = Math.ceil(len / 36) * 36, bpr = W / 8, bits = new Uint8Array(bpr * h);
+    for (let y = 0; y < len; y++) {
+      const X = s + y;
+      for (let x = 0; x < W; x++) if (px[(W - 1 - x) * L + X]) bits[y * bpr + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+    teile.push({ w: W, h, len, bits });
+  }
+  return teile;
+}
+
+// 1-Bit-Graustufen-PNG (Weiss = 1)
+async function png({ w, h, bits }){
+  const bpr = Math.ceil(w / 8), raw = new Uint8Array((bpr + 1) * h);
+  for (let y = 0; y < h; y++) for (let i = 0; i < bpr; i++) raw[y * (bpr + 1) + 1 + i] = ~bits[y * bpr + i] & 255;
+  // Rest der letzten Byte-Spalte weiss
+  if (w % 8) { const m = 0xff >> (w % 8); for (let y = 0; y < h; y++) raw[y * (bpr + 1) + bpr] |= m; }
+  const idat = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const ihdr = new Uint8Array(13), v = new DataView(ihdr.buffer);
+  v.setUint32(0, w); v.setUint32(4, h); ihdr[8] = 1;
+  return new Blob([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10), chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+}
+function chunk(type, data){
+  const out = new Uint8Array(12 + data.length), v = new DataView(out.buffer);
+  v.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  v.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
+function crc32(d){ let c = 0xffffffff; for (const b of d) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+const dataUrl = blob => new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+
+// ================================================================ Zustand, Vorschau
+let NODES = null, satz = null, px = null, zoom = Number(store.get('zoom', '1')) || 1, gewaehlt = null;
+
+async function laden(){
+  const r = await fetch('revolution-nodes.json', { cache: 'no-cache' });
+  NODES = await r.json();
+  await Promise.all([document.fonts.load(FONT(20, 500), 'AÉ'), document.fonts.load(FONT(20, 700), 'AÉ')]);
+}
+
+const params = () => ({
+  L: Math.round(Math.min(6000, Math.max(1000, Number($('laenge').value) || 3000))) * DPM,
+  F: { l1: num('f1', 16), l2: num('f2', 19), l3: num('f3', 16) },
+});
+const num = (id, d) => Math.round(Math.min(26, Math.max(12, Number($(id).value) || d)));
+
+let laeuft = Promise.resolve(), warte = null;
+function spaeter(){ clearTimeout(warte); warte = setTimeout(() => { laeuft = laeuft.then(zeichnen, zeichnen); }, 250); }
+
+async function zeichnen(){
+  const { L, F } = params();
+  $('stand').textContent = 'Wird gesetzt …';
+  const nodes = NODES.map(n => ({ ...n }));
+  satz = setzen(nodes, L, F);
+  satz.nodes = nodes;
+  px = await rastern(satz);
+  vorschau();
+  pruefen();
+}
+
+function vorschau(){
+  const { L } = satz, band = $('band');
+  band.innerHTML = '';
+  band.className = 'band' + (zoom === 1 ? ' pix' : '');
+  for (let x0 = 0; x0 < L; x0 += SLICE) {
+    const sw = Math.min(SLICE, L - x0), c = document.createElement('canvas');
+    c.width = sw; c.height = W; c.style.width = sw / zoom + 'px'; c.style.height = W / zoom + 'px';
+    const g = c.getContext('2d'), img = g.createImageData(sw, W), d = img.data;
+    for (let y = 0; y < W; y++) for (let x = 0; x < sw; x++) { const v = px[y * L + x0 + x] ? 0 : 255, i = (y * sw + x) * 4; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    g.putImageData(img, 0, 0);
+    band.appendChild(c);
+  }
+  const n = satz.nodes, sh = n.filter(k => k.shifted), dicht = sh.filter(k => k.year >= 1926 && k.year <= 2016);
+  const mm = Math.round(satz.L / DPM);
+  $('stand').textContent = `${n.length} Knoten · ${sh.length} verschoben mit Führungslinie (davon ${dicht.length} in 1926–2016) · ${satz.lay.zwei} zweizeilig · Streifen ${mm} mm` + (mm > Number($('laenge').value) ? ' (länger als eingestellt, damit nichts fehlt)' : '');
+  markieren();
+}
+
+function markieren(){
+  const a = $('auswahl');
+  const b = gewaehlt && satz.blocks.find(b => b.n.id === gewaehlt);
+  if (!b) { a.style.display = 'none'; return; }
+  a.style.display = 'block';
+  a.style.left = (b.x / zoom - 2) + 'px'; a.style.top = (10 + b.y / zoom - 2) + 'px';
+  a.style.width = (b.w / zoom + 4) + 'px'; a.style.height = (b.h / zoom + 4) + 'px';
+}
+
+$('band').addEventListener('click', e => {
+  if (!satz) return;
+  const r = $('band').getBoundingClientRect();
+  const X = (e.clientX - r.left) * zoom, Y = (e.clientY - r.top) * zoom;
+  let best = satz.blocks.find(b => X >= b.x && X < b.x + b.w && Y >= b.y && Y < b.y + b.h);
+  if (!best) {
+    let d = 30 * zoom;
+    for (const b of satz.blocks) { const dd = Math.hypot(b.n.mx - X, b.n.my - Y); if (dd < d) { d = dd; best = b; } }
+  }
+  if (best) zeigen(best.n.id);
+});
+
+const FELDER = [['id', 'ID'], ['date', 'Date'], ['year', 'Year'], ['regime', 'Regime'], ['thread', 'Thread'], ['place', 'Place'], ['event', 'Event'], ['change', 'Change'], ['gained', 'Gained'], ['paid', 'Paid'], ['labour', 'Labour'], ['mech', 'Mechanism'], ['causes', 'Causes'], ['link', 'Link'], ['evidence', 'Evidence'], ['source', 'Source']];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function zeigen(id){
+  const n = satz.nodes.find(k => k.id === id); if (!n) return;
+  gewaehlt = id; markieren();
+  const MN = Object.fromEntries(MECH);
+  const wert = (k) => {
+    const v = n[k];
+    if (k === 'causes') return v.length ? v.map(c => `<a href="#" data-id="${c}">${c} ${esc(satz.nodes.find(x => x.id === c)?.event || '')}</a>`).join('<br>') : '–';
+    if (k === 'mech') return v.length ? v.map(m => `${m} ${MN[m] || ''}`).join('<br>') : '–';
+    if (k === 'thread') return v + ' ' + (THREADS.find(t => t.k === v)?.name || '');
+    if (k === 'source') return esc(v).replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    if (Array.isArray(v)) return v.length ? esc(v.join(' ')) : '–';
+    return v === '' ? '–' : esc(v);
+  };
+  $('panelInhalt').innerHTML = `<h3>${esc(n.id)} ${esc(n.event)}</h3><dl>${FELDER.map(([k, l]) => `<dt>${l}</dt><dd${k === 'source' ? ' class="src"' : ''}>${wert(k)}</dd>`).join('')}</dl>`;
+  $('panel').classList.add('offen');
+  const s = $('streifen'), b = satz.blocks.find(b => b.n.id === id);
+  if (b) { const l = b.x / zoom - s.clientWidth / 3; if (b.x / zoom < s.scrollLeft || b.x / zoom > s.scrollLeft + s.clientWidth - 40) s.scrollLeft = l; }
+}
+$('panelInhalt').addEventListener('click', e => { const a = e.target.closest('a[data-id]'); if (a) { e.preventDefault(); zeigen(a.dataset.id); } });
+$('zu').addEventListener('click', () => { $('panel').classList.remove('offen'); gewaehlt = null; markieren(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('zu').click(); });
+
+const zoomKnoepfe = () => $('zoom').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.z) === zoom)));
+$('zoom').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !satz) return;
+  const s = $('streifen'), mitte = (s.scrollLeft + s.clientWidth / 2) * zoom;
+  zoom = Number(b.dataset.z); store.set('zoom', String(zoom)); zoomKnoepfe(); vorschau();
+  s.scrollLeft = mitte / zoom - s.clientWidth / 2;
+});
+zoomKnoepfe();
+for (const id of ['laenge', 'f1', 'f2', 'f3']) $(id).addEventListener('input', spaeter);
+
+// ================================================================ Prüfungen (Abschnitt 10 der Übergabe)
+function pruefen(){
+  const n = satz.nodes, liste = [];
+  const ok = (b, t) => liste.push([b, t]);
+  ok(n.length === 194 && satz.blocks.length === 194, `${satz.blocks.length} von 194 Knoten gezeichnet`);
+  const by = Object.fromEntries(n.map(k => [k.id, k]));
+  const fehlt = [], rechts = [];
+  for (const k of n) for (const c of k.causes) { if (!by[c]) fehlt.push(k.id + '←' + c); else if (by[c].tx > k.tx) rechts.push(k.id + '←' + c); }
+  ok(!fehlt.length, fehlt.length ? 'Ursachen fehlen: ' + fehlt.join(', ') : 'Alle Ursachen vorhanden');
+  ok(!rechts.length, rechts.length ? 'Ursache rechts vom Knoten: ' + rechts.join(', ') : 'Jede Ursache liegt links vom Knoten');
+  let einBit = true; for (let i = 0; i < px.length; i++) if (px[i] > 1) { einBit = false; break; }
+  ok(einBit, 'Raster streng 1 Bit');
+  const teile = druckTeile(px, satz.L);
+  const summe = teile.reduce((s, t) => s + t.len, 0);
+  ok(teile.every(t => t.w === 576), 'Breite genau 576 Punkte');
+  ok(summe === satz.L && teile.every(t => t.h <= 2000), `${teile.length} Teile, zusammen ${summe} Punkte = ganze Länge, jeder Teil höchstens 2000`);
+  // Stichprobe: Teile wieder zusammensetzen und mit dem Raster vergleichen
+  let gleich = true;
+  for (let s = 0; s < teile.length && gleich; s++) for (let y = 0; y < teile[s].len && gleich; y += 3)
+    for (let x = 0; x < W; x += 3) { const bit = (teile[s].bits[y * 72 + (x >> 3)] >> (7 - (x & 7))) & 1; if (bit !== px[(W - 1 - x) * satz.L + s * SLICE + y]) { gleich = false; break; } }
+  ok(gleich, 'Teile ergeben zusammen genau den Streifen');
+  const ueber = n.filter(k => k.px + (k.lines === 3 ? k.w3 : k.w2) > satz.XE);
+  ok(!ueber.length, ueber.length ? 'Knoten ragen in den Exkurs: ' + ueber.map(k => k.id).join(', ') : 'Kein Knoten ragt in den Exkurs');
+  $('pruef').innerHTML = liste.map(([b, t]) => `<li class="${b ? '' : 'nein'}">${esc(t)}</li>`).join('');
+}
+
+// ================================================================ Drucken und Herunterladen
+function bereich(test){
+  if (!test) return [0, satz.L];
+  const a = Math.max(0, satz.xOf(ybpOf(1926)) - 40);
+  return [a, Math.min(satz.L, a + TEST_MM * DPM)];
+}
+
+async function bonHtml(teile){
+  // Jeder Teil: Höhe ein Vielfaches von 36, eingebettet mit 272 px und H × 17/36 px (bon/NEUE-APP.md)
+  const imgs = [];
+  for (const t of teile) imgs.push(`<img src="${await dataUrl(await png(t))}" style="display:block;width:272px;height:${t.h * 17 / 36}px;image-rendering:pixelated">`);
+  return imgs.join('');
+}
+
+async function senden(test){
+  if (!satz) return;
+  const [a, b] = bereich(test);
+  const mm = Math.round((b - a) / DPM);
+  if (!test && !confirm(`Den ganzen Streifen drucken? Das braucht etwa ${(mm / 1000).toFixed(1).replace('.', ',')} m Papier.`)) return;
+  for (const id of ['drucken', 'test']) $(id).disabled = true;
+  msg('Sende …');
+  try {
+    const teile = druckTeile(px, satz.L, a, b);
+    const inhalt = await bonHtml(teile);
+    const titel = test ? 'Révolution Test 1926–2016' : 'Révolution';
+    const r = await fetch(BONPOST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ key: KEY, inhalt, titel, quelle: 'website' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.fehler || 'unbekannter Fehler');
+    msg(`Gesendet (${teile.length} Teile, ${mm} mm). Der Bon kommt innert einer Minute.`, 'ok');
+  } catch (e) {
+    msg('Fehler: ' + e.message, 'err');
+  } finally {
+    for (const id of ['drucken', 'test']) $(id).disabled = false;
+  }
+}
+$('drucken').addEventListener('click', () => senden(false));
+$('test').addEventListener('click', () => senden(true));
+
+function herunterladen(blob, name){
+  const u = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 4000);
+}
+const tag = () => new Date().toISOString().slice(0, 10);
+$('pngGanz').addEventListener('click', async () => {
+  if (!satz) return;
+  herunterladen(await png(querBits(px, satz.L)), `revolution-${tag()}.png`);
+});
+$('pngTeile').addEventListener('click', async () => {
+  if (!satz) return;
+  const teile = druckTeile(px, satz.L);
+  msg(`${teile.length} Dateien werden geladen …`);
+  for (let i = 0; i < teile.length; i++) {
+    herunterladen(await png(teile[i]), `revolution-${tag()}-teil-${String(i + 1).padStart(2, '0')}.png`);
+    await new Promise(r => setTimeout(r, 350));
+  }
+  msg(`${teile.length} Teile heruntergeladen (Druckrichtung, 576 Punkte breit).`, 'ok');
+});
+
+laden().then(() => laeuft = laeuft.then(zeichnen)).catch(e => { $('stand').textContent = 'Fehler: ' + e.message; });
+</script>
+</body>
+</html>
