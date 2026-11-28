@@ -10,6 +10,7 @@
 <link rel="preload" href="../text/plex-500.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../text/plex-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../text/plex-500-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../text/plex-300.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 /* IBM Plex Sans (SIL Open Font License), aus bon/text/ */
 @font-face{font-family:"Plex";src:url(../text/plex-500.woff2) format("woff2");font-weight:500;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
@@ -18,6 +19,9 @@
 @font-face{font-family:"Plex";src:url(../text/plex-700-ext.woff2) format("woff2");font-weight:700;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:"Plex";src:url(../text/plex-500-italic.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:"Plex";src:url(../text/plex-500-italic-ext.woff2) format("woff2");font-weight:500;font-style:italic;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* IBM Plex Sans Light 300 (OFL, Fontsource): Ideengeschichte */
+@font-face{font-family:"Plex";src:url(../text/plex-300.woff2) format("woff2");font-weight:300;font-display:block;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plex";src:url(../text/plex-300-ext.woff2) format("woff2");font-weight:300;font-display:block;unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 /* Hausstil simoschlumpf.ch: schwarz auf weiss, Plex 500/700, eckig, Europablau nur für die Auswahl am Bildschirm */
 :root{ --sans:"Plex",Arial,sans-serif; --muted:#555; --blau:#003399; --ok:#0a7a2f; --err:#b00020; color-scheme:light }
 *{box-sizing:border-box}
@@ -93,10 +97,8 @@ summary{cursor:pointer;font-size:.72rem;font-weight:700;text-transform:uppercase
     <p class="intro">Ein langer Bon, quer gelesen: von den ersten Steinwerkzeugen bis zur KI, 194 Knoten auf einer logarithmischen Zeitachse. Antippen zeigt alle Angaben. <a href="sources/">Quellen</a></p>
 
     <div class="ctrl">
-      <label class="feld"><span>Länge mm</span><input id="laenge" type="number" inputmode="numeric" min="1000" max="6000" step="50" value="3000"></label>
-      <label class="feld"><span>Schrift Z1</span><input id="f1" class="klein" type="number" inputmode="numeric" min="12" max="24" value="16"></label>
-      <label class="feld"><span>Z2</span><input id="f2" class="klein" type="number" inputmode="numeric" min="12" max="26" value="19"></label>
-      <label class="feld"><span>Z3</span><input id="f3" class="klein" type="number" inputmode="numeric" min="12" max="24" value="16"></label>
+      <label class="feld"><span>Länge mm</span><input id="laenge" type="number" inputmode="numeric" min="1000" max="6000" step="50" value="3500"></label>
+      <label class="feld"><span>Schrift</span><input id="f1" class="klein" type="number" inputmode="numeric" min="12" max="22" value="15"></label>
       <div class="feld"><span id="zoomLabel">Zoom</span>
         <div class="seg" id="zoom" role="group" aria-labelledby="zoomLabel"><button type="button" data-z="1">1:1</button><button type="button" data-z="2">1:2</button><button type="button" data-z="4">1:4</button><button type="button" data-z="8">1:8</button></div>
       </div>
@@ -139,6 +141,8 @@ const W = 576;              // Breite quer zum Papier: 72 mm bei 203 dpi (Equip 
 const DPM = 8;              // Punkte pro mm
 const SLICE = 1980;         // höchstens 2000 Punkte pro Teil; Vielfaches von 36, damit die Bon-Post punktgenau druckt
 const SCHWELLE = 128;       // 50 %
+const SCHWELLE_DUENN = 215; // dünne Schrift (Ideen): schon wenig Deckung wird schwarz, sonst zerfallen die Striche
+const duenn = o => o.font && o.font.startsWith('300 ');
 const SOURCES_URL = 'https://www.simoschlumpf.ch/bon/revolution/sources/';
 const SOURCES_TEXT = 'simoschlumpf.ch/bon/revolution/sources';
 
@@ -156,13 +160,15 @@ const THREADS = [
 { let y = SCALE_TOP; for (const t of THREADS) { t.y = y; y += t.h; } if (y + SCALE_BOT !== W) throw new Error('Bänder ergeben nicht 576 Punkte'); }
 
 // Längs (links nach rechts)
-const HEAD = 1200;          // Kopf ~150 mm
+let HEAD = 1200;            // Kopf: Titel und Legende, wird in setzen() aus der Legende berechnet
 const MARGIN_L = 60;        // Platz für die Bandbuchstaben vor der Zeitachse
 const EXC = 1600;           // KI-Exkurs ~200 mm
-const FOOT = 1580;          // Schluss ~200 mm: Legende, Zählung, Quellen
+let FOOT = 1580;            // Schluss: Legende, Zählung, Quellen, ebenso berechnet
+const TALLY = 960;          // Zählung M1–M8 und Quellen
 const GAP = 14;             // Abstand zwischen zwei Knoten in einer Spur
 const POSMAX = 6.52;        // log10 der Jahre vor 2026 am linken Rand (3,3 Mio. Jahre)
 const TEST_MM = 300;
+const LW = 2, LW_HEAVY = 4;   // Linienstärke in Punkten: normal, kräftig (Führungslinien 1)
 
 const STRUCT = {
   enabled: 'solid', transfer: 'solid', adaptation: 'solid', invention: 'solid', '': 'solid',
@@ -175,17 +181,75 @@ const MECH = [
   ['M5', 'cost shifting'], ['M6', 'war as funder'], ['M7', 'regulation lags'], ['M8', 'legibility'],
 ];
 
-const LEGEND = [
-  ['NODE', ['056 number · date · origin>affected']],
-  ['REGIME', ['P prologue · I muscle+fire · II organic · III fossil', 'IV electric · V digital']],
-  ['', ['M1 extraction first', 'M2 hidden labour', 'M3 skill capture'], true],
-  ['', ['M4 bottleneck=power', 'M5 cost shifting', 'M6 war as funder'], true],
-  ['', ['M7 regulation lags', 'M8 legibility'], true],
-  ['LABOUR', ['w wage s enslaved f forced i indentured', 'u unpaid domestic g gig']],
-  ['EVIDENCE', ['! documented  = consensus  ? contested/estimate']],
-  ['LINES', ['solid enabled · dashed motivated · heavy forced/extracted', 'wavy resistance · dotted replaced']],
-  ['THREADS', ['E energy I information F food L labour', 'R reproduction C cotton S state/legibility']],
+// Legende: Abschnitte, die in Spalten von oben nach unten fliessen (am Anfang und am Ende gleich)
+const LEGENDE = [
+  { titel: 'READING A NODE', teile: [
+    { art: 'beispiel' },
+    { art: 'row', mark: 'voll', t: 'Marker: exact date on the time axis. Filled: technology, material, event.' },
+    { art: 'row', mark: 'leer', t: 'Open: idea (text, theory, concept).' },
+    { art: 'row', k: '056', t: 'Node number. Sources are listed under this number.' },
+    { art: 'row', k: '1700/1721', t: 'Date or period. c. = about, BCE = before year 1.' },
+    { art: 'row', k: 'GB>IN', t: 'Where it started > where it had effects (country codes).' },
+    { art: 'row', k: 'M5 w =', t: 'Mechanism, form of labour, evidence (see below).' },
+    { art: 'row', k: 'Line 2', t: 'What happened. Bold: technology, material, event. Light: idea.' },
+    { art: 'row', k: 'Line 3', t: 'Groups affected; if none are named, the change in italics. Where space is short, only two lines are printed.' },
+  ] },
+  { titel: 'TIME AXIS', teile: [
+    { art: 'p', t: 'Time runs left to right on a log scale: each factor of ten in years before 2026 gets the same length. 1926–2016 takes as much space as 1 million to 100,000 years ago.' },
+    { art: 'p', t: 'Year labels at top and bottom. Dotted vertical lines: 10, 100, 1000 ... years before 2026.' },
+    { art: 'p', t: 'Where nodes crowd, a node moves right. A short mark at the top of its band shows its true date; a thin line leads to it.' },
+  ] },
+  { titel: 'REGIMES: THE MAIN ENERGY BASE', teile: [
+    { art: 'row', k: 'P', t: 'Prologue: stone tools, before regular fire (from 3.3 million years ago).' },
+    { art: 'row', k: 'I', t: 'Muscle and fire: human strength, fire for heat and cooking (from c. 1 million years ago).' },
+    { art: 'row', k: 'II', t: 'Organic: farming, animals, wood, water and wind (from c. 12,000 BCE).' },
+    { art: 'row', k: 'III', t: 'Fossil: coal and steam (from 1700).' },
+    { art: 'row', k: 'IV', t: 'Electric: electricity, oil, chemistry (from 1880).' },
+    { art: 'row', k: 'V', t: 'Digital: computers and networks (from 1945).' },
+    { art: 'p', t: 'Heavy bars on the year scale and dotted lines through the bands mark where a regime begins.' },
+  ] },
+  { titel: 'THREADS: ONE BAND EACH', teile: [
+    { art: 'row', k: 'E', t: 'Energy: sources of energy and their use.' },
+    { art: 'row', k: 'I', t: 'Information: writing, numbers, printing, computing, networks.' },
+    { art: 'row', k: 'F', t: 'Food: farming, land, famine.' },
+    { art: 'row', k: 'L', t: 'Labour: work, workplaces, workers\' organisations.' },
+    { art: 'row', k: 'R', t: 'Reproduction: bodies, birth, care and household work.' },
+    { art: 'row', k: 'C', t: 'Cotton: cotton and textiles as a global chain.' },
+    { art: 'row', k: 'S', t: 'State and legibility: states, money, trade rules, counting and identifying people.' },
+  ] },
+  { titel: 'MECHANISMS', teile: [
+    { art: 'row', k: 'M1', t: 'Extraction first: gains rest on raw materials or labour taken from elsewhere.' },
+    { art: 'row', k: 'M2', t: 'Hidden labour: work the technology needs is invisible or unpaid.' },
+    { art: 'row', k: 'M3', t: 'Skill capture: workers\' knowledge moves into machines or management.' },
+    { art: 'row', k: 'M4', t: 'Bottleneck = power: whoever controls a scarce part controls the whole.' },
+    { art: 'row', k: 'M5', t: 'Cost shifting: costs fall on people other than those who gain.' },
+    { art: 'row', k: 'M6', t: 'War as funder: military demand pays for development.' },
+    { art: 'row', k: 'M7', t: 'Regulation lags: rules come after the harm.' },
+    { art: 'row', k: 'M8', t: 'Legibility: people and things made countable for state or market.' },
+  ] },
+  { titel: 'FORMS OF LABOUR', teile: [
+    { art: 'row', k: 'w', t: 'Wage labour.' },
+    { art: 'row', k: 's', t: 'Enslaved.' },
+    { art: 'row', k: 'f', t: 'Forced labour, e.g. compulsory service (corvée, mita).' },
+    { art: 'row', k: 'i', t: 'Indentured: bound by contract for years.' },
+    { art: 'row', k: 'u', t: 'Unpaid domestic and care work.' },
+    { art: 'row', k: 'g', t: 'Gig work: paid per task through platforms.' },
+  ] },
+  { titel: 'EVIDENCE', teile: [
+    { art: 'row', k: '!', t: 'Documented in the sources.' },
+    { art: 'row', k: '=', t: 'Consensus among researchers.' },
+    { art: 'row', k: '?', t: 'Contested or an estimate.' },
+  ] },
+  { titel: 'LINES BETWEEN NODES', teile: [
+    { art: 'p', t: 'A line links a node with an earlier node it builds on. The style shows the kind of link:' },
+    { art: 'muster', stil: 'solid', t: 'enabled, transferred, adapted, invented' },
+    { art: 'muster', stil: 'dashed', t: 'motivated: gave the reason' },
+    { art: 'muster', stil: 'heavy', t: 'forced, extraction, suppression' },
+    { art: 'muster', stil: 'wavy', t: 'resistance against the earlier node' },
+    { art: 'muster', stil: 'dotted', t: 'replaced the earlier node' },
+  ] },
 ];
+const LEG = { colw: 530, gap: 40, top: 36, bot: W - 14, lh: 18, keyw: 86, fs: 15 };
 
 const STACK = [
   ['MINERALS', 'copper, cobalt, lithium, gallium, rare earths: CD, CL, CN'],
@@ -208,6 +272,7 @@ const REGIMES = [
   { r: 'V', year: 1945, t: 'V 1945', bar: true },
 ];
 
+const LIGHT = px => `300 ${px}px "Plex", Arial, sans-serif`;   // Ideen: Texte, Theorien, dünn; Technik und Ereignisse fett
 const FONT = (px, w = 500, kursiv = false) => `${kursiv ? 'italic ' : ''}${w} ${px}px "Plex", Arial, sans-serif`;
 const $ = id => document.getElementById(id);
 const msg = (t, k = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + k; };
@@ -251,16 +316,20 @@ function umbrechen(t, font, max){
 // ops.lines: Linien hinter allem (Pixel in eine Ebene), ops.knock: weisse Kästen, ops.rects/ops.text/ops.top: darüber
 function setzen(nodes, L, F){
   const lh1 = F.l1, lh2 = F.l2, lh3 = F.l3, h2 = lh1 + lh2, h3 = h2 + lh3;
-  const f1 = FONT(lh1, 700), f2 = FONT(lh2, 500), f3 = FONT(lh3, 500), f3k = FONT(lh3, 500, true);
+  const f1 = FONT(lh1, 700), f2 = FONT(lh2, 700), f3 = FONT(lh3, 500), f3k = FONT(lh3, 500, true);
   for (const n of nodes) {
     n.t1 = [n.id, n.date, n.place, ...n.mech, ...n.labour, n.evidence].filter(Boolean).join(' ');
     n.t2 = n.event;
+    n.f2 = n.kind === 'idea' ? LIGHT(lh2) : f2;
     n.t3 = n.paid || n.change;   // betroffene Gruppen, sonst die Veränderung kursiv
     n.f3 = n.paid ? f3 : f3k;
-    const w1 = breite(n.t1, f1), w2 = breite(n.t2, f2), w3 = breite(n.t3, n.f3);
-    n.w2 = Math.ceil(9 + Math.max(w1, w2));
-    n.w3 = Math.ceil(9 + Math.max(w1, w2, w3));
+    const w1 = breite(n.t1, f1), w2 = breite(n.t2, n.f2), w3 = breite(n.t3, n.f3);
+    n.b1 = w1; n.b2 = w2; n.b3 = w3;
+    n.w2 = Math.ceil(11 + Math.max(w1, w2));
+    n.w3 = Math.ceil(11 + Math.max(w1, w2, w3));
   }
+  HEAD = 32 + legende(null, null, 32, 190) + 48;
+  FOOT = 40 + legende(null, null, 0, LEG.top) + 80 + TALLY;
   const X0 = HEAD + MARGIN_L;
   let pad = 240, lay = null;
   for (let i = 0; i < 6; i++) {
@@ -334,17 +403,21 @@ function setzen(nodes, L, F){
     const th = n.band;
     const x = n.px, top = n.top;
     const w = n.lines === 3 ? n.w3 : n.w2, h = n.lines === 3 ? h3 : h2;
-    R(x - 2, top, w + 4, h, 1, ops.knock);
+    // Weiss nur hinter Marke und Text, Zeile für Zeile, damit die Linien sichtbar bleiben
+    R(x - 1, top + 1, 11, lh1 - 1, 1, ops.knock);
+    R(x + 10, top + 1, Math.ceil(n.b1) + 2, lh1 - 1, 1, ops.knock);
+    R(x + 10, top + lh1 + 1, Math.ceil(n.b2) + 2, lh2 - 1, 1, ops.knock);
+    if (n.lines === 3) R(x + 10, top + h2 + 1, Math.ceil(n.b3) + 2, lh3 - 1, 1, ops.knock);
     const my = top + Math.round(lh1 / 2);
-    R(x, my - 3, 6, 6, 0, ops.top);   // Marke
-    T(n.t1, x + 9, top + Math.round(lh1 * 0.8), f1);
-    T(n.t2, x + 9, top + lh1 + Math.round(lh2 * 0.8), f2);
-    if (n.lines === 3) T(n.t3, x + 9, top + h2 + Math.round(lh3 * 0.8), n.f3);
-    n.mx = x + 3; n.my = my;
+    marke(R, x, my - 4, n.kind === 'idea', ops.top);   // Marke: voll = Technik, Material, Ereignis; leer = Idee
+    T(n.t1, x + 11, top + Math.round(lh1 * 0.8), f1);
+    T(n.t2, x + 11, top + lh1 + Math.round(lh2 * 0.8), n.f2);
+    if (n.lines === 3) T(n.t3, x + 11, top + h2 + Math.round(lh3 * 0.8), n.f3);
+    n.mx = x + 4; n.my = my;
     if (n.shifted) {
       // Wahre Lage: Strich an der Bandkante, dünne Führungslinie zur Marke
       R(n.tx - 1, th.y + 1, 3, 7, 0, ops.top);
-      ops.lines.push({ from: [n.tx, th.y + 8], to: [n.mx, n.my], style: 'solid' });
+      ops.lines.push({ from: [n.tx, th.y + 8], to: [n.mx, n.my], style: 'leader' });
     }
     blocks.push({ n, x: x - 2, y: top, w: w + 4, h });
   }
@@ -444,32 +517,68 @@ function kopf(ops, R, T){
   const ft = FONT(70, 700);
   T('RÉVOLUTION', x, 104, ft, Math.round(70 * 0.12));
   stern(R, x + 16, 142, 16); stern(R, x + 56, 142, 16); stern(R, x + 96, 142, 16);
-  let y = 210;
-  const fM = FONT(18, 500), fLab = FONT(14, 700);
-  const label = (t, yy) => T(t, x, yy, fLab, Math.round(14 * 0.14));
-  label('METHOD', y); y += 24;
-  for (const z of umbrechen('Log scale: each factor of ten in years gets equal length. Read from 2026.', fM, 520)) { T(z, x, y, fM); y += 23; }
-  y += 14;
-  label('STRUCTURE', y); y += 24;
-  for (const z of umbrechen('Seven bands, one per thread. Each node: number, date, place and codes; event; groups affected, or the change in italics. Lines connect a node with earlier nodes.', fM, 520)) { T(z, x, y, fM); y += 23; }
-
-  legende(T, 600);
+  // Die Legende beginnt unter dem Titel und fliesst nach rechts weiter
+  return legende(R, T, x, 190);
 }
 
 // Legende, am Anfang und am Ende gleich
-function legende(T, lx){
-  const tx = lx + 104, fl = FONT(16, 500), fk = FONT(15, 700), fLab = FONT(14, 700);
-  let ly = 44;
-  T('LEGEND', lx, ly, fLab, Math.round(14 * 0.14)); ly += 30;
-  for (const [lab, zeilen, spalten] of LEGEND) {
-    if (spalten) {
-      zeilen.forEach((z, i) => T(z, lx + i * 186, ly, fl));
-      ly += 22;
-    } else {
-      if (lab) T(lab, lx, ly, fk);
-      for (const z of zeilen) { T(z, tx, ly, fl); ly += 22; }
+// Marke 8 × 8: voll oder als Rahmen von 2 Punkten
+function marke(R, x, y, leer, liste){
+  R(x, y, 8, 8, 0, liste);
+  if (leer) R(x + 2, y + 2, 4, 4, 1, liste);
+}
+
+// Zeichnet die Legende ab (x0, y0) in Spalten und gibt die Breite zurück. Ohne R und T wird nur gemessen.
+function legende(R, T, x0, y0){
+  const trocken = !R;
+  if (trocken) { R = () => {}; T = () => {}; }
+  const fT = FONT(LEG.fs, 500), fK = FONT(LEG.fs, 700), fH = FONT(13, 700), lh = LEG.lh;
+  const tw = LEG.colw - LEG.keyw;
+  const hoehe = teil => {
+    if (teil.art === 'beispiel') return 3 * 17 + 14;
+    if (teil.art === 'p') return umbrechen(teil.t, fT, LEG.colw).length * lh + 6;
+    if (teil.art === 'muster') return umbrechen(teil.t, fT, tw).length * lh + 2;
+    return umbrechen(teil.t, fT, tw).length * lh + 4;
+  };
+  let x = x0, y = y0, maxX = x0 + LEG.colw;
+  const neueSpalte = () => { x += LEG.colw + LEG.gap; y = LEG.top; maxX = Math.max(maxX, x + LEG.colw); };
+  for (const a of LEGENDE) {
+    // Titel bleibt mit dem ersten Teil zusammen; die übrigen Teile fliessen in die nächste Spalte
+    if (y > LEG.top && y + 26 + hoehe(a.teile[0]) > LEG.bot) neueSpalte();
+    T(a.titel, x, y + 13, fH, 2);
+    y += 26;
+    for (const t of a.teile) {
+      if (y + hoehe(t) > LEG.bot) neueSpalte();
+      const yy = y;
+      if (t.art === 'beispiel') {
+        marke(R, x, yy + 2, false);
+        T('056 1700/1721 GB>IN M5 w =', x + 11, yy + 12, FONT(LEG.fs, 700));
+        T('Calico Acts curb Indian cloth', x + 11, yy + 29, FONT(LEG.fs, 700));
+        T('Indian weavers', x + 11, yy + 46, fT);
+      } else if (t.art === 'p') {
+        umbrechen(t.t, fT, LEG.colw).forEach((z, i) => T(z, x, yy + 14 + i * lh, fT));
+      } else if (t.art === 'muster') {
+        linienMuster(R, x, yy + 9, 60, t.stil);
+        umbrechen(t.t, fT, tw).forEach((z, i) => T(z, x + LEG.keyw, yy + 14 + i * lh, fT));
+      } else {
+        if (t.mark) marke(R, x, yy + 5, t.mark === 'leer'); else T(t.k, x, yy + 14, fK);
+        umbrechen(t.t, fT, tw).forEach((z, i) => T(z, x + LEG.keyw, yy + 14 + i * lh, fT));
+      }
+      y += hoehe(t);
     }
-    ly += 6;
+    y += 16;
+  }
+  return maxX - x0;
+}
+
+// Linienmuster für die Legende, aus Rechtecken (die Linienebene liegt unter weissen Flächen)
+function linienMuster(R, x, y, len, art){
+  for (let i = 0; i < len; i++) {
+    if (art === 'solid') R(x + i, y, 1, 2);
+    else if (art === 'dashed') { if (i % 12 < 7) R(x + i, y, 1, 2); }
+    else if (art === 'heavy') R(x + i, y - 1, 1, 4);
+    else if (art === 'dotted') { if (i % 6 < 2) R(x + i, y, 1, 2); }
+    else if (art === 'wavy') R(x + i, Math.round(y + 3 * Math.sin(i * 2 * Math.PI / 14)), 1, 2);
   }
 }
 
@@ -491,9 +600,9 @@ function exkurs(ops, R, T, X){
 }
 
 function schluss(ops, R, T, X, nodes){
-  legende(T, X + 40);
-  R(X + 620, 0, 1, W);
-  X += 620;
+  const lb = legende(R, T, X + 40, LEG.top);
+  R(X + lb + 80, 0, 1, W);
+  X += lb + 80;
   const x = X + 40, fLab = FONT(14, 700), f = FONT(18, 500), fk = FONT(18, 700);
   T('MECHANISMS', x, 44, fLab, 2);
   const zahl = Object.fromEntries(MECH.map(([k]) => [k, 0]));
@@ -522,7 +631,7 @@ function schluss(ops, R, T, X, nodes){
   if (window.qrcode) {
     qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
     const q = qrcode(0, 'M'); q.addData(SOURCES_URL, 'Byte'); q.make();
-    const n = q.getModuleCount(), mod = 5, qs = n * mod, ox = X + (FOOT - 620) - 40 - qs - 4 * mod, oy = W - 40 - qs;
+    const n = q.getModuleCount(), mod = 5, qs = n * mod, ox = X + TALLY - 40 - qs - 4 * mod, oy = W - 40 - qs;
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) R(ox + c * mod, oy + r * mod, mod, mod);
   }
 }
@@ -531,7 +640,7 @@ function schluss(ops, R, T, X, nodes){
 function linienZeichnen(ops, L){
   const ebene = new Uint8Array(L * W);
   const set = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < L && y >= 0 && y < W) ebene[y * L + x] = 1; };
-  const brush = (x, y, d) => { if (d === 1) set(x, y); else for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) set(x + i, y + j); };
+  const brush = (x, y, d) => { const a = -Math.floor((d - 1) / 2); for (let i = a; i < a + d; i++) for (let j = a; j < a + d; j++) set(x + i, y + j); };
   for (const l of ops.lines) {
     if (l.dot) { set(l.dot[0], l.dot[1]); continue; }
     if (l.pattern === 'regime') { for (let y = l.y0; y < l.y1; y++) if (y % 6 < 2) set(l.x, y); continue; }
@@ -541,11 +650,12 @@ function linienZeichnen(ops, L){
     for (let s = 0; s <= len; s += 0.5) {
       const x = x1 + ux * s, y = y1 + uy * s;
       switch (l.style) {
-        case 'dashed': if (s % 10 < 6) set(x, y); break;
-        case 'dotted': if (s % 4 < 1) set(x, y); break;
-        case 'heavy': brush(x, y, 3); break;
-        case 'wavy': { const o = 2 * Math.sin(s * 2 * Math.PI / 12); set(x + nx * o, y + ny * o); break; }
-        default: set(x, y);
+        case 'dashed': if (s % 12 < 7) brush(x, y, LW); break;
+        case 'dotted': if (s % 6 < 2) brush(x, y, LW); break;
+        case 'heavy': brush(x, y, LW_HEAVY); break;
+        case 'wavy': { const o = 3 * Math.sin(s * 2 * Math.PI / 14); brush(x + nx * o, y + ny * o, LW); break; }
+        case 'leader': set(x, y); break;
+        default: brush(x, y, LW);
       }
     }
   }
@@ -577,7 +687,7 @@ async function rastern(satz){
       if (!o.sp) { g.fillText(o.t, o.x, o.y); return; }
       let x = o.x; for (const c of o.t) { g.fillText(c, x, o.y); x += g.measureText(c).width + o.sp; }
     };
-    for (const o of ops.text) if (sicht(o)) text(o);
+    for (const o of ops.text) if (sicht(o) && !duenn(o)) text(o);
     for (const o of ops.top) { if (!sicht(o)) continue; if (o.t != null) text(o); else { g.fillStyle = o.c ? '#fff' : '#000'; g.fillRect(o.x, o.y, o.w, o.h); } }
     g.restore();
     const out = g.getImageData(0, 0, sw, W), od = out.data;
@@ -585,6 +695,19 @@ async function rastern(satz){
       const i = (y * sw + x) * 4;
       const schwarz = 0.299 * od[i] + 0.587 * od[i + 1] + 0.114 * od[i + 2] < SCHWELLE;
       px[y * L + x0 + x] = schwarz ? 1 : 0;
+    }
+    // Zweiter Durchgang nur für dünne Schrift, mit eigener Schwelle, dazu geodert
+    const dunn = ops.text.filter(o => duenn(o) && sicht(o));
+    if (dunn.length) {
+      g.fillStyle = '#fff'; g.fillRect(0, 0, sw, W);
+      g.save(); g.translate(-x0, 0); g.textBaseline = 'alphabetic';
+      for (const o of dunn) text(o);
+      g.restore();
+      const d2 = g.getImageData(0, 0, sw, W).data;
+      for (let y = 0; y < W; y++) for (let x = 0; x < sw; x++) {
+        const i = (y * sw + x) * 4;
+        if (0.299 * d2[i] + 0.587 * d2[i + 1] + 0.114 * d2[i + 2] < SCHWELLE_DUENN) px[y * L + x0 + x] = 1;
+      }
     }
     await new Promise(r => setTimeout(r));
   }
@@ -642,12 +765,12 @@ let NODES = null, satz = null, px = null, zoom = Number(store.get('zoom', '1')) 
 async function laden(){
   const r = await fetch('revolution-nodes.json', { cache: 'no-cache' });
   NODES = await r.json();
-  await Promise.all([document.fonts.load(FONT(20, 500), 'AÉ'), document.fonts.load(FONT(20, 700), 'AÉ'), document.fonts.load(FONT(20, 500, true), 'AÉ')]);
+  await Promise.all([document.fonts.load(LIGHT(20), 'AÉ'), document.fonts.load(FONT(20, 500), 'AÉ'), document.fonts.load(FONT(20, 700), 'AÉ'), document.fonts.load(FONT(20, 500, true), 'AÉ')]);
 }
 
 const params = () => ({
-  L: Math.round(Math.min(6000, Math.max(1000, Number($('laenge').value) || 3000))) * DPM,
-  F: { l1: num('f1', 16), l2: num('f2', 19), l3: num('f3', 16) },
+  L: Math.round(Math.min(6000, Math.max(1000, Number($('laenge').value) || 3500))) * DPM,
+  F: (g => ({ l1: g, l2: g, l3: g }))(num('f1', 15)),   // alle Zeilen gleich gross
 });
 const num = (id, d) => Math.round(Math.min(26, Math.max(12, Number($(id).value) || d)));
 
@@ -704,7 +827,7 @@ $('band').addEventListener('click', e => {
   if (best) zeigen(best.n.id);
 });
 
-const FELDER = [['id', 'ID'], ['date', 'Date'], ['year', 'Year'], ['regime', 'Regime'], ['thread', 'Thread'], ['place', 'Place'], ['event', 'Event'], ['change', 'Change'], ['gained', 'Gained'], ['paid', 'Paid'], ['labour', 'Labour'], ['mech', 'Mechanism'], ['causes', 'Causes'], ['link', 'Link'], ['evidence', 'Evidence'], ['source', 'Source']];
+const FELDER = [['id', 'ID'], ['date', 'Date'], ['year', 'Year'], ['regime', 'Regime'], ['thread', 'Thread'], ['place', 'Place'], ['event', 'Event'], ['change', 'Change'], ['gained', 'Gained'], ['paid', 'Paid'], ['labour', 'Labour'], ['mech', 'Mechanism'], ['causes', 'Causes'], ['link', 'Link'], ['evidence', 'Evidence'], ['kind', 'Kind'], ['source', 'Source']];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 function zeigen(id){
   const n = satz.nodes.find(k => k.id === id); if (!n) return;
@@ -736,7 +859,7 @@ $('zoom').addEventListener('click', e => {
   s.scrollLeft = mitte / zoom - s.clientWidth / 2;
 });
 zoomKnoepfe();
-for (const id of ['laenge', 'f1', 'f2', 'f3']) $(id).addEventListener('input', spaeter);
+for (const id of ['laenge', 'f1']) $(id).addEventListener('input', spaeter);
 
 // ================================================================ Prüfungen (Abschnitt 10 der Übergabe)
 function pruefen(){
