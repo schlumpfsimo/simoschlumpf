@@ -40,7 +40,7 @@ Startprompt für einen neuen Chat:
     abweichende Punkte. Ob der Mac so lange Bons druckt, ist noch nicht getestet.
   - bon/rezept/: eigene Datensammlung (200 Rezepte in rezepte.js), Filter, Mengen umrechnen, Liste
     mit Kästchen zum Abhaken. Bettet das PNG schon nach der Regel mit 272 px und H × 17/36 px ein.
-- Schriften (alle OFL) relativ einbinden statt kopieren: IBM Plex Sans (bon/text/), IBM Plex Serif
+- Schriften (alle OFL) relativ einbinden statt kopieren: IBM Plex Sans inkl. kursiv 500 (bon/text/), IBM Plex Serif
   inkl. kursiv und Playfair Display Black (bon/depeche/), Playfair Display Italic (bon/menu/),
   Caveat als Handschrift und Dancing Script als Schreibschrift (bon/postkarte/). Neue Schriften
   von Fontsource über jsDelivr, Lizenz prüfen. Vor dem Messen `document.fonts.load(...)`.
