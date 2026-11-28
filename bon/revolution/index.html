@@ -156,12 +156,10 @@ const THREADS = [
 const HEAD = 1200;          // Kopf ~150 mm
 const MARGIN_L = 60;        // Platz für die Bandbuchstaben vor der Zeitachse
 const EXC = 1600;           // KI-Exkurs ~200 mm
-const FOOT = 960;           // Schluss ~120 mm
+const FOOT = 1580;          // Schluss ~200 mm: Legende, Zählung, Quellen
 const GAP = 14;             // Abstand zwischen zwei Knoten in einer Spur
 const POSMAX = 6.52;        // log10 der Jahre vor 2026 am linken Rand (3,3 Mio. Jahre)
 const TEST_MM = 300;
-const LEGW = 424;           // Kurzlegende in der Zeitachse, 53 mm breit
-const LEG_EVERY = 4800;     // etwa alle 600 mm
 
 const STRUCT = {
   enabled: 'solid', transfer: 'solid', adaptation: 'solid', invention: 'solid', '': 'solid',
@@ -260,24 +258,20 @@ function setzen(nodes, L, F){
     n.w3 = Math.ceil(9 + Math.max(w1, w2, w3));
   }
   const X0 = HEAD + MARGIN_L;
-  let pad = 240, lay = null, karte = null;
+  let pad = 240, lay = null;
   for (let i = 0; i < 6; i++) {
-    const TLg = L - X0 - pad - EXC - FOOT;          // Zeitachse samt Legenden-Lücken
-    karte = achse(nodes, X0, TLg);
-    lay = platzieren(nodes, karte, { lh1, lh2, lh3, h2, h3 });
-    const need = Math.max(0, lay.maxEnd - (X0 + TLg)) + 60;
+    const TL = L - X0 - pad - EXC - FOOT;
+    lay = platzieren(nodes, X0, TL, { lh1, lh2, lh3, h2, h3 });
+    const need = Math.max(0, lay.maxEnd - (X0 + TL)) + 60;
     if (need <= pad) break;
     pad = need;
   }
-  const TL = karte.TL + karte.gaps.length * LEGW, XE = Math.max(X0 + TL + pad, lay.maxEnd + 60);
-  lay.TL = TL;
+  const TL = lay.TL, XE = Math.max(X0 + TL + pad, lay.maxEnd + 60);
   const XF = XE + EXC, LEND = Math.max(L, XF + FOOT);
   const ops = { lines: [], knock: [], rects: [], text: [], top: [] };
   const R = (x, y, w, h, c = 0, liste = ops.rects) => liste.push({ x, y, w, h, c });
   const T = (t, x, y, font, sp = 0, c = 0, liste = ops.text) => liste.push({ t, x, y, font, sp, c });
-  const xOf = karte.xOf, gaps = karte.gaps;
-  // Strecke von a bis b ohne die Legenden-Lücken
-  const ohneLuecken = (a, b, f) => { let x = a; for (const [g0, g1] of gaps) { if (g0 > x) f(x, g0); x = Math.max(x, g1); } if (b > x) f(x, b); };
+  const xOf = ybp => Math.round(X0 + (POSMAX - Math.log10(ybp)) / POSMAX * TL);
 
   // ------------------------------------------------ Kopf
   kopf(ops, R, T);
@@ -293,7 +287,7 @@ function setzen(nodes, L, F){
   ticks.push({ ybp: 3302026, art: 3 });
   const fL = FONT(17, 700), fB = FONT(14, 700);
   // Beschriftungen nach Wichtigkeit setzen, Überlappungen auslassen
-  const belegtO = gaps.map(g => [g[0] - 10, g[1] + 10]), belegtU = gaps.map(g => [g[0] - 10, g[1] + 10]);
+  const belegtO = [], belegtU = [];
   const frei = (liste, a, b) => !liste.some(([c, d]) => a < d + 18 && b + 18 > c);
   for (const t of [...ticks].sort((a, b) => b.art - a.art || a.ybp - b.ybp)) {
     const x = xOf(t.ybp), lab = yearLabel(t.ybp);
@@ -324,11 +318,12 @@ function setzen(nodes, L, F){
     } else T(g.t, Math.max(X0 - 20, x + 6), 16, fR);
   }
   // Linie unter der oberen und über der unteren Skala
-  ohneLuecken(HEAD, XE - 30, (a, b) => { R(a, SCALE_TOP, b - a, 1); R(a, W - SCALE_BOT, b - a, 1); });
+  R(HEAD, SCALE_TOP, XE - 30 - HEAD, 1);
+  R(HEAD, W - SCALE_BOT, XE - 30 - HEAD, 1);
 
   // ------------------------------------------------ Bänder
   for (const th of THREADS) {
-    ohneLuecken(HEAD, XE - 30, (a, b) => R(a, th.y, b - a, 1));   // Haarlinie zwischen den Bändern
+    R(HEAD, th.y, XE - 30 - HEAD, 1);   // Haarlinie zwischen den Bändern
   }
   const blocks = [];
   for (const n of nodes) {
@@ -364,7 +359,7 @@ function setzen(nodes, L, F){
     for (let c = X0 + 800; c < X0 + TL + pad - 40; c += 800) {
       for (const dx of [0, 40, -40, 80, -80, 120, -120, 160, -160, 200, -200, 260, -260, 320, -320, 400, -400]) {
         const x = c + dx;
-        if (x < X0 || x > X0 + TL + pad - 40 || gaps.some(([g0, g1]) => x + 30 > g0 && x - 30 < g1)) continue;
+        if (x < X0 || x > X0 + TL + pad - 40) continue;
         const kollidiert = eigene.some(b => x - 4 < b.x + b.w && x + 22 > b.x && th.y + 1 < b.y + b.h && th.y + 24 > b.y)
           || nodes.some(n => n.thread === th.k && n.shifted && Math.abs(n.tx - x - 9) < 16);
         if (!kollidiert) { box(x); break; }
@@ -372,89 +367,18 @@ function setzen(nodes, L, F){
     }
   }
 
-  // ------------------------------------------------ Kurzlegenden in den Lücken
-  for (const [g0] of gaps) kurzlegende(ops, R, T, g0);
-
   // ------------------------------------------------ KI-Exkurs und Schluss
   R(XE - 2, 0, 2, W);
   exkurs(ops, R, T, XE);
   R(XF - 2, 0, 2, W);
   schluss(ops, R, T, XF, nodes);
 
-  return { ops, L: LEND, X0, TL, XE, XF, blocks, xOf, lay, gaps };
-}
-
-// Zeitachse mit Lücken für die Kurzlegende. Die Lücken liegen etwa alle 600 mm, dort, wo davor wenig Knoten stehen.
-function achse(nodes, X0, TLg){
-  const gapsN = Math.max(0, Math.floor((TLg - 2400) / LEG_EVERY));
-  const TL = TLg - gapsN * LEGW;
-  const basis = ybp => (POSMAX - Math.log10(ybp)) / POSMAX * TL;
-  const bs = nodes.map(n => basis(ybpOf(n.year)));
-  const g = [];
-  for (let k = 1; k <= gapsN; k++) {
-    const t = k * LEG_EVERY - (k - 1) * LEGW;
-    let best = t, score = Infinity;
-    for (let c = t - 1000; c <= t + 1000; c += 10) {
-      const s = bs.filter(b => b > c - 900 && b < c + 200).length * 1000 + Math.abs(c - t) / 100;
-      if (s < score) { score = s; best = c; }
-    }
-    g.push(Math.round(best));
-  }
-  g.sort((a, b) => a - b);
-  const xOf = ybp => { const b = basis(ybp); let n = 0; for (const c of g) if (b >= c) n++; return Math.round(X0 + b + n * LEGW); };
-  const gaps = g.map((c, i) => [Math.round(X0 + c + i * LEGW), Math.round(X0 + c + (i + 1) * LEGW)]);
-  return { xOf, gaps, TL, TLg };
-}
-
-// Kurzlegende: Bandnamen auf Höhe der Bänder, rechts die Codes
-function kurzlegende(ops, R, T, x0){
-  R(x0, 0, LEGW, W, 1, ops.knock);
-  R(x0 + 10, 0, 2, W); R(x0 + LEGW - 12, 0, 2, W);
-  const fLab = FONT(13, 700), fN = FONT(14, 700), fK = FONT(13, 700), fT = FONT(13, 500), fBand = FONT(14, 700);
-  T('LEGEND', x0 + 24, 20, fLab, 2);
-  T('Scale continues right', x0 + 24, 40, fT);
-  for (const th of THREADS) {
-    R(x0 + 24, th.y + 6, 18, 18);
-    const w = breite(th.k, fBand); T(th.k, Math.round(x0 + 33 - w / 2), th.y + 20, fBand, 0, 1);
-    const name = th.k === 'S' ? 'State/legibility' : th.name;
-    T(name.toUpperCase(), x0 + 48, th.y + 20, fN, 1);
-    R(x0 + 24, th.y, 150, 1);
-  }
-  R(x0 + 24, W - SCALE_BOT, 150, 1);
-  const rx = x0 + 196, kx = rx + 30;
-  let y = SCALE_TOP + 14;
-  const zeile = (k, t) => { if (k) T(k, rx, y, fK); T(t, k ? kx : rx, y, fT); y += 17; };
-  for (const [k, t] of MECH) zeile(k, t);
-  y += 6;
-  zeile('!', 'documented'); zeile('=', 'consensus'); zeile('?', 'contested/estimate');
-  y += 6;
-  zeile('w', 'wage   s enslaved'); zeile('f', 'forced   i indentured'); zeile('u', 'unpaid domestic   g gig');
-  y += 6;
-  // Linienmuster als Muster gezeichnet, nicht in der Linienebene (die Lücke ist ausgespart)
-  const muster = (art) => {
-    const yy = y - 5;
-    for (let i = 0; i < 24; i++) {
-      if (art === 'solid') R(rx + i, yy, 1, 1);
-      else if (art === 'dashed') { if (i % 10 < 6) R(rx + i, yy, 1, 1); }
-      else if (art === 'heavy') R(rx + i, yy - 1, 1, 3);
-      else if (art === 'dotted') { if (i % 4 === 0) R(rx + i, yy, 1, 1); }
-      else if (art === 'wavy') R(rx + i, Math.round(yy + 2 * Math.sin(i * 2 * Math.PI / 12)), 1, 1);
-    }
-    T({ solid: 'enabled', dashed: 'motivated', heavy: 'forced/extracted', wavy: 'resistance', dotted: 'replaced' }[art], kx, y, fT);
-    y += 17;
-  };
-  for (const a of ['solid', 'dashed', 'heavy', 'wavy', 'dotted']) muster(a);
-  y += 6;
-  T('Pin: note the', rx, y, fT); y += 17;
-  T('3-digit node number', rx, y, fT);
+  return { ops, L: LEND, X0, TL, XE, XF, blocks, xOf, lay };
 }
 
 // Greedy-Spuren je Band. Passt ein Knoten nicht an seine Stelle, rückt er nach rechts und bekommt eine Führungslinie.
-function platzieren(nodes, karte, m){
-  const { gaps, TL } = karte;
+function platzieren(nodes, X0, TL, m){
   let maxEnd = 0, shifted = 0, zwei = 0;
-  // Ein Block darf nicht in eine Legenden-Lücke ragen: sonst hinter die Lücke
-  const klar = (x, w) => { for (const [g0, g1] of gaps) if (x - 2 < g1 && x + w + 2 > g0) x = g1 + GAP; return x; };
   for (const th of THREADS) {
     const inner = th.h - 1;
     const lanes = Math.max(1, Math.floor(inner / m.h2));
@@ -462,7 +386,7 @@ function platzieren(nodes, karte, m){
     const fits3 = i => (laneTop(i) - th.y - 1) + m.h3 <= inner;
     const span3 = i => { const s = []; for (let j = i; j < lanes; j++) if (laneTop(j) < laneTop(i) + m.h3) s.push(j); return s; };
     const ns = nodes.filter(n => n.thread === th.k);
-    for (const n of ns) { n.band = th; n.tx = karte.xOf(ybpOf(n.year)); }
+    for (const n of ns) { n.band = th; n.tx = Math.round(X0 + (POSMAX - Math.log10(ybpOf(n.year))) / POSMAX * TL); }
     ns.sort((a, b) => a.tx - b.tx || a.id.localeCompare(b.id));
     const ends = Array(lanes).fill(-Infinity);
     ns.forEach((n, idx) => {
@@ -476,19 +400,16 @@ function platzieren(nodes, karte, m){
         for (const i of free) {
           if (!fits3(i)) continue;
           const sp = span3(i);
-          if (sp.every(j => free.includes(j)) && ahead <= free.length - sp.length && klar(tx, n.w3) === tx) {
+          if (sp.every(j => free.includes(j)) && ahead <= free.length - sp.length) {
             n.lines = 3; n.lane = i; n.px = tx; n.top = laneTop(i);
             for (const j of sp) ends[j] = tx + n.w3;
             done = true; break;
           }
         }
-        if (!done) {
-          const i = free[0]; n.lines = 2; n.lane = i; n.px = klar(tx, n.w2); n.top = laneTop(i); ends[i] = n.px + n.w2;
-          if (n.px !== tx) { n.shifted = true; shifted++; }
-        }
+        if (!done) { const i = free[0]; n.lines = 2; n.lane = i; n.px = tx; n.top = laneTop(i); ends[i] = tx + n.w2; }
       } else {
         let i = 0; for (let j = 1; j < lanes; j++) if (ends[j] < ends[i]) i = j;
-        n.lines = 2; n.lane = i; n.px = klar(Math.ceil(ends[i] + GAP), n.w2); n.top = laneTop(i); ends[i] = n.px + n.w2;
+        n.lines = 2; n.lane = i; n.px = Math.ceil(ends[i] + GAP); n.top = laneTop(i); ends[i] = n.px + n.w2;
         n.shifted = true; shifted++;
       }
       if (n.lines === 2) zwei++;
@@ -519,10 +440,7 @@ function kopf(ops, R, T){
   const ft = FONT(70, 700);
   T('RÉVOLUTION', x, 104, ft, Math.round(70 * 0.12));
   stern(R, x + 16, 142, 16); stern(R, x + 56, 142, 16); stern(R, x + 96, 142, 16);
-  let y = 200;
-  const fTh = FONT(26, 700);
-  for (const z of umbrechen('Every revolution has a bill. This is who paid it.', fTh, 520)) { T(z, x, y, fTh); y += 32; }
-  y += 14;
+  let y = 210;
   const fM = FONT(18, 500), fLab = FONT(14, 700);
   const label = (t, yy) => T(t, x, yy, fLab, Math.round(14 * 0.14));
   label('METHOD', y); y += 24;
@@ -531,8 +449,12 @@ function kopf(ops, R, T){
   label('NEEDLE', y); y += 24;
   for (const z of umbrechen('Stick a needle into the strip where you think society took a wrong turn. Write down the node number next to it, or read the year off the scale.', fM, 520)) { T(z, x, y, fM); y += 23; }
 
-  // Legende rechts
-  const lx = 600, tx = lx + 104, fl = FONT(16, 500), fk = FONT(15, 700);
+  legende(T, 600);
+}
+
+// Legende, am Anfang und am Ende gleich
+function legende(T, lx){
+  const tx = lx + 104, fl = FONT(16, 500), fk = FONT(15, 700), fLab = FONT(14, 700);
   let ly = 44;
   T('LEGEND', lx, ly, fLab, Math.round(14 * 0.14)); ly += 30;
   for (const [lab, zeilen, spalten] of LEGEND) {
@@ -565,6 +487,9 @@ function exkurs(ops, R, T, X){
 }
 
 function schluss(ops, R, T, X, nodes){
+  legende(T, X + 40);
+  R(X + 620, 0, 1, W);
+  X += 620;
   const x = X + 40, fLab = FONT(14, 700), f = FONT(18, 500), fk = FONT(18, 700);
   T('MECHANISMS', x, 44, fLab, 2);
   const zahl = Object.fromEntries(MECH.map(([k]) => [k, 0]));
@@ -593,7 +518,7 @@ function schluss(ops, R, T, X, nodes){
   if (window.qrcode) {
     qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
     const q = qrcode(0, 'M'); q.addData(SOURCES_URL, 'Byte'); q.make();
-    const n = q.getModuleCount(), mod = 5, qs = n * mod, ox = X + FOOT - 40 - qs - 4 * mod, oy = W - 40 - qs;
+    const n = q.getModuleCount(), mod = 5, qs = n * mod, ox = X + (FOOT - 620) - 40 - qs - 4 * mod, oy = W - 40 - qs;
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) R(ox + c * mod, oy + r * mod, mod, mod);
   }
 }
